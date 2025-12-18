@@ -1,0 +1,22 @@
+# AI Evaluation App Task List
+
+- [ ] Planning
+    - [/] Create Implementation Plan <!-- id: 0 -->
+    - [ ] Review Plan with User <!-- id: 1 -->
+- [ ] Project Setup
+    - [ ] Initialize Astro Project with generic template <!-- id: 2 -->
+    - [ ] Add Tailwind CSS <!-- id: 3 -->
+    - [ ] Setup SQLite Database (better-sqlite3 or similar) <!-- id: 4 -->
+- [ ] Core Features Implementation
+    - [ ] Implement Database Schema (Evaluations, Results, Templates) <!-- id: 5 -->
+    - [ ] Create "New Evaluation" Page (Form for prompts, model selection) <!-- id: 6 -->
+    - [ ] Implement LLM Client (Mock or Real basic integration for testing) <!-- id: 7 -->
+    - [ ] Implement Evaluation Logic (Run prompt, measure time/tokens) <!-- id: 8 -->
+    - [ ] Create Results Page (Table view, metrics comparison) <!-- id: 9 -->
+    - [ ] Implement History/Dashboard View <!-- id: 10 -->
+- [ ] Refinement & UI Polish
+    - [ ] Apply "Premium" Design (Dark mode, glassmorphism) <!-- id: 11 -->
+    - [ ] Add Charts/Visuals for trends (optional but good for "compare metrics") <!-- id: 12 -->
+- [ ] Verification
+    - [ ] Test with sample prompts <!-- id: 13 -->
+    - [ ] Verification details <!-- id: 14 -->
