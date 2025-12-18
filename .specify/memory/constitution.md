@@ -1,50 +1,117 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+<!--
+  SYNC IMPACT REPORT (Generated: 2025-12-18)
+  ============================================================================
+  Version: 1.0.0 (NEW - Initial creation)
+  Rationale: Initial constitution creation focused on core engineering disciplines
+
+  Principles Added:
+  - I. Code Quality Standards
+  - II. Testing Discipline (Non-Negotiable)
+  - III. User Experience Consistency
+  - IV. Performance & Scalability
+
+  Sections Added:
+  - Core Principles (4 principles)
+  - Governance
+
+  Templates Updated:
+  - ✅ spec-template.md: User story section aligned with UX consistency principle
+  - ✅ plan-template.md: Performance goals section aligned with performance principle
+  - ✅ tasks-template.md: Test-first pattern aligned with testing discipline
+
+  Deferred Items: None
+  ============================================================================
+-->
+
+# Evaluation Framework Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. Code Quality Standards
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+All code must prioritize clarity, maintainability, and adherence to established patterns.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+**Non-negotiable Requirements**:
+- Every function/method has a single, well-defined responsibility (SRP)
+- All code changes include appropriate documentation in commit messages
+- Code is reviewed for readability and architectural fit before merge
+- Technical debt is explicitly tracked and prioritized in backlog
+- Naming is explicit: variable names clearly describe their purpose
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+**Rationale**: High-quality code reduces bugs, speeds up onboarding, and enables
+confident refactoring. Clarity over cleverness prevents maintenance disasters.
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### II. Testing Discipline (NON-NEGOTIABLE)
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+Test-driven development is mandatory for all feature implementation.
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+**Non-negotiable Requirements**:
+- Tests are written FIRST and verified to FAIL before implementation begins
+- All user-facing features require contract/integration tests
+- Test coverage for critical paths must be >80%
+- Tests serve as executable documentation of feature behavior
+- Red-Green-Refactor cycle must be strictly followed
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+**Rationale**: Tests written first establish clear requirements, prevent regressions,
+enable confident refactoring, and catch edge cases early. This discipline ensures
+code is testable by design.
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+### III. User Experience Consistency
+
+Every feature must deliver consistent, predictable user experiences.
+
+**Non-negotiable Requirements**:
+- All features use standardized patterns for similar actions (e.g., error messages)
+- User workflows are tested independently before merging
+- Acceptance scenarios in specs describe the complete user journey
+- Visual/interactive elements follow established design patterns
+- Error messages are user-friendly and actionable
+
+**Rationale**: Users build mental models of how the system works. Consistency
+reduces cognitive load, prevents frustration, and builds confidence in the product.
+
+### IV. Performance & Scalability
+
+Performance is a feature, not an afterthought.
+
+**Non-negotiable Requirements**:
+- Performance targets are explicitly defined before implementation (e.g., <200ms p95)
+- Performance constraints are documented in plan.md Technical Context
+- Hot paths are profiled and optimized
+- Decisions that trade performance for convenience must be justified
+- Memory and CPU usage are reasonable for the target scale
+
+**Rationale**: Users abandon slow systems. Performance constraints prevent bad
+decisions early. Explicit targets enable measurement and accountability.
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+### Amendment Procedure
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+Constitution amendments follow these rules:
+
+1. **Proposal**: Submit amendment with rationale (why change, what improves)
+2. **Review**: All changes must be documented in templates that implement the principle
+3. **Version Bump**:
+   - MAJOR: Remove/redefine principle or change governance rules
+   - MINOR: Add new principle or expand guidance (no breaking changes)
+   - PATCH: Clarifications, wording refinements, typo fixes
+4. **Approval**: Amendments take effect upon version increment and documentation update
+5. **Propagation**: All dependent templates (spec-template.md, plan-template.md, tasks-template.md) must be audited and updated
+
+### Compliance & Verification
+
+- All pull requests must reference which principles they satisfy
+- Code reviews explicitly verify compliance with applicable principles
+- When exceptions are needed, they must be explicitly justified in PR description
+- Complexity violations (e.g., bypassing testing discipline) require rationale in plan.md Complexity Tracking section
+
+### Scope of Authority
+
+This constitution supersedes all other development practices. When conflicts arise,
+constitution principles take priority. Individual project decisions (e.g., specific
+technologies) are made within the constraints established here.
+
+---
+
+**Version**: 1.0.0 | **Ratified**: 2025-12-18 | **Last Amended**: 2025-12-18
