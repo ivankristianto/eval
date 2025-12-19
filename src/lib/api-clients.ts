@@ -25,11 +25,21 @@ export class OpenAIClient implements ModelClient {
   async evaluate(instruction: string): Promise<ModelResponse> {
     const startTime = performance.now();
 
+    // Newer OpenAI models (o1, o3, gpt-5+) require max_completion_tokens instead of max_tokens
+    const useMaxCompletionTokens = 
+      this.modelName.startsWith('o1') || 
+      this.modelName.startsWith('o3') || 
+      this.modelName.startsWith('gpt-5');
+      
+    const tokenParam = useMaxCompletionTokens 
+      ? { max_completion_tokens: 4096 } 
+      : { max_tokens: 4096 };
+
     const response = await this.client.chat.completions.create({
       model: this.modelName,
       messages: [{ role: 'user', content: instruction }],
-      max_tokens: 4096
-    });
+      ...tokenParam
+    } as any);
 
     const executionTime = Math.round(performance.now() - startTime);
 
