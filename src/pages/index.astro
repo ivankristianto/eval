@@ -1,0 +1,403 @@
+---
+import '../styles/global.css';
+import { getModels } from '../lib/db';
+
+// Get active models for the form
+let models: { id: string; model_name: string; provider: string }[] = [];
+try {
+  models = getModels(true).map(m => ({
+    id: m.id,
+    model_name: m.model_name,
+    provider: m.provider
+  }));
+} catch {
+  // Database may not be initialized yet
+}
+---
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Model Evaluation Framework</title>
+</head>
+<body class="bg-gray-50 min-h-screen">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header -->
+    <header class="mb-8">
+      <h1 class="text-3xl font-bold text-gray-900">AI Model Evaluation Framework</h1>
+      <p class="mt-2 text-gray-600">Compare multiple AI models by submitting identical instructions and analyzing metrics.</p>
+    </header>
+
+    <!-- Error Banner -->
+    <div id="error-banner" class="hidden error-banner mb-6">
+      <div class="flex">
+        <div class="flex-shrink-0">
+          <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+          </svg>
+        </div>
+        <div class="ml-3">
+          <p id="error-message" class="text-sm"></p>
+        </div>
+        <div class="ml-auto pl-3">
+          <button id="close-error" class="text-red-500 hover:text-red-600">
+            <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <!-- Evaluation Form -->
+      <div class="lg:col-span-1">
+        <div class="bg-white shadow rounded-lg p-6">
+          <h2 class="text-lg font-semibold text-gray-900 mb-4">New Evaluation</h2>
+
+          <form id="evaluation-form" class="space-y-4">
+            <!-- Instruction -->
+            <div>
+              <label for="instruction" class="form-label">Instruction</label>
+              <textarea
+                id="instruction"
+                name="instruction"
+                rows="4"
+                class="form-input"
+                placeholder="Enter the instruction to evaluate..."
+                required
+              ></textarea>
+            </div>
+
+            <!-- Rubric Type -->
+            <div>
+              <label for="rubric_type" class="form-label">Accuracy Rubric</label>
+              <select id="rubric_type" name="rubric_type" class="form-input" required>
+                <option value="exact_match">Exact Match</option>
+                <option value="partial_credit">Partial Credit</option>
+                <option value="semantic_similarity">Semantic Similarity</option>
+              </select>
+            </div>
+
+            <!-- Expected Output -->
+            <div>
+              <label for="expected_output" class="form-label">Expected Output</label>
+              <textarea
+                id="expected_output"
+                name="expected_output"
+                rows="2"
+                class="form-input"
+                placeholder="Enter the expected output for accuracy comparison..."
+                required
+              ></textarea>
+            </div>
+
+            <!-- Partial Credit Concepts (conditional) -->
+            <div id="concepts-container" class="hidden">
+              <label for="partial_credit_concepts" class="form-label">Key Concepts (comma-separated)</label>
+              <textarea
+                id="partial_credit_concepts"
+                name="partial_credit_concepts"
+                rows="2"
+                class="form-input"
+                placeholder="concept1, concept2, concept3..."
+              ></textarea>
+            </div>
+
+            <!-- Model Selection -->
+            <div>
+              <label class="form-label">Select Models</label>
+              {models.length > 0 ? (
+                <div class="space-y-2 mt-2">
+                  {models.map(model => (
+                    <label class="flex items-center">
+                      <input
+                        type="checkbox"
+                        name="model_ids"
+                        value={model.id}
+                        class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <span class="ml-2 text-sm text-gray-700">
+                        {model.model_name}
+                        <span class="text-gray-400 ml-1">({model.provider})</span>
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              ) : (
+                <p class="text-sm text-gray-500 mt-2">
+                  No models configured. Add models using the API first.
+                </p>
+              )}
+            </div>
+
+            <!-- Submit Button -->
+            <button
+              type="submit"
+              id="submit-btn"
+              class="btn-primary w-full"
+              disabled={models.length === 0}
+            >
+              Run Evaluation
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Results Section -->
+      <div class="lg:col-span-2">
+        <div class="bg-white shadow rounded-lg p-6">
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-lg font-semibold text-gray-900">Results</h2>
+            <div id="evaluation-status" class="hidden">
+              <span id="status-badge" class="status-pending">Pending</span>
+            </div>
+          </div>
+
+          <!-- Status Indicators -->
+          <div id="status-container" class="hidden mb-4">
+            <div id="model-statuses" class="flex flex-wrap gap-2"></div>
+          </div>
+
+          <!-- Results Table -->
+          <div id="results-container" class="hidden">
+            <div class="overflow-x-auto">
+              <table class="results-table">
+                <thead>
+                  <tr>
+                    <th class="cursor-pointer hover:bg-gray-100" data-sort="model_name">Model</th>
+                    <th class="cursor-pointer hover:bg-gray-100" data-sort="execution_time_ms">Time (ms)</th>
+                    <th class="cursor-pointer hover:bg-gray-100" data-sort="input_tokens">Input Tokens</th>
+                    <th class="cursor-pointer hover:bg-gray-100" data-sort="output_tokens">Output Tokens</th>
+                    <th class="cursor-pointer hover:bg-gray-100" data-sort="total_tokens">Total Tokens</th>
+                    <th class="cursor-pointer hover:bg-gray-100" data-sort="accuracy_score">Accuracy</th>
+                    <th>Reasoning</th>
+                  </tr>
+                </thead>
+                <tbody id="results-body"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Empty State -->
+          <div id="empty-state" class="text-center py-12 text-gray-500">
+            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
+            <p class="mt-4">No evaluation results yet.</p>
+            <p class="text-sm">Submit an instruction to compare model performance.</p>
+          </div>
+
+          <!-- Save as Template Button -->
+          <div id="save-template-container" class="hidden mt-6 pt-6 border-t border-gray-200">
+            <button id="save-template-btn" class="btn-secondary">
+              Save as Template
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // State
+    let currentEvaluationId: string | null = null;
+    let pollingInterval: number | null = null;
+
+    // DOM Elements
+    const form = document.getElementById('evaluation-form') as HTMLFormElement;
+    const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
+    const rubricSelect = document.getElementById('rubric_type') as HTMLSelectElement;
+    const conceptsContainer = document.getElementById('concepts-container') as HTMLDivElement;
+    const errorBanner = document.getElementById('error-banner') as HTMLDivElement;
+    const errorMessage = document.getElementById('error-message') as HTMLParagraphElement;
+    const closeErrorBtn = document.getElementById('close-error') as HTMLButtonElement;
+    const evaluationStatus = document.getElementById('evaluation-status') as HTMLDivElement;
+    const statusBadge = document.getElementById('status-badge') as HTMLSpanElement;
+    const statusContainer = document.getElementById('status-container') as HTMLDivElement;
+    const modelStatuses = document.getElementById('model-statuses') as HTMLDivElement;
+    const resultsContainer = document.getElementById('results-container') as HTMLDivElement;
+    const resultsBody = document.getElementById('results-body') as HTMLTableSectionElement;
+    const emptyState = document.getElementById('empty-state') as HTMLDivElement;
+    const saveTemplateContainer = document.getElementById('save-template-container') as HTMLDivElement;
+
+    // Show/hide partial credit concepts based on rubric selection
+    rubricSelect.addEventListener('change', () => {
+      conceptsContainer.classList.toggle('hidden', rubricSelect.value !== 'partial_credit');
+    });
+
+    // Close error banner
+    closeErrorBtn.addEventListener('click', () => {
+      errorBanner.classList.add('hidden');
+    });
+
+    // Show error
+    function showError(message: string) {
+      errorMessage.textContent = message;
+      errorBanner.classList.remove('hidden');
+    }
+
+    // Update status badge
+    function updateStatusBadge(status: string) {
+      statusBadge.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+      statusBadge.className = `status-${status}`;
+    }
+
+    // Render model statuses
+    function renderModelStatuses(results: Array<{ model_name: string; status: string }>) {
+      modelStatuses.innerHTML = results.map(r => `
+        <span class="status-${r.status}">${r.model_name}: ${r.status}</span>
+      `).join('');
+    }
+
+    // Render results table
+    function renderResults(results: Array<{
+      model_name: string;
+      provider: string;
+      execution_time_ms?: number;
+      input_tokens?: number;
+      output_tokens?: number;
+      total_tokens?: number;
+      accuracy_score?: number;
+      accuracy_reasoning?: string;
+    }>) {
+      const bestAccuracy = Math.max(...results.map(r => r.accuracy_score || 0));
+
+      resultsBody.innerHTML = results.map(r => `
+        <tr class="${r.accuracy_score === bestAccuracy ? 'best-performer' : ''}">
+          <td>
+            <div class="font-medium">${r.model_name}</div>
+            <div class="text-gray-400 text-xs">${r.provider}</div>
+          </td>
+          <td>${r.execution_time_ms ?? '-'}</td>
+          <td>${r.input_tokens ?? '-'}</td>
+          <td>${r.output_tokens ?? '-'}</td>
+          <td>${r.total_tokens ?? '-'}</td>
+          <td>
+            <span class="font-semibold ${r.accuracy_score === bestAccuracy ? 'text-green-600' : ''}">${r.accuracy_score ?? '-'}%</span>
+          </td>
+          <td class="max-w-xs truncate" title="${r.accuracy_reasoning || ''}">${r.accuracy_reasoning || '-'}</td>
+        </tr>
+      `).join('');
+    }
+
+    // Poll for status updates
+    async function pollStatus() {
+      if (!currentEvaluationId) return;
+
+      try {
+        const response = await fetch(`/api/evaluation-status?evaluation_id=${currentEvaluationId}`);
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || 'Failed to get status');
+        }
+
+        updateStatusBadge(data.overall_status);
+        renderModelStatuses(data.results);
+
+        if (data.overall_status === 'completed' || data.overall_status === 'failed') {
+          stopPolling();
+
+          if (data.overall_status === 'completed') {
+            // Fetch full results
+            const resultsResponse = await fetch(`/api/results?evaluation_id=${currentEvaluationId}`);
+            const resultsData = await resultsResponse.json();
+
+            if (resultsResponse.ok) {
+              renderResults(resultsData.results);
+              resultsContainer.classList.remove('hidden');
+              emptyState.classList.add('hidden');
+              saveTemplateContainer.classList.remove('hidden');
+            }
+          } else {
+            showError(data.error_message || 'Evaluation failed');
+          }
+
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Run Evaluation';
+        }
+      } catch (error) {
+        console.error('Polling error:', error);
+      }
+    }
+
+    function startPolling() {
+      pollingInterval = window.setInterval(pollStatus, 500);
+    }
+
+    function stopPolling() {
+      if (pollingInterval) {
+        clearInterval(pollingInterval);
+        pollingInterval = null;
+      }
+    }
+
+    // Form submission
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const formData = new FormData(form);
+      const modelIds = formData.getAll('model_ids') as string[];
+
+      if (modelIds.length === 0) {
+        showError('Please select at least one model');
+        return;
+      }
+
+      const instruction = formData.get('instruction') as string;
+      const rubricType = formData.get('rubric_type') as string;
+      const expectedOutput = formData.get('expected_output') as string;
+      const conceptsRaw = formData.get('partial_credit_concepts') as string;
+
+      const partialCreditConcepts = rubricType === 'partial_credit' && conceptsRaw
+        ? conceptsRaw.split(',').map(c => c.trim()).filter(Boolean)
+        : undefined;
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Running...';
+      errorBanner.classList.add('hidden');
+
+      try {
+        const response = await fetch('/api/evaluate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            instruction,
+            model_ids: modelIds,
+            rubric_type: rubricType,
+            expected_output: expectedOutput,
+            partial_credit_concepts: partialCreditConcepts
+          })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || 'Failed to start evaluation');
+        }
+
+        currentEvaluationId = data.evaluation_id;
+
+        // Show status section
+        evaluationStatus.classList.remove('hidden');
+        statusContainer.classList.remove('hidden');
+        updateStatusBadge('pending');
+        renderModelStatuses(data.models);
+
+        // Start polling
+        startPolling();
+      } catch (error) {
+        showError(error instanceof Error ? error.message : 'An error occurred');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Run Evaluation';
+      }
+    });
+
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', stopPolling);
+  </script>
+</body>
+</html>
