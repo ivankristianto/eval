@@ -74,7 +74,7 @@ description: "Task list for AI Model Evaluation Framework implementation"
 - [X] T020 [P] Create encryption utility in src/lib/db.ts for API key encryption/decryption using Node.js crypto module with .env encryption key
 - [X] T021 Create database query functions in src/lib/db.ts: insertModel(), getModels(), getModelById(), updateModel(), deleteModel(), testModelConnection()
 - [X] T022 Implement model API endpoint T017 using database functions from T021 with API key validation and encryption per T020
-- [ ] T022a Create src/pages/models.astro: Model Management page - list all configured models, add model form with provider/model_name/api_key inputs, edit model active status, delete model with confirmation, test connection button, import/export models functionality
+- [X] T022a Create src/pages/models.astro: Model Management page - list all configured models, add model form with provider/model_name/api_key inputs, edit model active status, delete model with confirmation, test connection button, import/export models functionality
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -205,6 +205,7 @@ description: "Task list for AI Model Evaluation Framework implementation"
 - [X] T084 Run build and verify production bundle: npm run build; check bundle size, verify no errors, verify Tailwind CSS is optimized (minimal unused styles)
 - [ ] T085 Create pre-commit hook validation: check TypeScript compilation (tsc --noEmit), run linter (eslint if added), run unit tests before commit
 - [ ] T086 Validate quickstart.md walkthrough: follow steps exactly as written to confirm setup works end-to-end (clone, npm install, .env, db:init, dev, http://localhost:3000)
+- [ ] T087 Validate Astro 5 upgrade compatibility: verify astro@^5.16.6 in package.json, test npm run dev, npm run build, verify all SSR features work (API routes, dynamic pages, database connections, environment variables), document any breaking changes from Astro 4 to 5 in migration notes
 
 ---
 
