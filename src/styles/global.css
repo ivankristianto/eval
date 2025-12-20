@@ -59,3 +59,8 @@
 .btn-secondary {
   @apply inline-flex items-center justify-center rounded-md bg-white px-4 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2;
 }
+
+/* Popover modal styles */
+#response-modal::backdrop {
+  background-color: rgba(107, 114, 128, 0.75);
+}

@@ -51,28 +51,22 @@ try {
       </div>
     </div>
 
-    <!-- Response Modal -->
-    <div id="response-modal" class="hidden fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-      <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
-        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
-          <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-            <div class="sm:flex sm:items-start">
-              <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
-                <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">Model Response</h3>
-                <div class="mt-2">
-                  <pre id="modal-response-text" class="text-sm text-gray-500 whitespace-pre-wrap font-mono bg-gray-50 p-4 rounded"></pre>
-                </div>
-              </div>
+    <!-- Response Modal (using HTML Popover API) -->
+    <div id="response-modal" popover class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-auto mt-[10vh] p-0 border-0">
+      <div class="px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+        <div class="sm:flex sm:items-start">
+          <div class="mt-3 text-center sm:mt-0 sm:text-left w-full">
+            <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">Model Response</h3>
+            <div class="mt-2">
+              <pre id="modal-response-text" class="text-sm text-gray-500 whitespace-pre-wrap font-mono bg-gray-50 p-4 rounded max-h-[60vh] overflow-y-auto"></pre>
             </div>
           </div>
-          <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-            <button type="button" id="close-modal-btn" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
-              Close
-            </button>
-          </div>
         </div>
+      </div>
+      <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse rounded-b-lg">
+        <button type="button" popovertarget="response-modal" popovertargetaction="hide" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+          Close
+        </button>
       </div>
     </div>
 
@@ -249,9 +243,8 @@ try {
     const resultsBody = document.getElementById('results-body') as HTMLTableSectionElement;
     const emptyState = document.getElementById('empty-state') as HTMLDivElement;
     const saveTemplateContainer = document.getElementById('save-template-container') as HTMLDivElement;
-    const responseModal = document.getElementById('response-modal') as HTMLDivElement;
+    const responseModal = document.getElementById('response-modal') as HTMLElement;
     const modalResponseText = document.getElementById('modal-response-text') as HTMLPreElement;
-    const closeModalBtn = document.getElementById('close-modal-btn') as HTMLButtonElement;
 
     // Show/hide partial credit concepts based on rubric selection
     rubricSelect.addEventListener('change', () => {
@@ -263,22 +256,10 @@ try {
       errorBanner.classList.add('hidden');
     });
 
-    // Close modal
-    closeModalBtn.addEventListener('click', () => {
-      responseModal.classList.add('hidden');
-    });
-
-    // Close modal on click outside
-    responseModal.addEventListener('click', (e) => {
-      if (e.target === responseModal) {
-        responseModal.classList.add('hidden');
-      }
-    });
-
-    // Open modal with response text
+    // Open modal with response text using Popover API
     function openModal(text: string) {
       modalResponseText.textContent = text;
-      responseModal.classList.remove('hidden');
+      responseModal.showPopover();
     }
 
     // Show error
@@ -321,6 +302,7 @@ try {
     }>) {
       // Store responses safely in array (avoids XSS via template literals)
       storedResponses = results.map(r => r.response_text || '');
+      console.log('renderResults:', { results, storedResponses });
       const bestAccuracy = Math.max(...results.map(r => r.accuracy_score || 0));
 
       resultsBody.innerHTML = results.map((r, index) => `
@@ -355,6 +337,7 @@ try {
       const btn = target.closest('[data-response-index]') as HTMLElement | null;
       if (btn) {
         const index = parseInt(btn.dataset.responseIndex || '0', 10);
+        console.log('View clicked:', { index, storedResponses, text: storedResponses[index] });
         openModal(storedResponses[index] || '');
       }
     });
