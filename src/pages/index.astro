@@ -51,6 +51,31 @@ try {
       </div>
     </div>
 
+    <!-- Response Modal -->
+    <div id="response-modal" class="hidden fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+      <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
+          <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+            <div class="sm:flex sm:items-start">
+              <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">Model Response</h3>
+                <div class="mt-2">
+                  <pre id="modal-response-text" class="text-sm text-gray-500 whitespace-pre-wrap font-mono bg-gray-50 p-4 rounded"></pre>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+            <button type="button" id="close-modal-btn" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
       <!-- Evaluation Form -->
       <div class="lg:col-span-1">
@@ -174,6 +199,7 @@ try {
                     <th class="cursor-pointer hover:bg-gray-100" data-sort="total_tokens">Total Tokens</th>
                     <th class="cursor-pointer hover:bg-gray-100" data-sort="accuracy_score">Accuracy</th>
                     <th>Reasoning</th>
+                    <th>Response</th>
                   </tr>
                 </thead>
                 <tbody id="results-body"></tbody>
@@ -222,6 +248,9 @@ try {
     const resultsBody = document.getElementById('results-body') as HTMLTableSectionElement;
     const emptyState = document.getElementById('empty-state') as HTMLDivElement;
     const saveTemplateContainer = document.getElementById('save-template-container') as HTMLDivElement;
+    const responseModal = document.getElementById('response-modal') as HTMLDivElement;
+    const modalResponseText = document.getElementById('modal-response-text') as HTMLPreElement;
+    const closeModalBtn = document.getElementById('close-modal-btn') as HTMLButtonElement;
 
     // Show/hide partial credit concepts based on rubric selection
     rubricSelect.addEventListener('change', () => {
@@ -232,6 +261,24 @@ try {
     closeErrorBtn.addEventListener('click', () => {
       errorBanner.classList.add('hidden');
     });
+
+    // Close modal
+    closeModalBtn.addEventListener('click', () => {
+      responseModal.classList.add('hidden');
+    });
+
+    // Close modal on click outside
+    responseModal.addEventListener('click', (e) => {
+      if (e.target === responseModal) {
+        responseModal.classList.add('hidden');
+      }
+    });
+
+    // Open modal with response text
+    function openModal(text: string) {
+      modalResponseText.textContent = text;
+      responseModal.classList.remove('hidden');
+    }
 
     // Show error
     function showError(message: string) {
@@ -262,10 +309,11 @@ try {
       total_tokens?: number;
       accuracy_score?: number;
       accuracy_reasoning?: string;
+      response_text?: string;
     }>) {
       const bestAccuracy = Math.max(...results.map(r => r.accuracy_score || 0));
 
-      resultsBody.innerHTML = results.map(r => `
+      resultsBody.innerHTML = results.map((r, index) => `
         <tr class="${r.accuracy_score === bestAccuracy ? 'best-performer' : ''}">
           <td>
             <div class="font-medium">${r.model_name}</div>
@@ -279,9 +327,22 @@ try {
             <span class="font-semibold ${r.accuracy_score === bestAccuracy ? 'text-green-600' : ''}">${r.accuracy_score ?? '-'}%</span>
           </td>
           <td class="max-w-xs truncate" title="${r.accuracy_reasoning || ''}">${r.accuracy_reasoning || '-'}</td>
+          <td>
+             <button
+               onclick="document.dispatchEvent(new CustomEvent('open-response-modal', { detail: { text: \`${(r.response_text || '').replace(/`/g, '\\`').replace(/"/g, '&quot;')}\` } }))"
+               class="text-blue-600 hover:text-blue-800 text-sm font-medium"
+             >
+               View
+             </button>
+          </td>
         </tr>
       `).join('');
     }
+
+    // Listen for custom event to open modal
+    document.addEventListener('open-response-modal', (e: any) => {
+      openModal(e.detail.text);
+    });
 
     // Poll for status updates
     async function pollStatus() {

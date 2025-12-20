@@ -80,7 +80,7 @@ description: "Task list for AI Model Evaluation Framework implementation"
 - [X] T031 [P] Create database query functions: insertEvaluation(), updateEvaluationStatus(), insertResults(), getEvaluation(), getResults(), getEvaluationStatus()
 - [X] T032 Create src/components/EvaluationForm.astro: form with instruction textarea, rubric dropdown (Exact Match/Partial Credit/Semantic Similarity), expected_output field, model checkboxes, submit button - Note: Implemented inline in index.astro
 - [X] T033 Create src/components/StatusIndicator.astro: display per-model status badge (Pending/Running/Completed/Failed) with color coding - Note: Implemented inline in index.astro
-- [X] T034 Create src/components/ResultsTable.astro: table with columns Model, Time(ms), Input Tokens, Output Tokens, Total Tokens, Accuracy, Reasoning; sortable by each column; highlight best performer green - Note: Implemented inline in index.astro
+- [X] T034 Create src/components/ResultsTable.astro: table with columns Model, Time(ms), Input Tokens, Output Tokens, Total Tokens, Accuracy, Reasoning; sortable by each column; highlight best performer green; include functionality to view full response text - Note: Implemented inline in index.astro
 - [X] T035 Create src/components/ErrorBanner.astro: consistent error display component for all error messages from API responses - Note: Implemented inline in index.astro
 - [X] T036 Update src/pages/index.astro to include EvaluationForm, StatusIndicator (polling every 500ms during run), ResultsTable, ErrorBanner; implement fetch polling logic with JavaScript
 - [X] T037 Create client-side JavaScript in src/pages/index.astro: handle form submission → POST /api/evaluate → poll /api/evaluation-status → GET /api/results → display in table
