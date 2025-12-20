@@ -1,6 +1,10 @@
 ---
 import '../styles/global.css';
-import { getModels } from '../lib/db';
+import { getModels, getEvaluation, getResults } from '../lib/db';
+
+// Get query params
+const url = Astro.url;
+const evaluationId = url.searchParams.get('evaluation');
 
 // Get active models for the form
 let models: { id: string; model_name: string; provider: string }[] = [];
@@ -12,6 +16,63 @@ try {
   }));
 } catch {
   // Database may not be initialized yet
+}
+
+// Get evaluation data if viewing an existing evaluation
+let evaluationData: {
+  id: string;
+  instruction_text: string;
+  accuracy_rubric: string;
+  expected_output?: string;
+  partial_credit_concepts?: string[];
+  status: string;
+  created_at: string;
+  results: Array<{
+    model_id: string;
+    model_name: string;
+    provider: string;
+    response_text?: string;
+    execution_time_ms?: number;
+    input_tokens?: number;
+    output_tokens?: number;
+    total_tokens?: number;
+    accuracy_score?: number;
+    accuracy_reasoning?: string;
+    status: string;
+  }>;
+} | null = null;
+
+if (evaluationId) {
+  try {
+    const evaluation = getEvaluation(evaluationId);
+    if (evaluation) {
+      const results = getResults(evaluationId);
+      evaluationData = {
+        id: evaluation.id,
+        instruction_text: evaluation.instruction_text,
+        accuracy_rubric: evaluation.accuracy_rubric,
+        expected_output: evaluation.expected_output,
+        partial_credit_concepts: evaluation.partial_credit_concepts,
+        status: evaluation.status,
+        created_at: evaluation.created_at,
+        results: results.map(r => ({
+          model_id: r.model_id,
+          model_name: r.model_name,
+          provider: r.provider,
+          response_text: r.response_text,
+          execution_time_ms: r.execution_time_ms,
+          input_tokens: r.input_tokens,
+          output_tokens: r.output_tokens,
+          total_tokens: r.total_tokens,
+          accuracy_score: r.accuracy_score,
+          accuracy_reasoning: r.accuracy_reasoning,
+          status: r.status
+        }))
+      };
+    }
+  } catch {
+    // Evaluation not found
+  }
 }
 ---
 
@@ -26,8 +87,19 @@ try {
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <!-- Header -->
     <header class="mb-8">
-      <h1 class="text-3xl font-bold text-gray-900">AI Model Evaluation Framework</h1>
-      <p class="mt-2 text-gray-600">Compare multiple AI models by submitting identical instructions and analyzing metrics.</p>
+      <nav class="flex items-center gap-6 mb-4">
+        <span class="text-gray-900 font-medium">Home</span>
+        <a href="/templates" class="text-blue-600 hover:text-blue-800">Templates</a>
+        <a href="/history" class="text-blue-600 hover:text-blue-800">History</a>
+      </nav>
+      <h1 class="text-3xl font-bold text-gray-900">
+        {evaluationData ? 'Evaluation Details' : 'AI Model Evaluation Framework'}
+      </h1>
+      <p class="mt-2 text-gray-600">
+        {evaluationData
+          ? `Viewing evaluation from ${new Date(evaluationData.created_at).toLocaleString()}`
+          : 'Compare multiple AI models by submitting identical instructions and analyzing metrics.'}
+      </p>
     </header>
 
     <!-- Error Banner -->
@@ -221,6 +293,11 @@ try {
     </div>
   </div>
 
+  <!-- Pass evaluation data from server to client -->
+  <script is:inline define:vars={{ evaluationData }}>
+    window.__EVALUATION_DATA__ = evaluationData;
+  </script>
+
   <script>
     // State
     let currentEvaluationId: string | null = null;
@@ -245,6 +322,9 @@ try {
     const saveTemplateContainer = document.getElementById('save-template-container') as HTMLDivElement;
     const responseModal = document.getElementById('response-modal') as HTMLElement;
     const modalResponseText = document.getElementById('modal-response-text') as HTMLPreElement;
+    const instructionTextarea = document.getElementById('instruction') as HTMLTextAreaElement;
+    const expectedOutputTextarea = document.getElementById('expected_output') as HTMLTextAreaElement;
+    const partialCreditConceptsTextarea = document.getElementById('partial_credit_concepts') as HTMLTextAreaElement;
 
     // Show/hide partial credit concepts based on rubric selection
     rubricSelect.addEventListener('change', () => {
@@ -457,6 +537,50 @@ try {
 
     // Cleanup on page unload
     window.addEventListener('beforeunload', stopPolling);
+
+    // Initialize with evaluation data if viewing an existing evaluation
+    function initializeWithEvaluationData() {
+      const evalData = (window as any).__EVALUATION_DATA__;
+      if (!evalData) return;
+
+      // Set the evaluation ID
+      currentEvaluationId = evalData.id;
+
+      // Populate form fields
+      instructionTextarea.value = evalData.instruction_text;
+      rubricSelect.value = evalData.accuracy_rubric;
+      expectedOutputTextarea.value = evalData.expected_output || '';
+
+      // Show partial credit concepts if applicable
+      if (evalData.accuracy_rubric === 'partial_credit') {
+        conceptsContainer.classList.remove('hidden');
+        if (evalData.partial_credit_concepts) {
+          partialCreditConceptsTextarea.value = evalData.partial_credit_concepts.join(', ');
+        }
+      }
+
+      // Check the model checkboxes that were used in this evaluation
+      const usedModelIds = new Set(evalData.results.map((r: any) => r.model_id));
+      const modelCheckboxes = form.querySelectorAll<HTMLInputElement>('input[name="model_ids"]');
+      modelCheckboxes.forEach(checkbox => {
+        checkbox.checked = usedModelIds.has(checkbox.value);
+      });
+
+      // Show status
+      evaluationStatus.classList.remove('hidden');
+      updateStatusBadge(evalData.status);
+
+      // Render results if available
+      if (evalData.results && evalData.results.length > 0) {
+        renderResults(evalData.results);
+        resultsContainer.classList.remove('hidden');
+        emptyState.classList.add('hidden');
+        saveTemplateContainer.classList.remove('hidden');
+      }
+    }
+
+    // Run initialization
+    initializeWithEvaluationData();
   </script>
 </body>
 </html>
