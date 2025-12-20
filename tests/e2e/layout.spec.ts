@@ -9,11 +9,15 @@ test.describe('Global Layout', () => {
     const navbar = page.locator('.navbar');
     await expect(navbar).toBeVisible();
 
-    // Check for links (desktop view)
-    const links = ['Home', 'Models', 'Templates', 'History'];
+    // Check for links (desktop view) - Models is now in mobile menu only
+    const links = ['Home', 'Templates', 'History'];
     for (const link of links) {
       await expect(page.locator(`.navbar-center a:has-text("${link}")`)).toBeVisible();
     }
+
+    // Check for New Evaluation button in navbar
+    const newEvalBtn = page.locator('.navbar-end button:has-text("New Evaluation")');
+    await expect(newEvalBtn).toBeVisible();
   });
 
   test('should display hamburger menu on mobile', async ({ page }) => {
@@ -24,8 +28,8 @@ test.describe('Global Layout', () => {
     const navbar = page.locator('.navbar');
     await expect(navbar).toBeVisible();
 
-    // Check hamburger menu button is visible (has aria-label="Menu")
-    const hamburgerButton = page.locator('.navbar button[aria-label="Menu"], .navbar div[role="button"]');
+    // Check hamburger menu button is visible
+    const hamburgerButton = page.locator('.navbar div[role="button"]');
     await expect(hamburgerButton.first()).toBeVisible();
 
     // Desktop nav should be hidden
@@ -43,11 +47,6 @@ test.describe('Global Layout', () => {
     await page.setViewportSize({ width: 1280, height: 720 });
     await page.goto('/');
 
-    // Navigate to Models page
-    await page.click('.navbar-center a:has-text("Models")');
-    await expect(page).toHaveURL('/models');
-    await expect(page.locator('h1:has-text("Model Management")')).toBeVisible();
-
     // Navigate to Templates page
     await page.click('.navbar-center a:has-text("Templates")');
     await expect(page).toHaveURL('/templates');
@@ -61,5 +60,22 @@ test.describe('Global Layout', () => {
     // Navigate back to Home
     await page.click('.navbar-center a:has-text("Home")');
     await expect(page).toHaveURL('/');
+  });
+
+  test('should open New Evaluation modal from navbar button', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await page.goto('/');
+
+    // Click New Evaluation button
+    await page.click('.navbar-end button:has-text("New Evaluation")');
+
+    // Modal should be visible
+    const modal = page.locator('#new-evaluation-modal');
+    await expect(modal).toBeVisible();
+
+    // Check modal content
+    await expect(page.locator('#new-evaluation-modal h3:has-text("New Evaluation")')).toBeVisible();
+    await expect(page.locator('#new-evaluation-modal textarea#instruction')).toBeVisible();
+    await expect(page.locator('#new-evaluation-modal select#rubric_type')).toBeVisible();
   });
 });

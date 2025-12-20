@@ -1,25 +1,14 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import Card from '../components/ui/Card.astro';
-import Button from '../components/ui/Button.astro';
-import { getModels, getEvaluation, getResults } from '../lib/db';
+import NewEvaluationModal from '../components/NewEvaluationModal.astro';
+import EvaluationDetailsDrawer from '../components/EvaluationDetailsDrawer.astro';
 import TemplateManager from '../components/TemplateManager.astro';
+import { getModels, getEvaluation, getResults } from '../lib/db';
 
 // Get query params
 const url = Astro.url;
 const evaluationId = url.searchParams.get('evaluation');
-
-// Get active models for the form
-let models: { id: string; model_name: string; provider: string }[] = [];
-try {
-  models = getModels(true).map(m => ({
-    id: m.id,
-    model_name: m.model_name,
-    provider: m.provider
-  }));
-} catch {
-  // Database may not be initialized yet
-}
 
 // Get evaluation data if viewing an existing evaluation
 let evaluationData: {
@@ -79,542 +68,327 @@ if (evaluationId) {
 }
 ---
 
-<Layout title={evaluationData ? 'Evaluation Details - Eval AI' : 'AI Model Evaluation Framework - Eval AI'}>
-  <!-- Header -->
-  <div class="mb-8">
-    <h1 class="text-3xl font-bold">
-      {evaluationData ? 'Evaluation Details' : 'AI Model Evaluation Framework'}
-    </h1>
-    <p class="mt-2 text-base-content/70">
-      {evaluationData
-        ? `Viewing evaluation from ${new Date(evaluationData.created_at).toLocaleString()}`
-        : 'Compare multiple AI models by submitting identical instructions and analyzing metrics.'}
-    </p>
-  </div>
-
-  <!-- Error Banner -->
-  <div id="error-banner" class="hidden alert alert-error mb-6">
-    <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-    </svg>
-    <span id="error-message"></span>
-    <button id="close-error" class="btn btn-sm btn-ghost">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
-      </svg>
-    </button>
-  </div>
-
-  <!-- Response Modal -->
-  <dialog id="response-modal" class="modal">
-    <div class="modal-box max-w-2xl">
-      <h3 class="font-bold text-lg">Model Response</h3>
-      <pre id="modal-response-text" class="py-4 whitespace-pre-wrap font-mono bg-base-200 p-4 rounded-lg mt-4 max-h-[60vh] overflow-y-auto text-sm"></pre>
-      <div class="modal-action">
-        <form method="dialog">
-          <button class="btn">Close</button>
-        </form>
-      </div>
-    </div>
-    <form method="dialog" class="modal-backdrop">
-      <button>close</button>
-    </form>
-  </dialog>
+<Layout title="Eval AI - AI Model Evaluation Framework">
+  <!-- New Evaluation Modal -->
+  <NewEvaluationModal />
 
   <!-- Template Manager Modal -->
   <TemplateManager />
 
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-    <!-- Evaluation Form -->
-    <div class="lg:col-span-1">
-      <Card title="New Evaluation">
-        <form id="evaluation-form" class="space-y-4">
-          <!-- Instruction -->
-          <div class="form-control w-full">
-            <label class="label" for="instruction">
-              <span class="label-text">Instruction</span>
-            </label>
-            <textarea
-              id="instruction"
-              name="instruction"
-              rows="4"
-              class="textarea textarea-bordered w-full"
-              placeholder="Enter the instruction to evaluate..."
-              required
-            ></textarea>
-          </div>
+  <!-- Evaluation Details Drawer -->
+  <EvaluationDetailsDrawer />
 
-          <!-- Rubric Type -->
-          <div class="form-control w-full">
-            <label class="label" for="rubric_type">
-              <span class="label-text">Accuracy Rubric</span>
-            </label>
-            <select id="rubric_type" name="rubric_type" class="select select-bordered w-full" required>
-              <option value="exact_match">Exact Match</option>
-              <option value="partial_credit">Partial Credit</option>
-              <option value="semantic_similarity">Semantic Similarity</option>
-            </select>
-          </div>
-
-          <!-- Expected Output -->
-          <div class="form-control w-full">
-            <label class="label" for="expected_output">
-              <span class="label-text">Expected Output</span>
-            </label>
-            <textarea
-              id="expected_output"
-              name="expected_output"
-              rows="2"
-              class="textarea textarea-bordered w-full"
-              placeholder="Enter the expected output for accuracy comparison..."
-              required
-            ></textarea>
-          </div>
-
-          <!-- Partial Credit Concepts (conditional) -->
-          <div id="concepts-container" class="hidden form-control w-full">
-            <label class="label" for="partial_credit_concepts">
-              <span class="label-text">Key Concepts (comma-separated)</span>
-            </label>
-            <textarea
-              id="partial_credit_concepts"
-              name="partial_credit_concepts"
-              rows="2"
-              class="textarea textarea-bordered w-full"
-              placeholder="concept1, concept2, concept3..."
-            ></textarea>
-          </div>
-
-          <!-- Model Selection -->
-          <div class="form-control w-full">
-            <label class="label">
-              <span class="label-text">Select Models</span>
-            </label>
-            {models.length > 0 ? (
-              <div class="space-y-2 mt-2">
-                {models.map(model => (
-                  <label class="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      name="model_ids"
-                      value={model.id}
-                      class="checkbox checkbox-primary checkbox-sm"
-                    />
-                    <span class="label-text">
-                      {model.model_name}
-                      <span class="text-base-content/50 ml-1">({model.provider})</span>
-                    </span>
-                  </label>
-                ))}
-              </div>
-            ) : (
-              <div class="text-sm text-base-content/50 mt-2">
-                No models configured. <a href="/models" class="link link-primary">Add models</a> first.
-              </div>
-            )}
-          </div>
-
-          <!-- Submit Button -->
-          <Button
-            type="submit"
-            variant="primary"
-            class="w-full"
-            id="submit-btn"
-            disabled={models.length === 0}
-          >
-            Run Evaluation
-          </Button>
-        </form>
-      </Card>
+  <!-- Main Content -->
+  <Card>
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-6">
+      <div>
+        <h1 class="text-2xl font-bold">Evaluation Results</h1>
+        {evaluationData && (
+          <p class="text-sm text-base-content/60 mt-1">
+            {new Date(evaluationData.created_at).toLocaleString()}
+          </p>
+        )}
+      </div>
+      <div class="flex items-center gap-3">
+        <!-- Status -->
+        <div id="evaluation-status" class={evaluationData ? '' : 'hidden'}>
+          <span id="status-badge" class={`badge ${evaluationData?.status === 'completed' ? 'badge-success' : evaluationData?.status === 'failed' ? 'badge-error' : 'badge-warning'}`}>
+            {evaluationData?.status || 'Pending'}
+          </span>
+        </div>
+        <!-- Save as Template -->
+        <button id="save-template-btn" class={`btn btn-sm btn-outline ${evaluationData?.results?.length ? '' : 'hidden'}`}>
+          Save as Template
+        </button>
+      </div>
     </div>
 
-    <!-- Results Section -->
-    <div class="lg:col-span-2">
-      <Card>
-        <div class="flex justify-between items-center mb-4">
-          <h2 class="card-title">Results</h2>
-          <div id="evaluation-status" class="hidden">
-            <span id="status-badge" class="badge badge-warning">Pending</span>
-          </div>
-        </div>
-
-        <!-- Status Indicators -->
-        <div id="status-container" class="hidden mb-4">
-          <div id="model-statuses" class="flex flex-wrap gap-2"></div>
-        </div>
-
-        <!-- Results Table -->
-        <div id="results-container" class="hidden">
-          <div class="overflow-x-auto">
-            <table class="table table-zebra">
-              <thead>
-                <tr>
-                  <th class="cursor-pointer hover:bg-base-200" data-sort="model_name">Model</th>
-                  <th class="cursor-pointer hover:bg-base-200" data-sort="execution_time_ms">Time (ms)</th>
-                  <th class="cursor-pointer hover:bg-base-200" data-sort="input_tokens">Input</th>
-                  <th class="cursor-pointer hover:bg-base-200" data-sort="output_tokens">Output</th>
-                  <th class="cursor-pointer hover:bg-base-200" data-sort="total_tokens">Total</th>
-                  <th class="cursor-pointer hover:bg-base-200" data-sort="accuracy_score">Accuracy</th>
-                  <th>Reasoning</th>
-                  <th>Response</th>
-                </tr>
-              </thead>
-              <tbody id="results-body"></tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- Empty State -->
-        <div id="empty-state" class="text-center py-12">
-          <svg class="mx-auto h-12 w-12 text-base-content/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-          </svg>
-          <p class="mt-4 text-base-content/70">No evaluation results yet.</p>
-          <p class="text-sm text-base-content/50">Submit an instruction to compare model performance.</p>
-        </div>
-
-        <!-- Save as Template Button -->
-        <div id="save-template-container" class="hidden mt-6 pt-6 border-t border-base-200">
-          <Button id="save-template-btn" variant="secondary">
-            Save as Template
-          </Button>
-        </div>
-      </Card>
+    <!-- Results Table -->
+    <div id="results-container" class={evaluationData?.results?.length ? '' : 'hidden'}>
+      <div class="overflow-x-auto">
+        <table class="table table-zebra w-full" id="results-table">
+          <thead>
+            <tr class="bg-base-200">
+              <th>Model Name</th>
+              <th>Status</th>
+              <th>Time (ms)</th>
+              <th>Total Tokens</th>
+              <th>Accuracy Score</th>
+            </tr>
+          </thead>
+          <tbody id="results-body">
+            {evaluationData?.results?.map((result, index) => (
+              <tr
+                class="cursor-pointer hover:bg-base-200 transition-colors"
+                data-result-index={index}
+              >
+                <td>
+                  <div class="font-medium">{result.model_name}</div>
+                  <div class="text-xs text-base-content/50">{result.provider}</div>
+                </td>
+                <td>
+                  <span class={`badge ${result.status === 'completed' ? 'badge-success' : result.status === 'failed' ? 'badge-error' : 'badge-warning'}`}>
+                    {result.status === 'completed' ? 'Completed' : result.status === 'failed' ? 'Failed' : 'Pending'}
+                  </span>
+                </td>
+                <td>{result.execution_time_ms ?? '-'}</td>
+                <td>{result.total_tokens ?? '-'}</td>
+                <td>
+                  <span class={`font-semibold ${result.accuracy_score === 100 ? 'text-success' : result.accuracy_score === 0 ? 'text-error' : ''}`}>
+                    {result.accuracy_score !== undefined ? `${result.accuracy_score}%` : '-'}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
-  </div>
 
-  <!-- Pass evaluation data from server to client -->
-  <script is:inline define:vars={{ evaluationData }}>
-    window.__EVALUATION_DATA__ = evaluationData;
-  </script>
+    <!-- Empty State -->
+    <div id="empty-state" class={evaluationData?.results?.length ? 'hidden' : 'text-center py-16'}>
+      <svg class="mx-auto h-16 w-16 text-base-content/30" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+      </svg>
+      <h3 class="mt-4 text-lg font-medium">No evaluation results yet</h3>
+      <p class="mt-2 text-base-content/60">Click "New Evaluation" to compare AI models.</p>
+    </div>
 
-  <script>
-    // State
-    let currentEvaluationId: string | null = null;
-    let pollingInterval: number | null = null;
-    let storedResponses: string[] = [];
-
-    // DOM Elements
-    const form = document.getElementById('evaluation-form') as HTMLFormElement;
-    const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
-    const rubricSelect = document.getElementById('rubric_type') as HTMLSelectElement;
-    const conceptsContainer = document.getElementById('concepts-container') as HTMLDivElement;
-    const errorBanner = document.getElementById('error-banner') as HTMLDivElement;
-    const errorMessage = document.getElementById('error-message') as HTMLSpanElement;
-    const closeErrorBtn = document.getElementById('close-error') as HTMLButtonElement;
-    const evaluationStatus = document.getElementById('evaluation-status') as HTMLDivElement;
-    const statusBadge = document.getElementById('status-badge') as HTMLElement;
-    const statusContainer = document.getElementById('status-container') as HTMLDivElement;
-    const modelStatuses = document.getElementById('model-statuses') as HTMLDivElement;
-    const resultsContainer = document.getElementById('results-container') as HTMLDivElement;
-    const resultsBody = document.getElementById('results-body') as HTMLTableSectionElement;
-    const emptyState = document.getElementById('empty-state') as HTMLDivElement;
-    const saveTemplateContainer = document.getElementById('save-template-container') as HTMLDivElement;
-    const responseModal = document.getElementById('response-modal') as HTMLDialogElement;
-    const modalResponseText = document.getElementById('modal-response-text') as HTMLPreElement;
-    const instructionTextarea = document.getElementById('instruction') as HTMLTextAreaElement;
-    const expectedOutputTextarea = document.getElementById('expected_output') as HTMLTextAreaElement;
-    const partialCreditConceptsTextarea = document.getElementById('partial_credit_concepts') as HTMLTextAreaElement;
-    const saveTemplateBtn = document.getElementById('save-template-btn') as HTMLButtonElement;
-
-    // Show/hide partial credit concepts based on rubric selection
-    rubricSelect.addEventListener('change', () => {
-      conceptsContainer.classList.toggle('hidden', rubricSelect.value !== 'partial_credit');
-    });
-
-    // Close error banner
-    closeErrorBtn.addEventListener('click', () => {
-      errorBanner.classList.add('hidden');
-    });
-
-    // Save as Template button click handler
-    saveTemplateBtn.addEventListener('click', () => {
-      // Get current form values
-      const instruction = instructionTextarea.value.trim();
-      const expectedOutput = expectedOutputTextarea.value.trim();
-      const rubric = rubricSelect.value;
-      const conceptsValue = partialCreditConceptsTextarea.value.trim();
-      const partialCreditConcepts = conceptsValue ? conceptsValue.split(',').map(c => c.trim()).filter(Boolean) : undefined;
-
-      // Get selected model IDs
-      const modelCheckboxes = form.querySelectorAll('input[name="model_ids"]:checked') as NodeListOf<HTMLInputElement>;
-      const modelIds = Array.from(modelCheckboxes).map(cb => cb.value);
-
-      if (!instruction) {
-        showError('Cannot save template: instruction is empty');
-        return;
-      }
-
-      if (modelIds.length === 0) {
-        showError('Cannot save template: no models selected');
-        return;
-      }
-
-      // Open template modal with current evaluation data
-      if (typeof (window as any).openTemplateModal === 'function') {
-        (window as any).openTemplateModal({
-          instruction_text: instruction,
-          model_ids: modelIds,
-          accuracy_rubric: rubric,
-          expected_output: expectedOutput,
-          partial_credit_concepts: partialCreditConcepts
-        });
-      }
-    });
-
-    // Open modal with response text
-    function openModal(text: string) {
-      modalResponseText.textContent = text;
-      responseModal.showModal();
-    }
-
-    // Show error
-    function showError(message: string) {
-      errorMessage.textContent = message;
-      errorBanner.classList.remove('hidden');
-    }
-
-    // Get badge variant based on status
-    function getStatusVariant(status: string): string {
-      switch (status) {
-        case 'pending': return 'badge-warning';
-        case 'running': return 'badge-info';
-        case 'completed': return 'badge-success';
-        case 'failed': return 'badge-error';
-        default: return 'badge-neutral';
-      }
-    }
-
-    // Update status badge
-    function updateStatusBadge(status: string) {
-      statusBadge.textContent = status.charAt(0).toUpperCase() + status.slice(1);
-      statusBadge.className = `badge ${getStatusVariant(status)}`;
-    }
-
-    // Render model statuses
-    function renderModelStatuses(results: Array<{ model_name: string; status: string }>) {
-      modelStatuses.innerHTML = results.map(r => `
-        <span class="badge ${getStatusVariant(r.status)}">${r.model_name}: ${r.status}</span>
-      `).join('');
-    }
-
-    // Escape HTML to prevent XSS in attribute values
-    function escapeHtml(text: string): string {
-      const div = document.createElement('div');
-      div.textContent = text;
-      return div.innerHTML;
-    }
-
-    // Render results table
-    function renderResults(results: Array<{
-      model_name: string;
-      provider: string;
-      execution_time_ms?: number;
-      input_tokens?: number;
-      output_tokens?: number;
-      total_tokens?: number;
-      accuracy_score?: number;
-      accuracy_reasoning?: string;
-      response_text?: string;
-    }>) {
-      // Store responses safely in array (avoids XSS via template literals)
-      storedResponses = results.map(r => r.response_text || '');
-      const bestAccuracy = Math.max(...results.map(r => r.accuracy_score || 0));
-
-      resultsBody.innerHTML = results.map((r, index) => `
-        <tr class="${r.accuracy_score === bestAccuracy ? 'bg-success/10' : ''}">
-          <td>
-            <div class="font-medium">${escapeHtml(r.model_name)}</div>
-            <div class="text-base-content/50 text-xs">${escapeHtml(r.provider)}</div>
-          </td>
-          <td>${r.execution_time_ms ?? '-'}</td>
-          <td>${r.input_tokens ?? '-'}</td>
-          <td>${r.output_tokens ?? '-'}</td>
-          <td>${r.total_tokens ?? '-'}</td>
-          <td>
-            <span class="font-semibold ${r.accuracy_score === bestAccuracy ? 'text-success' : ''}">${r.accuracy_score ?? '-'}%</span>
-          </td>
-          <td class="max-w-xs truncate" title="${escapeHtml(r.accuracy_reasoning || '')}">${escapeHtml(r.accuracy_reasoning || '-')}</td>
-          <td>
-             <button
-               data-response-index="${index}"
-               class="view-response-btn btn btn-xs btn-ghost text-primary"
-             >
-               View
-             </button>
-          </td>
-        </tr>
-      `).join('');
-    }
-
-    // Event delegation for view response buttons
-    resultsBody.addEventListener('click', (e) => {
-      const target = e.target as HTMLElement;
-      const btn = target.closest('[data-response-index]') as HTMLElement | null;
-      if (btn) {
-        const index = parseInt(btn.dataset.responseIndex || '0', 10);
-        openModal(storedResponses[index] || '');
-      }
-    });
-
-    // Poll for status updates
-    async function pollStatus() {
-      if (!currentEvaluationId) return;
-
-      try {
-        const response = await fetch(`/api/evaluation-status?evaluation_id=${currentEvaluationId}`);
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.message || 'Failed to get status');
-        }
-
-        updateStatusBadge(data.overall_status);
-        renderModelStatuses(data.results);
-
-        if (data.overall_status === 'completed' || data.overall_status === 'failed') {
-          stopPolling();
-
-          if (data.overall_status === 'completed') {
-            // Fetch full results
-            const resultsResponse = await fetch(`/api/results?evaluation_id=${currentEvaluationId}`);
-            const resultsData = await resultsResponse.json();
-
-            if (resultsResponse.ok) {
-              renderResults(resultsData.results);
-              resultsContainer.classList.remove('hidden');
-              emptyState.classList.add('hidden');
-              saveTemplateContainer.classList.remove('hidden');
-            }
-          } else {
-            showError(data.error_message || 'Evaluation failed');
-          }
-
-          submitBtn.disabled = false;
-          submitBtn.textContent = 'Run Evaluation';
-        }
-      } catch (error) {
-        console.error('Polling error:', error);
-      }
-    }
-
-    function startPolling() {
-      pollingInterval = window.setInterval(pollStatus, 500);
-    }
-
-    function stopPolling() {
-      if (pollingInterval) {
-        clearInterval(pollingInterval);
-        pollingInterval = null;
-      }
-    }
-
-    // Form submission
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-
-      const formData = new FormData(form);
-      const modelIds = formData.getAll('model_ids') as string[];
-
-      if (modelIds.length === 0) {
-        showError('Please select at least one model');
-        return;
-      }
-
-      const instruction = formData.get('instruction') as string;
-      const rubricType = formData.get('rubric_type') as string;
-      const expectedOutput = formData.get('expected_output') as string;
-      const conceptsRaw = formData.get('partial_credit_concepts') as string;
-
-      const partialCreditConcepts = rubricType === 'partial_credit' && conceptsRaw
-        ? conceptsRaw.split(',').map(c => c.trim()).filter(Boolean)
-        : undefined;
-
-      submitBtn.disabled = true;
-      submitBtn.textContent = 'Running...';
-      errorBanner.classList.add('hidden');
-
-      try {
-        const response = await fetch('/api/evaluate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            instruction,
-            model_ids: modelIds,
-            rubric_type: rubricType,
-            expected_output: expectedOutput,
-            partial_credit_concepts: partialCreditConcepts
-          })
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.message || 'Failed to start evaluation');
-        }
-
-        currentEvaluationId = data.evaluation_id;
-
-        // Show status section
-        evaluationStatus.classList.remove('hidden');
-        statusContainer.classList.remove('hidden');
-        updateStatusBadge('pending');
-        renderModelStatuses(data.models);
-
-        // Start polling
-        startPolling();
-      } catch (error) {
-        showError(error instanceof Error ? error.message : 'An error occurred');
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Run Evaluation';
-      }
-    });
-
-    // Cleanup on page unload
-    window.addEventListener('beforeunload', stopPolling);
-
-    // Initialize with evaluation data if viewing an existing evaluation
-    function initializeWithEvaluationData() {
-      const evalData = (window as any).__EVALUATION_DATA__;
-      if (!evalData) return;
-
-      // Set the evaluation ID
-      currentEvaluationId = evalData.id;
-
-      // Populate form fields
-      instructionTextarea.value = evalData.instruction_text;
-      rubricSelect.value = evalData.accuracy_rubric;
-      expectedOutputTextarea.value = evalData.expected_output || '';
-
-      // Show partial credit concepts if applicable
-      if (evalData.accuracy_rubric === 'partial_credit') {
-        conceptsContainer.classList.remove('hidden');
-        if (evalData.partial_credit_concepts) {
-          partialCreditConceptsTextarea.value = evalData.partial_credit_concepts.join(', ');
-        }
-      }
-
-      // Check the model checkboxes that were used in this evaluation
-      const usedModelIds = new Set(evalData.results.map((r: any) => r.model_id));
-      const modelCheckboxes = form.querySelectorAll<HTMLInputElement>('input[name="model_ids"]');
-      modelCheckboxes.forEach(checkbox => {
-        checkbox.checked = usedModelIds.has(checkbox.value);
-      });
-
-      // Show status
-      evaluationStatus.classList.remove('hidden');
-      updateStatusBadge(evalData.status);
-
-      // Render results if available
-      if (evalData.results && evalData.results.length > 0) {
-        renderResults(evalData.results);
-        resultsContainer.classList.remove('hidden');
-        emptyState.classList.add('hidden');
-        saveTemplateContainer.classList.remove('hidden');
-      }
-    }
-
-    // Run initialization
-    initializeWithEvaluationData();
-  </script>
+    <!-- Loading/Polling State -->
+    <div id="polling-state" class="hidden">
+      <div class="flex items-center justify-center py-8">
+        <span class="loading loading-spinner loading-lg"></span>
+        <span class="ml-3 text-base-content/70">Running evaluation...</span>
+      </div>
+      <div id="model-statuses" class="flex flex-wrap gap-2 justify-center mt-4"></div>
+    </div>
+  </Card>
 </Layout>
+
+<!-- Pass evaluation data from server to client -->
+<script is:inline define:vars={{ evaluationData }}>
+  window.__EVALUATION_DATA__ = evaluationData;
+</script>
+
+<script>
+  // State
+  let currentEvaluationId: string | null = null;
+  let pollingInterval: number | null = null;
+  let currentResults: Array<any> = [];
+  let currentInstructionText: string = '';
+  let currentExpectedOutput: string = '';
+
+  // DOM Elements
+  const resultsContainer = document.getElementById('results-container');
+  const resultsBody = document.getElementById('results-body');
+  const emptyState = document.getElementById('empty-state');
+  const pollingState = document.getElementById('polling-state');
+  const modelStatuses = document.getElementById('model-statuses');
+  const evaluationStatus = document.getElementById('evaluation-status');
+  const statusBadge = document.getElementById('status-badge');
+  const saveTemplateBtn = document.getElementById('save-template-btn');
+
+  // Initialize with existing data
+  function initializeWithEvaluationData() {
+    const evalData = (window as any).__EVALUATION_DATA__;
+    if (!evalData) return;
+
+    currentEvaluationId = evalData.id;
+    currentResults = evalData.results || [];
+    currentInstructionText = evalData.instruction_text;
+    currentExpectedOutput = evalData.expected_output || '';
+
+    // Setup row click handlers
+    setupRowClickHandlers();
+  }
+
+  // Setup click handlers for result rows
+  function setupRowClickHandlers() {
+    const rows = document.querySelectorAll('[data-result-index]');
+    rows.forEach(row => {
+      row.addEventListener('click', () => {
+        const index = parseInt((row as HTMLElement).dataset.resultIndex || '0', 10);
+        const result = currentResults[index];
+        if (result && (window as any).showEvaluationDetails) {
+          (window as any).showEvaluationDetails({
+            modelName: result.model_name,
+            prompt: currentInstructionText,
+            expectedOutput: currentExpectedOutput,
+            response: result.response_text || '[No response]',
+            reasoning: result.accuracy_reasoning || 'No reasoning available',
+            executionTime: result.execution_time_ms,
+            accuracyScore: result.accuracy_score,
+            inputTokens: result.input_tokens,
+            outputTokens: result.output_tokens
+          });
+        }
+      });
+    });
+  }
+
+  // Get badge variant based on status
+  function getStatusBadgeClass(status: string): string {
+    switch (status) {
+      case 'completed': return 'badge-success';
+      case 'running': return 'badge-info';
+      case 'failed': return 'badge-error';
+      default: return 'badge-warning';
+    }
+  }
+
+  // Update status badge
+  function updateStatusBadge(status: string) {
+    if (statusBadge) {
+      statusBadge.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+      statusBadge.className = `badge ${getStatusBadgeClass(status)}`;
+    }
+    if (evaluationStatus) {
+      evaluationStatus.classList.remove('hidden');
+    }
+  }
+
+  // Render model statuses during polling
+  function renderModelStatuses(results: Array<{ model_name: string; status: string }>) {
+    if (!modelStatuses) return;
+    modelStatuses.innerHTML = results.map(r => `
+      <span class="badge ${getStatusBadgeClass(r.status)}">${r.model_name}: ${r.status}</span>
+    `).join('');
+  }
+
+  // Escape HTML
+  function escapeHtml(text: string): string {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  // Render results table
+  function renderResults(results: Array<any>) {
+    if (!resultsBody) return;
+
+    currentResults = results;
+
+    resultsBody.innerHTML = results.map((r, index) => `
+      <tr class="cursor-pointer hover:bg-base-200 transition-colors" data-result-index="${index}">
+        <td>
+          <div class="font-medium">${escapeHtml(r.model_name)}</div>
+          <div class="text-xs text-base-content/50">${escapeHtml(r.provider)}</div>
+        </td>
+        <td>
+          <span class="badge ${getStatusBadgeClass(r.status)}">
+            ${r.status === 'completed' ? 'Completed' : r.status === 'failed' ? 'Failed' : 'Pending'}
+          </span>
+        </td>
+        <td>${r.execution_time_ms ?? '-'}</td>
+        <td>${r.total_tokens ?? '-'}</td>
+        <td>
+          <span class="font-semibold ${r.accuracy_score === 100 ? 'text-success' : r.accuracy_score === 0 ? 'text-error' : ''}">
+            ${r.accuracy_score !== undefined ? `${r.accuracy_score}%` : '-'}
+          </span>
+        </td>
+      </tr>
+    `).join('');
+
+    // Re-setup click handlers
+    setupRowClickHandlers();
+  }
+
+  // Poll for status updates
+  async function pollStatus() {
+    if (!currentEvaluationId) return;
+
+    try {
+      const response = await fetch(`/api/evaluation-status?evaluation_id=${currentEvaluationId}`);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to get status');
+      }
+
+      updateStatusBadge(data.overall_status);
+      renderModelStatuses(data.results);
+
+      if (data.overall_status === 'completed' || data.overall_status === 'failed') {
+        stopPolling();
+
+        if (data.overall_status === 'completed') {
+          // Fetch full results
+          const resultsResponse = await fetch(`/api/results?evaluation_id=${currentEvaluationId}`);
+          const resultsData = await resultsResponse.json();
+
+          if (resultsResponse.ok) {
+            renderResults(resultsData.results);
+            if (resultsContainer) resultsContainer.classList.remove('hidden');
+            if (emptyState) emptyState.classList.add('hidden');
+            if (pollingState) pollingState.classList.add('hidden');
+            if (saveTemplateBtn) saveTemplateBtn.classList.remove('hidden');
+          }
+        } else {
+          alert(data.error_message || 'Evaluation failed');
+          if (pollingState) pollingState.classList.add('hidden');
+          if (emptyState) emptyState.classList.remove('hidden');
+        }
+      }
+    } catch (error) {
+      console.error('Polling error:', error);
+    }
+  }
+
+  function startPolling() {
+    pollingInterval = window.setInterval(pollStatus, 500);
+  }
+
+  function stopPolling() {
+    if (pollingInterval) {
+      clearInterval(pollingInterval);
+      pollingInterval = null;
+    }
+  }
+
+  // Listen for evaluation started event from modal
+  window.addEventListener('evaluation-started', ((e: CustomEvent) => {
+    const { evaluationId, models } = e.detail;
+    currentEvaluationId = evaluationId;
+
+    // Show polling state
+    if (emptyState) emptyState.classList.add('hidden');
+    if (resultsContainer) resultsContainer.classList.add('hidden');
+    if (pollingState) pollingState.classList.remove('hidden');
+
+    updateStatusBadge('pending');
+    renderModelStatuses(models);
+
+    // Start polling
+    startPolling();
+
+    // Update URL without reload
+    const newUrl = new URL(window.location.href);
+    newUrl.searchParams.set('evaluation', evaluationId);
+    window.history.pushState({}, '', newUrl.toString());
+  }) as EventListener);
+
+  // Save as template handler
+  if (saveTemplateBtn) {
+    saveTemplateBtn.addEventListener('click', () => {
+      if (typeof (window as any).openTemplateModal === 'function' && currentEvaluationId) {
+        const evalData = (window as any).__EVALUATION_DATA__;
+        if (evalData) {
+          (window as any).openTemplateModal({
+            instruction_text: evalData.instruction_text,
+            model_ids: evalData.results.map((r: any) => r.model_id),
+            accuracy_rubric: evalData.accuracy_rubric,
+            expected_output: evalData.expected_output,
+            partial_credit_concepts: evalData.partial_credit_concepts
+          });
+        }
+      }
+    });
+  }
+
+  // Cleanup
+  window.addEventListener('beforeunload', stopPolling);
+
+  // Initialize
+  initializeWithEvaluationData();
+</script>

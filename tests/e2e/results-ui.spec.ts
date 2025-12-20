@@ -1,45 +1,19 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Results Visualization UI', () => {
-  test('should display evaluation form on home page', async ({ page }) => {
+  test('should display Evaluation Results heading on home page', async ({ page }) => {
     await page.goto('/');
 
-    // Check for evaluation form
-    const form = page.locator('#evaluation-form');
-    await expect(form).toBeVisible();
-
-    // Check for form elements with DaisyUI styling
-    await expect(page.locator('textarea#instruction')).toBeVisible();
-    await expect(page.locator('select#rubric_type')).toBeVisible();
-    await expect(page.locator('textarea#expected_output')).toBeVisible();
+    // Check for results heading
+    await expect(page.locator('h1:has-text("Evaluation Results")')).toBeVisible();
   });
 
-  test('should use DaisyUI Card components for form and results', async ({ page }) => {
+  test('should use DaisyUI Card component for results', async ({ page }) => {
     await page.goto('/');
 
-    // Check for card components
-    const cards = page.locator('.card');
-    await expect(cards.first()).toBeVisible();
-
-    // Should have at least 2 cards (form and results)
-    const cardCount = await cards.count();
-    expect(cardCount).toBeGreaterThanOrEqual(2);
-  });
-
-  test('should use DaisyUI form controls', async ({ page }) => {
-    await page.goto('/');
-
-    // Check textarea has DaisyUI classes
-    const textarea = page.locator('textarea.textarea');
-    await expect(textarea.first()).toBeVisible();
-
-    // Check select has DaisyUI classes
-    const select = page.locator('select.select');
-    await expect(select.first()).toBeVisible();
-
-    // Check button has DaisyUI classes
-    const button = page.locator('button.btn');
-    await expect(button.first()).toBeVisible();
+    // Check for card component
+    const card = page.locator('.card');
+    await expect(card.first()).toBeVisible();
   });
 
   test('should display empty state when no results', async ({ page }) => {
@@ -49,12 +23,13 @@ test.describe('Results Visualization UI', () => {
     const emptyState = page.locator('#empty-state');
     await expect(emptyState).toBeVisible();
     await expect(page.locator('text=No evaluation results yet')).toBeVisible();
+    await expect(page.locator('text=Click "New Evaluation" to compare AI models')).toBeVisible();
   });
 
-  test('should use DaisyUI table for results', async ({ page }) => {
+  test('should have results table structure', async ({ page }) => {
     await page.goto('/');
 
-    // The results table should exist (hidden initially)
+    // Results table should exist (hidden when no results)
     const resultsContainer = page.locator('#results-container');
     await expect(resultsContainer).toBeAttached();
 
@@ -64,31 +39,44 @@ test.describe('Results Visualization UI', () => {
     await expect(table).toHaveClass(/table/);
   });
 
-  test('should use DaisyUI alert for errors', async ({ page }) => {
+  test('should have correct table columns', async ({ page }) => {
     await page.goto('/');
 
-    // Error banner should exist (hidden by default)
-    const errorBanner = page.locator('#error-banner');
-    await expect(errorBanner).toBeAttached();
-    await expect(errorBanner).toHaveClass(/alert/);
-    await expect(errorBanner).toHaveClass(/alert-error/);
+    // Check table headers
+    const headers = page.locator('#results-container th');
+    const expectedHeaders = ['Model Name', 'Status', 'Time (ms)', 'Total Tokens', 'Accuracy Score'];
+
+    for (const header of expectedHeaders) {
+      await expect(page.locator(`#results-container th:has-text("${header}")`)).toBeAttached();
+    }
   });
 
-  test('should use DaisyUI modal for response viewer', async ({ page }) => {
+  test('should have evaluation details drawer', async ({ page }) => {
     await page.goto('/');
 
-    // Modal should exist
-    const modal = page.locator('#response-modal');
-    await expect(modal).toBeAttached();
-    await expect(modal).toHaveClass(/modal/);
+    // Details drawer should exist (hidden by default)
+    const drawer = page.locator('#details-drawer');
+    await expect(drawer).toBeAttached();
+
+    // Should be off-screen initially
+    await expect(drawer).toHaveClass(/translate-x-full/);
   });
 
-  test('should have badge component for status', async ({ page }) => {
+  test('should have polling state element', async ({ page }) => {
     await page.goto('/');
 
-    // Status badge should exist (hidden by default)
-    const statusBadge = page.locator('#status-badge');
-    await expect(statusBadge).toBeAttached();
-    await expect(statusBadge).toHaveClass(/badge/);
+    // Polling state should exist (hidden by default)
+    const pollingState = page.locator('#polling-state');
+    await expect(pollingState).toBeAttached();
+    await expect(pollingState).toHaveClass(/hidden/);
+  });
+
+  test('should have Save as Template button (hidden by default)', async ({ page }) => {
+    await page.goto('/');
+
+    // Save as Template button should exist
+    const saveTemplateBtn = page.locator('#save-template-btn');
+    await expect(saveTemplateBtn).toBeAttached();
+    await expect(saveTemplateBtn).toHaveClass(/hidden/);
   });
 });
