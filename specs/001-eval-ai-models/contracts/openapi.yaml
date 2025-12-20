@@ -1,0 +1,571 @@
+openapi: 3.0.0
+info:
+  title: AI Model Evaluation Framework API
+  version: 1.0.0
+  description: API for submitting and comparing evaluations across multiple AI models
+
+servers:
+  - url: http://localhost:3000
+    description: Development server
+
+paths:
+  /api/models:
+    get:
+      summary: List configured AI models
+      tags: [Models]
+      parameters:
+        - name: active
+          in: query
+          schema:
+            type: boolean
+          description: Filter by active status (optional)
+      responses:
+        '200':
+          description: List of configured models
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  models:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ModelConfiguration'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+    post:
+      summary: Add a new AI model
+      tags: [Models]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [provider, model_name, api_key]
+              properties:
+                provider:
+                  type: string
+                  enum: [openai, anthropic, google]
+                model_name:
+                  type: string
+                  description: e.g., gpt-4, claude-3-opus, gemini-2.0
+                api_key:
+                  type: string
+                  description: API key for the model provider (encrypted on storage)
+      responses:
+        '201':
+          description: Model created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelConfiguration'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: Model already exists for this provider
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /api/models/{id}:
+    patch:
+      summary: Update model configuration
+      tags: [Models]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                active:
+                  type: boolean
+                api_key:
+                  type: string
+      responses:
+        '200':
+          description: Model updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelConfiguration'
+        '404':
+          description: Model not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+    delete:
+      summary: Delete a model configuration
+      tags: [Models]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Model deleted successfully
+        '404':
+          description: Model not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: Cannot delete model with active evaluations
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /api/evaluate:
+    post:
+      summary: Submit an evaluation
+      tags: [Evaluations]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [instruction_text, model_ids, accuracy_rubric]
+              properties:
+                instruction_text:
+                  type: string
+                  description: The prompt to evaluate (1-10000 chars)
+                expected_output:
+                  type: string
+                  description: Optional expected output for accuracy scoring
+                accuracy_rubric:
+                  type: string
+                  enum: [exact_match, partial_credit, semantic_similarity]
+                partial_credit_concepts:
+                  type: array
+                  items:
+                    type: string
+                  description: Key concepts to look for (for partial_credit rubric)
+                model_ids:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+                  minItems: 1
+                  description: Models to evaluate against
+      responses:
+        '201':
+          description: Evaluation created and started
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  evaluation_id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                    enum: [pending, running]
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /api/evaluation-status/{evaluation_id}:
+    get:
+      summary: Get evaluation status and results
+      tags: [Evaluations]
+      parameters:
+        - name: evaluation_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Evaluation status and partial/complete results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  evaluation_id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                    enum: [pending, running, completed, failed]
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Result'
+                  created_at:
+                    type: string
+                    format: date-time
+                  started_at:
+                    type: string
+                    format: date-time
+                    nullable: true
+                  completed_at:
+                    type: string
+                    format: date-time
+                    nullable: true
+        '404':
+          description: Evaluation not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /api/results:
+    get:
+      summary: Get complete evaluation results
+      tags: [Results]
+      parameters:
+        - name: evaluation_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Complete results for evaluation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  evaluation_id:
+                    type: string
+                    format: uuid
+                  instruction_text:
+                    type: string
+                  expected_output:
+                    type: string
+                    nullable: true
+                  accuracy_rubric:
+                    type: string
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Result'
+        '404':
+          description: Evaluation not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /api/cancel-evaluation:
+    post:
+      summary: Cancel an in-progress evaluation
+      tags: [Evaluations]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [evaluation_id]
+              properties:
+                evaluation_id:
+                  type: string
+                  format: uuid
+      responses:
+        '200':
+          description: Evaluation cancelled
+        '404':
+          description: Evaluation not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: Cannot cancel completed evaluation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /api/templates:
+    get:
+      summary: List saved evaluation templates
+      tags: [Templates]
+      responses:
+        '200':
+          description: List of templates
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  templates:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/EvaluationTemplate'
+
+    post:
+      summary: Save evaluation as template
+      tags: [Templates]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, instruction_text, model_ids, accuracy_rubric]
+              properties:
+                name:
+                  type: string
+                  maxLength: 100
+                description:
+                  type: string
+                  maxLength: 500
+                instruction_text:
+                  type: string
+                expected_output:
+                  type: string
+                  nullable: true
+                accuracy_rubric:
+                  type: string
+                  enum: [exact_match, partial_credit, semantic_similarity]
+                partial_credit_concepts:
+                  type: array
+                  items:
+                    type: string
+                  nullable: true
+                model_ids:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+                  minItems: 1
+      responses:
+        '201':
+          description: Template created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EvaluationTemplate'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: Template name already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /api/templates/{id}:
+    delete:
+      summary: Delete a template
+      tags: [Templates]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Template deleted
+        '404':
+          description: Template not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /api/templates/{id}/run:
+    post:
+      summary: Run an evaluation from a template
+      tags: [Templates]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '201':
+          description: Evaluation created from template
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  evaluation_id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+        '404':
+          description: Template not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+components:
+  schemas:
+    ModelConfiguration:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        provider:
+          type: string
+          enum: [openai, anthropic, google]
+        model_name:
+          type: string
+        active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    Evaluation:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        instruction_text:
+          type: string
+        expected_output:
+          type: string
+          nullable: true
+        accuracy_rubric:
+          type: string
+        status:
+          type: string
+          enum: [pending, running, completed, failed]
+        created_at:
+          type: string
+          format: date-time
+
+    Result:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        model_id:
+          type: string
+          format: uuid
+        model_name:
+          type: string
+        provider:
+          type: string
+        response_text:
+          type: string
+          nullable: true
+        execution_time_ms:
+          type: integer
+          nullable: true
+        input_tokens:
+          type: integer
+          nullable: true
+        output_tokens:
+          type: integer
+          nullable: true
+        accuracy_score:
+          type: integer
+          minimum: 0
+          maximum: 100
+          nullable: true
+        accuracy_reasoning:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [pending, completed, failed]
+        error_message:
+          type: string
+          nullable: true
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    EvaluationTemplate:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        instruction_text:
+          type: string
+        expected_output:
+          type: string
+          nullable: true
+        accuracy_rubric:
+          type: string
+        model_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    ApiError:
+      type: object
+      required: [error, message]
+      properties:
+        error:
+          type: string
+          description: Error code (e.g., INVALID_INPUT, MODEL_NOT_FOUND)
+        message:
+          type: string
+          description: Human-readable error message
+        field:
+          type: string
+          description: Field name for validation errors
+        details:
+          type: object
+          description: Additional context

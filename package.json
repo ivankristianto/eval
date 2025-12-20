@@ -1,0 +1,46 @@
+{
+  "name": "eval-ai-models",
+  "version": "1.0.0",
+  "description": "AI Model Evaluation Framework - Compare multiple AI models with metrics and accuracy scoring",
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "test": "vitest",
+    "test:coverage": "vitest --coverage",
+    "test:e2e": "playwright test",
+    "db:init": "node db/init.js",
+    "db:reset": "rm -f db/evaluation.db && node db/init.js",
+    "lint": "eslint src tests --ext .ts,.tsx,.astro",
+    "typecheck": "tsc --noEmit",
+    "validate": "node scripts/validate.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.30.0",
+    "@astrojs/node": "^9.5.1",
+    "@google/generative-ai": "^0.21.0",
+    "@tailwindcss/vite": "^4.0.0",
+    "astro": "^5.16.6",
+    "better-sqlite3": "^11.0.0",
+    "openai": "^4.0.0",
+    "tailwindcss": "^4.0.0",
+    "uuid": "^10.0.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.48.0",
+    "@types/better-sqlite3": "^7.6.0",
+    "@types/node": "^22.0.0",
+    "@types/uuid": "^10.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "@vitest/coverage-v8": "^4.0.16",
+    "eslint": "^9.0.0",
+    "playwright": "^1.48.0",
+    "typescript": "^5.6.0",
+    "vitest": "^4.0.16"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}
