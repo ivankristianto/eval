@@ -39,13 +39,13 @@ Users want to save sets of instructions and model configurations so they can rer
 
 ---
 
-### User Story 3 - Custom Accuracy Evaluation & Model Reasoning (Priority: P3)
+### User Story 3 - Predefined Accuracy Evaluation & Model Reasoning (Priority: P3)
 
-Users want to define custom accuracy metrics (beyond binary correct/incorrect) and see reasoning from models to understand why accuracy scores were assigned.
+Users want to select from predefined accuracy rubrics and see reasoning from models to understand why accuracy scores were assigned.
 
-**Why this priority**: Enables more nuanced evaluation scenarios. P3 because basic binary accuracy suffices for MVP, but custom metrics add analytical depth for power users.
+**Why this priority**: Enables more nuanced evaluation scenarios. P3 because basic binary accuracy suffices for MVP, but predefined rubrics add analytical depth for power users. Custom metric creation deferred to future releases.
 
-**Independent Test**: Can be fully tested by creating a custom accuracy metric (e.g., "partial credit if answer contains key concept"), running evaluation, and seeing reasoning explanations with accuracy justification.
+**Independent Test**: Can be fully tested by selecting a predefined rubric (e.g., "partial credit if answer contains key concept"), running evaluation, and seeing reasoning explanations with accuracy justification.
 
 **Acceptance Scenarios**:
 
@@ -71,7 +71,7 @@ Users want to define custom accuracy metrics (beyond binary correct/incorrect) a
 - **FR-002**: System MUST query each selected model with the same instruction and capture raw response
 - **FR-003**: System MUST measure and record wall-clock execution time for each model query (in milliseconds)
 - **FR-004**: System MUST extract and record token counts (input tokens, output tokens, total) for each model response
-- **FR-005**: System MUST calculate accuracy scores for each model response against user-defined success criteria
+- **FR-005**: System MUST calculate accuracy scores for each model response using predefined accuracy rubrics (Exact Match, Partial Credit, or Semantic Similarity)
 - **FR-006**: System MUST display all metrics in a structured table format with columns: Model, Time (ms), Input Tokens, Output Tokens, Total Cost, Accuracy
 - **FR-007**: System MUST support real-time status indicators (Pending, Running, Completed, Failed) for each model during evaluation
 - **FR-008**: System MUST persist evaluation results with timestamps so user can view historical comparisons
@@ -103,7 +103,7 @@ Users want to define custom accuracy metrics (beyond binary correct/incorrect) a
 ## Assumptions
 
 - **Model provider APIs**: System will integrate with popular model providers (OpenAI GPT-4, Anthropic Claude, Google Gemini, others) via standard HTTP APIs
-- **Accuracy definition**: Without user-provided custom criteria, accuracy defaults to binary comparison (model response matches expected output) or semantic similarity scoring
+- **Accuracy definition**: System supports three predefined accuracy rubrics for MVP (Exact Match, Partial Credit, Semantic Similarity). Custom rubric creation is deferred to future releases
 - **Token cost**: Token counts are obtained from model provider APIs; user can view this data for cost analysis but no actual billing integration required for MVP
 - **Authentication**: Users will provide API keys for each model provider through secure configuration; system stores encrypted references but never exposes keys
 - **Instruction size**: System supports instructions up to 10,000 characters; very long instructions will be handled but may exceed some model context windows

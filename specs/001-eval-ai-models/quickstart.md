@@ -1,430 +1,375 @@
-# Quick Start Guide
+# Quickstart Guide: AI Model Evaluation Framework
 
-**Feature**: AI Model Evaluation Framework
-**Version**: 1.0.0
-**Last Updated**: 2025-12-18
+This guide covers getting started with the AI Model Evaluation Framework for developers and power users.
 
 ## Prerequisites
 
-- **Node.js**: v22 or higher (check with `node --version`)
-- **npm**: v9 or higher (check with `npm --version`)
-- **API Keys**: At least one AI model provider (OpenAI, Anthropic, or Google Gemini)
+- **Node.js 22+** and **npm**
+- **Astro 5.x** (web framework)
+- **SQLite3** (database)
+- API keys for at least one provider: OpenAI, Anthropic Claude, or Google Gemini
 
-## Installation
+## Initial Setup
 
-### 1. Clone and Install Dependencies
+### 1. Install Dependencies
 
-```bash
-# Clone the repository (or navigate to existing directory)
-cd eval
-
-# Install dependencies
+\`\`\`bash
 npm install
-```
+\`\`\`
 
-Expected output:
+### 2. Initialize Database
 
-```
-added XXX packages in X.XXs
-```
-
-### 2. Set Up Environment Variables
-
-```bash
-# Copy example environment file
-cp .env.example .env
-
-# Edit .env and add your API keys
-# Use your preferred editor (vim, nano, code, etc.)
-nano .env
-```
-
-**Example .env content**:
-
-```
-# OpenAI Configuration
-OPENAI_API_KEY=sk-...your-key-here...
-
-# Anthropic Configuration
-ANTHROPIC_API_KEY=sk-ant-...your-key-here...
-
-# Google Gemini Configuration
-GOOGLE_API_KEY=...your-key-here...
-
-# App Configuration
-NODE_ENV=development
-LOG_LEVEL=info
-```
-
-### 3. Initialize Database
-
-```bash
-# Create SQLite database and schema
+\`\`\`bash
 npm run db:init
+\`\`\`
 
-# Verify database created
-ls -lh db/evaluation.db
-```
+This creates `db/evaluation.db` with the schema:
+- `ModelConfiguration` - Configured AI models
+- `Evaluation` - Evaluation runs
+- `Result` - Individual model results
+- `EvaluationTemplate` - Saved templates
 
-Expected output:
+### 3. Configure Environment
 
-```
--rw-r--r--  1 user  staff  12K db/evaluation.db
-```
+Create a `.env.local` file:
+
+\`\`\`env
+# Encryption key for API keys (generate: openssl rand -hex 32)
+ENCRYPTION_KEY=your-32-byte-hex-key
+
+# Optional: Node.js environment
+NODE_ENV=development
+\`\`\`
+
+Generate encryption key:
+
+\`\`\`bash
+openssl rand -hex 32
+\`\`\`
 
 ### 4. Start Development Server
 
-```bash
-# Start Astro dev server with hot reload
+\`\`\`bash
 npm run dev
-```
+\`\`\`
 
-Expected output:
+Visit \`http://localhost:3000\` in your browser.
 
-```
-  🚀  astro  v4.x.x started in 123ms
+---
 
-  ┌─────────────────────────────────────────┐
-  │  Local    http://localhost:3000/        │
-  │  Network  use --host to expose          │
-  └─────────────────────────────────────────┘
-```
+## User Workflow: Running Your First Evaluation
 
-Open browser to `http://localhost:3000`
+### Step 1: Add Models
 
-## First Evaluation - Step by Step
+Navigate to **Settings** → **Models** (or use API):
 
-### Step 1: Configure Models
-
-1. Go to **Models** page (if available in sidebar)
-2. Click **Add Model**
-3. Select provider (e.g., "OpenAI")
-4. Enter model name (e.g., "gpt-4")
-5. Paste API key
-6. Click **Save**
-7. API key will be validated; you'll see ✓ if valid
-
-Repeat for additional providers (e.g., Claude, Gemini)
-
-### Step 2: Create Evaluation
-
-1. Go to **Evaluate** page (home page)
-2. Enter **Instruction** (e.g., "What is the capital of France?")
-3. Select **Rubric** (e.g., "Exact Match")
-4. Enter **Expected Output** (e.g., "Paris")
-5. Select **Models** to compare (check GPT-4, Claude, Gemini)
-6. Click **Run Evaluation**
-
-### Step 3: Monitor Progress
-
-- You'll see **Status** column showing: Pending → Running → Completed
-- Execution **Time (ms)** updates as each model responds
-- **Token counts** display showing API consumption
-
-### Step 4: Review Results
-
-- **Results Table** shows all metrics per model
-- Models ranked by **Accuracy** (green = best)
-- Click any result to see full response and reasoning
-
-### Step 5: Save for Later
-
-1. After results load, click **Save as Template**
-2. Enter name (e.g., "Capital Cities Challenge")
-3. Click **Save**
-
-Next time, go to **Templates** page and click **Rerun** to evaluate with new/updated models.
-
-## Project Structure
-
-```
-src/
-├── pages/                    # Astro pages and API routes
-│   ├── index.astro          # Main evaluation interface
-│   ├── templates.astro      # Saved templates list
-│   ├── history.astro        # Evaluation history
-│   └── api/                 # API endpoints
-│       ├── evaluate.ts
-│       ├── models.ts
-│       └── templates.ts
-│
-├── components/              # Astro components
-│   ├── EvaluationForm.astro
-│   ├── ResultsTable.astro
-│   └── ...
-│
-└── lib/                     # Business logic
-    ├── db.ts               # Database queries
-    ├── evaluator.ts        # Evaluation orchestration
-    ├── api-clients.ts      # Model provider clients
-    └── accuracy.ts         # Scoring logic
-
-db/
-├── schema.sql              # SQLite schema
-└── evaluation.db           # SQLite database (created by npm run db:init)
-
-tests/
-├── contract/               # API contract tests
-├── integration/            # End-to-end workflows
-└── unit/                   # Individual component tests
-```
-
-## Common Commands
-
-### Development
-
-```bash
-# Start dev server with hot reload
-npm run dev
-
-# Build for production
-npm run build
-
-# Run development build locally
-npm run preview
-```
-
-### Database
-
-```bash
-# Initialize database (create tables, seed data)
-npm run db:init
-
-# Reset database (DELETE ALL DATA - use carefully!)
-npm run db:reset
-
-# Backup database
-cp db/evaluation.db db/evaluation.db.backup
-
-# Restore from backup
-cp db/evaluation.db.backup db/evaluation.db
-```
-
-### Testing
-
-```bash
-# Run all tests
-npm test
-
-# Run tests in watch mode (rerun on file changes)
-npm test -- --watch
-
-# Run specific test file
-npm test -- contract/evaluate.test.ts
-
-# Run with coverage
-npm test -- --coverage
-```
-
-## Troubleshooting
-
-### "API key validation failed"
-
-**Problem**: Can't add model because API key is invalid
-
-**Solution**:
-
-1. Copy API key again from provider dashboard
-2. Verify there are no extra spaces before/after
-3. Ensure key format matches provider (e.g., `sk-...` for OpenAI)
-4. Check API key hasn't expired in provider account
-
-### "Evaluation times out after 5 minutes"
-
-**Problem**: Evaluation didn't complete; status shows "failed"
-
-**Solution**:
-
-1. Check that all API keys have sufficient quota
-2. Try with fewer models first
-3. Try with shorter instruction (< 1000 chars)
-4. Check network connectivity
-5. View browser console (F12) for detailed error
-
-### Database errors
-
-**Problem**: "Cannot read db/evaluation.db" or similar
-
-**Solution**:
-
-```bash
-# Reinitialize database
-npm run db:reset
-npm run db:init
-
-# Verify database exists
-file db/evaluation.db
-```
-
-### Port 3000 already in use
-
-**Problem**: "Error: Port 3000 already in use"
-
-**Solution**:
-
-```bash
-# Use different port
-npm run dev -- --port 3001
-
-# Or kill process using port 3000
-# On macOS/Linux:
-lsof -i :3000 | grep LISTEN | awk '{print $2}' | xargs kill -9
-```
-
-## API Examples
-
-### Using curl
-
-```bash
-# Add a model
-curl -X POST http://localhost:3000/api/models \
-  -H "Content-Type: application/json" \
+\`\`\`bash
+curl -X POST http://localhost:3000/api/models \\
+  -H "Content-Type: application/json" \\
   -d '{
     "provider": "openai",
     "model_name": "gpt-4",
     "api_key": "sk-..."
   }'
+\`\`\`
 
-# Start evaluation
-curl -X POST http://localhost:3000/api/evaluate \
-  -H "Content-Type: application/json" \
+Add at least 2-3 models for meaningful comparison.
+
+### Step 2: Submit Evaluation
+
+1. Go to **Evaluate** page
+2. Enter instruction: "Explain quantum entanglement in simple terms"
+3. Select accuracy rubric: **Partial Credit**
+4. Add key concepts: quantum, entanglement, particles
+5. Select models: gpt-4, claude-3-opus, gemini-2.0
+6. Click **Run Evaluation**
+
+**Via API**:
+
+\`\`\`bash
+curl -X POST http://localhost:3000/api/evaluate \\
+  -H "Content-Type: application/json" \\
   -d '{
-    "instruction": "What is 2+2?",
-    "model_ids": ["model-uuid-1", "model-uuid-2"],
-    "rubric_type": "exact_match",
-    "expected_output": "4"
+    "instruction_text": "Explain quantum entanglement...",
+    "expected_output": "Two particles affecting each other...",
+    "accuracy_rubric": "partial_credit",
+    "partial_credit_concepts": ["quantum", "entanglement", "particles"],
+    "model_ids": ["uuid1", "uuid2", "uuid3"]
   }'
+\`\`\`
 
-# Check evaluation status
-curl http://localhost:3000/api/evaluation-status?evaluation_id=eval-uuid
+Response:
 
-# Get results
-curl http://localhost:3000/api/results?evaluation_id=eval-uuid
-```
+\`\`\`json
+{
+  "evaluation_id": "a1b2c3d4-e5f6-4g7h-8i9j-0k1l2m3n4o5p",
+  "status": "running"
+}
+\`\`\`
 
-### Using JavaScript/fetch
+### Step 3: Poll Status
 
-```javascript
-// Add model
-const addModel = async () => {
-  const response = await fetch("/api/models", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      provider: "openai",
-      model_name: "gpt-4",
-      api_key: "sk-...",
-    }),
-  });
-  return response.json();
-};
+The UI automatically polls `/api/evaluation-status/{evaluation_id}`:
 
-// Start evaluation
-const startEvaluation = async (instruction, modelIds) => {
-  const response = await fetch("/api/evaluate", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      instruction,
-      model_ids: modelIds,
-      rubric_type: "exact_match",
-      expected_output: "...",
-    }),
-  });
-  return response.json();
-};
+\`\`\`bash
+curl http://localhost:3000/api/evaluation-status/a1b2c3d4-e5f6-4g7h-8i9j-0k1l2m3n4o5p
+\`\`\`
 
-// Poll status
-const pollStatus = async (evaluationId) => {
-  const response = await fetch(
-    `/api/evaluation-status?evaluation_id=${evaluationId}`
-  );
-  return response.json();
-};
-```
+Response (in progress):
 
-## Performance Tips
+\`\`\`json
+{
+  "evaluation_id": "a1b2c3d4-e5f6-4g7h-8i9j-0k1l2m3n4o5p",
+  "status": "running",
+  "results": [
+    {
+      "model_id": "uuid1",
+      "model_name": "gpt-4",
+      "status": "completed",
+      "execution_time_ms": 2847,
+      "input_tokens": 15,
+      "output_tokens": 340,
+      "accuracy_score": 85
+    },
+    {
+      "model_id": "uuid2",
+      "model_name": "claude-3-opus",
+      "status": "completed",
+      "execution_time_ms": 3120,
+      "input_tokens": 15,
+      "output_tokens": 298,
+      "accuracy_score": 92
+    },
+    {
+      "model_id": "uuid3",
+      "model_name": "gemini-2.0",
+      "status": "pending"
+    }
+  ],
+  "created_at": "2025-12-20T10:05:00Z",
+  "started_at": "2025-12-20T10:05:01Z"
+}
+\`\`\`
 
-### For Faster Evaluations
+### Step 4: View Results
 
-1. **Use fewer models**: Start with 2-3, not 10
-2. **Use shorter instructions**: Long prompts take longer to process
-3. **Choose faster models**: Smaller models respond faster (but may be less accurate)
-4. **Use exact match rubric**: Faster than semantic similarity
+Once `status: "completed"`, get full results:
 
-### For Better Results
+\`\`\`bash
+curl http://localhost:3000/api/results?evaluation_id=a1b2c3d4-e5f6-4g7h-8i9j-0k1l2m3n4o5p
+\`\`\`
 
-1. **Use larger models**: GPT-4 > GPT-3.5, Claude 3 Opus > Sonnet
-2. **Provide clear instructions**: Ambiguous prompts get inconsistent responses
-3. **Use semantic similarity for open-ended questions**: Exact match too strict
-4. **Save templates**: Reuse configurations instead of recreating
+UI displays comparison table:
 
-## Next Steps
-
-### After First Evaluation
-
-- Explore **History** page to see past evaluations
-- Create **Templates** for frequently-used instructions
-- Configure **Additional Models** for comparison
-- Experiment with different **Rubric Types**
-
-### Advanced Usage
-
-- **Trend Analysis**: Use history to compare model performance over time
-- **Batch Testing**: Save templates and re-run periodically
-- **Custom Rubrics**: Use partial credit with specific concepts to grade
-
-### Development
-
-- Review test files to understand expected behavior
-- Modify components in `src/components/` to customize UI
-- Add new rubric types by editing `src/lib/accuracy.ts`
-- Create additional model providers in `src/lib/api-clients.ts`
-
-## Support & Debugging
-
-### View Logs
-
-Development logs printed to console:
-
-```
-2025-12-18T14:32:15.123Z POST /api/evaluate 201 145ms evaluation_id=xxx
-2025-12-18T14:32:18.456Z Evaluation xxx status: running (2/3 models)
-2025-12-18T14:32:22.789Z Evaluation xxx completed in 7.666s
-```
-
-### Browser Developer Tools
-
-Press **F12** to open DevTools:
-
-- **Console**: JavaScript errors and logs
-- **Network**: API request/response details
-- **Application**: LocalStorage (not used in MVP) and session data
-
-### Check Environment
-
-```bash
-# Verify Node.js version
-node --version  # Should be v18+
-
-# Verify npm version
-npm --version   # Should be v9+
-
-# Verify dependencies installed
-npm list        # Should show no errors
-
-# Verify database
-ls -la db/evaluation.db  # Should exist and be > 8KB
-```
-
-## Getting Help
-
-1. **Check troubleshooting section above**
-2. **Review error message** - note exact error text
-3. **Check console** - F12 → Console tab for JavaScript errors
-4. **Try with test data** - confirm setup works with simple examples
-5. **Review tests** - look at `tests/` directory for examples
+| Model | Time (ms) | Input Tokens | Output Tokens | Accuracy | Reasoning |
+|-------|-----------|--------------|---------------|----------|-----------|
+| gpt-4 | 2,847 | 15 | 340 | 85% | Contains key concepts... |
+| claude-3-opus | 3,120 | 15 | 298 | 92% | Excellent explanation... |
+| gemini-2.0 | 3,890 | 15 | 402 | 78% | Misses entanglement definition |
 
 ---
 
-**Ready to evaluate?** Start the dev server with `npm run dev` and navigate to http://localhost:3000!
+## Advanced: Save and Reuse Templates
+
+### Save Template
+
+\`\`\`bash
+curl -X POST http://localhost:3000/api/templates \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "name": "Quantum Physics Test",
+    "description": "Evaluates model understanding of quantum concepts",
+    "instruction_text": "Explain quantum entanglement...",
+    "expected_output": "...",
+    "accuracy_rubric": "partial_credit",
+    "partial_credit_concepts": ["quantum", "entanglement", "particles"],
+    "model_ids": ["uuid1", "uuid2", "uuid3"]
+  }'
+\`\`\`
+
+### Run Template
+
+\`\`\`bash
+curl -X POST http://localhost:3000/api/templates/{template_id}/run
+\`\`\`
+
+Reuses same instruction, rubric, and models. Results appended to history.
+
+---
+
+## Architecture Overview
+
+### Pages (User Interface)
+
+- **index.astro** - Main evaluation interface
+- **templates.astro** - Manage saved templates
+- **history.astro** - View past evaluations
+
+### API Routes (Backend)
+
+- **POST /api/models** - Add model
+- **GET /api/models** - List models
+- **POST /api/evaluate** - Submit evaluation
+- **GET /api/evaluation-status/{id}** - Poll progress
+- **GET /api/results** - Get final results
+- **POST /api/templates** - Save template
+- **POST /api/templates/{id}/run** - Run template
+
+### Business Logic (src/lib/)
+
+- **evaluator.ts** - Orchestrates model evaluation
+  - Parallelizes requests across models
+  - 30-second per-model timeout
+  - 5-minute total evaluation timeout
+- **accuracy.ts** - Calculates scores using rubrics
+  - Exact Match: Compares response to expected output
+  - Partial Credit: Counts key concepts present
+  - Semantic Similarity: Uses embedding cosine similarity
+- **types.ts** - TypeScript interfaces
+- **validators.ts** - Input validation
+- **db.ts** - Database queries
+
+### Database (better-sqlite3)
+
+```
+evaluation.db
+├── ModelConfiguration (id, provider, model_name, api_key_encrypted, active)
+├── Evaluation (id, instruction_text, expected_output, accuracy_rubric, status)
+├── Result (id, evaluation_id, model_id, response_text, execution_time_ms, accuracy_score)
+└── EvaluationTemplate (id, name, instruction_text, model_ids)
+```
+
+---
+
+## Performance Tips
+
+### Evaluation Timeouts
+
+- **Per-model timeout**: 30 seconds (spec clarification)
+- **Total evaluation timeout**: 5 minutes
+- **Slow model?** Cancellation via POST /api/cancel-evaluation
+
+### Accuracy Scoring Speed
+
+- **Exact Match**: Instant
+- **Partial Credit**: O(n) concepts
+- **Semantic Similarity**: Requires embedding API call
+
+For fastest results, use **Exact Match** rubric.
+
+### Database Queries
+
+Common queries use indexes:
+
+\`\`\`sql
+-- Fetch results for evaluation (indexed on evaluation_id)
+SELECT * FROM Result WHERE evaluation_id = ?;
+
+-- Filter active models (indexed on active)
+SELECT * FROM ModelConfiguration WHERE active = true;
+
+-- List templates by recency (indexed on created_at)
+SELECT * FROM EvaluationTemplate ORDER BY created_at DESC;
+\`\`\`
+
+---
+
+## Testing
+
+### Unit Tests
+
+\`\`\`bash
+npm test
+\`\`\`
+
+Tests cover:
+- Input validation
+- Accuracy rubric calculation
+- Database CRUD operations
+
+### E2E Tests (Playwright)
+
+\`\`\`bash
+npm run test:e2e
+\`\`\`
+
+Tests cover:
+- User workflow: Add model → Submit evaluation → View results
+- Template save and rerun
+- Error handling (invalid API key, timeout, etc.)
+
+### Build & Type Check
+
+\`\`\`bash
+npm run build       # Build Astro site
+npm run typecheck   # TypeScript static analysis
+npm run lint        # ESLint
+\`\`\`
+
+---
+
+## Troubleshooting
+
+### "Evaluation timed out"
+
+- Model response exceeded 30 seconds
+- Check API rate limits
+- Reduce instruction length (< 5,000 chars)
+
+### "Invalid API key"
+
+- Verify key format for provider (OpenAI: sk-..., Anthropic: sk-ant-..., etc.)
+- Check key hasn't been revoked
+- Ensure key has correct permissions
+
+### "Token counts show N/A"
+
+- Some models don't return token metadata
+- This is expected per spec
+- Use token count display as estimate only
+
+### Database locked
+
+\`\`\`bash
+npm run db:reset    # Reinitialize database
+\`\`\`
+
+---
+
+## Configuration
+
+### Environment Variables
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| ENCRYPTION_KEY | Required | AES-256-GCM key for API key encryption |
+| NODE_ENV | development | Node environment |
+| PORT | 3000 | Server port |
+
+### Performance Tuning
+
+In \`src/lib/evaluator.ts\`:
+
+\`\`\`typescript
+const MODEL_TIMEOUT_MS = 30000;      // Per-model timeout (ms)
+const EVALUATION_TIMEOUT_MS = 300000; // Total timeout (ms)
+const PARALLEL_REQUESTS = 5;          // Max concurrent requests
+\`\`\`
+
+---
+
+## Next Steps
+
+1. **Add more models** for better comparison coverage
+2. **Create templates** for recurring evaluation patterns
+3. **Review accuracy rubrics** - choose one that matches your use case
+4. **Set up scheduled evaluations** (future feature - watch spec)
+5. **Export results** to CSV for analysis (future feature)
+
+---
+
+## API Documentation
+
+Full OpenAPI spec available at `specs/001-eval-ai-models/contracts/openapi.yaml`
+
+Common request/response examples above. For complete details on all endpoints, see OpenAPI spec.

@@ -10,7 +10,26 @@ description: "Task list for AI Model Evaluation Framework implementation"
 
 **Organization**: Tasks are grouped by user story to enable independent implementation and testing of each story. Tests are MANDATORY per Constitution Principle II (Testing Discipline Non-Negotiable).
 
-> ⚠️ **CRITICAL GAP (Identified 2025-12-20)**: No test files exist in `tests/` directory. Test tasks T018-T026, T040-T043, T056-T058 remain incomplete while implementation tasks are marked complete. This violates Constitution Principle II. **Priority action**: Write tests for critical paths before further implementation.
+> 🔴 **CRITICAL: CONSTITUTION PRINCIPLE II VIOLATION (Identified 2025-12-20)**:
+>
+> **NO IMPLEMENTATION SHOULD PROCEED UNTIL TESTS ARE WRITTEN AND PASSING.**
+>
+> Current state:
+> - 55 implementation tasks marked COMPLETE
+> - 0 test files written (0/26 test tasks completed)
+> - This violates Constitution Principle II: "Tests are written FIRST and verified to FAIL before implementation begins"
+>
+> **Immediate Action Required**:
+> 1. ⛔ PAUSE all implementation work
+> 2. ✅ Write T018-T019 (Model API contract tests) FIRST
+> 3. ✅ Verify tests FAIL when run (no implementation yet)
+> 4. ✅ Write T023-T026 (User Story 1 tests) FIRST
+> 5. ✅ Verify tests FAIL when run (no implementation yet)
+> 6. 🔄 THEN proceed with implementation using Red-Green-Refactor cycle
+>
+> **Blocking gate**: Cannot validate User Story 1 (MVP) or proceed to User Stories 2-3 without test coverage.
+>
+> **Reference**: See plan.md Lines 39-45 for Gate Status and Action Items
 
 ## Format: `[ID] [P?] [Story?] Description`
 
@@ -55,6 +74,7 @@ description: "Task list for AI Model Evaluation Framework implementation"
 - [X] T020 [P] Create encryption utility in src/lib/db.ts for API key encryption/decryption using Node.js crypto module with .env encryption key
 - [X] T021 Create database query functions in src/lib/db.ts: insertModel(), getModels(), getModelById(), updateModel(), deleteModel(), testModelConnection()
 - [X] T022 Implement model API endpoint T017 using database functions from T021 with API key validation and encryption per T020
+- [ ] T022a Create src/pages/models.astro: Model Management page - list all configured models, add model form with provider/model_name/api_key inputs, edit model active status, delete model with confirmation, test connection button, import/export models functionality
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 

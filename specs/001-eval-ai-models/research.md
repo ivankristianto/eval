@@ -1,169 +1,198 @@
-# Phase 0: Research & Technology Decisions
+# Research Findings: AI Model Evaluation Framework
 
-**Status**: Complete
-**Date**: 2025-12-18
-**Feature**: AI Model Evaluation Framework
+**Phase**: 0 (Research & Clarification)
+**Date**: 2025-12-20
+**Status**: Complete - All unknowns resolved
 
-## Research Findings
+## Astro 5 + TypeScript Pattern Research
 
-### 1. Astro Patterns for Real-Time Data Updates
+### Decision: Astro 5 SSR with Node.js Adapter + TypeScript
 
-**Question**: How should we handle live status updates during the evaluation process when multiple models are being queried concurrently?
+**Rationale:**
+- Already integrated in project (package.json: `astro ^5.16.6`)
+- Supports server-side rendering for dynamic API-driven pages
+- Strong TypeScript support with Astro components
+- Performance: Static generation for UI templates, SSR for dynamic content
+- Tailwind CSS 4 integration already in place
 
-**Research Summary**:
-- Astro supports Server-Sent Events (SSE) natively via streaming responses
-- Alternative: Client-side polling with fetch() to check status every 500ms-1s
-- SSE is more efficient but requires maintaining server connection
-- Polling is simpler to implement and debug with vanilla JS
+**Alternatives Considered:**
+- Next.js: More opinionated, overkill for single-file database model
+- SvelteKit: Would require migration, Astro already established
+- Astro 4: Missing improvements in SSR and type safety in Astro 5
 
-**Decision**: Hybrid approach
-- Use fetch polling for status updates (simpler, no persistent connection)
-- Poll /api/evaluation-status?evaluation_id=xxx every 500ms during run
-- Status endpoint returns current model statuses (Pending/Running/Completed/Failed)
-- UI updates in real-time without external dependencies
-
-**Rationale**:
-- Polling fits minimalist architecture (no libraries needed)
-- Sufficient latency for UI feedback (<500ms to see status change)
-- Simpler error handling than persistent SSE connection
-- Browser handles polling natively with fetch API
-
-**Alternatives Considered**:
-- WebSockets: Overkill for this use case, requires library
-- SSE streaming: More efficient but harder to cancel/cleanup
-- Job queue (Bull, etc.): Too complex for single-user app
+**Evidence from Codebase**: Pages (index.astro, templates.astro, history.astro) are already Astro components with TypeScript. API routes use Astro's `APIRoute` type for consistent endpoint implementation.
 
 ---
 
-### 2. SQLite Best Practices for Concurrent Reads/Writes
+## Database & Persistence Pattern Research
 
-**Question**: How should we handle concurrent evaluations writing to SQLite? Can multiple models be queried in parallel safely?
+### Decision: better-sqlite3 with Functional Query API (No ORM)
 
-**Research Summary**:
-- SQLite uses file-level locking; only one writer at a time
-- WAL (Write-Ahead Logging) mode allows concurrent reads while writes happen
-- better-sqlite3 is synchronous but much faster than sqlite3 async library
-- For single-user evaluations: each evaluation is a transaction, results batch-inserted
+**Rationale:**
+- Already integrated (package.json: `better-sqlite3 ^11.0.0`)
+- Single-file SQLite database matches MVP requirement: "simple database"
+- Prepared statements with parameters prevent SQL injection
+- Type safety via manual TypeScript interfaces (no ORM overhead)
+- Performance: Synchronous access adequate for single-user/small-team deployment
+- Encryption of sensitive data (API keys) at database layer
 
-**Decision**: better-sqlite3 with WAL mode
-- Enable WAL mode: `PRAGMA journal_mode = WAL`
-- Keep connection pool size = 1 (single Astro process, no multiple workers)
-- Each evaluation transaction: create evaluation record, insert all results atomically
-- Parallel model queries run client-side (in Promise.all), results saved as batch
+**Alternatives Considered:**
+- Prisma ORM: Adds complexity, generates migration files, slower cold starts
+- TypeORM: Similar complexity to Prisma, fewer benefits for SQLite
+- Raw SQL without better-sqlite3: Poor DX, no prepared statement safety
+- PostgreSQL: Overscoped for MVP, requires external service
 
-**Rationale**:
-- WAL mode is production-proven for SQLite concurrency
-- Single writer per evaluation (no write conflicts between separate evaluations)
-- Synchronous API simplifies error handling vs async callbacks
-- Sufficient for target scale (50 templates, 1000s of evaluations)
-
-**Alternatives Considered**:
-- PostgreSQL: Overkill for local single-user app; adds deployment complexity
-- MongoDB: Schema-less but loses ACID guarantees needed for accuracy data
-- In-memory (IndexedDB): Can't reliably sync, browser storage limits
+**Evidence from Codebase**: Database functions in `src/lib/db.ts` follow functional pattern with `insert*`, `get*`, `update*`, `delete*` functions. Queries use parameterized statements. API keys encrypted with AES-256-GCM.
 
 ---
 
-### 3. Model Provider API Integration Patterns
+## API Design Pattern Research
 
-**Question**: How do we consistently extract timing and token metrics from different AI model providers?
+### Decision: REST API with Astro APIRoute Pattern
 
-**Research Summary**:
-- **OpenAI API**: Returns usage.prompt_tokens, usage.completion_tokens, has rate limits
-- **Anthropic Claude API**: Returns usage.input_tokens, usage.output_tokens via SDK
-- **Google Gemini API**: Returns usageMetadata.prompt_token_count, completion_token_count
-- All return tokens in response; no need for separate token counting
-- Timing: Measure wall-clock time from request start to response received
+**Rationale:**
+- Astro's native `APIRoute` type provides type-safe endpoint definitions
+- RESTful conventions align with CRUD operations on evaluations, models, templates
+- JSON responses with consistent error format: `{ error, message, field?, details? }`
+- Status codes follow HTTP standards (201 created, 400 validation, 404 not found, 409 conflict, 500 error)
+- Composable route handlers match Astro's file-based routing
 
-**Decision**: Provider-specific SDK clients with normalized output
-- Create api-clients.ts with ClientFactory pattern
-- Each provider (OpenAI, Anthropic, Google) implements same interface:
-  ```typescript
-  evaluate(instruction: string): Promise<{
-    response: string,
-    inputTokens: number,
-    outputTokens: number,
-    totalTokens: number,
-    executionTime: number
-  }>
-  ```
-- Measure time using `performance.now()` or `Date.now()` for server-side API calls
-- Normalize across providers before storing in DB
+**Alternatives Considered:**
+- GraphQL: Adds complexity for single-page form-based application
+- tRPC: Tight coupling with client, less suitable for form submissions
+- gRPC: Not suitable for web application
 
-**Rationale**:
-- Each provider SDK handles authentication and rate-limiting correctly
-- Centralized interface makes testing and mocking easier
-- Token normalization ensures table displays consistently
-- Timing measurement is framework-agnostic
-
-**Alternatives Considered**:
-- Direct HTTP calls to each API: More control but more error-prone, lose auth handling
-- Proxy service: Too complex, adds latency
-- Local LLM (llama.cpp): Doesn't meet requirement to test multiple cloud models
+**Evidence from Codebase**:
+- Routes defined in `src/pages/api/` using Astro's file-based routing
+- All routes use `APIRoute` type
+- POST `/api/evaluate` submits evaluation, GET `/api/evaluation-status` polls results
+- POST `/api/templates` saves templates, GET `/api/results` retrieves results
+- Consistent error format across all endpoints
 
 ---
 
-### 4. Accuracy Rubric Implementation Strategies
+## Error Handling & Validation Strategy
 
-**Question**: How do we implement the three accuracy rubrics (Exact Match, Partial Credit, Semantic Similarity)?
+### Decision: Layered Validation (Input → Business Logic → Constraints)
 
-**Research Summary**:
-- **Exact Match**: Direct string comparison, trivial to implement
-- **Partial Credit**: Requires defining key concepts to match; could use regex or keyword search
-- **Semantic Similarity**: Need embeddings or LLM-based comparison
-  - Option A: Call embedding model API (costs tokens, adds latency)
-  - Option B: Use LLM to score ("Is this response semantically similar to expected? Yes/No")
-  - Option C: Simple NLP library (natural.js): small, no external APIs
+**Rationale:**
+- Input validation: Separate `src/lib/validators.ts` for schema validation (required fields, type checking, provider validation)
+- Business logic validation: Check entity existence before operations (model exists, evaluation exists)
+- Constraint validation: Enforce business rules (cannot delete model with active evaluations, cannot update inactive model)
+- Consistent error codes for client-side handling: `INVALID_INPUT`, `MODEL_NOT_FOUND`, `CANNOT_DELETE`, etc.
 
-**Decision**: Hybrid approach, rubric-specific
-1. **Exact Match**: Case-insensitive string comparison (user enters expected output)
-2. **Partial Credit**: User provides list of key phrases/concepts to search for in response
-   - Each concept found = 50 points (max 100)
-   - Simple regex matching, no ML required
-3. **Semantic Similarity**: Call Claude or GPT API to score
-   - Send expected + actual response
-   - Ask model to rate similarity 0-100
-   - Cache scoring requests to reduce cost
+**Evidence from Codebase**:
+```typescript
+// Input validation returns early
+const validation = validateCreateModel(body);
+if (!validation.valid) return new Response(JSON.stringify(validation.error), { status: 400 });
 
-**Rationale**:
-- Exact/Partial don't require additional API calls
-- Semantic similarity uses existing model APIs; user doesn't need separate embeddings service
-- All three are implementable with minimal dependencies
-- User can choose rubric based on their evaluation needs
+// Business logic validation
+const model = getModelById(id);
+if (!model) return new Response(...{ error: 'MODEL_NOT_FOUND' }, { status: 404 });
 
-**Alternatives Considered**:
-- Universal embeddings model: Would add library (transformers, etc.) - violates minimalism
-- No semantic similarity at all: Limits power-user functionality in P3
-- Always call LLM for all rubrics: Too expensive, unnecessary for exact match
+// Constraint validation
+if (usageCount > 0) return new Response(...{ error: 'CANNOT_DELETE' }, { status: 409 });
+```
 
 ---
 
-## Technology Stack Summary
+## Type System & API Contracts
 
-| Component | Technology | Rationale |
-|-----------|-----------|-----------|
-| **Web Framework** | Astro | SSR, minimal JS shipped, native API routes |
-| **Styling** | Tailwind CSS | Utility-first, low overhead, minimal custom CSS |
-| **Runtime** | Node.js 18+ | Native TypeScript support (tsx), async/await |
-| **Language** | TypeScript | Type safety, IDE support, easier refactoring |
-| **Database** | SQLite (better-sqlite3) | File-based, ACID, no server dependency, WAL mode for concurrency |
-| **Testing** | Vitest + Playwright | Fast unit tests, browser automation for E2E |
-| **API Clients** | Official SDKs (openai, @anthropic-ai/sdk, @google-ai/generativelanguage) | Battle-tested, auth built-in, rate limiting |
-| **Accuracy Scoring** | Custom logic + model APIs | Lightweight for exact/partial, leverage existing APIs for semantic |
+### Decision: TypeScript Interfaces + Manual Validation (No Schema Library)
 
----
+**Rationale:**
+- All entities have defined interfaces: `ModelConfiguration`, `Evaluation`, `Result`, `EvaluationTemplate`
+- API request/response types defined: `CreateEvaluationRequest`, `EvaluationStatusResponse`, etc.
+- Provider union type: `type Provider = 'openai' | 'anthropic' | 'google'`
+- Status enums prevent invalid state: `EvaluationStatus = 'pending' | 'running' | 'completed' | 'failed'`
+- Manual validation functions ensure runtime type safety
 
-## Design Decisions Locked In
+**Alternatives Considered:**
+- Zod/Joi: Would add bundle size, TypeScript alone sufficient for MVP
+- JSON Schema: External format, harder to maintain alongside TypeScript
 
-✅ **No ORM**: Direct SQL queries via better-sqlite3 (too simple for ORM overhead)
-✅ **No build step for CSS**: Tailwind as-is, no CSS-in-JS library
-✅ **No real-time framework**: Polling via fetch + vanilla JS (no Socket.io, Pusher, etc.)
-✅ **No job queue**: Evaluations run synchronously in API request (simple & sufficient)
-✅ **No authentication**: Single-user local app (no auth framework needed for MVP)
-✅ **No caching layer**: SQLite queries fast enough; add Redis only if profiling shows need
+**Evidence from Codebase**: Comprehensive `src/lib/types.ts` with 15+ interfaces covering all domain entities and API contracts.
 
 ---
 
-## Outstanding Clarifications
+## Authentication & API Key Management
 
-None. All research tasks resolved; ready for Phase 1 design.
+### Decision: Encrypted Environment Variable Storage (No Token Service)
+
+**Rationale:**
+- Users provide API keys through form input in UI
+- Keys immediately encrypted with AES-256-GCM before database storage
+- Encrypted keys stored in SQLite, never exposed via API responses
+- Environment variable (ENCRYPTION_KEY) manages encryption key rotation
+- Suitable for single-user/small-team deployment (no multi-tenant auth needed)
+
+**Alternatives Considered:**
+- OAuth for each provider: Users already have API keys, unnecessary complexity
+- Shared token service: Out of scope for MVP local deployment
+- Plain text storage: Security vulnerability
+
+**Evidence from Codebase**: Database functions encrypt API keys on insert, decrypt on retrieval. API responses never include keys.
+
+---
+
+## Performance Optimization Targets
+
+### Decision: Async/Await with Timeout Guards + Connection Pooling
+
+**Rationale Per Constraints**:
+- **30s per-model timeout** (spec clarification): Each model query wrapped in Promise.race with timeout
+- **5-min total evaluation timeout** (spec clarification): Overall evaluation wrapped in second timeout
+- **±5% time accuracy** (SC-002): Wall-clock time measured with `performance.now()` or `Date.now()` for database timestamps
+- **Responsive UI** (SC-005): Evaluation happens in background, UI polls status, user can cancel
+
+**Evidence from Codebase**: `src/lib/evaluator.ts` implements:
+```typescript
+const MODEL_TIMEOUT_MS = 30000;  // Per-model timeout
+const EVALUATION_TIMEOUT_MS = 300000;  // Total evaluation timeout
+
+const modelResponse = await Promise.race([
+  client.evaluate(instruction),
+  new Promise<never>((_, reject) =>
+    setTimeout(() => reject(new Error('Model timeout')), MODEL_TIMEOUT_MS)
+  )
+]);
+```
+
+---
+
+## Testing Strategy
+
+### Decision: Vitest (Unit/Integration) + Playwright (E2E)
+
+**Rationale:**
+- **Vitest**: Fast unit testing for validators, accuracy scoring, database functions
+- **Playwright**: Full workflow testing (submit evaluation, poll status, view results)
+- Coverage target: >80% critical paths per Constitution Principle II
+- Test patterns align with existing `tests/` directory structure
+
+**Alternatives Considered:**
+- Jest: Vitest is faster, better Astro integration
+- Cypress: Playwright has better headless performance
+- No E2E: Would miss user workflow issues (status polling, results display)
+
+**Evidence from Codebase**: `vitest.config.ts` and `tests/` directory exist with placeholder structure.
+
+---
+
+## Research Resolutions
+
+| Unknown | Resolution | Evidence |
+|---------|-----------|----------|
+| Astro version compatibility | Astro 5.16.6 already in use | package.json confirms 5.x |
+| Database choice | better-sqlite3 + functional query pattern | db/ directory + src/lib/db.ts |
+| API style | REST with APIRoute type | src/pages/api/ route definitions |
+| Type safety approach | TypeScript interfaces + manual validation | src/lib/types.ts + validators.ts |
+| Error handling | Layered validation with consistent error codes | API route implementations |
+| Authentication | Encrypted key storage in SQLite | Database functions handle encryption |
+| Performance targets | 30s per-model timeout + 5-min total timeout | evaluator.ts implementation |
+| Testing framework | Vitest + Playwright | vitest.config.ts + tests/ structure |
+
+---
+
+**Conclusion**: All technical unknowns are resolved. Codebase follows established patterns for API design, database access, type safety, and error handling. Phase 1 can proceed with data-model and contracts design.
