@@ -93,3 +93,10 @@ npm run typecheck
   - `src/lib`: Core business logic and utilities.
   - `src/components`: UI components.
   - `db`: Database initialization and schema.
+
+## Active Technologies
+- TypeScript 5.6.0+, Node.js >= 22.0.0 + Astro 5.16.6, Tailwind CSS 4.0.0, daisyui (v5 beta/latest compatible with TW v4) (002-update-ui-style)
+- localStorage for theme persistence; SQLite for application data (no schema changes) (002-update-ui-style)
+
+## Recent Changes
+- 002-update-ui-style: Added TypeScript 5.6.0+, Node.js >= 22.0.0 + Astro 5.16.6, Tailwind CSS 4.0.0, daisyui (v5 beta/latest compatible with TW v4)
