@@ -1,0 +1,38 @@
+<div id="toast-container" class="toast toast-end toast-bottom z-50 fixed"></div>
+
+<script>
+  import { toasts, removeToast } from '../../lib/toastStore';
+  
+  const container = document.getElementById('toast-container');
+
+  if (container) {
+    toasts.subscribe((currentToasts) => {
+      // Clear current content
+      container.innerHTML = '';
+
+      currentToasts.forEach((toast) => {
+        const alert = document.createElement('div');
+        
+        // Map types to DaisyUI classes
+        let typeClass = 'alert-info';
+        switch (toast.type) {
+          case 'success': typeClass = 'alert-success'; break;
+          case 'warning': typeClass = 'alert-warning'; break;
+          case 'error': typeClass = 'alert-error'; break;
+        }
+
+        alert.className = `alert ${typeClass} shadow-lg cursor-pointer min-w-[300px] mb-2`;
+        alert.innerHTML = `
+          <div>
+            <span>${toast.message}</span>
+          </div>
+        `;
+        
+        // Click to dismiss
+        alert.onclick = () => removeToast(toast.id);
+
+        container.appendChild(alert);
+      });
+    });
+  }
+</script>

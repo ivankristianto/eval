@@ -1,0 +1,26 @@
+---
+export interface Props {
+  title?: string;
+  class?: string;
+  bodyClass?: string;
+}
+
+const {
+  title,
+  class: className = '',
+  bodyClass = '',
+} = Astro.props;
+---
+
+<div class={`card bg-base-100 shadow-sm border border-base-200 ${className}`}>
+  <div class={`card-body ${bodyClass}`}>
+    {title && <h2 class="card-title mb-2">{title}</h2>}
+    <slot />
+    
+    {Astro.slots.has('actions') && (
+      <div class="card-actions justify-end mt-4">
+        <slot name="actions" />
+      </div>
+    )}
+  </div>
+</div>

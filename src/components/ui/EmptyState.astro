@@ -1,0 +1,32 @@
+---
+import Button from './Button.astro';
+
+export interface Props {
+  title: string;
+  description: string;
+  action?: {
+    label: string;
+    href?: string;
+    onClick?: string;
+  };
+  icon?: string; // Optional SVG string or icon name
+}
+
+const { title, description, action, icon } = Astro.props;
+---
+
+<div class="hero min-h-[400px] bg-base-200 rounded-box">
+  <div class="hero-content text-center">
+    <div class="max-w-md">
+      {icon && <div class="mb-4 flex justify-center" set:html={icon} />}
+      <h1 class="text-3xl font-bold">{title}</h1>
+      <p class="py-6">{description}</p>
+      {action && (
+        <Button variant="primary" href={action.href} onclick={action.onClick}>
+          {action.label}
+        </Button>
+      )}
+      <slot />
+    </div>
+  </div>
+</div>

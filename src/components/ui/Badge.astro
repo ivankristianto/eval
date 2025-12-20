@@ -1,0 +1,27 @@
+---
+export interface Props {
+  variant?: 'primary' | 'secondary' | 'accent' | 'ghost' | 'neutral' | 'info' | 'success' | 'warning' | 'error';
+  size?: 'lg' | 'md' | 'sm' | 'xs';
+  outline?: boolean;
+  class?: string;
+}
+
+const {
+  variant = 'neutral',
+  size = 'md',
+  outline = false,
+  class: className = '',
+} = Astro.props;
+
+const classes = [
+  'badge',
+  variant && `badge-${variant}`,
+  size && size !== 'md' && `badge-${size}`,
+  outline && 'badge-outline',
+  className
+].filter(Boolean).join(' ');
+---
+
+<div class={classes}>
+  <slot />
+</div>
