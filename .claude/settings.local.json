@@ -4,7 +4,10 @@
       "Bash(.specify/scripts/bash/check-prerequisites.sh:*)",
       "Bash(npm install:*)",
       "Bash(npm run typecheck:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(sqlite3:*)",
+      "Bash(curl:*)",
+      "WebFetch(domain:localhost)"
     ]
   }
 }
