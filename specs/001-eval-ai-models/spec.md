@@ -57,10 +57,11 @@ Users want to define custom accuracy metrics (beyond binary correct/incorrect) a
 
 ### Edge Cases
 
-- What happens when a model API call times out during evaluation?
-- How does the system handle when different models return tokens counts in different formats?
-- What happens if user tries to evaluate a model that's unavailable or deprecated?
-- How does the system handle very long instructions that might exceed context limits?
+- **Rate-limit errors (HTTP 429)**: System displays error immediately for the affected model with no automatic retry; other models continue evaluation normally
+- **API timeout**: 30-second timeout per model; timed-out models marked as Failed with "Timeout" error while other models continue
+- **Missing/inconsistent token counts**: Display "N/A" for models that don't provide token data, with a footnote explaining the limitation
+- **Unavailable/deprecated models**: System warns user at evaluation start and allows proceeding without the unavailable model(s)
+- **Long instructions exceeding context limits**: System warns user about potential issues with specific models, allows them to proceed; models that fail due to context limits show error in results
 
 ## Requirements
 
@@ -108,6 +109,16 @@ Users want to define custom accuracy metrics (beyond binary correct/incorrect) a
 - **Instruction size**: System supports instructions up to 10,000 characters; very long instructions will be handled but may exceed some model context windows
 - **Historical data**: Evaluation results are persisted locally or in a simple database; no cloud sync required for MVP
 - **User type**: Single user or small team using the system locally; no multi-tenant authentication required for MVP
+
+## Clarifications
+
+### Session 2025-12-20
+
+- Q: How should system handle rate-limit errors (HTTP 429) during multi-model evaluation? → A: Show error immediately for rate-limited model, no retry
+- Q: What timeout threshold for model API calls, and what happens on timeout? → A: 30-second timeout, mark as Failed with "Timeout" error
+- Q: How to handle models that return token counts in different formats or not at all? → A: Display "N/A" for missing token data with footnote explaining limitation
+- Q: What happens if user tries to evaluate an unavailable or deprecated model? → A: Warn user at start, allow proceeding without unavailable model
+- Q: How to handle long instructions that may exceed model context limits? → A: Warn user about potential issues, allow them to proceed anyway
 
 ## Out of Scope
 

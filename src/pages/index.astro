@@ -1,6 +1,7 @@
 ---
 import '../styles/global.css';
 import { getModels, getEvaluation, getResults } from '../lib/db';
+import TemplateManager from '../components/TemplateManager.astro';
 
 // Get query params
 const url = Astro.url;
@@ -141,6 +142,9 @@ if (evaluationId) {
         </button>
       </div>
     </div>
+
+    <!-- Template Manager Modal -->
+    <TemplateManager />
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
       <!-- Evaluation Form -->
@@ -325,6 +329,7 @@ if (evaluationId) {
     const instructionTextarea = document.getElementById('instruction') as HTMLTextAreaElement;
     const expectedOutputTextarea = document.getElementById('expected_output') as HTMLTextAreaElement;
     const partialCreditConceptsTextarea = document.getElementById('partial_credit_concepts') as HTMLTextAreaElement;
+    const saveTemplateBtn = document.getElementById('save-template-btn') as HTMLButtonElement;
 
     // Show/hide partial credit concepts based on rubric selection
     rubricSelect.addEventListener('change', () => {
@@ -334,6 +339,41 @@ if (evaluationId) {
     // Close error banner
     closeErrorBtn.addEventListener('click', () => {
       errorBanner.classList.add('hidden');
+    });
+
+    // Save as Template button click handler
+    saveTemplateBtn.addEventListener('click', () => {
+      // Get current form values
+      const instruction = instructionTextarea.value.trim();
+      const expectedOutput = expectedOutputTextarea.value.trim();
+      const rubric = rubricSelect.value;
+      const conceptsValue = partialCreditConceptsTextarea.value.trim();
+      const partialCreditConcepts = conceptsValue ? conceptsValue.split(',').map(c => c.trim()).filter(Boolean) : undefined;
+
+      // Get selected model IDs
+      const modelCheckboxes = form.querySelectorAll('input[name="model_ids"]:checked') as NodeListOf<HTMLInputElement>;
+      const modelIds = Array.from(modelCheckboxes).map(cb => cb.value);
+
+      if (!instruction) {
+        showError('Cannot save template: instruction is empty');
+        return;
+      }
+
+      if (modelIds.length === 0) {
+        showError('Cannot save template: no models selected');
+        return;
+      }
+
+      // Open template modal with current evaluation data
+      if (typeof (window as any).openTemplateModal === 'function') {
+        (window as any).openTemplateModal({
+          instruction_text: instruction,
+          model_ids: modelIds,
+          accuracy_rubric: rubric,
+          expected_output: expectedOutput,
+          partial_credit_concepts: partialCreditConcepts
+        });
+      }
     });
 
     // Open modal with response text using Popover API

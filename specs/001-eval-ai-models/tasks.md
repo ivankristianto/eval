@@ -10,6 +10,8 @@ description: "Task list for AI Model Evaluation Framework implementation"
 
 **Organization**: Tasks are grouped by user story to enable independent implementation and testing of each story. Tests are MANDATORY per Constitution Principle II (Testing Discipline Non-Negotiable).
 
+> ⚠️ **CRITICAL GAP (Identified 2025-12-20)**: No test files exist in `tests/` directory. Test tasks T018-T026, T040-T043, T056-T058 remain incomplete while implementation tasks are marked complete. This violates Constitution Principle II. **Priority action**: Write tests for critical paths before further implementation.
+
 ## Format: `[ID] [P?] [Story?] Description`
 
 - **[P]**: Can run in parallel (different files, no dependencies)
@@ -84,7 +86,7 @@ description: "Task list for AI Model Evaluation Framework implementation"
 - [X] T035 Create src/components/ErrorBanner.astro: consistent error display component for all error messages from API responses - Note: Implemented inline in index.astro
 - [X] T036 Update src/pages/index.astro to include EvaluationForm, StatusIndicator (polling every 500ms during run), ResultsTable, ErrorBanner; implement fetch polling logic with JavaScript
 - [X] T037 Create client-side JavaScript in src/pages/index.astro: handle form submission → POST /api/evaluate → poll /api/evaluation-status → GET /api/results → display in table
-- [X] T038 Add timeout logic (5 minute hard limit per evaluation) in src/lib/evaluator.ts and src/pages/api/evaluate.ts
+- [X] T038 Add timeout logic (30-second per-model timeout per spec clarification + 5-minute total evaluation limit) in src/lib/evaluator.ts and src/pages/api/evaluate.ts
 - [ ] T039 Test P1 workflow end-to-end: submit instruction, see status updates, verify all metrics display correctly in table with ±5% timing accuracy
 
 **Checkpoint**: User Story 1 is fully functional and independently testable. Can be deployed as MVP.
@@ -111,7 +113,7 @@ description: "Task list for AI Model Evaluation Framework implementation"
 - [X] T046 Create src/pages/api/templates/[id]/history.ts endpoint: GET /api/templates/:id/history - return evaluations linked to template with summary metrics (best accuracy, fastest model), paginated
 - [X] T047 [P] Create database query functions: insertTemplate(), getTemplates(), getTemplateById(), updateTemplate(), deleteTemplate(), getTemplateHistory(), incrementTemplateRunCount()
 - [X] T048 Create src/pages/templates.astro page: list all templates with name, instruction preview, model count, run count; buttons to Rerun, Edit, Delete; search/sort by created/name/run_count
-- [ ] T049 Create src/components/TemplateManager.astro: modal to save current evaluation as template - prompt for name, description, confirmation; call POST /api/templates
+- [X] T049 Create src/components/TemplateManager.astro: modal to save current evaluation as template - prompt for name, description, confirmation; call POST /api/templates
 - [X] T050 Create src/components/TemplateList.astro: display template list with pagination; click to view history; click Rerun to load template and run with current model selection - Note: Implemented inline in templates.astro
 - [X] T051 Update src/pages/index.astro: add "Save as Template" button that triggers TemplateManager modal after successful evaluation
 - [X] T052 Create src/pages/history.astro page: display evaluation history with filters (by template, by date range), pagination, click to see full results and comparison with previous runs
@@ -161,11 +163,17 @@ description: "Task list for AI Model Evaluation Framework implementation"
 
 - [ ] T069 [P] Create E2E tests with Playwright in tests/e2e/: full workflow from model config → evaluation → template save → rerun → history view
 - [X] T070 [P] Add error handling: catch API timeouts (30s per model), auth failures, rate limits, network errors; display user-friendly messages in ErrorBanner
+- [ ] T070a Verify edge case implementations match spec clarifications (Session 2025-12-20):
+  - [ ] Rate-limit (HTTP 429): Error displayed immediately, no retry, other models continue
+  - [ ] API timeout: 30s per model, marked Failed with "Timeout" error
+  - [ ] Missing token counts: Display "N/A" with footnote
+  - [ ] Unavailable models: Warn at start, allow proceeding without
+  - [ ] Context limit exceeded: Warn user, allow proceed, show error if fails
 - [X] T071 [P] Add validation error messages: instruction length validation, model count validation, required field validation in EvaluationForm with live feedback
 - [ ] T072 Implement performance profiling: measure database query times, API endpoint response times, table render time; add metrics to logs
 - [X] T073 Optimize database queries: verify all indexes exist (T010), add EXPLAIN QUERY PLAN analysis for slow queries, optimize JOIN operations
 - [ ] T074 [P] Add logging infrastructure: implement structured logging in src/lib/logger.ts (timestamp, level, evaluation_id, duration), log all API calls and database operations
-- [X] T075 Create src/lib/crypto.ts for API key encryption/decryption - verify keys never logged or exposed in responses or errors - Note: Implemented in db.ts
+- [X] T075 ~~Create src/lib/crypto.ts~~ API key encryption/decryption implemented in src/lib/db.ts (consolidated with T020) - verify keys never logged or exposed in responses or errors
 - [ ] T076 Add keyboard navigation and accessibility: ARIA labels on form inputs, keyboard shortcuts for common actions (Enter to submit, Esc to cancel)
 - [ ] T077 Create comprehensive error documentation: document all error codes, meanings, how to resolve (timeout, auth failure, invalid rubric, etc.)
 - [ ] T078 Add setup validation script npm run validate - check .env exists, API keys can be decrypted, database accessible, required npm packages installed
