@@ -31,27 +31,16 @@ export const GET: APIRoute = async ({ url }) => {
       });
     }
 
-    // Check if evaluation is complete
-    if (evaluation.status !== 'completed') {
-      return new Response(JSON.stringify({
-        error: 'EVALUATION_INCOMPLETE',
-        message: 'Evaluation is still running or failed',
-        status: evaluation.status
-      }), {
-        status: 409,
-        headers: { 'Content-Type': 'application/json' }
-      });
-    }
-
     const results = getResults(evaluationId);
 
-    // Sort by accuracy descending
+    // Sort by accuracy descending (only for completed results)
     const sortedResults = results.sort((a, b) =>
       (b.accuracy_score || 0) - (a.accuracy_score || 0)
     );
 
     return new Response(JSON.stringify({
       evaluation_id: evaluationId,
+      evaluation_status: evaluation.status,
       instruction_text: evaluation.instruction_text,
       accuracy_rubric: evaluation.accuracy_rubric,
       expected_output: evaluation.expected_output || '',
@@ -61,6 +50,7 @@ export const GET: APIRoute = async ({ url }) => {
         model_id: r.model_id,
         model_name: r.model_name,
         provider: r.provider,
+        status: r.status,
         execution_time_ms: r.execution_time_ms || 0,
         input_tokens: r.input_tokens || 0,
         output_tokens: r.output_tokens || 0,

@@ -312,7 +312,7 @@ function getStatusBadgeVariant(status: string) {
                   <div class="text-xs text-base-content/50 capitalize">${r.provider}</div>
                 </td>
                 <td>
-                  <span class="badge ${badgeClass} badge-sm">${r.status}</span>
+                  <span class="badge ${badgeClass} badge-sm">${r.status || "pending"}</span>
                 </td>
                 <td>${r.execution_time_ms ?? "-"}</td>
                 <td>${r.total_tokens ?? "-"}</td>
@@ -320,6 +320,9 @@ function getStatusBadgeVariant(status: string) {
                   <span class="font-semibold ${scoreClass}">
                     ${r.accuracy_score !== undefined ? `${r.accuracy_score}%` : "-"}
                   </span>
+                </td>
+                <td>
+                  <a href="#/" class="btn btn-xs btn-ghost text-primary">View</a>
                 </td>
               </tr>
              `;
