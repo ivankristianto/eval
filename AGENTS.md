@@ -1,6 +1,6 @@
 # eval-ai-models Agent Guide
 
-Auto-generated from CLAUDE.md and GEMINI.md. Last updated: 2025-12-18.
+Auto-generated from CLAUDE.md and GEMINI.md. Last updated: 2025-12-21.
 
 ## Project Overview
 
@@ -51,6 +51,9 @@ npm run db:reset
 npm test
 npm run test:e2e
 npm run lint
+npm run lint:fix
+npm run format
+npm run format:check
 npm run typecheck
 ```
 
@@ -61,10 +64,27 @@ npm run typecheck
 - Environment: configuration via `.env` (see `.env.example`).
 - Tests: unit/integration in `tests/unit` or `tests/integration`; E2E in
   `tests/e2e`.
+- Structure:
+  - `src/pages`: Astro pages and API routes.
+  - `src/lib`: core business logic and utilities.
+  - `src/components`: UI components.
+  - `db`: database initialization and schema.
 
 ## Code Style
 
-JavaScript/TypeScript (Node.js 18+ or 22+). Follow standard conventions.
+- Linter: ESLint 9 with flat config (`eslint.config.js`)
+- Formatter: Prettier with Astro plugin (`.prettierrc`)
+- Plugins: eslint-plugin-astro, @typescript-eslint
+
+### Style Rules
+
+- Semicolons: required
+- Quotes: double quotes
+- Indentation: 2 spaces
+- Trailing commas: ES5 style
+- Line width: 100 characters
+- Unused variables: warn (prefix with `_` to ignore)
+- Explicit `any`: warn
 
 ## Recent Changes
 

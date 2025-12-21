@@ -27,55 +27,75 @@ The application is built as an Astro project with server-side API endpoints and 
 # Building and Running
 
 ## Prerequisites
+
 - Node.js >= 22.0.0
 
 ## Installation
+
 ```bash
 npm install
 ```
 
 ## Database Setup
+
 Initialize the SQLite database before running the application:
+
 ```bash
 npm run db:init
 ```
+
 To reset the database (clears all data):
+
 ```bash
 npm run db:reset
 ```
 
 ## Development Server
+
 Start the Astro development server (default port 3000):
+
 ```bash
 npm run dev
 ```
 
 ## Production Build
+
 Build the application for production:
+
 ```bash
 npm run build
 ```
+
 Preview the production build:
+
 ```bash
 npm run preview
 ```
 
 ## Testing
+
 Run unit and integration tests with Vitest:
+
 ```bash
 npm test
 ```
+
 Run end-to-end tests with Playwright:
+
 ```bash
 npm run test:e2e
 ```
 
 ## Code Quality
+
 Run linting:
+
 ```bash
 npm run lint
 ```
+
 Run type checking:
+
 ```bash
 npm run typecheck
 ```
@@ -95,8 +115,12 @@ npm run typecheck
   - `db`: Database initialization and schema.
 
 ## Active Technologies
+
 - TypeScript 5.6.0+, Node.js >= 22.0.0 + Astro 5.16.6, Tailwind CSS 4.0.0, daisyui (v5 beta/latest compatible with TW v4) (002-update-ui-style)
 - localStorage for theme persistence; SQLite for application data (no schema changes) (002-update-ui-style)
 
 ## Recent Changes
+
+- 001-eval-ai-models: Added TypeScript 5.6+ on Node.js 22+ + Astro 5.x (SSR), Tailwind CSS 4.x, better-sqlite3, OpenAI SDK, Anthropic SDK, Google Generative AI SDK
+- 001-eval-ai-models: Added JavaScript/TypeScript (Node.js 18+) + TypeScript for type safety + Astro, Tailwind CSS, SQLite3, node-sqlite3/better-sqlite3
 - 002-update-ui-style: Added TypeScript 5.6.0+, Node.js >= 22.0.0 + Astro 5.16.6, Tailwind CSS 4.0.0, daisyui (v5 beta/latest compatible with TW v4)

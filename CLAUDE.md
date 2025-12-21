@@ -3,6 +3,7 @@
 Auto-generated from all feature plans. Last updated: 2025-12-18
 
 ## Active Technologies
+
 - TypeScript 5.6+ on Node.js 22+ + Astro 5.x (SSR), Tailwind CSS 4.x, better-sqlite3, OpenAI SDK, Anthropic SDK, Google Generative AI SDK (001-eval-ai-models)
 - SQLite via better-sqlite3 (local persistence, single-file database) (001-eval-ai-models)
 
@@ -33,6 +34,7 @@ npm run typecheck # Run TypeScript type checking
 - **Plugins**: eslint-plugin-astro, @typescript-eslint
 
 ### Style Rules
+
 - Semicolons: required
 - Quotes: double quotes
 - Indentation: 2 spaces
@@ -42,9 +44,10 @@ npm run typecheck # Run TypeScript type checking
 - Explicit `any`: warn
 
 ## Recent Changes
-- 001-eval-ai-models: Added TypeScript 5.6+ on Node.js 22+ + Astro 5.x (SSR), Tailwind CSS 4.x, better-sqlite3, OpenAI SDK, Anthropic SDK, Google Generative AI SDK
 
+- 001-eval-ai-models: Added TypeScript 5.6+ on Node.js 22+ + Astro 5.x (SSR), Tailwind CSS 4.x, better-sqlite3, OpenAI SDK, Anthropic SDK, Google Generative AI SDK
 - 001-eval-ai-models: Added JavaScript/TypeScript (Node.js 18+) + TypeScript for type safety + Astro, Tailwind CSS, SQLite3, node-sqlite3/better-sqlite3
+- 002-update-ui-style: Added TypeScript 5.6.0+, Node.js >= 22.0.0 + Astro 5.16.6, Tailwind CSS 4.0.0, daisyui (v5 beta/latest compatible with TW v4)
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->
