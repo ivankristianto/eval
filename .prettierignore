@@ -1,0 +1,8 @@
+dist/
+node_modules/
+.astro/
+*.min.js
+package-lock.json
+.gemini
+.claude
+db
