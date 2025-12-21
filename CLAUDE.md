@@ -17,11 +17,29 @@ tests/
 
 ## Commands
 
-npm test && npm run lint
+```bash
+npm test          # Run unit tests with Vitest
+npm run lint      # Run ESLint
+npm run lint:fix  # Run ESLint with auto-fix
+npm run format    # Format code with Prettier
+npm run format:check  # Check formatting without changes
+npm run typecheck # Run TypeScript type checking
+```
 
 ## Code Style
 
-JavaScript/TypeScript (Node.js 18+) + TypeScript for type safety: Follow standard conventions
+- **Linter**: ESLint 9 with flat config (`eslint.config.js`)
+- **Formatter**: Prettier with Astro plugin (`.prettierrc`)
+- **Plugins**: eslint-plugin-astro, @typescript-eslint
+
+### Style Rules
+- Semicolons: required
+- Quotes: double quotes
+- Indentation: 2 spaces
+- Trailing commas: ES5 style
+- Line width: 100 characters
+- Unused variables: warn (prefix with `_` to ignore)
+- Explicit `any`: warn
 
 ## Recent Changes
 - 001-eval-ai-models: Added TypeScript 5.6+ on Node.js 22+ + Astro 5.x (SSR), Tailwind CSS 4.x, better-sqlite3, OpenAI SDK, Anthropic SDK, Google Generative AI SDK
