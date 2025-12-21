@@ -2,7 +2,7 @@
 // Accuracy calculation functions for AI Model Evaluation Framework
 
 import type { AccuracyResult, RubricType } from './types';
-import { getSemanticSimilarityScore } from './api-clients';
+import { getSemanticSimilarityScore } from './semanticSimilarity';
 
 // ===== Exact Match Rubric =====
 

@@ -182,6 +182,7 @@ export class ClientFactory {
 
 // ===== Helper for semantic similarity scoring =====
 
+// @deprecated: Use getSemanticSimilarityScore from semanticSimilarity.ts
 export async function getSemanticSimilarityScore(
   response: string,
   expectedOutput: string,
@@ -236,6 +237,7 @@ Reply with ONLY a JSON object in this exact format: {"score": <number>, "reasoni
   }
 }
 
+// @deprecated: Use fallbackSimilarity from semanticSimilarity.ts
 function fallbackSimilarity(response: string, expectedOutput: string): { score: number; reasoning: string } {
   // Simple word overlap similarity as fallback
   const responseWords = new Set(response.toLowerCase().split(/\s+/));
