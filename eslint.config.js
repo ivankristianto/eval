@@ -47,10 +47,9 @@ export default [
     },
   },
   {
-    ignores: ["dist/", "node_modules/", ".astro/"],
+    ignores: ["dist/", "build/", "coverage/", "node_modules/", ".astro/", "*.min.js"],
   },
 ];
-
 
 
 
