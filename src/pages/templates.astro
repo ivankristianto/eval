@@ -19,7 +19,7 @@ let templates: Array<{
 }> = [];
 
 try {
-  templates = getTemplates().map(t => ({
+  templates = getTemplates().map((t) => ({
     id: t.id,
     name: t.name,
     description: t.description,
@@ -27,16 +27,13 @@ try {
     model_count: t.model_ids.length,
     accuracy_rubric: t.accuracy_rubric,
     created_at: t.created_at,
-    run_count: t.run_count
+    run_count: t.run_count,
   }));
 } catch {
   // Database may not be initialized
 }
 
-const breadcrumbItems = [
-  { label: 'Home', href: '/' },
-  { label: 'Templates' }
-];
+const breadcrumbItems = [{ label: 'Home', href: '/' }, { label: 'Templates' }];
 
 // Icon for empty state
 const templateIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-base-content/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -54,79 +51,84 @@ const templateIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 t
 
   <!-- Templates List -->
   <Card>
-    {templates.length > 0 ? (
-      <div class="overflow-x-auto">
-        <table class="table table-zebra w-full">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Instruction Preview</th>
-              <th>Models</th>
-              <th>Rubric</th>
-              <th>Runs</th>
-              <th>Created</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="templates-body">
-            {templates.map(template => (
-              <tr data-id={template.id} class="hover:bg-base-200 transition-colors">
-                <td>
-                  <div class="font-medium">{template.name}</div>
-                  {template.description && (
-                    <div class="text-xs text-base-content/50 mt-1">{template.description}</div>
-                  )}
-                </td>
-                <td class="max-w-xs">
-                  <div class="truncate text-sm text-base-content/70" title={template.instruction_text}>
-                    {template.instruction_text}
-                  </div>
-                </td>
-                <td>{template.model_count}</td>
-                <td>
-                  <Badge variant="ghost" size="sm">
-                    {template.accuracy_rubric.replace('_', ' ')}
-                  </Badge>
-                </td>
-                <td>{template.run_count}</td>
-                <td class="text-sm text-base-content/70">
-                  {new Date(template.created_at).toLocaleDateString()}
-                </td>
-                <td>
-                  <div class="flex gap-2">
-                    <button
-                      class="run-btn btn btn-xs btn-ghost text-primary"
-                      data-id={template.id}
-                    >
-                      Run
-                    </button>
-                    <a
-                      href={`/?template=${template.id}`}
-                      class="btn btn-xs btn-ghost text-base-content/70"
-                    >
-                      History
-                    </a>
-                    <button
-                      class="delete-btn btn btn-xs btn-ghost text-error"
-                      data-id={template.id}
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </td>
+    {
+      templates.length > 0 ? (
+        <div class="overflow-x-auto">
+          <table class="table table-zebra w-full">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Instruction Preview</th>
+                <th>Models</th>
+                <th>Rubric</th>
+                <th>Runs</th>
+                <th>Created</th>
+                <th>Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    ) : (
-      <EmptyState
-        title="No templates saved"
-        description="Complete an evaluation and save it as a template."
-        icon={templateIcon}
-        action={{ label: 'Go to Evaluate', href: '/' }}
-      />
-    )}
+            </thead>
+            <tbody id="templates-body">
+              {templates.map((template) => (
+                <tr data-id={template.id} class="hover:bg-base-200 transition-colors">
+                  <td>
+                    <div class="font-medium">{template.name}</div>
+                    {template.description && (
+                      <div class="text-xs text-base-content/50 mt-1">{template.description}</div>
+                    )}
+                  </td>
+                  <td class="max-w-xs">
+                    <div
+                      class="truncate text-sm text-base-content/70"
+                      title={template.instruction_text}
+                    >
+                      {template.instruction_text}
+                    </div>
+                  </td>
+                  <td>{template.model_count}</td>
+                  <td>
+                    <Badge variant="ghost" size="sm">
+                      {template.accuracy_rubric.replace('_', ' ')}
+                    </Badge>
+                  </td>
+                  <td>{template.run_count}</td>
+                  <td class="text-sm text-base-content/70">
+                    {new Date(template.created_at).toLocaleDateString()}
+                  </td>
+                  <td>
+                    <div class="flex gap-2">
+                      <button
+                        class="run-btn btn btn-xs btn-ghost text-primary"
+                        data-id={template.id}
+                      >
+                        Run
+                      </button>
+                      <a
+                        href={`/?template=${template.id}`}
+                        class="btn btn-xs btn-ghost text-base-content/70"
+                      >
+                        History
+                      </a>
+                      <button
+                        class="delete-btn btn btn-xs btn-ghost text-error"
+                        data-id={template.id}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <EmptyState
+          title="No templates saved"
+          description="Complete an evaluation and save it as a template."
+          icon={templateIcon}
+          action={{ label: 'Go to Evaluate', href: '/' }}
+        />
+      )
+    }
   </Card>
 </Layout>
 
@@ -134,7 +136,7 @@ const templateIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 t
   import { addToast } from '../lib/toastStore';
 
   // Run template
-  document.querySelectorAll('.run-btn').forEach(btn => {
+  document.querySelectorAll('.run-btn').forEach((btn) => {
     btn.addEventListener('click', async (e) => {
       const target = e.target as HTMLButtonElement;
       const templateId = target.dataset.id;
@@ -145,7 +147,7 @@ const templateIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 t
 
       try {
         const response = await fetch(`/api/templates/${templateId}/run`, {
-          method: 'POST'
+          method: 'POST',
         });
 
         const data = await response.json();
@@ -166,7 +168,7 @@ const templateIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 t
   });
 
   // Delete template
-  document.querySelectorAll('.delete-btn').forEach(btn => {
+  document.querySelectorAll('.delete-btn').forEach((btn) => {
     btn.addEventListener('click', async (e) => {
       const target = e.target as HTMLButtonElement;
       const templateId = target.dataset.id;
@@ -180,7 +182,7 @@ const templateIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 t
 
       try {
         const response = await fetch(`/api/templates/${templateId}`, {
-          method: 'DELETE'
+          method: 'DELETE',
         });
 
         const data = await response.json();

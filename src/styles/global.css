@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 @plugin "daisyui";
 
 /* Focus ring styles for accessibility */
@@ -41,5 +41,7 @@ tr.best-performer {
 
 /* Smooth transitions for theme switching */
 html {
-  transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+  transition:
+    background-color 0.2s ease-in-out,
+    color 0.2s ease-in-out;
 }

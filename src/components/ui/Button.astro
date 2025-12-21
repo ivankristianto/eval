@@ -1,6 +1,16 @@
 ---
 export interface Props {
-  variant?: 'primary' | 'secondary' | 'accent' | 'ghost' | 'link' | 'info' | 'success' | 'warning' | 'error' | 'neutral';
+  variant?:
+    | 'primary'
+    | 'secondary'
+    | 'accent'
+    | 'ghost'
+    | 'link'
+    | 'info'
+    | 'success'
+    | 'warning'
+    | 'error'
+    | 'neutral';
   size?: 'lg' | 'md' | 'sm' | 'xs';
   outline?: boolean;
   type?: 'button' | 'submit' | 'reset';
@@ -23,21 +33,19 @@ const {
   ...rest
 } = Astro.props;
 
-const classes = [
-  'btn',
-  `btn-${variant}`,
-  `btn-${size}`,
-  outline ? 'btn-outline' : '',
-  className
-].filter(Boolean).join(' ');
+const classes = ['btn', `btn-${variant}`, `btn-${size}`, outline ? 'btn-outline' : '', className]
+  .filter(Boolean)
+  .join(' ');
 ---
 
-{href ? (
-  <a href={href} class={classes} id={id} {...rest}>
-    <slot />
-  </a>
-) : (
-  <button type={type} class={classes} disabled={disabled} id={id} {...rest}>
-    <slot />
-  </button>
-)}
+{
+  href ? (
+    <a href={href} class={classes} id={id} {...rest}>
+      <slot />
+    </a>
+  ) : (
+    <button type={type} class={classes} disabled={disabled} id={id} {...rest}>
+      <slot />
+    </button>
+  )
+}

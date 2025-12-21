@@ -27,9 +27,9 @@ let evaluations: Array<{
 try {
   const rawEvaluations = getEvaluations(templateId || undefined, 50, 0);
 
-  evaluations = rawEvaluations.map(e => {
+  evaluations = rawEvaluations.map((e) => {
     const results = getResults(e.id);
-    const completedResults = results.filter(r => r.status === 'completed');
+    const completedResults = results.filter((r) => r.status === 'completed');
 
     let bestAccuracy: number | undefined;
     let fastestModel: { model_name: string; execution_time_ms: number } | undefined;
@@ -46,7 +46,7 @@ try {
       if (fastest.execution_time_ms !== undefined) {
         fastestModel = {
           model_name: fastest.model_name,
-          execution_time_ms: fastest.execution_time_ms
+          execution_time_ms: fastest.execution_time_ms,
         };
       }
     }
@@ -60,7 +60,7 @@ try {
       completed_at: e.completed_at,
       best_accuracy: bestAccuracy,
       fastest_model: fastestModel,
-      result_count: results.length
+      result_count: results.length,
     };
   });
 } catch {
@@ -75,11 +75,16 @@ const emptyIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text
 // Helper function to get status variant
 function getStatusVariant(status: string): 'warning' | 'info' | 'success' | 'error' | 'neutral' {
   switch (status) {
-    case 'pending': return 'warning';
-    case 'running': return 'info';
-    case 'completed': return 'success';
-    case 'failed': return 'error';
-    default: return 'neutral';
+    case 'pending':
+      return 'warning';
+    case 'running':
+      return 'info';
+    case 'completed':
+      return 'success';
+    case 'failed':
+      return 'error';
+    default:
+      return 'neutral';
   }
 }
 ---
@@ -90,9 +95,7 @@ function getStatusVariant(status: string): 'warning' | 'info' | 'success' | 'err
   <div class="flex items-center justify-between mb-8">
     <div>
       <h1 class="text-3xl font-bold">Evaluation History</h1>
-      <p class="mt-2 text-base-content/70">
-        All past evaluation runs and their results.
-      </p>
+      <p class="mt-2 text-base-content/70">All past evaluation runs and their results.</p>
     </div>
     <Button variant="primary" onclick="document.getElementById('new-evaluation-modal').showModal()">
       New Evaluation
@@ -101,76 +104,87 @@ function getStatusVariant(status: string): 'warning' | 'info' | 'success' | 'err
 
   <!-- History List -->
   <Card>
-    {evaluations.length > 0 ? (
-      <div class="overflow-x-auto">
-        <table class="table table-zebra w-full">
-          <thead>
-            <tr>
-              <th>Instruction</th>
-              <th>Rubric</th>
-              <th>Models</th>
-              <th>Best Accuracy</th>
-              <th>Fastest Model</th>
-              <th>Status</th>
-              <th>Date</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {evaluations.map(evaluation => (
-              <tr class="hover:bg-base-200 transition-colors">
-                <td class="max-w-xs">
-                  <div class="truncate text-sm font-medium" title={evaluation.instruction_text}>
-                    {evaluation.instruction_text}
-                  </div>
-                </td>
-                <td>
-                  <Badge variant="ghost" size="sm">
-                    {evaluation.accuracy_rubric.replace('_', ' ')}
-                  </Badge>
-                </td>
-                <td>{evaluation.result_count}</td>
-                <td>
-                  {evaluation.best_accuracy !== undefined ? (
-                    <span class="font-semibold text-success">{evaluation.best_accuracy}%</span>
-                  ) : '-'}
-                </td>
-                <td>
-                  {evaluation.fastest_model ? (
-                    <div class="text-sm">
-                      <div class="font-medium">{evaluation.fastest_model.model_name}</div>
-                      <div class="text-base-content/50">{evaluation.fastest_model.execution_time_ms}ms</div>
-                    </div>
-                  ) : '-'}
-                </td>
-                <td>
-                  <Badge variant={getStatusVariant(evaluation.status)}>
-                    {evaluation.status.charAt(0).toUpperCase() + evaluation.status.slice(1)}
-                  </Badge>
-                </td>
-                <td class="text-sm text-base-content/70">
-                  {new Date(evaluation.created_at).toLocaleString()}
-                </td>
-                <td>
-                  <a
-                    href={`/evaluations/${evaluation.id}`}
-                    class="btn btn-xs btn-ghost text-primary"
-                  >
-                    View
-                  </a>
-                </td>
+    {
+      evaluations.length > 0 ? (
+        <div class="overflow-x-auto">
+          <table class="table table-zebra w-full">
+            <thead>
+              <tr>
+                <th>Instruction</th>
+                <th>Rubric</th>
+                <th>Models</th>
+                <th>Best Accuracy</th>
+                <th>Fastest Model</th>
+                <th>Status</th>
+                <th>Date</th>
+                <th>Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    ) : (
-      <EmptyState
-        title="No evaluations yet"
-        description="Run your first evaluation to compare AI models."
-        icon={emptyIcon}
-        action={{ label: 'Start Evaluation', onClick: "document.getElementById('new-evaluation-modal').showModal()" }}
-      />
-    )}
+            </thead>
+            <tbody>
+              {evaluations.map((evaluation) => (
+                <tr class="hover:bg-base-200 transition-colors">
+                  <td class="max-w-xs">
+                    <div class="truncate text-sm font-medium" title={evaluation.instruction_text}>
+                      {evaluation.instruction_text}
+                    </div>
+                  </td>
+                  <td>
+                    <Badge variant="ghost" size="sm">
+                      {evaluation.accuracy_rubric.replace('_', ' ')}
+                    </Badge>
+                  </td>
+                  <td>{evaluation.result_count}</td>
+                  <td>
+                    {evaluation.best_accuracy !== undefined ? (
+                      <span class="font-semibold text-success">{evaluation.best_accuracy}%</span>
+                    ) : (
+                      '-'
+                    )}
+                  </td>
+                  <td>
+                    {evaluation.fastest_model ? (
+                      <div class="text-sm">
+                        <div class="font-medium">{evaluation.fastest_model.model_name}</div>
+                        <div class="text-base-content/50">
+                          {evaluation.fastest_model.execution_time_ms}ms
+                        </div>
+                      </div>
+                    ) : (
+                      '-'
+                    )}
+                  </td>
+                  <td>
+                    <Badge variant={getStatusVariant(evaluation.status)}>
+                      {evaluation.status.charAt(0).toUpperCase() + evaluation.status.slice(1)}
+                    </Badge>
+                  </td>
+                  <td class="text-sm text-base-content/70">
+                    {new Date(evaluation.created_at).toLocaleString()}
+                  </td>
+                  <td>
+                    <a
+                      href={`/evaluations/${evaluation.id}`}
+                      class="btn btn-xs btn-ghost text-primary"
+                    >
+                      View
+                    </a>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <EmptyState
+          title="No evaluations yet"
+          description="Run your first evaluation to compare AI models."
+          icon={emptyIcon}
+          action={{
+            label: 'Start Evaluation',
+            onClick: "document.getElementById('new-evaluation-modal').showModal()",
+          }}
+        />
+      )
+    }
   </Card>
 </Layout>

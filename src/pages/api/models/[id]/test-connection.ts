@@ -11,25 +11,31 @@ export const POST: APIRoute = async ({ params, request }) => {
     const { id } = params;
 
     if (!id) {
-      return new Response(JSON.stringify({
-        error: 'INVALID_INPUT',
-        message: 'Model ID is required'
-      }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      return new Response(
+        JSON.stringify({
+          error: 'INVALID_INPUT',
+          message: 'Model ID is required',
+        }),
+        {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
     }
 
     const model = getModelById(id);
 
     if (!model) {
-      return new Response(JSON.stringify({
-        error: 'MODEL_NOT_FOUND',
-        message: 'Model does not exist'
-      }), {
-        status: 404,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      return new Response(
+        JSON.stringify({
+          error: 'MODEL_NOT_FOUND',
+          message: 'Model does not exist',
+        }),
+        {
+          status: 404,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
     }
 
     // Check if a new API key was provided in the request body
@@ -42,7 +48,7 @@ export const POST: APIRoute = async ({ params, request }) => {
         if (!validation.valid) {
           return new Response(JSON.stringify(validation.error), {
             status: 400,
-            headers: { 'Content-Type': 'application/json' }
+            headers: { 'Content-Type': 'application/json' },
           });
         }
         apiKey = body.api_key;
@@ -59,37 +65,46 @@ export const POST: APIRoute = async ({ params, request }) => {
     const isValid = await ClientFactory.testConnection(model.provider, apiKey, model.model_name);
 
     if (isValid) {
-      return new Response(JSON.stringify({
-        model_id: model.id,
-        provider: model.provider,
-        model_name: model.model_name,
-        status: 'valid',
-        message: 'API key is valid'
-      }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      });
-    } else {
-      return new Response(JSON.stringify({
-        error: 'API_KEY_INVALID',
-        message: 'API key is invalid or expired',
-        details: {
+      return new Response(
+        JSON.stringify({
+          model_id: model.id,
           provider: model.provider,
-          provider_message: 'Invalid authentication credentials'
+          model_name: model.model_name,
+          status: 'valid',
+          message: 'API key is valid',
+        }),
+        {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
         }
-      }), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      );
+    } else {
+      return new Response(
+        JSON.stringify({
+          error: 'API_KEY_INVALID',
+          message: 'API key is invalid or expired',
+          details: {
+            provider: model.provider,
+            provider_message: 'Invalid authentication credentials',
+          },
+        }),
+        {
+          status: 401,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
     }
   } catch (error) {
     console.error('POST /api/models/:id/test-connection error:', error);
-    return new Response(JSON.stringify({
-      error: 'INTERNAL_ERROR',
-      message: error instanceof Error ? error.message : 'Internal server error'
-    }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return new Response(
+      JSON.stringify({
+        error: 'INTERNAL_ERROR',
+        message: error instanceof Error ? error.message : 'Internal server error',
+      }),
+      {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
   }
 };

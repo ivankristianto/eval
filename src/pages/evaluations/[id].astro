@@ -1,12 +1,12 @@
 ---
-import Layout from "../../layouts/Layout.astro";
-import Card from "../../components/ui/Card.astro";
-import Badge from "../../components/ui/Badge.astro";
-import Button from "../../components/ui/Button.astro";
-import Breadcrumbs from "../../components/ui/Breadcrumbs.astro";
-import EvaluationDetailsDrawer from "../../components/EvaluationDetailsDrawer.astro";
-import TemplateManager from "../../components/TemplateManager.astro";
-import { getEvaluation, getResults } from "../../lib/db";
+import Layout from '../../layouts/Layout.astro';
+import Card from '../../components/ui/Card.astro';
+import Badge from '../../components/ui/Badge.astro';
+import Button from '../../components/ui/Button.astro';
+import Breadcrumbs from '../../components/ui/Breadcrumbs.astro';
+import EvaluationDetailsDrawer from '../../components/EvaluationDetailsDrawer.astro';
+import TemplateManager from '../../components/TemplateManager.astro';
+import { getEvaluation, getResults } from '../../lib/db';
 
 export const prerender = false;
 
@@ -65,27 +65,27 @@ if (id) {
       };
     }
   } catch (e) {
-    console.error("Failed to fetch evaluation:", e);
+    console.error('Failed to fetch evaluation:', e);
   }
 }
 
 if (!evaluationData) {
-  return Astro.redirect("/404");
+  return Astro.redirect('/404');
 }
 
-const breadcrumbItems = [{ label: "Home", href: "/" }, { label: "Evaluation Details" }];
+const breadcrumbItems = [{ label: 'Home', href: '/' }, { label: 'Evaluation Details' }];
 
 // Helper to get status badge class
 function getStatusBadgeVariant(status: string) {
   switch (status) {
-    case "completed":
-      return "success";
-    case "failed":
-      return "error";
-    case "running":
-      return "info";
+    case 'completed':
+      return 'success';
+    case 'failed':
+      return 'error';
+    case 'running':
+      return 'info';
     default:
-      return "warning";
+      return 'warning';
   }
 }
 ---
@@ -108,7 +108,7 @@ function getStatusBadgeVariant(status: string) {
       </div>
     </div>
 
-    <div class={evaluationData.results.length > 0 ? "" : "hidden"} id="actions-container">
+    <div class={evaluationData.results.length > 0 ? '' : 'hidden'} id="actions-container">
       <Button variant="secondary" size="sm" id="save-template-btn"> Save as Template </Button>
     </div>
   </div>
@@ -187,20 +187,17 @@ function getStatusBadgeVariant(status: string) {
                       {result.status}
                     </Badge>
                   </td>
-                  <td>{result.execution_time_ms ?? "-"}</td>
-                  <td>{result.total_tokens ?? "-"}</td>
+                  <td>{result.execution_time_ms ?? '-'}</td>
+                  <td>{result.total_tokens ?? '-'}</td>
                   <td>
                     <span
-                      class={`font-semibold ${result.accuracy_score === 100 ? "text-success" : result.accuracy_score === 0 ? "text-error" : ""}`}
+                      class={`font-semibold ${result.accuracy_score === 100 ? 'text-success' : result.accuracy_score === 0 ? 'text-error' : ''}`}
                     >
-                      {result.accuracy_score !== undefined ? `${result.accuracy_score}%` : "-"}
+                      {result.accuracy_score !== undefined ? `${result.accuracy_score}%` : '-'}
                     </span>
                   </td>
                   <td>
-                    <a
-                      href='#/'
-                      class="btn btn-xs btn-ghost text-primary"
-                    >
+                    <a href="#/" class="btn btn-xs btn-ghost text-primary">
                       View
                     </a>
                   </td>
@@ -229,11 +226,11 @@ function getStatusBadgeVariant(status: string) {
   let currentResults = (window as any).__EVALUATION_DATA__?.results || [];
   const evaluationId = (window as any).__EVALUATION_DATA__?.id;
   const evaluationStatus = (window as any).__EVALUATION_DATA__?.status;
-  const saveTemplateBtn = document.getElementById("save-template-btn");
+  const saveTemplateBtn = document.getElementById('save-template-btn');
 
   // Save as Template
   if (saveTemplateBtn) {
-    saveTemplateBtn.addEventListener("click", () => {
+    saveTemplateBtn.addEventListener('click', () => {
       const evalData = (window as any).__EVALUATION_DATA__;
       if (evalData && (window as any).openTemplateModal) {
         (window as any).openTemplateModal({
@@ -249,10 +246,10 @@ function getStatusBadgeVariant(status: string) {
 
   // Setup row click handlers
   function setupRowClickHandlers() {
-    const rows = document.querySelectorAll("[data-result-index]");
+    const rows = document.querySelectorAll('[data-result-index]');
     rows.forEach((row) => {
-      row.addEventListener("click", () => {
-        const index = parseInt((row as HTMLElement).dataset.resultIndex || "0", 10);
+      row.addEventListener('click', () => {
+        const index = parseInt((row as HTMLElement).dataset.resultIndex || '0', 10);
         const result = currentResults[index];
         const evalData = (window as any).__EVALUATION_DATA__;
 
@@ -261,8 +258,8 @@ function getStatusBadgeVariant(status: string) {
             modelName: result.model_name,
             prompt: evalData.instruction_text,
             expectedOutput: evalData.expected_output,
-            response: result.response_text || "[No response]",
-            reasoning: result.accuracy_reasoning || "No reasoning available",
+            response: result.response_text || '[No response]',
+            reasoning: result.accuracy_reasoning || 'No reasoning available',
             executionTime: result.execution_time_ms,
             accuracyScore: result.accuracy_score,
             inputTokens: result.input_tokens,
@@ -277,9 +274,9 @@ function getStatusBadgeVariant(status: string) {
   setupRowClickHandlers();
 
   // Polling logic if running
-  if (evaluationStatus === "pending" || evaluationStatus === "running") {
-    const pollingIndicator = document.getElementById("polling-indicator");
-    if (pollingIndicator) pollingIndicator.classList.remove("hidden");
+  if (evaluationStatus === 'pending' || evaluationStatus === 'running') {
+    const pollingIndicator = document.getElementById('polling-indicator');
+    if (pollingIndicator) pollingIndicator.classList.remove('hidden');
 
     const interval = setInterval(async () => {
       try {
@@ -291,19 +288,19 @@ function getStatusBadgeVariant(status: string) {
         currentResults = results;
 
         // Update Table
-        const tbody = document.getElementById("results-body");
+        const tbody = document.getElementById('results-body');
         if (tbody) {
           tbody.innerHTML = results
             .map((r: any, index: number) => {
               // Reconstruct badge variant logic
-              let badgeClass = "badge-warning";
-              if (r.status === "completed") badgeClass = "badge-success";
-              if (r.status === "failed") badgeClass = "badge-error";
-              if (r.status === "running") badgeClass = "badge-info";
+              let badgeClass = 'badge-warning';
+              if (r.status === 'completed') badgeClass = 'badge-success';
+              if (r.status === 'failed') badgeClass = 'badge-error';
+              if (r.status === 'running') badgeClass = 'badge-info';
 
-              let scoreClass = "";
-              if (r.accuracy_score === 100) scoreClass = "text-success";
-              if (r.accuracy_score === 0) scoreClass = "text-error";
+              let scoreClass = '';
+              if (r.accuracy_score === 100) scoreClass = 'text-success';
+              if (r.accuracy_score === 0) scoreClass = 'text-error';
 
               return `
               <tr class="cursor-pointer hover:bg-base-200 transition-colors" data-result-index="${index}">
@@ -312,13 +309,13 @@ function getStatusBadgeVariant(status: string) {
                   <div class="text-xs text-base-content/50 capitalize">${r.provider}</div>
                 </td>
                 <td>
-                  <span class="badge ${badgeClass} badge-sm">${r.status || "pending"}</span>
+                  <span class="badge ${badgeClass} badge-sm">${r.status || 'pending'}</span>
                 </td>
-                <td>${r.execution_time_ms ?? "-"}</td>
-                <td>${r.total_tokens ?? "-"}</td>
+                <td>${r.execution_time_ms ?? '-'}</td>
+                <td>${r.total_tokens ?? '-'}</td>
                 <td>
                   <span class="font-semibold ${scoreClass}">
-                    ${r.accuracy_score !== undefined ? `${r.accuracy_score}%` : "-"}
+                    ${r.accuracy_score !== undefined ? `${r.accuracy_score}%` : '-'}
                   </span>
                 </td>
                 <td>
@@ -327,23 +324,23 @@ function getStatusBadgeVariant(status: string) {
               </tr>
              `;
             })
-            .join("");
+            .join('');
 
           setupRowClickHandlers();
         }
 
         // Check if all complete
         const allDone = results.every(
-          (r: any) => r.status === "completed" || r.status === "failed"
+          (r: any) => r.status === 'completed' || r.status === 'failed'
         );
         if (allDone) {
           clearInterval(interval);
-          if (pollingIndicator) pollingIndicator.classList.add("hidden");
+          if (pollingIndicator) pollingIndicator.classList.add('hidden');
           // Reload to update main status header
           window.location.reload();
         }
       } catch (e) {
-        console.error("Polling error", e);
+        console.error('Polling error', e);
       }
     }, 2000);
   }

@@ -7,7 +7,8 @@
 <div
   id="details-drawer-backdrop"
   class="fixed inset-0 bg-black/50 z-40 hidden opacity-0 transition-opacity duration-300"
-></div>
+>
+</div>
 
 <!-- Drawer panel -->
 <div
@@ -23,8 +24,18 @@
       id="details-drawer-close"
       aria-label="Close"
     >
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        class="h-5 w-5"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M6 18L18 6M6 6l12 12"></path>
       </svg>
     </button>
   </div>
@@ -46,7 +57,11 @@
     <!-- Response -->
     <div>
       <h3 class="text-sm font-semibold text-base-content/70 mb-2">Response:</h3>
-      <div id="details-response" class="bg-base-200 p-3 rounded-lg text-sm font-mono whitespace-pre-wrap"></div>
+      <div
+        id="details-response"
+        class="bg-base-200 p-3 rounded-lg text-sm font-mono whitespace-pre-wrap"
+      >
+      </div>
     </div>
 
     <!-- Reasoning -->
@@ -140,7 +155,8 @@
       if (responseEl) responseEl.textContent = data.response || '-';
       if (reasoningEl) reasoningEl.textContent = data.reasoning || '-';
       if (timeEl) timeEl.textContent = data.executionTime ? `${data.executionTime}ms` : '-';
-      if (accuracyEl) accuracyEl.textContent = data.accuracyScore !== undefined ? `${data.accuracyScore}%` : '-';
+      if (accuracyEl)
+        accuracyEl.textContent = data.accuracyScore !== undefined ? `${data.accuracyScore}%` : '-';
       if (inputTokensEl) inputTokensEl.textContent = data.inputTokens?.toString() || '-';
       if (outputTokensEl) outputTokensEl.textContent = data.outputTokens?.toString() || '-';
 

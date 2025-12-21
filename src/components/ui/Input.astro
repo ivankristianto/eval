@@ -25,19 +25,21 @@ const {
   ...rest
 } = Astro.props;
 
-const inputClasses = [
-  'input input-bordered w-full',
-  error ? 'input-error' : '',
-  className
-].filter(Boolean).join(' ');
+const inputClasses = ['input input-bordered w-full', error ? 'input-error' : '', className]
+  .filter(Boolean)
+  .join(' ');
 ---
 
 <div class="form-control w-full">
-  {label && (
-    <label class="label" for={name}>
-      <span class="label-text">{label} {required && <span class="text-error">*</span>}</span>
-    </label>
-  )}
+  {
+    label && (
+      <label class="label" for={name}>
+        <span class="label-text">
+          {label} {required && <span class="text-error">*</span>}
+        </span>
+      </label>
+    )
+  }
   <input
     id={name}
     name={name}
@@ -49,9 +51,11 @@ const inputClasses = [
     class={inputClasses}
     {...rest}
   />
-  {error && (
-    <label class="label">
-      <span class="label-text-alt text-error">{error}</span>
-    </label>
-  )}
+  {
+    error && (
+      <label class="label">
+        <span class="label-text-alt text-error">{error}</span>
+      </label>
+    )
+  }
 </div>

@@ -1,7 +1,7 @@
-import Anthropic from "@anthropic-ai/sdk";
+import Anthropic from '@anthropic-ai/sdk';
 
 export interface SimilarityDimension {
-  rating: "YES" | "PARTIAL" | "NO";
+  rating: 'YES' | 'PARTIAL' | 'NO';
   details?: string;
 }
 
@@ -17,17 +17,17 @@ export interface SemanticSimilarityResult {
 }
 
 interface LLMEvaluationResponse {
-  correctness: "YES" | "PARTIAL" | "NO";
+  correctness: 'YES' | 'PARTIAL' | 'NO';
   correctness_details?: string;
-  completeness: "YES" | "PARTIAL" | "NO";
+  completeness: 'YES' | 'PARTIAL' | 'NO';
   completeness_details?: string;
-  no_contradictions: "YES" | "PARTIAL" | "NO";
+  no_contradictions: 'YES' | 'PARTIAL' | 'NO';
   no_contradictions_details?: string;
   overall_match: boolean;
   reasoning: string;
 }
 
-const DIMENSION_SCORES: Record<"YES" | "PARTIAL" | "NO", number> = {
+const DIMENSION_SCORES: Record<'YES' | 'PARTIAL' | 'NO', number> = {
   YES: 100,
   PARTIAL: 50,
   NO: 0,
@@ -55,31 +55,27 @@ export async function getSemanticSimilarityScore(
     const client = new Anthropic({ apiKey: anthropicKey });
 
     const result = await client.messages.create({
-      model: "claude-sonnet-4-20250514",
+      model: 'claude-sonnet-4-20250514',
       max_tokens: 500,
       messages: [
         {
-          role: "user",
+          role: 'user',
           content: buildEvaluationPrompt(response, expectedOutput),
         },
       ],
     });
 
-    const textContent = result.content.find((block) => block.type === "text");
-    const text =
-      textContent && "text" in textContent ? textContent.text.trim() : "";
+    const textContent = result.content.find((block) => block.type === 'text');
+    const text = textContent && 'text' in textContent ? textContent.text.trim() : '';
 
     return parseEvaluationResponse(text);
   } catch (error) {
-    console.error("Semantic similarity scoring failed:", error);
+    console.error('Semantic similarity scoring failed:', error);
     return fallbackSimilarity(response, expectedOutput);
   }
 }
 
-function buildEvaluationPrompt(
-  response: string,
-  expectedOutput: string
-): string {
+function buildEvaluationPrompt(response: string, expectedOutput: string): string {
   const truncatedResponse = response.substring(0, 2000);
   const truncatedExpected = expectedOutput.substring(0, 2000);
 
@@ -121,20 +117,18 @@ function parseEvaluationResponse(text: string): SemanticSimilarityResult {
   // Extract JSON from response (handle markdown code blocks)
   const jsonMatch = text.match(/\{[\s\S]*\}/);
   if (!jsonMatch) {
-    throw new Error("No JSON found in response");
+    throw new Error('No JSON found in response');
   }
 
   const parsed: LLMEvaluationResponse = JSON.parse(jsonMatch[0]);
 
   // Validate and normalize ratings
-  const normalizeRating = (
-    value: string | undefined
-  ): "YES" | "PARTIAL" | "NO" => {
+  const normalizeRating = (value: string | undefined): 'YES' | 'PARTIAL' | 'NO' => {
     const upper = String(value).toUpperCase().trim();
-    if (upper === "YES" || upper === "PARTIAL" || upper === "NO") {
+    if (upper === 'YES' || upper === 'PARTIAL' || upper === 'NO') {
       return upper;
     }
-    return "PARTIAL"; // Default to partial if unclear
+    return 'PARTIAL'; // Default to partial if unclear
   };
 
   const dimensions = {
@@ -154,32 +148,26 @@ function parseEvaluationResponse(text: string): SemanticSimilarityResult {
 
   // Calculate weighted score
   const score = Math.round(
-    DIMENSION_SCORES[dimensions.correctness.rating] *
-      DIMENSION_WEIGHTS.correctness +
-      DIMENSION_SCORES[dimensions.completeness.rating] *
-        DIMENSION_WEIGHTS.completeness +
-      DIMENSION_SCORES[dimensions.noContradictions.rating] *
-        DIMENSION_WEIGHTS.noContradictions
+    DIMENSION_SCORES[dimensions.correctness.rating] * DIMENSION_WEIGHTS.correctness +
+      DIMENSION_SCORES[dimensions.completeness.rating] * DIMENSION_WEIGHTS.completeness +
+      DIMENSION_SCORES[dimensions.noContradictions.rating] * DIMENSION_WEIGHTS.noContradictions
   );
 
   return {
     score,
     overallMatch: Boolean(parsed.overall_match),
     dimensions,
-    reasoning: String(parsed.reasoning || "").substring(0, 500),
+    reasoning: String(parsed.reasoning || '').substring(0, 500),
   };
 }
 
-function fallbackSimilarity(
-  response: string,
-  expectedOutput: string
-): SemanticSimilarityResult {
+function fallbackSimilarity(response: string, expectedOutput: string): SemanticSimilarityResult {
   // Basic token overlap similarity when no API is available
   const normalize = (text: string): Set<string> => {
     return new Set(
       text
         .toLowerCase()
-        .replace(/[^\w\s]/g, "")
+        .replace(/[^\w\s]/g, '')
         .split(/\s+/)
         .filter((word) => word.length > 2)
     );
@@ -193,35 +181,33 @@ function fallbackSimilarity(
       score: responseTokens.size === 0 ? 100 : 0,
       overallMatch: responseTokens.size === 0,
       dimensions: {
-        correctness: { rating: "PARTIAL", details: "Fallback method used" },
-        completeness: { rating: "PARTIAL", details: "Fallback method used" },
+        correctness: { rating: 'PARTIAL', details: 'Fallback method used' },
+        completeness: { rating: 'PARTIAL', details: 'Fallback method used' },
         noContradictions: {
-          rating: "PARTIAL",
-          details: "Fallback method used",
+          rating: 'PARTIAL',
+          details: 'Fallback method used',
         },
       },
-      reasoning: "Using token overlap fallback (no API key available)",
+      reasoning: 'Using token overlap fallback (no API key available)',
     };
   }
 
-  const intersection = new Set(
-    [...responseTokens].filter((token) => expectedTokens.has(token))
-  );
+  const intersection = new Set([...responseTokens].filter((token) => expectedTokens.has(token)));
 
   // Jaccard-like similarity
   const union = new Set([...responseTokens, ...expectedTokens]);
   const similarity = Math.round((intersection.size / union.size) * 100);
 
-  const rating: "YES" | "PARTIAL" | "NO" =
-    similarity >= 70 ? "YES" : similarity >= 40 ? "PARTIAL" : "NO";
+  const rating: 'YES' | 'PARTIAL' | 'NO' =
+    similarity >= 70 ? 'YES' : similarity >= 40 ? 'PARTIAL' : 'NO';
 
   return {
     score: similarity,
     overallMatch: similarity >= 70,
     dimensions: {
-      correctness: { rating, details: "Based on token overlap" },
-      completeness: { rating, details: "Based on token overlap" },
-      noContradictions: { rating: "PARTIAL", details: "Cannot verify" },
+      correctness: { rating, details: 'Based on token overlap' },
+      completeness: { rating, details: 'Based on token overlap' },
+      noContradictions: { rating: 'PARTIAL', details: 'Cannot verify' },
     },
     reasoning: `Token overlap similarity: ${intersection.size}/${expectedTokens.size} expected tokens found`,
   };
@@ -238,9 +224,7 @@ export async function batchSemanticSimilarity(
   for (let i = 0; i < pairs.length; i += concurrency) {
     const batch = pairs.slice(i, i + concurrency);
     const batchResults = await Promise.all(
-      batch.map((pair) =>
-        getSemanticSimilarityScore(pair.response, pair.expectedOutput, apiKey)
-      )
+      batch.map((pair) => getSemanticSimilarityScore(pair.response, pair.expectedOutput, apiKey))
     );
     results.push(...batchResults);
   }

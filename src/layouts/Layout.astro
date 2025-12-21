@@ -10,7 +10,7 @@ export interface Props {
 const { title = 'Eval AI' } = Astro.props;
 ---
 
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en" data-theme="light">
   <head>
     <meta charset="UTF-8" />
@@ -19,13 +19,15 @@ const { title = 'Eval AI' } = Astro.props;
     <!-- Prevent FOUC -->
     <script is:inline>
       const storedTheme = localStorage.getItem('theme');
-      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches
+        ? 'dark'
+        : 'light';
       document.documentElement.setAttribute('data-theme', storedTheme || systemTheme);
     </script>
   </head>
   <body class="min-h-screen bg-base-100 text-base-content font-sans antialiased">
     <Navbar />
-    
+
     <main class="container mx-auto px-4 py-8 max-w-7xl">
       <slot />
     </main>

@@ -20,23 +20,20 @@ let models: Array<{
 }> = [];
 
 try {
-  models = getModels(false).map(m => ({
+  models = getModels(false).map((m) => ({
     id: m.id,
     provider: m.provider,
     model_name: m.model_name,
     is_active: m.is_active,
     created_at: m.created_at,
     notes: m.notes,
-    usage_count: getModelUsageCount(m.id)
+    usage_count: getModelUsageCount(m.id),
   }));
 } catch {
   // Database may not be initialized
 }
 
-const breadcrumbItems = [
-  { label: 'Home', href: '/' },
-  { label: 'Models' }
-];
+const breadcrumbItems = [{ label: 'Home', href: '/' }, { label: 'Models' }];
 
 // Icon for empty state
 const modelIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-base-content/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -55,20 +52,45 @@ const modelIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text
     </div>
     <div class="flex flex-wrap gap-2">
       <Button id="import-btn" variant="secondary" size="sm">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-          <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-5 w-5 mr-1"
+          viewBox="0 0 20 20"
+          fill="currentColor"
+        >
+          <path
+            fill-rule="evenodd"
+            d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
+            clip-rule="evenodd"></path>
         </svg>
         Import
       </Button>
       <Button id="export-btn" variant="secondary" size="sm">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-          <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" transform="rotate(180 10 10)"/>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-5 w-5 mr-1"
+          viewBox="0 0 20 20"
+          fill="currentColor"
+        >
+          <path
+            fill-rule="evenodd"
+            d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
+            clip-rule="evenodd"
+            transform="rotate(180 10 10)"></path>
         </svg>
         Export
       </Button>
       <Button id="add-model-btn" variant="primary" size="sm">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-          <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-5 w-5 mr-1"
+          viewBox="0 0 20 20"
+          fill="currentColor"
+        >
+          <path
+            fill-rule="evenodd"
+            d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+            clip-rule="evenodd"></path>
         </svg>
         Add Model
       </Button>
@@ -100,20 +122,23 @@ const modelIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text
           placeholder="e.g. gpt-4o, claude-3-opus-20240229"
           required
         />
-        <p class="text-xs text-base-content/50 -mt-2">Must match the provider's API model identifier.</p>
-        <Input
-          label="API Key"
-          name="api_key"
-          type="password"
-          placeholder="sk-..."
-          required
-        />
-        <p class="text-xs text-base-content/50 -mt-2">Stored securely using AES-256-GCM encryption.</p>
+        <p class="text-xs text-base-content/50 -mt-2">
+          Must match the provider's API model identifier.
+        </p>
+        <Input label="API Key" name="api_key" type="password" placeholder="sk-..." required />
+        <p class="text-xs text-base-content/50 -mt-2">
+          Stored securely using AES-256-GCM encryption.
+        </p>
         <div class="form-control w-full">
           <label class="label" for="notes">
             <span class="label-text">Notes (Optional)</span>
           </label>
-          <textarea id="notes" name="notes" rows="2" class="textarea textarea-bordered w-full" placeholder="Internal notes about this model..."></textarea>
+          <textarea
+            id="notes"
+            name="notes"
+            rows="2"
+            class="textarea textarea-bordered w-full"
+            placeholder="Internal notes about this model..."></textarea>
         </div>
         <div class="modal-action">
           <button type="button" class="btn" onclick="add_model_modal.close()">Cancel</button>
@@ -131,62 +156,71 @@ const modelIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text
 
   <!-- Models List -->
   <Card>
-    {models.length > 0 ? (
-      <div class="overflow-x-auto">
-        <table class="table table-zebra w-full">
-          <thead>
-            <tr>
-              <th>Status</th>
-              <th>Provider / Model</th>
-              <th>Usage</th>
-              <th>Created</th>
-              <th class="text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody id="models-body">
-            {models.map(model => (
-              <tr data-id={model.id}>
-                <td>
-                  <input
-                    type="checkbox"
-                    class="toggle toggle-success"
-                    checked={model.is_active}
-                    data-id={model.id}
-                    data-active={model.is_active.toString()}
-                  />
-                </td>
-                <td>
-                  <div>
-                    <div class="font-medium">{model.model_name}</div>
-                    <div class="text-sm text-base-content/50 capitalize">{model.provider}</div>
-                    {model.notes && <div class="text-xs text-base-content/40 mt-0.5">{model.notes}</div>}
-                  </div>
-                </td>
-                <td class="text-base-content/70">
-                  {model.usage_count} evaluations
-                </td>
-                <td class="text-base-content/70">
-                  {new Date(model.created_at).toLocaleDateString()}
-                </td>
-                <td>
-                  <div class="flex justify-end gap-2">
-                    <button class="test-btn btn btn-xs btn-ghost text-primary" data-id={model.id}>Test</button>
-                    <button class="delete-btn btn btn-xs btn-ghost text-error" data-id={model.id}>Delete</button>
-                  </div>
-                </td>
+    {
+      models.length > 0 ? (
+        <div class="overflow-x-auto">
+          <table class="table table-zebra w-full">
+            <thead>
+              <tr>
+                <th>Status</th>
+                <th>Provider / Model</th>
+                <th>Usage</th>
+                <th>Created</th>
+                <th class="text-right">Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    ) : (
-      <EmptyState
-        title="No models configured"
-        description="Add your first AI model to start evaluating."
-        icon={modelIcon}
-        action={{ label: 'Add Model', onClick: "document.getElementById('add-model-modal').showModal()" }}
-      />
-    )}
+            </thead>
+            <tbody id="models-body">
+              {models.map((model) => (
+                <tr data-id={model.id}>
+                  <td>
+                    <input
+                      type="checkbox"
+                      class="toggle toggle-success"
+                      checked={model.is_active}
+                      data-id={model.id}
+                      data-active={model.is_active.toString()}
+                    />
+                  </td>
+                  <td>
+                    <div>
+                      <div class="font-medium">{model.model_name}</div>
+                      <div class="text-sm text-base-content/50 capitalize">{model.provider}</div>
+                      {model.notes && (
+                        <div class="text-xs text-base-content/40 mt-0.5">{model.notes}</div>
+                      )}
+                    </div>
+                  </td>
+                  <td class="text-base-content/70">{model.usage_count} evaluations</td>
+                  <td class="text-base-content/70">
+                    {new Date(model.created_at).toLocaleDateString()}
+                  </td>
+                  <td>
+                    <div class="flex justify-end gap-2">
+                      <button class="test-btn btn btn-xs btn-ghost text-primary" data-id={model.id}>
+                        Test
+                      </button>
+                      <button class="delete-btn btn btn-xs btn-ghost text-error" data-id={model.id}>
+                        Delete
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <EmptyState
+          title="No models configured"
+          description="Add your first AI model to start evaluating."
+          icon={modelIcon}
+          action={{
+            label: 'Add Model',
+            onClick: "document.getElementById('add-model-modal').showModal()",
+          }}
+        />
+      )
+    }
   </Card>
 </Layout>
 
@@ -225,7 +259,7 @@ const modelIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text
         const response = await fetch('/api/models', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data)
+          body: JSON.stringify(data),
         });
 
         const result = await response.json();
@@ -241,7 +275,6 @@ const modelIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text
         addToast(`Model ${result.model_name} added successfully!`, 'success');
         // Refresh page to show new model
         setTimeout(() => window.location.reload(), 1500);
-
       } catch (error) {
         addToast(error instanceof Error ? error.message : 'An error occurred', 'error');
       } finally {
@@ -252,7 +285,7 @@ const modelIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text
   }
 
   // Toggle Active Status
-  document.querySelectorAll('.toggle').forEach(btn => {
+  document.querySelectorAll('.toggle').forEach((btn) => {
     btn.addEventListener('change', async (e) => {
       const target = e.currentTarget as HTMLInputElement;
       const id = target.dataset.id;
@@ -262,7 +295,7 @@ const modelIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text
         const response = await fetch(`/api/models/${id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ is_active: newActive })
+          body: JSON.stringify({ is_active: newActive }),
         });
 
         if (!response.ok) {
@@ -270,7 +303,6 @@ const modelIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text
         }
 
         target.dataset.active = newActive.toString();
-
       } catch {
         addToast('Failed to update model status', 'error');
         // Revert the toggle
@@ -280,7 +312,7 @@ const modelIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text
   });
 
   // Delete Model
-  document.querySelectorAll('.delete-btn').forEach(btn => {
+  document.querySelectorAll('.delete-btn').forEach((btn) => {
     btn.addEventListener('click', async (e) => {
       const target = e.currentTarget as HTMLButtonElement;
       const id = target.dataset.id;
@@ -294,7 +326,7 @@ const modelIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text
 
       try {
         const response = await fetch(`/api/models/${id}`, {
-          method: 'DELETE'
+          method: 'DELETE',
         });
 
         if (!response.ok) {
@@ -310,7 +342,6 @@ const modelIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text
         if (document.querySelectorAll('tbody tr').length === 0) {
           window.location.reload();
         }
-
       } catch (error) {
         addToast(error instanceof Error ? error.message : 'Failed to delete model', 'error');
         target.disabled = false;
@@ -320,7 +351,7 @@ const modelIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text
   });
 
   // Test Connection
-  document.querySelectorAll('.test-btn').forEach(btn => {
+  document.querySelectorAll('.test-btn').forEach((btn) => {
     btn.addEventListener('click', async (e) => {
       const target = e.currentTarget as HTMLButtonElement;
       const id = target.dataset.id;
@@ -331,7 +362,7 @@ const modelIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text
 
       try {
         const response = await fetch(`/api/models/${id}/test-connection`, {
-          method: 'POST'
+          method: 'POST',
         });
 
         const data = await response.json();
@@ -341,7 +372,6 @@ const modelIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text
         }
 
         addToast('Connection successful! Model is ready to use.', 'success');
-
       } catch (error) {
         addToast(error instanceof Error ? error.message : 'Connection failed', 'error');
       } finally {
@@ -359,7 +389,9 @@ const modelIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text
         const data = await response.json();
 
         // Remove sensitive data
-        const exportData = data.models.map(({ api_key_encrypted: _api_key_encrypted, ...rest }: any) => rest);
+        const exportData = data.models.map(
+          ({ api_key_encrypted: _api_key_encrypted, ...rest }: any) => rest
+        );
 
         const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
         const url = window.URL.createObjectURL(blob);
@@ -403,45 +435,54 @@ const modelIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text
           importBtn.textContent = 'Importing...';
 
           for (const model of models) {
-             if (!model.provider || !model.model_name) {
-               console.warn('Skipping invalid model entry', model);
-               continue;
-             }
+            if (!model.provider || !model.model_name) {
+              console.warn('Skipping invalid model entry', model);
+              continue;
+            }
 
-             if (!model.api_key) {
-               console.warn(`Skipping ${model.model_name}: missing API key`);
-               failCount++;
-               continue;
-             }
+            if (!model.api_key) {
+              console.warn(`Skipping ${model.model_name}: missing API key`);
+              failCount++;
+              continue;
+            }
 
-             try {
-               const response = await fetch('/api/models', {
-                 method: 'POST',
-                 headers: { 'Content-Type': 'application/json' },
-                 body: JSON.stringify({
-                   provider: model.provider,
-                   model_name: model.model_name,
-                   api_key: model.api_key,
-                   notes: model.notes
-                 })
-               });
+            try {
+              const response = await fetch('/api/models', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  provider: model.provider,
+                  model_name: model.model_name,
+                  api_key: model.api_key,
+                  notes: model.notes,
+                }),
+              });
 
-               if (response.ok) successCount++;
-               else failCount++;
-             } catch {
-               failCount++;
-             }
+              if (response.ok) successCount++;
+              else failCount++;
+            } catch {
+              failCount++;
+            }
           }
 
           if (successCount > 0) {
-            addToast(`Imported ${successCount} models. ${failCount > 0 ? `(${failCount} failed)` : ''}`, 'success');
+            addToast(
+              `Imported ${successCount} models. ${failCount > 0 ? `(${failCount} failed)` : ''}`,
+              'success'
+            );
             setTimeout(() => window.location.reload(), 2000);
           } else {
-            addToast(`Import failed. No valid models with API keys found. ${failCount} entries skipped.`, 'error');
+            addToast(
+              `Import failed. No valid models with API keys found. ${failCount} entries skipped.`,
+              'error'
+            );
           }
-
         } catch (error) {
-          addToast('Failed to parse import file: ' + (error instanceof Error ? error.message : 'Unknown error'), 'error');
+          addToast(
+            'Failed to parse import file: ' +
+              (error instanceof Error ? error.message : 'Unknown error'),
+            'error'
+          );
         } finally {
           importBtn.disabled = false;
           importBtn.textContent = 'Import';

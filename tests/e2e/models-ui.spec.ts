@@ -48,8 +48,8 @@ test.describe('Models Page UI', () => {
     await page.goto('/models');
 
     // Check for either the table OR the empty state
-    const hasTable = await page.locator('table').count() > 0;
-    const hasEmptyState = await page.locator('text=No models configured').count() > 0;
+    const hasTable = (await page.locator('table').count()) > 0;
+    const hasEmptyState = (await page.locator('text=No models configured').count()) > 0;
 
     // One of these should be true
     expect(hasTable || hasEmptyState).toBe(true);

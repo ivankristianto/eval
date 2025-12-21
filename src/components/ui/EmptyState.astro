@@ -21,15 +21,13 @@ const { title, description, icon, action } = Astro.props;
     <div class="max-w-md">
       <h1 class="text-2xl font-bold mb-2">{title}</h1>
       <p class="py-4 text-base-content/70">{description}</p>
-      {action && (
-        <Button 
-          variant="primary" 
-          href={action.href} 
-          onclick={action.onClick}
-        >
-          {action.label}
-        </Button>
-      )}
+      {
+        action && (
+          <Button variant="primary" href={action.href} onclick={action.onClick}>
+            {action.label}
+          </Button>
+        )
+      }
     </div>
   </div>
 </div>
