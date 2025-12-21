@@ -52,27 +52,11 @@ const templateIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 t
     <p class="mt-2 text-base-content/70">Saved evaluation configurations for quick reuse.</p>
   </div>
 
-  <!-- Error Banner -->
-  <div id="error-banner" class="hidden alert alert-error mb-6">
-    <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-    </svg>
-    <span id="error-message"></span>
-  </div>
-
-  <!-- Success Banner -->
-  <div id="success-banner" class="hidden alert alert-success mb-6">
-    <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-    </svg>
-    <span id="success-message"></span>
-  </div>
-
   <!-- Templates List -->
   <Card>
     {templates.length > 0 ? (
       <div class="overflow-x-auto">
-        <table class="table table-zebra">
+        <table class="table table-zebra w-full">
           <thead>
             <tr>
               <th>Name</th>
@@ -86,7 +70,7 @@ const templateIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 t
           </thead>
           <tbody id="templates-body">
             {templates.map(template => (
-              <tr data-id={template.id}>
+              <tr data-id={template.id} class="hover:bg-base-200 transition-colors">
                 <td>
                   <div class="font-medium">{template.name}</div>
                   {template.description && (
@@ -117,7 +101,7 @@ const templateIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 t
                       Run
                     </button>
                     <a
-                      href={`/history?template=${template.id}`}
+                      href={`/?template=${template.id}`}
                       class="btn btn-xs btn-ghost text-base-content/70"
                     >
                       History
@@ -147,23 +131,7 @@ const templateIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 t
 </Layout>
 
 <script>
-  const errorBanner = document.getElementById('error-banner') as HTMLDivElement;
-  const errorMessage = document.getElementById('error-message') as HTMLSpanElement;
-  const successBanner = document.getElementById('success-banner') as HTMLDivElement;
-  const successMessage = document.getElementById('success-message') as HTMLSpanElement;
-
-  function showError(message: string) {
-    errorMessage.textContent = message;
-    errorBanner.classList.remove('hidden');
-    successBanner.classList.add('hidden');
-  }
-
-  function showSuccess(message: string) {
-    successMessage.textContent = message;
-    successBanner.classList.remove('hidden');
-    errorBanner.classList.add('hidden');
-    setTimeout(() => successBanner.classList.add('hidden'), 5000);
-  }
+  import { addToast } from '../lib/toastStore';
 
   // Run template
   document.querySelectorAll('.run-btn').forEach(btn => {
@@ -186,10 +154,11 @@ const templateIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 t
           throw new Error(data.message || 'Failed to run template');
         }
 
-        // Redirect to home with evaluation ID
-        window.location.href = `/?evaluation=${data.evaluation_id}`;
+        addToast('Template run started', 'success');
+        // Redirect to evaluation details (using new route logic)
+        window.location.href = `/evaluations/${data.evaluation_id}`;
       } catch (error) {
-        showError(error instanceof Error ? error.message : 'Failed to run template');
+        addToast(error instanceof Error ? error.message : 'Failed to run template', 'error');
         target.disabled = false;
         target.textContent = 'Run';
       }
@@ -224,14 +193,14 @@ const templateIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 t
         const row = target.closest('tr');
         if (row) row.remove();
 
-        showSuccess('Template deleted successfully');
+        addToast('Template deleted successfully', 'success');
 
         // If no rows left, reload to show empty state
         if (document.querySelectorAll('tbody tr').length === 0) {
           window.location.reload();
         }
       } catch (error) {
-        showError(error instanceof Error ? error.message : 'Failed to delete template');
+        addToast(error instanceof Error ? error.message : 'Failed to delete template', 'error');
         target.disabled = false;
       }
     });

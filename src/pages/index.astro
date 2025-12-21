@@ -1,394 +1,176 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import Card from '../components/ui/Card.astro';
+import Badge from '../components/ui/Badge.astro';
+import Button from '../components/ui/Button.astro';
+import EmptyState from '../components/ui/EmptyState.astro';
 import NewEvaluationModal from '../components/NewEvaluationModal.astro';
-import EvaluationDetailsDrawer from '../components/EvaluationDetailsDrawer.astro';
-import TemplateManager from '../components/TemplateManager.astro';
-import { getModels, getEvaluation, getResults } from '../lib/db';
+import { getEvaluations, getResults } from '../lib/db';
 
 // Get query params
 const url = Astro.url;
-const evaluationId = url.searchParams.get('evaluation');
+const templateId = url.searchParams.get('template');
 
-// Get evaluation data if viewing an existing evaluation
-let evaluationData: {
+// Get evaluations
+let evaluations: Array<{
   id: string;
   instruction_text: string;
   accuracy_rubric: string;
-  expected_output?: string;
-  partial_credit_concepts?: string[];
   status: string;
   created_at: string;
-  results: Array<{
-    model_id: string;
-    model_name: string;
-    provider: string;
-    response_text?: string;
-    execution_time_ms?: number;
-    input_tokens?: number;
-    output_tokens?: number;
-    total_tokens?: number;
-    accuracy_score?: number;
-    accuracy_reasoning?: string;
-    status: string;
-  }>;
-} | null = null;
+  completed_at?: string;
+  best_accuracy?: number;
+  fastest_model?: { model_name: string; execution_time_ms: number };
+  result_count: number;
+}> = [];
 
-if (evaluationId) {
-  try {
-    const evaluation = getEvaluation(evaluationId);
-    if (evaluation) {
-      const results = getResults(evaluationId);
-      evaluationData = {
-        id: evaluation.id,
-        instruction_text: evaluation.instruction_text,
-        accuracy_rubric: evaluation.accuracy_rubric,
-        expected_output: evaluation.expected_output,
-        partial_credit_concepts: evaluation.partial_credit_concepts,
-        status: evaluation.status,
-        created_at: evaluation.created_at,
-        results: results.map(r => ({
-          model_id: r.model_id,
-          model_name: r.model_name,
-          provider: r.provider,
-          response_text: r.response_text,
-          execution_time_ms: r.execution_time_ms,
-          input_tokens: r.input_tokens,
-          output_tokens: r.output_tokens,
-          total_tokens: r.total_tokens,
-          accuracy_score: r.accuracy_score,
-          accuracy_reasoning: r.accuracy_reasoning,
-          status: r.status
-        }))
-      };
+try {
+  const rawEvaluations = getEvaluations(templateId || undefined, 50, 0);
+
+  evaluations = rawEvaluations.map(e => {
+    const results = getResults(e.id);
+    const completedResults = results.filter(r => r.status === 'completed');
+
+    let bestAccuracy: number | undefined;
+    let fastestModel: { model_name: string; execution_time_ms: number } | undefined;
+
+    if (completedResults.length > 0) {
+      const best = completedResults.reduce((a, b) =>
+        (a.accuracy_score || 0) > (b.accuracy_score || 0) ? a : b
+      );
+      bestAccuracy = best.accuracy_score;
+
+      const fastest = completedResults.reduce((a, b) =>
+        (a.execution_time_ms || Infinity) < (b.execution_time_ms || Infinity) ? a : b
+      );
+      if (fastest.execution_time_ms !== undefined) {
+        fastestModel = {
+          model_name: fastest.model_name,
+          execution_time_ms: fastest.execution_time_ms
+        };
+      }
     }
-  } catch {
-    // Evaluation not found
+
+    return {
+      id: e.id,
+      instruction_text: e.instruction_text.substring(0, 100),
+      accuracy_rubric: e.accuracy_rubric,
+      status: e.status,
+      created_at: e.created_at,
+      completed_at: e.completed_at,
+      best_accuracy: bestAccuracy,
+      fastest_model: fastestModel,
+      result_count: results.length
+    };
+  });
+} catch {
+  // Database may not be initialized
+}
+
+// Icon for empty state
+const emptyIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-base-content/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+</svg>`;
+
+// Helper function to get status variant
+function getStatusVariant(status: string): 'warning' | 'info' | 'success' | 'error' | 'neutral' {
+  switch (status) {
+    case 'pending': return 'warning';
+    case 'running': return 'info';
+    case 'completed': return 'success';
+    case 'failed': return 'error';
+    default: return 'neutral';
   }
 }
 ---
 
-<Layout title="Eval AI - AI Model Evaluation Framework">
-  <!-- New Evaluation Modal -->
+<Layout title="Evaluation History - Eval AI">
   <NewEvaluationModal />
 
-  <!-- Template Manager Modal -->
-  <TemplateManager />
-
-  <!-- Evaluation Details Drawer -->
-  <EvaluationDetailsDrawer />
-
-  <!-- Main Content -->
-  <Card>
-    <!-- Header -->
-    <div class="flex items-center justify-between mb-6">
-      <div>
-        <h1 class="text-2xl font-bold">Evaluation Results</h1>
-        {evaluationData && (
-          <p class="text-sm text-base-content/60 mt-1">
-            {new Date(evaluationData.created_at).toLocaleString()}
-          </p>
-        )}
-      </div>
-      <div class="flex items-center gap-3">
-        <!-- Status -->
-        <div id="evaluation-status" class={evaluationData ? '' : 'hidden'}>
-          <span id="status-badge" class={`badge ${evaluationData?.status === 'completed' ? 'badge-success' : evaluationData?.status === 'failed' ? 'badge-error' : 'badge-warning'}`}>
-            {evaluationData?.status || 'Pending'}
-          </span>
-        </div>
-        <!-- Save as Template -->
-        <button id="save-template-btn" class={`btn btn-sm btn-outline ${evaluationData?.results?.length ? '' : 'hidden'}`}>
-          Save as Template
-        </button>
-      </div>
+  <div class="flex items-center justify-between mb-8">
+    <div>
+      <h1 class="text-3xl font-bold">Evaluation History</h1>
+      <p class="mt-2 text-base-content/70">
+        All past evaluation runs and their results.
+      </p>
     </div>
+    <Button variant="primary" onclick="document.getElementById('new-evaluation-modal').showModal()">
+      New Evaluation
+    </Button>
+  </div>
 
-    <!-- Results Table -->
-    <div id="results-container" class={evaluationData?.results?.length ? '' : 'hidden'}>
+  <!-- History List -->
+  <Card>
+    {evaluations.length > 0 ? (
       <div class="overflow-x-auto">
-        <table class="table table-zebra w-full" id="results-table">
+        <table class="table table-zebra w-full">
           <thead>
-            <tr class="bg-base-200">
-              <th>Model Name</th>
+            <tr>
+              <th>Instruction</th>
+              <th>Rubric</th>
+              <th>Models</th>
+              <th>Best Accuracy</th>
+              <th>Fastest Model</th>
               <th>Status</th>
-              <th>Time (ms)</th>
-              <th>Total Tokens</th>
-              <th>Accuracy Score</th>
+              <th>Date</th>
+              <th>Actions</th>
             </tr>
           </thead>
-          <tbody id="results-body">
-            {evaluationData?.results?.map((result, index) => (
-              <tr
-                class="cursor-pointer hover:bg-base-200 transition-colors"
-                data-result-index={index}
-              >
-                <td>
-                  <div class="font-medium">{result.model_name}</div>
-                  <div class="text-xs text-base-content/50">{result.provider}</div>
+          <tbody>
+            {evaluations.map(evaluation => (
+              <tr class="hover:bg-base-200 transition-colors">
+                <td class="max-w-xs">
+                  <div class="truncate text-sm font-medium" title={evaluation.instruction_text}>
+                    {evaluation.instruction_text}
+                  </div>
                 </td>
                 <td>
-                  <span class={`badge ${result.status === 'completed' ? 'badge-success' : result.status === 'failed' ? 'badge-error' : 'badge-warning'}`}>
-                    {result.status === 'completed' ? 'Completed' : result.status === 'failed' ? 'Failed' : 'Pending'}
-                  </span>
+                  <Badge variant="ghost" size="sm">
+                    {evaluation.accuracy_rubric.replace('_', ' ')}
+                  </Badge>
                 </td>
-                <td>{result.execution_time_ms ?? '-'}</td>
-                <td>{result.total_tokens ?? '-'}</td>
+                <td>{evaluation.result_count}</td>
                 <td>
-                  <span class={`font-semibold ${result.accuracy_score === 100 ? 'text-success' : result.accuracy_score === 0 ? 'text-error' : ''}`}>
-                    {result.accuracy_score !== undefined ? `${result.accuracy_score}%` : '-'}
-                  </span>
+                  {evaluation.best_accuracy !== undefined ? (
+                    <span class="font-semibold text-success">{evaluation.best_accuracy}%</span>
+                  ) : '-'}
+                </td>
+                <td>
+                  {evaluation.fastest_model ? (
+                    <div class="text-sm">
+                      <div class="font-medium">{evaluation.fastest_model.model_name}</div>
+                      <div class="text-base-content/50">{evaluation.fastest_model.execution_time_ms}ms</div>
+                    </div>
+                  ) : '-'}
+                </td>
+                <td>
+                  <Badge variant={getStatusVariant(evaluation.status)}>
+                    {evaluation.status.charAt(0).toUpperCase() + evaluation.status.slice(1)}
+                  </Badge>
+                </td>
+                <td class="text-sm text-base-content/70">
+                  {new Date(evaluation.created_at).toLocaleString()}
+                </td>
+                <td>
+                  <a
+                    href={`/evaluations/${evaluation.id}`}
+                    class="btn btn-xs btn-ghost text-primary"
+                  >
+                    View
+                  </a>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-    </div>
-
-    <!-- Empty State -->
-    <div id="empty-state" class={evaluationData?.results?.length ? 'hidden' : 'text-center py-16'}>
-      <svg class="mx-auto h-16 w-16 text-base-content/30" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-      </svg>
-      <h3 class="mt-4 text-lg font-medium">No evaluation results yet</h3>
-      <p class="mt-2 text-base-content/60">Click "New Evaluation" to compare AI models.</p>
-    </div>
-
-    <!-- Loading/Polling State -->
-    <div id="polling-state" class="hidden">
-      <div class="flex items-center justify-center py-8">
-        <span class="loading loading-spinner loading-lg"></span>
-        <span class="ml-3 text-base-content/70">Running evaluation...</span>
-      </div>
-      <div id="model-statuses" class="flex flex-wrap gap-2 justify-center mt-4"></div>
-    </div>
+    ) : (
+      <EmptyState
+        title="No evaluations yet"
+        description="Run your first evaluation to compare AI models."
+        icon={emptyIcon}
+        action={{ label: 'Start Evaluation', onClick: "document.getElementById('new-evaluation-modal').showModal()" }}
+      />
+    )}
   </Card>
 </Layout>
-
-<!-- Pass evaluation data from server to client -->
-<script is:inline define:vars={{ evaluationData }}>
-  window.__EVALUATION_DATA__ = evaluationData;
-</script>
-
-<script>
-  // State
-  let currentEvaluationId: string | null = null;
-  let pollingInterval: number | null = null;
-  let currentResults: Array<any> = [];
-  let currentInstructionText: string = '';
-  let currentExpectedOutput: string = '';
-
-  // DOM Elements
-  const resultsContainer = document.getElementById('results-container');
-  const resultsBody = document.getElementById('results-body');
-  const emptyState = document.getElementById('empty-state');
-  const pollingState = document.getElementById('polling-state');
-  const modelStatuses = document.getElementById('model-statuses');
-  const evaluationStatus = document.getElementById('evaluation-status');
-  const statusBadge = document.getElementById('status-badge');
-  const saveTemplateBtn = document.getElementById('save-template-btn');
-
-  // Initialize with existing data
-  function initializeWithEvaluationData() {
-    const evalData = (window as any).__EVALUATION_DATA__;
-    if (!evalData) return;
-
-    currentEvaluationId = evalData.id;
-    currentResults = evalData.results || [];
-    currentInstructionText = evalData.instruction_text;
-    currentExpectedOutput = evalData.expected_output || '';
-
-    // Setup row click handlers
-    setupRowClickHandlers();
-  }
-
-  // Setup click handlers for result rows
-  function setupRowClickHandlers() {
-    const rows = document.querySelectorAll('[data-result-index]');
-    rows.forEach(row => {
-      row.addEventListener('click', () => {
-        const index = parseInt((row as HTMLElement).dataset.resultIndex || '0', 10);
-        const result = currentResults[index];
-        if (result && (window as any).showEvaluationDetails) {
-          (window as any).showEvaluationDetails({
-            modelName: result.model_name,
-            prompt: currentInstructionText,
-            expectedOutput: currentExpectedOutput,
-            response: result.response_text || '[No response]',
-            reasoning: result.accuracy_reasoning || 'No reasoning available',
-            executionTime: result.execution_time_ms,
-            accuracyScore: result.accuracy_score,
-            inputTokens: result.input_tokens,
-            outputTokens: result.output_tokens
-          });
-        }
-      });
-    });
-  }
-
-  // Get badge variant based on status
-  function getStatusBadgeClass(status: string): string {
-    switch (status) {
-      case 'completed': return 'badge-success';
-      case 'running': return 'badge-info';
-      case 'failed': return 'badge-error';
-      default: return 'badge-warning';
-    }
-  }
-
-  // Update status badge
-  function updateStatusBadge(status: string) {
-    if (statusBadge) {
-      statusBadge.textContent = status.charAt(0).toUpperCase() + status.slice(1);
-      statusBadge.className = `badge ${getStatusBadgeClass(status)}`;
-    }
-    if (evaluationStatus) {
-      evaluationStatus.classList.remove('hidden');
-    }
-  }
-
-  // Render model statuses during polling
-  function renderModelStatuses(results: Array<{ model_name: string; status: string }>) {
-    if (!modelStatuses) return;
-    modelStatuses.innerHTML = results.map(r => `
-      <span class="badge ${getStatusBadgeClass(r.status)}">${r.model_name}: ${r.status}</span>
-    `).join('');
-  }
-
-  // Escape HTML
-  function escapeHtml(text: string): string {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-  }
-
-  // Render results table
-  function renderResults(results: Array<any>) {
-    if (!resultsBody) return;
-
-    currentResults = results;
-
-    resultsBody.innerHTML = results.map((r, index) => `
-      <tr class="cursor-pointer hover:bg-base-200 transition-colors" data-result-index="${index}">
-        <td>
-          <div class="font-medium">${escapeHtml(r.model_name)}</div>
-          <div class="text-xs text-base-content/50">${escapeHtml(r.provider)}</div>
-        </td>
-        <td>
-          <span class="badge ${getStatusBadgeClass(r.status)}">
-            ${r.status === 'completed' ? 'Completed' : r.status === 'failed' ? 'Failed' : 'Pending'}
-          </span>
-        </td>
-        <td>${r.execution_time_ms ?? '-'}</td>
-        <td>${r.total_tokens ?? '-'}</td>
-        <td>
-          <span class="font-semibold ${r.accuracy_score === 100 ? 'text-success' : r.accuracy_score === 0 ? 'text-error' : ''}">
-            ${r.accuracy_score !== undefined ? `${r.accuracy_score}%` : '-'}
-          </span>
-        </td>
-      </tr>
-    `).join('');
-
-    // Re-setup click handlers
-    setupRowClickHandlers();
-  }
-
-  // Poll for status updates
-  async function pollStatus() {
-    if (!currentEvaluationId) return;
-
-    try {
-      const response = await fetch(`/api/evaluation-status?evaluation_id=${currentEvaluationId}`);
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to get status');
-      }
-
-      updateStatusBadge(data.overall_status);
-      renderModelStatuses(data.results);
-
-      if (data.overall_status === 'completed' || data.overall_status === 'failed') {
-        stopPolling();
-
-        if (data.overall_status === 'completed') {
-          // Fetch full results
-          const resultsResponse = await fetch(`/api/results?evaluation_id=${currentEvaluationId}`);
-          const resultsData = await resultsResponse.json();
-
-          if (resultsResponse.ok) {
-            renderResults(resultsData.results);
-            if (resultsContainer) resultsContainer.classList.remove('hidden');
-            if (emptyState) emptyState.classList.add('hidden');
-            if (pollingState) pollingState.classList.add('hidden');
-            if (saveTemplateBtn) saveTemplateBtn.classList.remove('hidden');
-          }
-        } else {
-          alert(data.error_message || 'Evaluation failed');
-          if (pollingState) pollingState.classList.add('hidden');
-          if (emptyState) emptyState.classList.remove('hidden');
-        }
-      }
-    } catch (error) {
-      console.error('Polling error:', error);
-    }
-  }
-
-  function startPolling() {
-    pollingInterval = window.setInterval(pollStatus, 500);
-  }
-
-  function stopPolling() {
-    if (pollingInterval) {
-      clearInterval(pollingInterval);
-      pollingInterval = null;
-    }
-  }
-
-  // Listen for evaluation started event from modal
-  window.addEventListener('evaluation-started', ((e: CustomEvent) => {
-    const { evaluationId, models } = e.detail;
-    currentEvaluationId = evaluationId;
-
-    // Show polling state
-    if (emptyState) emptyState.classList.add('hidden');
-    if (resultsContainer) resultsContainer.classList.add('hidden');
-    if (pollingState) pollingState.classList.remove('hidden');
-
-    updateStatusBadge('pending');
-    renderModelStatuses(models);
-
-    // Start polling
-    startPolling();
-
-    // Update URL without reload
-    const newUrl = new URL(window.location.href);
-    newUrl.searchParams.set('evaluation', evaluationId);
-    window.history.pushState({}, '', newUrl.toString());
-  }) as EventListener);
-
-  // Save as template handler
-  if (saveTemplateBtn) {
-    saveTemplateBtn.addEventListener('click', () => {
-      if (typeof (window as any).openTemplateModal === 'function' && currentEvaluationId) {
-        const evalData = (window as any).__EVALUATION_DATA__;
-        if (evalData) {
-          (window as any).openTemplateModal({
-            instruction_text: evalData.instruction_text,
-            model_ids: evalData.results.map((r: any) => r.model_id),
-            accuracy_rubric: evalData.accuracy_rubric,
-            expected_output: evalData.expected_output,
-            partial_credit_concepts: evalData.partial_credit_concepts
-          });
-        }
-      }
-    });
-  }
-
-  // Cleanup
-  window.addEventListener('beforeunload', stopPolling);
-
-  // Initialize
-  initializeWithEvaluationData();
-</script>

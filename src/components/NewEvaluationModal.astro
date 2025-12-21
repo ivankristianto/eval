@@ -135,22 +135,16 @@ try {
 </dialog>
 
 <script>
+  import { addToast } from '../lib/toastStore';
+
   function initNewEvaluationModal() {
     const modal = document.getElementById('new-evaluation-modal') as HTMLDialogElement;
     const form = document.getElementById('evaluation-form') as HTMLFormElement;
     const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
     const rubricSelect = document.getElementById('rubric_type') as HTMLSelectElement;
     const conceptsContainer = document.getElementById('concepts-container') as HTMLDivElement;
-    const newEvaluationBtn = document.getElementById('new-evaluation-btn') as HTMLButtonElement;
 
     if (!modal || !form) return;
-
-    // Open modal when navbar button is clicked
-    if (newEvaluationBtn) {
-      newEvaluationBtn.addEventListener('click', () => {
-        modal.showModal();
-      });
-    }
 
     // Show/hide partial credit concepts based on rubric selection
     if (rubricSelect && conceptsContainer) {
@@ -167,7 +161,7 @@ try {
       const modelIds = formData.getAll('model_ids') as string[];
 
       if (modelIds.length === 0) {
-        alert('Please select at least one model');
+        addToast('Please select at least one model', 'warning');
         return;
       }
 
@@ -206,17 +200,13 @@ try {
         modal.close();
         form.reset();
 
-        // Dispatch custom event with evaluation data
-        window.dispatchEvent(new CustomEvent('evaluation-started', {
-          detail: {
-            evaluationId: data.evaluation_id,
-            models: data.models
-          }
-        }));
+        addToast('Evaluation started!', 'success');
+        
+        // Redirect to new dedicated evaluation page
+        window.location.href = `/evaluations/${data.evaluation_id}`;
 
       } catch (error) {
-        alert(error instanceof Error ? error.message : 'An error occurred');
-      } finally {
+        addToast(error instanceof Error ? error.message : 'An error occurred', 'error');
         submitBtn.disabled = false;
         submitBtn.textContent = 'Run Evaluation';
       }

@@ -75,22 +75,6 @@ const modelIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text
     </div>
   </div>
 
-  <!-- Error Banner -->
-  <div id="error-banner" class="hidden alert alert-error mb-6">
-    <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-    </svg>
-    <span id="error-message"></span>
-  </div>
-
-  <!-- Success Banner -->
-  <div id="success-banner" class="hidden alert alert-success mb-6">
-    <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-    </svg>
-    <span id="success-message"></span>
-  </div>
-
   <!-- Add Model Modal -->
   <dialog id="add-model-modal" class="modal">
     <div class="modal-box">
@@ -149,7 +133,7 @@ const modelIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text
   <Card>
     {models.length > 0 ? (
       <div class="overflow-x-auto">
-        <table class="table">
+        <table class="table table-zebra w-full">
           <thead>
             <tr>
               <th>Status</th>
@@ -165,7 +149,7 @@ const modelIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text
                 <td>
                   <input
                     type="checkbox"
-                    class="toggle toggle-success toggle-active-btn"
+                    class="toggle toggle-success"
                     checked={model.is_active}
                     data-id={model.id}
                     data-active={model.is_active.toString()}
@@ -207,14 +191,12 @@ const modelIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text
 </Layout>
 
 <script>
+  import { addToast } from '../lib/toastStore';
+
   // Elements
   const addModelBtn = document.getElementById('add-model-btn') as HTMLButtonElement;
   const addModelModal = document.getElementById('add-model-modal') as HTMLDialogElement;
   const addModelForm = document.getElementById('add-model-form') as HTMLFormElement;
-  const errorBanner = document.getElementById('error-banner') as HTMLDivElement;
-  const errorMessage = document.getElementById('error-message') as HTMLSpanElement;
-  const successBanner = document.getElementById('success-banner') as HTMLDivElement;
-  const successMessage = document.getElementById('success-message') as HTMLSpanElement;
   const importBtn = document.getElementById('import-btn') as HTMLButtonElement;
   const exportBtn = document.getElementById('export-btn') as HTMLButtonElement;
   const importFile = document.getElementById('import-file') as HTMLInputElement;
@@ -226,66 +208,51 @@ const modelIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text
     });
   }
 
-  // Helper functions
-  function showError(message: string) {
-    errorMessage.textContent = message;
-    errorBanner.classList.remove('hidden');
-    successBanner.classList.add('hidden');
-    window.scrollTo(0, 0);
-  }
-
-  function showSuccess(message: string) {
-    successMessage.textContent = message;
-    successBanner.classList.remove('hidden');
-    errorBanner.classList.add('hidden');
-    window.scrollTo(0, 0);
-    setTimeout(() => successBanner.classList.add('hidden'), 5000);
-  }
-
   // Add Model Submit
-  addModelForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
+  if (addModelForm) {
+    addModelForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
 
-    const submitBtn = addModelForm.querySelector('button[type="submit"]') as HTMLButtonElement;
-    const originalText = submitBtn.textContent;
-    submitBtn.disabled = true;
-    submitBtn.textContent = 'Verifying & Adding...';
-    errorBanner.classList.add('hidden');
+      const submitBtn = addModelForm.querySelector('button[type="submit"]') as HTMLButtonElement;
+      const originalText = submitBtn.textContent;
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Verifying & Adding...';
 
-    const formData = new FormData(addModelForm);
-    const data = Object.fromEntries(formData.entries());
+      const formData = new FormData(addModelForm);
+      const data = Object.fromEntries(formData.entries());
 
-    try {
-      const response = await fetch('/api/models', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-      });
+      try {
+        const response = await fetch('/api/models', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
 
-      const result = await response.json();
+        const result = await response.json();
 
-      if (!response.ok) {
-         throw new Error(result.message || result.error || 'Failed to add model');
+        if (!response.ok) {
+          throw new Error(result.message || result.error || 'Failed to add model');
+        }
+
+        // Close modal
+        addModelModal.close();
+        addModelForm.reset();
+
+        addToast(`Model ${result.model_name} added successfully!`, 'success');
+        // Refresh page to show new model
+        setTimeout(() => window.location.reload(), 1500);
+
+      } catch (error) {
+        addToast(error instanceof Error ? error.message : 'An error occurred', 'error');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
       }
-
-      // Close modal
-      addModelModal.close();
-      addModelForm.reset();
-
-      showSuccess(`Model ${result.model_name} added successfully!`);
-      // Refresh page to show new model
-      setTimeout(() => window.location.reload(), 1500);
-
-    } catch (error) {
-      showError(error instanceof Error ? error.message : 'An error occurred');
-    } finally {
-      submitBtn.disabled = false;
-      submitBtn.textContent = originalText;
-    }
-  });
+    });
+  }
 
   // Toggle Active Status
-  document.querySelectorAll('.toggle-active-btn').forEach(btn => {
+  document.querySelectorAll('.toggle').forEach(btn => {
     btn.addEventListener('change', async (e) => {
       const target = e.currentTarget as HTMLInputElement;
       const id = target.dataset.id;
@@ -305,7 +272,7 @@ const modelIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text
         target.dataset.active = newActive.toString();
 
       } catch (error) {
-        showError('Failed to update model status');
+        addToast('Failed to update model status', 'error');
         // Revert the toggle
         target.checked = !newActive;
       }
@@ -337,7 +304,7 @@ const modelIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text
 
         // Remove row
         target.closest('tr')?.remove();
-        showSuccess('Model deleted successfully');
+        addToast('Model deleted successfully', 'success');
 
         // If no rows left, reload to show empty state
         if (document.querySelectorAll('tbody tr').length === 0) {
@@ -345,7 +312,7 @@ const modelIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text
         }
 
       } catch (error) {
-        showError(error instanceof Error ? error.message : 'Failed to delete model');
+        addToast(error instanceof Error ? error.message : 'Failed to delete model', 'error');
         target.disabled = false;
         target.textContent = 'Delete';
       }
@@ -373,10 +340,10 @@ const modelIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text
           throw new Error(data.message || 'Connection test failed');
         }
 
-        showSuccess('Connection successful! Model is ready to use.');
+        addToast('Connection successful! Model is ready to use.', 'success');
 
       } catch (error) {
-        showError(error instanceof Error ? error.message : 'Connection failed');
+        addToast(error instanceof Error ? error.message : 'Connection failed', 'error');
       } finally {
         target.disabled = false;
         target.textContent = originalText;
@@ -385,99 +352,103 @@ const modelIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text
   });
 
   // Export
-  exportBtn.addEventListener('click', async () => {
-    try {
-      const response = await fetch('/api/models');
-      const data = await response.json();
+  if (exportBtn) {
+    exportBtn.addEventListener('click', async () => {
+      try {
+        const response = await fetch('/api/models');
+        const data = await response.json();
 
-      // Remove sensitive data
-      const exportData = data.models.map(({ api_key_encrypted, ...rest }: any) => rest);
+        // Remove sensitive data
+        const exportData = data.models.map(({ api_key_encrypted, ...rest }: any) => rest);
 
-      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `eval-models-export-${new Date().toISOString().split('T')[0]}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      showError('Failed to export models');
-    }
-  });
+        const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `eval-models-export-${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      } catch (error) {
+        addToast('Failed to export models', 'error');
+      }
+    });
+  }
 
   // Import
-  importBtn.addEventListener('click', () => {
-    importFile.click();
-  });
+  if (importBtn && importFile) {
+    importBtn.addEventListener('click', () => {
+      importFile.click();
+    });
 
-  importFile.addEventListener('change', async (e) => {
-    const file = (e.target as HTMLInputElement).files?.[0];
-    if (!file) return;
+    importFile.addEventListener('change', async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = async (event) => {
-      try {
-        const content = event.target?.result as string;
-        const models = JSON.parse(content);
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        try {
+          const content = event.target?.result as string;
+          const models = JSON.parse(content);
 
-        if (!Array.isArray(models)) {
-          throw new Error('Invalid file format: expected an array of models');
+          if (!Array.isArray(models)) {
+            throw new Error('Invalid file format: expected an array of models');
+          }
+
+          let successCount = 0;
+          let failCount = 0;
+
+          importBtn.disabled = true;
+          importBtn.textContent = 'Importing...';
+
+          for (const model of models) {
+             if (!model.provider || !model.model_name) {
+               console.warn('Skipping invalid model entry', model);
+               continue;
+             }
+
+             if (!model.api_key) {
+               console.warn(`Skipping ${model.model_name}: missing API key`);
+               failCount++;
+               continue;
+             }
+
+             try {
+               const response = await fetch('/api/models', {
+                 method: 'POST',
+                 headers: { 'Content-Type': 'application/json' },
+                 body: JSON.stringify({
+                   provider: model.provider,
+                   model_name: model.model_name,
+                   api_key: model.api_key,
+                   notes: model.notes
+                 })
+               });
+
+               if (response.ok) successCount++;
+               else failCount++;
+             } catch {
+               failCount++;
+             }
+          }
+
+          if (successCount > 0) {
+            addToast(`Imported ${successCount} models. ${failCount > 0 ? `(${failCount} failed)` : ''}`, 'success');
+            setTimeout(() => window.location.reload(), 2000);
+          } else {
+            addToast(`Import failed. No valid models with API keys found. ${failCount} entries skipped.`, 'error');
+          }
+
+        } catch (error) {
+          addToast('Failed to parse import file: ' + (error instanceof Error ? error.message : 'Unknown error'), 'error');
+        } finally {
+          importBtn.disabled = false;
+          importBtn.textContent = 'Import';
+          importFile.value = '';
         }
-
-        let successCount = 0;
-        let failCount = 0;
-
-        importBtn.disabled = true;
-        importBtn.textContent = 'Importing...';
-
-        for (const model of models) {
-           if (!model.provider || !model.model_name) {
-             console.warn('Skipping invalid model entry', model);
-             continue;
-           }
-
-           if (!model.api_key) {
-             console.warn(`Skipping ${model.model_name}: missing API key`);
-             failCount++;
-             continue;
-           }
-
-           try {
-             const response = await fetch('/api/models', {
-               method: 'POST',
-               headers: { 'Content-Type': 'application/json' },
-               body: JSON.stringify({
-                 provider: model.provider,
-                 model_name: model.model_name,
-                 api_key: model.api_key,
-                 notes: model.notes
-               })
-             });
-
-             if (response.ok) successCount++;
-             else failCount++;
-           } catch {
-             failCount++;
-           }
-        }
-
-        if (successCount > 0) {
-          showSuccess(`Imported ${successCount} models. ${failCount > 0 ? `(${failCount} failed)` : ''}`);
-          setTimeout(() => window.location.reload(), 2000);
-        } else {
-          showError(`Import failed. No valid models with API keys found. ${failCount} entries skipped.`);
-        }
-
-      } catch (error) {
-        showError('Failed to parse import file: ' + (error instanceof Error ? error.message : 'Unknown error'));
-      } finally {
-        importBtn.disabled = false;
-        importBtn.textContent = 'Import';
-        importFile.value = '';
-      }
-    };
-    reader.readAsText(file);
-  });
+      };
+      reader.readAsText(file);
+    });
+  }
 </script>
