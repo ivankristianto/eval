@@ -9,5 +9,7 @@
       "Bash(curl:*)",
       "WebFetch(domain:localhost)"
     ]
-  }
+  },
+  "includeCoAuthoredBy": false,
+  "gitAttribution": false
 }
