@@ -378,6 +378,58 @@ export function validateCreateModel(data: unknown): ValidationResult {
   return { valid: true };
 }
 
+// Validation for partial updates to a model configuration
+export function validateUpdateModel(data: unknown): ValidationResult {
+  if (!data || typeof data !== 'object') {
+    return {
+      valid: false,
+      error: {
+        error: 'INVALID_INPUT',
+        message: 'Request body must be a valid JSON object',
+      },
+    };
+  }
+
+  const body = data as Record<string, unknown>;
+
+  if (body.is_active !== undefined && typeof body.is_active !== 'boolean') {
+    return {
+      valid: false,
+      error: {
+        error: 'INVALID_INPUT',
+        message: 'is_active must be a boolean',
+        field: 'is_active',
+      },
+    };
+  }
+
+  if (body.notes !== undefined && typeof body.notes !== 'string') {
+    return {
+      valid: false,
+      error: {
+        error: 'INVALID_INPUT',
+        message: 'notes must be a string',
+        field: 'notes',
+      },
+    };
+  }
+
+  if (body.api_key !== undefined) {
+    if (typeof body.api_key !== 'string' || body.api_key.trim().length === 0) {
+      return {
+        valid: false,
+        error: {
+          error: 'INVALID_API_KEY',
+          message: 'API key must be a non-empty string',
+          field: 'api_key',
+        },
+      };
+    }
+  }
+
+  return { valid: true };
+}
+
 // Composite validation for template creation
 export function validateCreateTemplate(data: unknown): ValidationResult {
   if (!data || typeof data !== 'object') {
