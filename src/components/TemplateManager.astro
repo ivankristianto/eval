@@ -4,7 +4,11 @@
 ---
 
 <!-- Template Manager Modal (using HTML Popover API) -->
-<div id="template-modal" popover class="bg-white rounded-lg shadow-xl max-w-md w-full mx-auto mt-[10vh] p-0 border-0">
+<div
+  id="template-modal"
+  popover
+  class="bg-white rounded-lg shadow-xl max-w-md w-full mx-auto mt-[10vh] p-0 border-0"
+>
   <form id="template-form">
     <div class="px-4 pt-5 pb-4 sm:p-6">
       <div class="sm:flex sm:items-start">
@@ -107,7 +111,9 @@
   const templateModal = document.getElementById('template-modal') as HTMLElement;
   const templateForm = document.getElementById('template-form') as HTMLFormElement;
   const templateNameInput = document.getElementById('template-name') as HTMLInputElement;
-  const templateDescriptionInput = document.getElementById('template-description') as HTMLTextAreaElement;
+  const templateDescriptionInput = document.getElementById(
+    'template-description'
+  ) as HTMLTextAreaElement;
   const templateSummary = document.getElementById('template-summary') as HTMLUListElement;
   const templateError = document.getElementById('template-error') as HTMLDivElement;
   const templateErrorText = document.getElementById('template-error-text') as HTMLParagraphElement;
@@ -126,9 +132,10 @@
     templateSubmitBtn.textContent = 'Save Template';
 
     // Populate summary
-    const instructionPreview = data.instruction_text.length > 50
-      ? data.instruction_text.substring(0, 50) + '...'
-      : data.instruction_text;
+    const instructionPreview =
+      data.instruction_text.length > 50
+        ? data.instruction_text.substring(0, 50) + '...'
+        : data.instruction_text;
 
     templateSummary.innerHTML = `
       <li><span class="font-medium">Instruction:</span> "${instructionPreview}"</li>
@@ -143,9 +150,9 @@
 
   function formatRubric(rubric: string): string {
     const rubricNames: Record<string, string> = {
-      'exact_match': 'Exact Match',
-      'partial_credit': 'Partial Credit',
-      'semantic_similarity': 'Semantic Similarity'
+      exact_match: 'Exact Match',
+      partial_credit: 'Partial Credit',
+      semantic_similarity: 'Semantic Similarity',
     };
     return rubricNames[rubric] || rubric;
   }
@@ -181,8 +188,8 @@
           model_ids: pendingTemplateData.model_ids,
           accuracy_rubric: pendingTemplateData.accuracy_rubric,
           expected_output: pendingTemplateData.expected_output,
-          partial_credit_concepts: pendingTemplateData.partial_credit_concepts
-        })
+          partial_credit_concepts: pendingTemplateData.partial_credit_concepts,
+        }),
       });
 
       const data = await response.json();
@@ -202,7 +209,7 @@
         templateSubmitBtn.disabled = false;
         templateSubmitBtn.textContent = 'Save Template';
       }
-    } catch (error) {
+    } catch {
       showTemplateError('Network error. Please try again.');
       templateSubmitBtn.disabled = false;
       templateSubmitBtn.textContent = 'Save Template';

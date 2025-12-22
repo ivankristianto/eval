@@ -1,0 +1,61 @@
+---
+export interface Props {
+  label?: string;
+  name: string;
+  type?: 'text' | 'password' | 'email' | 'number' | 'search' | 'url';
+  placeholder?: string;
+  value?: string | number;
+  required?: boolean;
+  disabled?: boolean;
+  error?: string;
+  class?: string;
+  [key: string]: any;
+}
+
+const {
+  label,
+  name,
+  type = 'text',
+  placeholder,
+  value,
+  required = false,
+  disabled = false,
+  error,
+  class: className = '',
+  ...rest
+} = Astro.props;
+
+const inputClasses = ['input input-bordered w-full', error ? 'input-error' : '', className]
+  .filter(Boolean)
+  .join(' ');
+---
+
+<div class="form-control w-full">
+  {
+    label && (
+      <label class="label" for={name}>
+        <span class="label-text">
+          {label} {required && <span class="text-error">*</span>}
+        </span>
+      </label>
+    )
+  }
+  <input
+    id={name}
+    name={name}
+    type={type}
+    placeholder={placeholder}
+    value={value}
+    required={required}
+    disabled={disabled}
+    class={inputClasses}
+    {...rest}
+  />
+  {
+    error && (
+      <label class="label">
+        <span class="label-text-alt text-error">{error}</span>
+      </label>
+    )
+  }
+</div>

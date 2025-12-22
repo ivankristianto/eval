@@ -1,0 +1,33 @@
+---
+export interface Props {
+  variant?:
+    | 'primary'
+    | 'secondary'
+    | 'accent'
+    | 'ghost'
+    | 'info'
+    | 'success'
+    | 'warning'
+    | 'error'
+    | 'neutral';
+  size?: 'lg' | 'md' | 'sm' | 'xs';
+  outline?: boolean;
+  class?: string;
+}
+
+const { variant = 'neutral', size = 'md', outline = false, class: className = '' } = Astro.props;
+
+const classes = [
+  'badge',
+  `badge-${variant}`,
+  `badge-${size}`,
+  outline ? 'badge-outline' : '',
+  className,
+]
+  .filter(Boolean)
+  .join(' ');
+---
+
+<span class={classes}>
+  <slot />
+</span>

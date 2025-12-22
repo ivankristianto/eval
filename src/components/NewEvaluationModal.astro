@@ -1,0 +1,247 @@
+---
+import { getModels } from '../lib/db';
+
+// Get active models for the form
+let models: { id: string; model_name: string; provider: string }[] = [];
+try {
+  models = getModels(true).map((m) => ({
+    id: m.id,
+    model_name: m.model_name,
+    provider: m.provider,
+  }));
+} catch {
+  // Database may not be initialized yet
+}
+---
+
+<dialog id="new-evaluation-modal" class="modal">
+  <div class="modal-box max-w-2xl">
+    <form method="dialog">
+      <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+    </form>
+    <h3 class="font-bold text-lg mb-6">New Evaluation</h3>
+
+    <form id="evaluation-form" class="space-y-4">
+      <!-- Instruction -->
+      <div class="form-control w-full">
+        <label class="label" for="instruction">
+          <span class="label-text font-medium">Instruction</span>
+        </label>
+        <textarea
+          id="instruction"
+          name="instruction"
+          rows="4"
+          class="textarea textarea-bordered w-full"
+          placeholder="Enter the instruction to evaluate..."
+          required></textarea>
+      </div>
+
+      <!-- Two column layout for rubric and expected output -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Rubric Type -->
+        <div class="form-control w-full">
+          <label class="label" for="rubric_type">
+            <span class="label-text font-medium">Accuracy Rubric</span>
+          </label>
+          <select
+            id="rubric_type"
+            name="rubric_type"
+            class="select select-bordered w-full"
+            required
+          >
+            <option value="exact_match">Exact Match</option>
+            <option value="partial_credit">Partial Credit</option>
+            <option value="semantic_similarity">Semantic Similarity</option>
+          </select>
+        </div>
+
+        <!-- Expected Output -->
+        <div class="form-control w-full">
+          <label class="label" for="expected_output">
+            <span class="label-text font-medium">Expected Output</span>
+          </label>
+          <input
+            type="text"
+            id="expected_output"
+            name="expected_output"
+            class="input input-bordered w-full"
+            placeholder="Expected output..."
+            required
+          />
+        </div>
+      </div>
+
+      <!-- Partial Credit Concepts (conditional) -->
+      <div id="concepts-container" class="hidden form-control w-full">
+        <label class="label" for="partial_credit_concepts">
+          <span class="label-text font-medium">Key Concepts (comma-separated)</span>
+        </label>
+        <textarea
+          id="partial_credit_concepts"
+          name="partial_credit_concepts"
+          rows="2"
+          class="textarea textarea-bordered w-full"
+          placeholder="concept1, concept2, concept3..."></textarea>
+      </div>
+
+      <!-- Model Selection -->
+      <div class="form-control w-full">
+        <label class="label">
+          <span class="label-text font-medium">Select Models</span>
+        </label>
+        {
+          models.length > 0 ? (
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2 p-3 bg-base-200 rounded-lg">
+              {models.map((model) => (
+                <label class="flex items-center gap-2 cursor-pointer p-2 hover:bg-base-300 rounded">
+                  <input
+                    type="checkbox"
+                    name="model_ids"
+                    value={model.id}
+                    class="checkbox checkbox-primary checkbox-sm"
+                  />
+                  <span class="label-text">
+                    {model.model_name}
+                    <span class="text-base-content/50 text-xs ml-1">({model.provider})</span>
+                  </span>
+                </label>
+              ))}
+            </div>
+          ) : (
+            <div class="alert alert-warning mt-2">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="stroke-current shrink-0 h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                />
+              </svg>
+              <span>
+                No models configured.{' '}
+                <a href="/models" class="link">
+                  Add models
+                </a>{' '}
+                first.
+              </span>
+            </div>
+          )
+        }
+      </div>
+
+      <!-- Actions -->
+      <div class="modal-action">
+        <button
+          type="button"
+          class="btn"
+          onclick="document.getElementById('new-evaluation-modal').close()"
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          id="submit-btn"
+          class="btn btn-primary"
+          disabled={models.length === 0}
+        >
+          Run Evaluation
+        </button>
+      </div>
+    </form>
+  </div>
+  <form method="dialog" class="modal-backdrop">
+    <button>close</button>
+  </form>
+</dialog>
+
+<script>
+  import { addToast } from '../lib/toastStore';
+
+  function initNewEvaluationModal() {
+    const modal = document.getElementById('new-evaluation-modal') as HTMLDialogElement;
+    const form = document.getElementById('evaluation-form') as HTMLFormElement;
+    const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
+    const rubricSelect = document.getElementById('rubric_type') as HTMLSelectElement;
+    const conceptsContainer = document.getElementById('concepts-container') as HTMLDivElement;
+
+    if (!modal || !form) return;
+
+    // Show/hide partial credit concepts based on rubric selection
+    if (rubricSelect && conceptsContainer) {
+      rubricSelect.addEventListener('change', () => {
+        conceptsContainer.classList.toggle('hidden', rubricSelect.value !== 'partial_credit');
+      });
+    }
+
+    // Form submission
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const formData = new FormData(form);
+      const modelIds = formData.getAll('model_ids') as string[];
+
+      if (modelIds.length === 0) {
+        addToast('Please select at least one model', 'warning');
+        return;
+      }
+
+      const instruction = formData.get('instruction') as string;
+      const rubricType = formData.get('rubric_type') as string;
+      const expectedOutput = formData.get('expected_output') as string;
+      const conceptsRaw = formData.get('partial_credit_concepts') as string;
+
+      const partialCreditConcepts =
+        rubricType === 'partial_credit' && conceptsRaw
+          ? conceptsRaw
+              .split(',')
+              .map((c) => c.trim())
+              .filter(Boolean)
+          : undefined;
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Running...';
+
+      try {
+        const response = await fetch('/api/evaluate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            instruction,
+            model_ids: modelIds,
+            rubric_type: rubricType,
+            expected_output: expectedOutput,
+            partial_credit_concepts: partialCreditConcepts,
+          }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || 'Failed to start evaluation');
+        }
+
+        // Close modal
+        modal.close();
+        form.reset();
+
+        addToast('Evaluation started!', 'success');
+
+        // Redirect to new dedicated evaluation page
+        window.location.href = `/evaluations/${data.evaluation_id}`;
+      } catch (error) {
+        addToast(error instanceof Error ? error.message : 'An error occurred', 'error');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Run Evaluation';
+      }
+    });
+  }
+
+  // Initialize
+  initNewEvaluationModal();
+  document.addEventListener('astro:page-load', initNewEvaluationModal);
+</script>

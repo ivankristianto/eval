@@ -10,16 +10,17 @@ Compare and evaluate multiple AI models (OpenAI, Anthropic, Google) against spec
   - **Exact Match**: For strict output requirements.
   - **Partial Credit**: For responses requiring specific key concepts.
   - **Semantic Similarity**: AI-based scoring for open-ended responses.
-- **Evaluation History**: Track model performance over time with historical data.
+- **Evaluation History Dashboard**: Homepage shows history with status badges, empty states, and quick actions.
+- **Dedicated Evaluation Details**: View results on `/evaluations/[id]` with semantic status styling.
 - **Templates**: Save evaluation configurations to rerun benchmarks easily.
-- **Visual Reports**: Sortable tables and status indicators for quick analysis.
+- **Modern UI**: DaisyUI components, breadcrumbs, responsive navbar, and theme switching.
 
 ## Tech Stack
 
 - **Runtime**: Node.js (v22+)
 - **Framework**: Astro (SSR)
 - **Database**: SQLite (better-sqlite3)
-- **Styling**: Tailwind CSS
+- **Styling**: Tailwind CSS + DaisyUI
 - **Testing**: Vitest, Playwright
 
 ## Quick Start
@@ -60,6 +61,7 @@ Compare and evaluate multiple AI models (OpenAI, Anthropic, Google) against spec
    ```
 
    Visit `http://localhost:3000` to start evaluating models.
+   The homepage shows evaluation history; details live at `/evaluations/[id]`.
 
 ## Usage Guide
 
@@ -99,13 +101,18 @@ See `specs/001-eval-ai-models/contracts/` for detailed API specifications.
   ```
 - **API Key Issues**: Ensure your keys in `.env` are correct and have active quotas.
 
-## Testing
+## Run Tests
 
-Run the test suite to ensure everything is working:
+Run the test suites to ensure everything is working:
 
 ```bash
 npm test          # Unit and Integration tests
 npm run test:e2e  # End-to-End tests
+```
+
+If Playwright browsers are missing, install them once:
+```bash
+npx playwright install
 ```
 
 ## License

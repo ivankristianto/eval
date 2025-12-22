@@ -26,19 +26,19 @@ export class OpenAIClient implements ModelClient {
     const startTime = performance.now();
 
     // Newer OpenAI models (o1, o3, gpt-5+) require max_completion_tokens instead of max_tokens
-    const useMaxCompletionTokens = 
-      this.modelName.startsWith('o1') || 
-      this.modelName.startsWith('o3') || 
+    const useMaxCompletionTokens =
+      this.modelName.startsWith('o1') ||
+      this.modelName.startsWith('o3') ||
       this.modelName.startsWith('gpt-5');
-      
-    const tokenParam = useMaxCompletionTokens 
-      ? { max_completion_tokens: 4096 } 
+
+    const tokenParam = useMaxCompletionTokens
+      ? { max_completion_tokens: 4096 }
       : { max_tokens: 4096 };
 
     const response = await this.client.chat.completions.create({
       model: this.modelName,
       messages: [{ role: 'user', content: instruction }],
-      ...tokenParam
+      ...tokenParam,
     } as any);
 
     const executionTime = Math.round(performance.now() - startTime);
@@ -51,7 +51,7 @@ export class OpenAIClient implements ModelClient {
       inputTokens: usage?.prompt_tokens || 0,
       outputTokens: usage?.completion_tokens || 0,
       totalTokens: usage?.total_tokens || 0,
-      executionTime
+      executionTime,
     };
   }
 
@@ -82,12 +82,12 @@ export class AnthropicClient implements ModelClient {
     const response = await this.client.messages.create({
       model: this.modelName,
       max_tokens: 4096,
-      messages: [{ role: 'user', content: instruction }]
+      messages: [{ role: 'user', content: instruction }],
     });
 
     const executionTime = Math.round(performance.now() - startTime);
 
-    const textContent = response.content.find(block => block.type === 'text');
+    const textContent = response.content.find((block) => block.type === 'text');
     const responseText = textContent && 'text' in textContent ? textContent.text : '';
 
     return {
@@ -95,7 +95,7 @@ export class AnthropicClient implements ModelClient {
       inputTokens: response.usage.input_tokens,
       outputTokens: response.usage.output_tokens,
       totalTokens: response.usage.input_tokens + response.usage.output_tokens,
-      executionTime
+      executionTime,
     };
   }
 
@@ -105,7 +105,7 @@ export class AnthropicClient implements ModelClient {
       await this.client.messages.create({
         model: this.modelName,
         max_tokens: 10,
-        messages: [{ role: 'user', content: 'Hi' }]
+        messages: [{ role: 'user', content: 'Hi' }],
       });
       return true;
     } catch {
@@ -143,7 +143,7 @@ export class GoogleClient implements ModelClient {
       inputTokens: usage?.promptTokenCount || 0,
       outputTokens: usage?.candidatesTokenCount || 0,
       totalTokens: usage?.totalTokenCount || 0,
-      executionTime
+      executionTime,
     };
   }
 
@@ -174,7 +174,11 @@ export class ClientFactory {
     }
   }
 
-  static async testConnection(provider: Provider, apiKey: string, modelName: string): Promise<boolean> {
+  static async testConnection(
+    provider: Provider,
+    apiKey: string,
+    modelName: string
+  ): Promise<boolean> {
     const client = this.createClient(provider, apiKey, modelName);
     return client.testConnection();
   }
@@ -182,6 +186,7 @@ export class ClientFactory {
 
 // ===== Helper for semantic similarity scoring =====
 
+// @deprecated: Use getSemanticSimilarityScore from semanticSimilarity.ts
 export async function getSemanticSimilarityScore(
   response: string,
   expectedOutput: string,
@@ -201,33 +206,35 @@ export async function getSemanticSimilarityScore(
     const result = await client.messages.create({
       model: 'claude-3-haiku-20240307',
       max_tokens: 100,
-      messages: [{
-        role: 'user',
-        content: `Compare these two texts for semantic similarity. Rate the similarity from 0 to 100, where 100 means identical meaning.
+      messages: [
+        {
+          role: 'user',
+          content: `Compare these two texts for semantic similarity. Rate the similarity from 0 to 100, where 100 means identical meaning.
 
 Text A: "${response.substring(0, 1000)}"
 
 Text B: "${expectedOutput.substring(0, 1000)}"
 
-Reply with ONLY a JSON object in this exact format: {"score": <number>, "reasoning": "<brief explanation>"}`
-      }]
+Reply with ONLY a JSON object in this exact format: {"score": <number>, "reasoning": "<brief explanation>"}`,
+        },
+      ],
     });
 
-    const textContent = result.content.find(block => block.type === 'text');
+    const textContent = result.content.find((block) => block.type === 'text');
     const text = textContent && 'text' in textContent ? textContent.text : '';
 
     try {
       const parsed = JSON.parse(text);
       return {
         score: Math.min(100, Math.max(0, Math.round(parsed.score))),
-        reasoning: String(parsed.reasoning).substring(0, 500)
+        reasoning: String(parsed.reasoning).substring(0, 500),
       };
     } catch {
       // If parsing fails, try to extract score from text
       const scoreMatch = text.match(/\d+/);
       return {
         score: scoreMatch ? Math.min(100, Math.max(0, parseInt(scoreMatch[0], 10))) : 50,
-        reasoning: 'Semantic similarity score extracted from model response'
+        reasoning: 'Semantic similarity score extracted from model response',
       };
     }
   } catch (error) {
@@ -236,7 +243,11 @@ Reply with ONLY a JSON object in this exact format: {"score": <number>, "reasoni
   }
 }
 
-function fallbackSimilarity(response: string, expectedOutput: string): { score: number; reasoning: string } {
+// @deprecated: Use fallbackSimilarity from semanticSimilarity.ts
+function fallbackSimilarity(
+  response: string,
+  expectedOutput: string
+): { score: number; reasoning: string } {
   // Simple word overlap similarity as fallback
   const responseWords = new Set(response.toLowerCase().split(/\s+/));
   const expectedWords = new Set(expectedOutput.toLowerCase().split(/\s+/));
@@ -252,6 +263,6 @@ function fallbackSimilarity(response: string, expectedOutput: string): { score: 
 
   return {
     score,
-    reasoning: `Fallback word overlap similarity: ${overlap} common words`
+    reasoning: `Fallback word overlap similarity: ${overlap} common words`,
   };
 }

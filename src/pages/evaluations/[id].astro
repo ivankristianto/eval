@@ -1,0 +1,347 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Card from '../../components/ui/Card.astro';
+import Badge from '../../components/ui/Badge.astro';
+import Button from '../../components/ui/Button.astro';
+import Breadcrumbs from '../../components/ui/Breadcrumbs.astro';
+import EvaluationDetailsDrawer from '../../components/EvaluationDetailsDrawer.astro';
+import TemplateManager from '../../components/TemplateManager.astro';
+import { getEvaluation, getResults } from '../../lib/db';
+
+export const prerender = false;
+
+const { id } = Astro.params;
+
+// Get evaluation data
+let evaluationData: {
+  id: string;
+  instruction_text: string;
+  accuracy_rubric: string;
+  expected_output?: string;
+  partial_credit_concepts?: string[];
+  status: string;
+  created_at: string;
+  results: Array<{
+    model_id: string;
+    model_name: string;
+    provider: string;
+    response_text?: string;
+    execution_time_ms?: number;
+    input_tokens?: number;
+    output_tokens?: number;
+    total_tokens?: number;
+    accuracy_score?: number;
+    accuracy_reasoning?: string;
+    status: string;
+  }>;
+} | null = null;
+
+if (id) {
+  try {
+    const evaluation = getEvaluation(id);
+    if (evaluation) {
+      const results = getResults(id);
+      evaluationData = {
+        id: evaluation.id,
+        instruction_text: evaluation.instruction_text,
+        accuracy_rubric: evaluation.accuracy_rubric,
+        expected_output: evaluation.expected_output,
+        partial_credit_concepts: evaluation.partial_credit_concepts,
+        status: evaluation.status,
+        created_at: evaluation.created_at,
+        results: results.map((r) => ({
+          model_id: r.model_id,
+          model_name: r.model_name,
+          provider: r.provider,
+          response_text: r.response_text,
+          execution_time_ms: r.execution_time_ms,
+          input_tokens: r.input_tokens,
+          output_tokens: r.output_tokens,
+          total_tokens: r.total_tokens,
+          accuracy_score: r.accuracy_score,
+          accuracy_reasoning: r.accuracy_reasoning,
+          status: r.status,
+        })),
+      };
+    }
+  } catch (e) {
+    console.error('Failed to fetch evaluation:', e);
+  }
+}
+
+if (!evaluationData) {
+  return Astro.redirect('/404');
+}
+
+const breadcrumbItems = [{ label: 'Home', href: '/' }, { label: 'Evaluation Details' }];
+
+// Helper to get status badge class
+function getStatusBadgeVariant(status: string) {
+  switch (status) {
+    case 'completed':
+      return 'success';
+    case 'failed':
+      return 'error';
+    case 'running':
+      return 'info';
+    default:
+      return 'warning';
+  }
+}
+---
+
+<Layout title="Evaluation Details - Eval AI">
+  <Breadcrumbs items={breadcrumbItems} />
+
+  <EvaluationDetailsDrawer />
+  <TemplateManager />
+
+  <div class="mb-6 flex justify-between items-start">
+    <div>
+      <h1 class="text-2xl font-bold mb-2">Evaluation Results</h1>
+      <div class="flex items-center gap-2 text-sm text-base-content/70">
+        <span>{new Date(evaluationData.created_at).toLocaleString()}</span>
+        <span>•</span>
+        <Badge variant={getStatusBadgeVariant(evaluationData.status)}>
+          {evaluationData.status.charAt(0).toUpperCase() + evaluationData.status.slice(1)}
+        </Badge>
+      </div>
+    </div>
+
+    <div class={evaluationData.results.length > 0 ? '' : 'hidden'} id="actions-container">
+      <Button variant="secondary" size="sm" id="save-template-btn"> Save as Template </Button>
+    </div>
+  </div>
+
+  <Card class="mb-6">
+    <div class="space-y-4">
+      <div>
+        <h3 class="font-semibold text-sm text-base-content/70 mb-1">Instruction</h3>
+        <div class="bg-base-200 p-4 rounded-lg whitespace-pre-wrap">
+          {evaluationData.instruction_text}
+        </div>
+      </div>
+
+      {
+        evaluationData.accuracy_rubric && (
+          <div>
+            <h3 class="font-semibold text-sm text-base-content/70 mb-1">Accuracy Rubric</h3>
+            <div class="bg-base-200 p-4 rounded-lg font-mono text-sm">
+              {evaluationData.accuracy_rubric}
+            </div>
+          </div>
+        )
+      }
+
+      {
+        evaluationData.expected_output && (
+          <div>
+            <h3 class="font-semibold text-sm text-base-content/70 mb-1">Expected Output</h3>
+            <div class="bg-base-200 p-4 rounded-lg font-mono text-sm">
+              {evaluationData.expected_output}
+            </div>
+          </div>
+        )
+      }
+
+      {
+        evaluationData.partial_credit_concepts && (
+          <div>
+            <h3 class="font-semibold text-sm text-base-content/70 mb-1">Concepts</h3>
+            <div class="bg-base-200 p-4 rounded-lg font-mono text-sm">
+              {evaluationData.partial_credit_concepts}
+            </div>
+          </div>
+        )
+      }
+    </div>
+  </Card>
+
+  <Card title="Model Results">
+    <div id="results-container">
+      <div class="overflow-x-auto">
+        <table class="table table-zebra w-full" id="results-table">
+          <thead>
+            <tr>
+              <th>Model</th>
+              <th>Status</th>
+              <th>Time (ms)</th>
+              <th>Total Tokens</th>
+              <th>Accuracy</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="results-body">
+            {
+              evaluationData.results.map((result, index) => (
+                <tr
+                  class="cursor-pointer hover:bg-base-200 transition-colors"
+                  data-result-index={index}
+                >
+                  <td>
+                    <div class="font-medium">{result.model_name}</div>
+                    <div class="text-xs text-base-content/50 capitalize">{result.provider}</div>
+                  </td>
+                  <td>
+                    <Badge variant={getStatusBadgeVariant(result.status)} size="sm">
+                      {result.status}
+                    </Badge>
+                  </td>
+                  <td>{result.execution_time_ms ?? '-'}</td>
+                  <td>{result.total_tokens ?? '-'}</td>
+                  <td>
+                    <span
+                      class={`font-semibold ${result.accuracy_score === 100 ? 'text-success' : result.accuracy_score === 0 ? 'text-error' : ''}`}
+                    >
+                      {result.accuracy_score !== undefined ? `${result.accuracy_score}%` : '-'}
+                    </span>
+                  </td>
+                  <td>
+                    <a href="#/" class="btn btn-xs btn-ghost text-primary">
+                      View
+                    </a>
+                  </td>
+                </tr>
+              ))
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Polling State Indicator -->
+    <div id="polling-indicator" class="hidden text-center py-4 text-base-content/50 text-sm">
+      <span class="loading loading-spinner loading-xs mr-2"></span>
+      Updating results...
+    </div>
+  </Card>
+</Layout>
+
+<!-- Pass data to client for drawer and polling -->
+<script is:inline define:vars={{ evaluationData }}>
+  window.__EVALUATION_DATA__ = evaluationData;
+</script>
+
+<script>
+  let currentResults = (window as any).__EVALUATION_DATA__?.results || [];
+  const evaluationId = (window as any).__EVALUATION_DATA__?.id;
+  const evaluationStatus = (window as any).__EVALUATION_DATA__?.status;
+  const saveTemplateBtn = document.getElementById('save-template-btn');
+
+  // Save as Template
+  if (saveTemplateBtn) {
+    saveTemplateBtn.addEventListener('click', () => {
+      const evalData = (window as any).__EVALUATION_DATA__;
+      if (evalData && (window as any).openTemplateModal) {
+        (window as any).openTemplateModal({
+          instruction_text: evalData.instruction_text,
+          model_ids: evalData.results.map((r: any) => r.model_id),
+          accuracy_rubric: evalData.accuracy_rubric,
+          expected_output: evalData.expected_output,
+          partial_credit_concepts: evalData.partial_credit_concepts,
+        });
+      }
+    });
+  }
+
+  // Setup row click handlers
+  function setupRowClickHandlers() {
+    const rows = document.querySelectorAll('[data-result-index]');
+    rows.forEach((row) => {
+      row.addEventListener('click', () => {
+        const index = parseInt((row as HTMLElement).dataset.resultIndex || '0', 10);
+        const result = currentResults[index];
+        const evalData = (window as any).__EVALUATION_DATA__;
+
+        if (result && (window as any).showEvaluationDetails) {
+          (window as any).showEvaluationDetails({
+            modelName: result.model_name,
+            prompt: evalData.instruction_text,
+            expectedOutput: evalData.expected_output,
+            response: result.response_text || '[No response]',
+            reasoning: result.accuracy_reasoning || 'No reasoning available',
+            executionTime: result.execution_time_ms,
+            accuracyScore: result.accuracy_score,
+            inputTokens: result.input_tokens,
+            outputTokens: result.output_tokens,
+          });
+        }
+      });
+    });
+  }
+
+  // Initial setup
+  setupRowClickHandlers();
+
+  // Polling logic if running
+  if (evaluationStatus === 'pending' || evaluationStatus === 'running') {
+    const pollingIndicator = document.getElementById('polling-indicator');
+    if (pollingIndicator) pollingIndicator.classList.remove('hidden');
+
+    const interval = setInterval(async () => {
+      try {
+        const response = await fetch(`/api/results?evaluation_id=${evaluationId}`);
+        if (!response.ok) return;
+
+        const data = await response.json();
+        const results = data.results;
+        currentResults = results;
+
+        // Update Table
+        const tbody = document.getElementById('results-body');
+        if (tbody) {
+          tbody.innerHTML = results
+            .map((r: any, index: number) => {
+              // Reconstruct badge variant logic
+              let badgeClass = 'badge-warning';
+              if (r.status === 'completed') badgeClass = 'badge-success';
+              if (r.status === 'failed') badgeClass = 'badge-error';
+              if (r.status === 'running') badgeClass = 'badge-info';
+
+              let scoreClass = '';
+              if (r.accuracy_score === 100) scoreClass = 'text-success';
+              if (r.accuracy_score === 0) scoreClass = 'text-error';
+
+              return `
+              <tr class="cursor-pointer hover:bg-base-200 transition-colors" data-result-index="${index}">
+                <td>
+                  <div class="font-medium">${r.model_name}</div>
+                  <div class="text-xs text-base-content/50 capitalize">${r.provider}</div>
+                </td>
+                <td>
+                  <span class="badge ${badgeClass} badge-sm">${r.status || 'pending'}</span>
+                </td>
+                <td>${r.execution_time_ms ?? '-'}</td>
+                <td>${r.total_tokens ?? '-'}</td>
+                <td>
+                  <span class="font-semibold ${scoreClass}">
+                    ${r.accuracy_score !== undefined ? `${r.accuracy_score}%` : '-'}
+                  </span>
+                </td>
+                <td>
+                  <a href="#/" class="btn btn-xs btn-ghost text-primary">View</a>
+                </td>
+              </tr>
+             `;
+            })
+            .join('');
+
+          setupRowClickHandlers();
+        }
+
+        // Check if all complete
+        const allDone = results.every(
+          (r: any) => r.status === 'completed' || r.status === 'failed'
+        );
+        if (allDone) {
+          clearInterval(interval);
+          if (pollingIndicator) pollingIndicator.classList.add('hidden');
+          // Reload to update main status header
+          window.location.reload();
+        }
+      } catch (e) {
+        console.error('Polling error', e);
+      }
+    }, 2000);
+  }
+</script>

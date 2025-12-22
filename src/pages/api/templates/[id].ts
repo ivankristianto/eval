@@ -2,20 +2,13 @@
 // Individual template endpoints
 
 import type { APIRoute } from 'astro';
-import {
-  getTemplateById,
-  updateTemplate,
-  deleteTemplate,
-  getModelById
-} from '../../../lib/db';
+import { getTemplateById, updateTemplate, deleteTemplate, getModelById } from '../../../lib/db';
 import {
   validateTemplateName,
   validateDescription,
   validateInstruction,
   validateRubricType,
   validateModelIds,
-  validateExpectedOutput,
-  validatePartialCreditConcepts
 } from '../../../lib/validators';
 import type { RubricType } from '../../../lib/types';
 
@@ -25,65 +18,81 @@ export const GET: APIRoute = async ({ params }) => {
     const { id } = params;
 
     if (!id) {
-      return new Response(JSON.stringify({
-        error: 'INVALID_INPUT',
-        message: 'Template ID is required'
-      }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      return new Response(
+        JSON.stringify({
+          error: 'INVALID_INPUT',
+          message: 'Template ID is required',
+        }),
+        {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
     }
 
     const template = getTemplateById(id);
 
     if (!template) {
-      return new Response(JSON.stringify({
-        error: 'TEMPLATE_NOT_FOUND',
-        message: 'Template does not exist',
-        template_id: id
-      }), {
-        status: 404,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      return new Response(
+        JSON.stringify({
+          error: 'TEMPLATE_NOT_FOUND',
+          message: 'Template does not exist',
+          template_id: id,
+        }),
+        {
+          status: 404,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
     }
 
     // Get model details
-    const models = template.model_ids.map(modelId => {
-      const model = getModelById(modelId);
-      return model ? {
-        id: model.id,
-        model_name: model.model_name,
-        provider: model.provider,
-        is_active: model.is_active
-      } : null;
-    }).filter(Boolean);
+    const models = template.model_ids
+      .map((modelId) => {
+        const model = getModelById(modelId);
+        return model
+          ? {
+              id: model.id,
+              model_name: model.model_name,
+              provider: model.provider,
+              is_active: model.is_active,
+            }
+          : null;
+      })
+      .filter(Boolean);
 
-    return new Response(JSON.stringify({
-      id: template.id,
-      name: template.name,
-      description: template.description,
-      instruction_text: template.instruction_text,
-      model_ids: template.model_ids,
-      models,
-      accuracy_rubric: template.accuracy_rubric,
-      expected_output: template.expected_output,
-      partial_credit_concepts: template.partial_credit_concepts,
-      created_at: template.created_at,
-      updated_at: template.updated_at,
-      run_count: template.run_count
-    }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return new Response(
+      JSON.stringify({
+        id: template.id,
+        name: template.name,
+        description: template.description,
+        instruction_text: template.instruction_text,
+        model_ids: template.model_ids,
+        models,
+        accuracy_rubric: template.accuracy_rubric,
+        expected_output: template.expected_output,
+        partial_credit_concepts: template.partial_credit_concepts,
+        created_at: template.created_at,
+        updated_at: template.updated_at,
+        run_count: template.run_count,
+      }),
+      {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
   } catch (error) {
     console.error('GET /api/templates/:id error:', error);
-    return new Response(JSON.stringify({
-      error: 'INTERNAL_ERROR',
-      message: error instanceof Error ? error.message : 'Internal server error'
-    }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return new Response(
+      JSON.stringify({
+        error: 'INTERNAL_ERROR',
+        message: error instanceof Error ? error.message : 'Internal server error',
+      }),
+      {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
   }
 };
 
@@ -93,25 +102,31 @@ export const PATCH: APIRoute = async ({ params, request }) => {
     const { id } = params;
 
     if (!id) {
-      return new Response(JSON.stringify({
-        error: 'INVALID_INPUT',
-        message: 'Template ID is required'
-      }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      return new Response(
+        JSON.stringify({
+          error: 'INVALID_INPUT',
+          message: 'Template ID is required',
+        }),
+        {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
     }
 
     const template = getTemplateById(id);
 
     if (!template) {
-      return new Response(JSON.stringify({
-        error: 'TEMPLATE_NOT_FOUND',
-        message: 'Template does not exist'
-      }), {
-        status: 404,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      return new Response(
+        JSON.stringify({
+          error: 'TEMPLATE_NOT_FOUND',
+          message: 'Template does not exist',
+        }),
+        {
+          status: 404,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
     }
 
     const body = await request.json();
@@ -122,7 +137,7 @@ export const PATCH: APIRoute = async ({ params, request }) => {
       if (!validation.valid) {
         return new Response(JSON.stringify(validation.error), {
           status: 400,
-          headers: { 'Content-Type': 'application/json' }
+          headers: { 'Content-Type': 'application/json' },
         });
       }
     }
@@ -132,7 +147,7 @@ export const PATCH: APIRoute = async ({ params, request }) => {
       if (!validation.valid) {
         return new Response(JSON.stringify(validation.error), {
           status: 400,
-          headers: { 'Content-Type': 'application/json' }
+          headers: { 'Content-Type': 'application/json' },
         });
       }
     }
@@ -142,7 +157,7 @@ export const PATCH: APIRoute = async ({ params, request }) => {
       if (!validation.valid) {
         return new Response(JSON.stringify(validation.error), {
           status: 400,
-          headers: { 'Content-Type': 'application/json' }
+          headers: { 'Content-Type': 'application/json' },
         });
       }
     }
@@ -152,7 +167,7 @@ export const PATCH: APIRoute = async ({ params, request }) => {
       if (!validation.valid) {
         return new Response(JSON.stringify(validation.error), {
           status: 400,
-          headers: { 'Content-Type': 'application/json' }
+          headers: { 'Content-Type': 'application/json' },
         });
       }
     }
@@ -162,7 +177,7 @@ export const PATCH: APIRoute = async ({ params, request }) => {
       if (!validation.valid) {
         return new Response(JSON.stringify(validation.error), {
           status: 400,
-          headers: { 'Content-Type': 'application/json' }
+          headers: { 'Content-Type': 'application/json' },
         });
       }
     }
@@ -184,38 +199,48 @@ export const PATCH: APIRoute = async ({ params, request }) => {
     if (body.model_ids !== undefined) updates.model_ids = body.model_ids;
     if (body.accuracy_rubric !== undefined) updates.accuracy_rubric = body.accuracy_rubric;
     if (body.expected_output !== undefined) updates.expected_output = body.expected_output;
-    if (body.partial_credit_concepts !== undefined) updates.partial_credit_concepts = body.partial_credit_concepts;
+    if (body.partial_credit_concepts !== undefined)
+      updates.partial_credit_concepts = body.partial_credit_concepts;
 
     const updated = updateTemplate(id, updates);
 
     if (!updated) {
-      return new Response(JSON.stringify({
-        error: 'UPDATE_FAILED',
-        message: 'Failed to update template'
-      }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      return new Response(
+        JSON.stringify({
+          error: 'UPDATE_FAILED',
+          message: 'Failed to update template',
+        }),
+        {
+          status: 500,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
     }
 
-    return new Response(JSON.stringify({
-      id: updated.id,
-      name: updated.name,
-      updated_at: updated.updated_at,
-      run_count: updated.run_count
-    }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return new Response(
+      JSON.stringify({
+        id: updated.id,
+        name: updated.name,
+        updated_at: updated.updated_at,
+        run_count: updated.run_count,
+      }),
+      {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
   } catch (error) {
     console.error('PATCH /api/templates/:id error:', error);
-    return new Response(JSON.stringify({
-      error: 'INTERNAL_ERROR',
-      message: error instanceof Error ? error.message : 'Internal server error'
-    }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return new Response(
+      JSON.stringify({
+        error: 'INTERNAL_ERROR',
+        message: error instanceof Error ? error.message : 'Internal server error',
+      }),
+      {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
   }
 };
 
@@ -225,54 +250,69 @@ export const DELETE: APIRoute = async ({ params }) => {
     const { id } = params;
 
     if (!id) {
-      return new Response(JSON.stringify({
-        error: 'INVALID_INPUT',
-        message: 'Template ID is required'
-      }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      return new Response(
+        JSON.stringify({
+          error: 'INVALID_INPUT',
+          message: 'Template ID is required',
+        }),
+        {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
     }
 
     const template = getTemplateById(id);
 
     if (!template) {
-      return new Response(JSON.stringify({
-        error: 'TEMPLATE_NOT_FOUND',
-        message: 'Template does not exist'
-      }), {
-        status: 404,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      return new Response(
+        JSON.stringify({
+          error: 'TEMPLATE_NOT_FOUND',
+          message: 'Template does not exist',
+        }),
+        {
+          status: 404,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
     }
 
     const deleted = deleteTemplate(id);
 
     if (!deleted) {
-      return new Response(JSON.stringify({
-        error: 'DELETE_FAILED',
-        message: 'Failed to delete template'
-      }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      return new Response(
+        JSON.stringify({
+          error: 'DELETE_FAILED',
+          message: 'Failed to delete template',
+        }),
+        {
+          status: 500,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
     }
 
-    return new Response(JSON.stringify({
-      id,
-      message: 'Template deleted successfully'
-    }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return new Response(
+      JSON.stringify({
+        id,
+        message: 'Template deleted successfully',
+      }),
+      {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
   } catch (error) {
     console.error('DELETE /api/templates/:id error:', error);
-    return new Response(JSON.stringify({
-      error: 'INTERNAL_ERROR',
-      message: error instanceof Error ? error.message : 'Internal server error'
-    }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return new Response(
+      JSON.stringify({
+        error: 'INTERNAL_ERROR',
+        message: error instanceof Error ? error.message : 'Internal server error',
+      }),
+      {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
   }
 };

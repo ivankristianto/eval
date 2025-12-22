@@ -21,8 +21,8 @@ export function validateInstruction(instruction: unknown): ValidationResult {
       error: {
         error: 'INVALID_INPUT',
         message: 'instruction must be a non-empty string',
-        field: 'instruction'
-      }
+        field: 'instruction',
+      },
     };
   }
 
@@ -32,8 +32,8 @@ export function validateInstruction(instruction: unknown): ValidationResult {
       error: {
         error: 'INVALID_INPUT',
         message: `instruction must be max ${MAX_INSTRUCTION_LENGTH} characters`,
-        field: 'instruction'
-      }
+        field: 'instruction',
+      },
     };
   }
 
@@ -47,8 +47,8 @@ export function validateRubricType(rubricType: unknown): ValidationResult {
       error: {
         error: 'INVALID_RUBRIC',
         message: `rubric_type must be one of: ${VALID_RUBRIC_TYPES.join(', ')}`,
-        field: 'rubric_type'
-      }
+        field: 'rubric_type',
+      },
     };
   }
 
@@ -62,8 +62,8 @@ export function validateModelIds(modelIds: unknown): ValidationResult {
       error: {
         error: 'INVALID_MODEL_SELECTION',
         message: 'At least one model must be selected',
-        field: 'model_ids'
-      }
+        field: 'model_ids',
+      },
     };
   }
 
@@ -74,8 +74,8 @@ export function validateModelIds(modelIds: unknown): ValidationResult {
         error: {
           error: 'INVALID_MODEL_SELECTION',
           message: 'All model_ids must be valid UUIDs',
-          field: 'model_ids'
-        }
+          field: 'model_ids',
+        },
       };
     }
   }
@@ -90,8 +90,8 @@ export function validateProvider(provider: unknown): ValidationResult {
       error: {
         error: 'INVALID_PROVIDER',
         message: `provider must be one of: ${VALID_PROVIDERS.join(', ')}`,
-        field: 'provider'
-      }
+        field: 'provider',
+      },
     };
   }
 
@@ -105,8 +105,8 @@ export function validateApiKeyFormat(apiKey: unknown, provider: Provider): Valid
       error: {
         error: 'INVALID_API_KEY',
         message: 'API key must be a non-empty string',
-        field: 'api_key'
-      }
+        field: 'api_key',
+      },
     };
   }
 
@@ -120,8 +120,8 @@ export function validateApiKeyFormat(apiKey: unknown, provider: Provider): Valid
             error: 'INVALID_API_KEY',
             message: 'OpenAI API key must start with "sk-"',
             field: 'api_key',
-            details: { provider: 'openai', reason: 'key does not match expected format' }
-          }
+            details: { provider: 'openai', reason: 'key does not match expected format' },
+          },
         };
       }
       break;
@@ -133,8 +133,8 @@ export function validateApiKeyFormat(apiKey: unknown, provider: Provider): Valid
             error: 'INVALID_API_KEY',
             message: 'Anthropic API key must start with "sk-ant-"',
             field: 'api_key',
-            details: { provider: 'anthropic', reason: 'key does not match expected format' }
-          }
+            details: { provider: 'anthropic', reason: 'key does not match expected format' },
+          },
         };
       }
       break;
@@ -147,8 +147,8 @@ export function validateApiKeyFormat(apiKey: unknown, provider: Provider): Valid
             error: 'INVALID_API_KEY',
             message: 'Google API key appears too short',
             field: 'api_key',
-            details: { provider: 'google', reason: 'key does not match expected format' }
-          }
+            details: { provider: 'google', reason: 'key does not match expected format' },
+          },
         };
       }
       break;
@@ -164,8 +164,8 @@ export function validateModelName(modelName: unknown): ValidationResult {
       error: {
         error: 'INVALID_INPUT',
         message: 'model_name must be a non-empty string',
-        field: 'model_name'
-      }
+        field: 'model_name',
+      },
     };
   }
 
@@ -175,8 +175,8 @@ export function validateModelName(modelName: unknown): ValidationResult {
       error: {
         error: 'INVALID_INPUT',
         message: `model_name must be max ${MAX_NAME_LENGTH} characters`,
-        field: 'model_name'
-      }
+        field: 'model_name',
+      },
     };
   }
 
@@ -190,8 +190,8 @@ export function validateTemplateName(name: unknown): ValidationResult {
       error: {
         error: 'INVALID_INPUT',
         message: 'name must be a non-empty string',
-        field: 'name'
-      }
+        field: 'name',
+      },
     };
   }
 
@@ -201,8 +201,8 @@ export function validateTemplateName(name: unknown): ValidationResult {
       error: {
         error: 'INVALID_INPUT',
         message: `name must be max ${MAX_NAME_LENGTH} characters`,
-        field: 'name'
-      }
+        field: 'name',
+      },
     };
   }
 
@@ -220,8 +220,8 @@ export function validateDescription(description: unknown): ValidationResult {
       error: {
         error: 'INVALID_INPUT',
         message: 'description must be a string',
-        field: 'description'
-      }
+        field: 'description',
+      },
     };
   }
 
@@ -231,8 +231,8 @@ export function validateDescription(description: unknown): ValidationResult {
       error: {
         error: 'INVALID_INPUT',
         message: `description must be max ${MAX_DESCRIPTION_LENGTH} characters`,
-        field: 'description'
-      }
+        field: 'description',
+      },
     };
   }
 
@@ -253,8 +253,8 @@ export function validatePartialCreditConcepts(
       error: {
         error: 'MISSING_RUBRIC_CONFIG',
         message: "partial_credit_concepts required when rubric_type is 'partial_credit'",
-        field: 'partial_credit_concepts'
-      }
+        field: 'partial_credit_concepts',
+      },
     };
   }
 
@@ -265,8 +265,8 @@ export function validatePartialCreditConcepts(
         error: {
           error: 'INVALID_INPUT',
           message: 'All concepts must be non-empty strings',
-          field: 'partial_credit_concepts'
-        }
+          field: 'partial_credit_concepts',
+        },
       };
     }
   }
@@ -276,7 +276,7 @@ export function validatePartialCreditConcepts(
 
 export function validateExpectedOutput(
   expectedOutput: unknown,
-  rubricType: RubricType
+  _rubricType: RubricType
 ): ValidationResult {
   // Required for all rubric types
   if (typeof expectedOutput !== 'string' || expectedOutput.trim().length === 0) {
@@ -285,8 +285,8 @@ export function validateExpectedOutput(
       error: {
         error: 'INVALID_INPUT',
         message: 'expected_output is required for accuracy comparison',
-        field: 'expected_output'
-      }
+        field: 'expected_output',
+      },
     };
   }
 
@@ -300,8 +300,8 @@ export function validateUuid(id: unknown): ValidationResult {
       error: {
         error: 'INVALID_INPUT',
         message: 'Invalid UUID format',
-        field: 'id'
-      }
+        field: 'id',
+      },
     };
   }
 
@@ -321,8 +321,8 @@ export function validateCreateEvaluation(data: unknown): ValidationResult {
       valid: false,
       error: {
         error: 'INVALID_INPUT',
-        message: 'Request body must be a valid JSON object'
-      }
+        message: 'Request body must be a valid JSON object',
+      },
     };
   }
 
@@ -337,10 +337,16 @@ export function validateCreateEvaluation(data: unknown): ValidationResult {
   const modelIdsResult = validateModelIds(body.model_ids);
   if (!modelIdsResult.valid) return modelIdsResult;
 
-  const expectedOutputResult = validateExpectedOutput(body.expected_output, body.rubric_type as RubricType);
+  const expectedOutputResult = validateExpectedOutput(
+    body.expected_output,
+    body.rubric_type as RubricType
+  );
   if (!expectedOutputResult.valid) return expectedOutputResult;
 
-  const conceptsResult = validatePartialCreditConcepts(body.partial_credit_concepts, body.rubric_type as RubricType);
+  const conceptsResult = validatePartialCreditConcepts(
+    body.partial_credit_concepts,
+    body.rubric_type as RubricType
+  );
   if (!conceptsResult.valid) return conceptsResult;
 
   return { valid: true };
@@ -353,8 +359,8 @@ export function validateCreateModel(data: unknown): ValidationResult {
       valid: false,
       error: {
         error: 'INVALID_INPUT',
-        message: 'Request body must be a valid JSON object'
-      }
+        message: 'Request body must be a valid JSON object',
+      },
     };
   }
 
@@ -379,8 +385,8 @@ export function validateCreateTemplate(data: unknown): ValidationResult {
       valid: false,
       error: {
         error: 'INVALID_INPUT',
-        message: 'Request body must be a valid JSON object'
-      }
+        message: 'Request body must be a valid JSON object',
+      },
     };
   }
 
@@ -401,10 +407,16 @@ export function validateCreateTemplate(data: unknown): ValidationResult {
   const modelIdsResult = validateModelIds(body.model_ids);
   if (!modelIdsResult.valid) return modelIdsResult;
 
-  const expectedOutputResult = validateExpectedOutput(body.expected_output, body.accuracy_rubric as RubricType);
+  const expectedOutputResult = validateExpectedOutput(
+    body.expected_output,
+    body.accuracy_rubric as RubricType
+  );
   if (!expectedOutputResult.valid) return expectedOutputResult;
 
-  const conceptsResult = validatePartialCreditConcepts(body.partial_credit_concepts, body.accuracy_rubric as RubricType);
+  const conceptsResult = validatePartialCreditConcepts(
+    body.partial_credit_concepts,
+    body.accuracy_rubric as RubricType
+  );
   if (!conceptsResult.valid) return conceptsResult;
 
   return { valid: true };

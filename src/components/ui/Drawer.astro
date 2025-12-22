@@ -1,0 +1,153 @@
+---
+export interface Props {
+  id: string;
+  title?: string;
+  width?: 'sm' | 'md' | 'lg' | 'xl';
+}
+
+const { id, title, width = 'md' } = Astro.props;
+
+const widthClasses = {
+  sm: 'max-w-sm',
+  md: 'max-w-md',
+  lg: 'max-w-lg',
+  xl: 'max-w-xl',
+};
+---
+
+<!-- Drawer backdrop -->
+<div
+  id={`${id}-backdrop`}
+  class="fixed inset-0 bg-black/50 z-40 hidden opacity-0 transition-opacity duration-300"
+  data-drawer-backdrop={id}
+>
+</div>
+
+<!-- Drawer panel -->
+<div
+  id={id}
+  class={`fixed top-0 right-0 h-full w-full ${widthClasses[width]} bg-base-100 shadow-xl z-50 transform translate-x-full transition-transform duration-300 ease-in-out overflow-hidden flex flex-col`}
+  data-drawer
+>
+  <!-- Header -->
+  <div class="flex items-center justify-between p-4 border-b border-base-200">
+    {
+      title && (
+        <h2 class="text-lg font-semibold" id={`${id}-title`}>
+          {title}
+        </h2>
+      )
+    }
+    <slot name="title" />
+    <button
+      type="button"
+      class="btn btn-ghost btn-sm btn-circle"
+      data-drawer-close={id}
+      aria-label="Close"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        class="h-5 w-5"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M6 18L18 6M6 6l12 12"></path>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Content -->
+  <div class="flex-1 overflow-y-auto p-4">
+    <slot />
+  </div>
+
+  <!-- Footer (optional) -->
+  {
+    Astro.slots.has('footer') && (
+      <div class="p-4 border-t border-base-200">
+        <slot name="footer" />
+      </div>
+    )
+  }
+</div>
+
+<script>
+  // Drawer controller
+  function initDrawers() {
+    // Close drawer function
+    function closeDrawer(drawerId: string) {
+      const drawer = document.getElementById(drawerId);
+      const backdrop = document.getElementById(`${drawerId}-backdrop`);
+
+      if (drawer) {
+        drawer.classList.add('translate-x-full');
+      }
+      if (backdrop) {
+        backdrop.classList.add('opacity-0');
+        setTimeout(() => {
+          backdrop.classList.add('hidden');
+        }, 300);
+      }
+      document.body.classList.remove('overflow-hidden');
+    }
+
+    // Open drawer function
+    function openDrawer(drawerId: string) {
+      const drawer = document.getElementById(drawerId);
+      const backdrop = document.getElementById(`${drawerId}-backdrop`);
+
+      if (backdrop) {
+        backdrop.classList.remove('hidden');
+        // Trigger reflow for animation
+        backdrop.offsetHeight;
+        backdrop.classList.remove('opacity-0');
+      }
+      if (drawer) {
+        drawer.classList.remove('translate-x-full');
+      }
+      document.body.classList.add('overflow-hidden');
+    }
+
+    // Expose to window for external control
+    (window as any).openDrawer = openDrawer;
+    (window as any).closeDrawer = closeDrawer;
+
+    // Setup close buttons
+    document.querySelectorAll('[data-drawer-close]').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        const drawerId = (e.currentTarget as HTMLElement).dataset.drawerClose;
+        if (drawerId) closeDrawer(drawerId);
+      });
+    });
+
+    // Setup backdrop click to close
+    document.querySelectorAll('[data-drawer-backdrop]').forEach((backdrop) => {
+      backdrop.addEventListener('click', (e) => {
+        const drawerId = (e.currentTarget as HTMLElement).dataset.drawerBackdrop;
+        if (drawerId) closeDrawer(drawerId);
+      });
+    });
+
+    // ESC key to close
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        document.querySelectorAll('[data-drawer]').forEach((drawer) => {
+          if (!drawer.classList.contains('translate-x-full')) {
+            closeDrawer(drawer.id);
+          }
+        });
+      }
+    });
+  }
+
+  // Initialize on load
+  initDrawers();
+
+  // Re-initialize on Astro page transitions
+  document.addEventListener('astro:page-load', initDrawers);
+</script>

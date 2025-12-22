@@ -3,6 +3,7 @@ node_modules/
 
 # Build output
 dist/
+build/
 .astro/
 
 # Database
@@ -14,6 +15,7 @@ db/evaluation.db-shm
 .env
 .env.local
 .env.*.local
+.env*
 
 # Logs
 *.log
@@ -21,6 +23,8 @@ npm-debug.log*
 
 # Editor directories
 .vscode/
+.codex/
+.cursor/
 .idea/
 *.swp
 *.swo

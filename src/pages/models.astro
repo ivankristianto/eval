@@ -1,5 +1,10 @@
 ---
-import '../styles/global.css';
+import Layout from '../layouts/Layout.astro';
+import Card from '../components/ui/Card.astro';
+import Breadcrumbs from '../components/ui/Breadcrumbs.astro';
+import Button from '../components/ui/Button.astro';
+import Input from '../components/ui/Input.astro';
+import EmptyState from '../components/ui/EmptyState.astro';
 import { getModels, getModelUsageCount } from '../lib/db';
 import type { Provider } from '../lib/types';
 
@@ -15,180 +20,188 @@ let models: Array<{
 }> = [];
 
 try {
-  models = getModels(false).map(m => ({
+  models = getModels(false).map((m) => ({
     id: m.id,
     provider: m.provider,
     model_name: m.model_name,
     is_active: m.is_active,
     created_at: m.created_at,
     notes: m.notes,
-    usage_count: getModelUsageCount(m.id)
+    usage_count: getModelUsageCount(m.id),
   }));
 } catch {
   // Database may not be initialized
 }
+
+const breadcrumbItems = [{ label: 'Home', href: '/' }, { label: 'Models' }];
+
+// Icon for empty state
+const modelIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-base-content/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+</svg>`;
 ---
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Model Management - AI Model Evaluation Framework</title>
-</head>
-<body class="bg-gray-50 min-h-screen">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <!-- Header -->
-    <header class="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-      <div>
-        <nav class="flex items-center gap-6 mb-2">
-          <a href="/" class="text-blue-600 hover:text-blue-800">Home</a>
-          <span class="text-gray-400">/</span>
-          <span class="text-gray-900 font-medium">Models</span>
-        </nav>
-        <h1 class="text-3xl font-bold text-gray-900">Model Management</h1>
-        <p class="mt-2 text-gray-600">Configure AI models for evaluation.</p>
-      </div>
-      <div class="flex flex-wrap gap-2">
-         <button id="import-btn" class="btn-secondary flex items-center gap-2">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
-          </svg>
-          Import
-        </button>
-        <button id="export-btn" class="btn-secondary flex items-center gap-2">
-           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" transform="rotate(180 10 10)"/>
-          </svg>
-          Export
-        </button>
-        <button id="add-model-btn" class="btn-primary flex items-center gap-2">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
-          </svg>
-          Add Model
-        </button>
-      </div>
-    </header>
+<Layout title="Model Management - Eval AI">
+  <Breadcrumbs items={breadcrumbItems} />
 
-    <!-- Error Banner -->
-    <div id="error-banner" class="hidden error-banner mb-6">
-      <div class="flex">
-        <div class="flex-shrink-0">
-          <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
-          </svg>
-        </div>
-        <div class="ml-3">
-          <p id="error-message" class="text-sm"></p>
-        </div>
-      </div>
+  <!-- Header -->
+  <div class="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div>
+      <h1 class="text-3xl font-bold">Model Management</h1>
+      <p class="mt-2 text-base-content/70">Configure AI models for evaluation.</p>
     </div>
-
-    <!-- Success Banner -->
-    <div id="success-banner" class="hidden bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg mb-6">
-      <p id="success-message" class="text-sm"></p>
+    <div class="flex flex-wrap gap-2">
+      <Button id="import-btn" variant="secondary" size="sm">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-5 w-5 mr-1"
+          viewBox="0 0 20 20"
+          fill="currentColor"
+        >
+          <path
+            fill-rule="evenodd"
+            d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
+            clip-rule="evenodd"></path>
+        </svg>
+        Import
+      </Button>
+      <Button id="export-btn" variant="secondary" size="sm">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-5 w-5 mr-1"
+          viewBox="0 0 20 20"
+          fill="currentColor"
+        >
+          <path
+            fill-rule="evenodd"
+            d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
+            clip-rule="evenodd"
+            transform="rotate(180 10 10)"></path>
+        </svg>
+        Export
+      </Button>
+      <Button id="add-model-btn" variant="primary" size="sm">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-5 w-5 mr-1"
+          viewBox="0 0 20 20"
+          fill="currentColor"
+        >
+          <path
+            fill-rule="evenodd"
+            d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+            clip-rule="evenodd"></path>
+        </svg>
+        Add Model
+      </Button>
     </div>
+  </div>
 
-    <!-- Add Model Modal -->
-    <div id="add-model-modal" popover class="bg-white rounded-lg shadow-xl max-w-lg w-full mx-auto mt-[10vh] p-0 border-0 backdrop:bg-gray-500/50">
-      <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
-        <h2 class="text-lg font-semibold text-gray-900">Add New Model</h2>
-        <button type="button" popovertarget="add-model-modal" popovertargetaction="hide" class="text-gray-400 hover:text-gray-500">
-          <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-      </div>
-      <form id="add-model-form" class="p-6 space-y-4">
-        <div>
-          <label for="provider" class="form-label">Provider</label>
-          <select id="provider" name="provider" class="form-input" required>
+  <!-- Add Model Modal -->
+  <dialog id="add-model-modal" class="modal">
+    <div class="modal-box">
+      <form method="dialog">
+        <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+      </form>
+      <h3 class="font-bold text-lg mb-4">Add New Model</h3>
+      <form id="add-model-form" class="space-y-4">
+        <div class="form-control w-full">
+          <label class="label" for="provider">
+            <span class="label-text">Provider</span>
+          </label>
+          <select id="provider" name="provider" class="select select-bordered w-full" required>
             <option value="">Select a provider...</option>
             <option value="openai">OpenAI (GPT)</option>
             <option value="anthropic">Anthropic (Claude)</option>
             <option value="google">Google (Gemini)</option>
           </select>
         </div>
-        <div>
-          <label for="model_name" class="form-label">Model Name</label>
-          <input type="text" id="model_name" name="model_name" class="form-input" placeholder="e.g. gpt-4o, claude-3-opus-20240229" required>
-          <p class="text-xs text-gray-500 mt-1">Must match the provider's API model identifier.</p>
+        <Input
+          label="Model Name"
+          name="model_name"
+          placeholder="e.g. gpt-4o, claude-3-opus-20240229"
+          required
+        />
+        <p class="text-xs text-base-content/50 -mt-2">
+          Must match the provider's API model identifier.
+        </p>
+        <Input label="API Key" name="api_key" type="password" placeholder="sk-..." required />
+        <p class="text-xs text-base-content/50 -mt-2">
+          Stored securely using AES-256-GCM encryption.
+        </p>
+        <div class="form-control w-full">
+          <label class="label" for="notes">
+            <span class="label-text">Notes (Optional)</span>
+          </label>
+          <textarea
+            id="notes"
+            name="notes"
+            rows="2"
+            class="textarea textarea-bordered w-full"
+            placeholder="Internal notes about this model..."></textarea>
         </div>
-        <div>
-          <label for="api_key" class="form-label">API Key</label>
-          <input type="password" id="api_key" name="api_key" class="form-input" placeholder="sk-..." required>
-          <p class="text-xs text-gray-500 mt-1">Stored securely using AES-256-GCM encryption.</p>
-        </div>
-        <div>
-          <label for="notes" class="form-label">Notes (Optional)</label>
-          <textarea id="notes" name="notes" rows="2" class="form-input" placeholder="Internal notes about this model..."></textarea>
-        </div>
-        <div class="pt-4 flex justify-end gap-3">
-          <button type="button" popovertarget="add-model-modal" popovertargetaction="hide" class="btn-secondary">Cancel</button>
-          <button type="submit" class="btn-primary">Add Model</button>
+        <div class="modal-action">
+          <button type="button" class="btn" onclick="add_model_modal.close()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Add Model</button>
         </div>
       </form>
     </div>
+    <form method="dialog" class="modal-backdrop">
+      <button>close</button>
+    </form>
+  </dialog>
 
-     <!-- Import File Input (Hidden) -->
-    <input type="file" id="import-file" accept=".json" class="hidden" />
+  <!-- Import File Input (Hidden) -->
+  <input type="file" id="import-file" accept=".json" class="hidden" />
 
-    <!-- Models List -->
-    <div class="bg-white shadow rounded-lg overflow-hidden">
-      {models.length > 0 ? (
+  <!-- Models List -->
+  <Card>
+    {
+      models.length > 0 ? (
         <div class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
+          <table class="table table-zebra w-full">
+            <thead>
               <tr>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Provider / Model</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Usage</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
-                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                <th>Status</th>
+                <th>Provider / Model</th>
+                <th>Usage</th>
+                <th>Created</th>
+                <th class="text-right">Actions</th>
               </tr>
             </thead>
-            <tbody class="bg-white divide-y divide-gray-200" id="models-body">
-              {models.map(model => (
+            <tbody id="models-body">
+              {models.map((model) => (
                 <tr data-id={model.id}>
-                  <td class="px-6 py-4 whitespace-nowrap">
-                    <button 
-                      class="toggle-active-btn relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                      role="switch" 
-                      aria-checked={model.is_active}
+                  <td>
+                    <input
+                      type="checkbox"
+                      class="toggle toggle-success"
+                      checked={model.is_active}
                       data-id={model.id}
                       data-active={model.is_active.toString()}
-                      class:list={[model.is_active ? 'bg-green-600' : 'bg-gray-200']}
-                    >
-                      <span class="sr-only">Use setting</span>
-                      <span 
-                        aria-hidden="true" 
-                        class:list={[
-                          model.is_active ? 'translate-x-5' : 'translate-x-0',
-                          'pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform ring-0 transition ease-in-out duration-200'
-                        ]}
-                      ></span>
-                    </button>
+                    />
                   </td>
-                  <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="flex items-center">
-                      <div>
-                        <div class="text-sm font-medium text-gray-900">{model.model_name}</div>
-                        <div class="text-sm text-gray-500 capitalize">{model.provider}</div>
-                         {model.notes && <div class="text-xs text-gray-400 mt-0.5">{model.notes}</div>}
-                      </div>
+                  <td>
+                    <div>
+                      <div class="font-medium">{model.model_name}</div>
+                      <div class="text-sm text-base-content/50 capitalize">{model.provider}</div>
+                      {model.notes && (
+                        <div class="text-xs text-base-content/40 mt-0.5">{model.notes}</div>
+                      )}
                     </div>
                   </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {model.usage_count} evaluations
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td class="text-base-content/70">{model.usage_count} evaluations</td>
+                  <td class="text-base-content/70">
                     {new Date(model.created_at).toLocaleDateString()}
                   </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <div class="flex justify-end gap-3">
-                      <button class="test-btn text-blue-600 hover:text-blue-900" data-id={model.id}>Test</button>
-                      <button class="delete-btn text-red-600 hover:text-red-900" data-id={model.id}>Delete</button>
+                  <td>
+                    <div class="flex justify-end gap-2">
+                      <button class="test-btn btn btn-xs btn-ghost text-primary" data-id={model.id}>
+                        Test
+                      </button>
+                      <button class="delete-btn btn btn-xs btn-ghost text-error" data-id={model.id}>
+                        Delete
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -197,65 +210,47 @@ try {
           </table>
         </div>
       ) : (
-        <div class="text-center py-12 text-gray-500">
-          <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-          </svg>
-          <p class="mt-4">No models configured.</p>
-          <p class="text-sm">Add your first AI model to start evaluating.</p>
-          <button class="btn-primary mt-4 inline-block" onclick="document.getElementById('add-model-modal').showPopover()">
-            Add Model
-          </button>
-        </div>
-      )}
-    </div>
-  </div>
-
-  <script>
-    // Elements
-    const addModelBtn = document.getElementById('add-model-btn') as HTMLButtonElement;
-    const addModelModal = document.getElementById('add-model-modal') as HTMLElement;
-    const addModelForm = document.getElementById('add-model-form') as HTMLFormElement;
-    const errorBanner = document.getElementById('error-banner') as HTMLDivElement;
-    const errorMessage = document.getElementById('error-message') as HTMLParagraphElement;
-    const successBanner = document.getElementById('success-banner') as HTMLDivElement;
-    const successMessage = document.getElementById('success-message') as HTMLParagraphElement;
-    const importBtn = document.getElementById('import-btn') as HTMLButtonElement;
-    const exportBtn = document.getElementById('export-btn') as HTMLButtonElement;
-    const importFile = document.getElementById('import-file') as HTMLInputElement;
-
-    // Show modal
-    if (addModelBtn) {
-      addModelBtn.addEventListener('click', () => {
-        addModelModal.showPopover();
-      });
+        <EmptyState
+          title="No models configured"
+          description="Add your first AI model to start evaluating."
+          icon={modelIcon}
+          action={{
+            label: 'Add Model',
+            onClick: "document.getElementById('add-model-modal').showModal()",
+          }}
+        />
+      )
     }
+  </Card>
+</Layout>
 
-    // Helper functions
-    function showError(message: string) {
-      errorMessage.textContent = message;
-      errorBanner.classList.remove('hidden');
-      successBanner.classList.add('hidden');
-      window.scrollTo(0, 0);
-    }
+<script>
+  import { addToast } from '../lib/toastStore';
 
-    function showSuccess(message: string) {
-      successMessage.textContent = message;
-      successBanner.classList.remove('hidden');
-      errorBanner.classList.add('hidden');
-      window.scrollTo(0, 0);
-      setTimeout(() => successBanner.classList.add('hidden'), 5000);
-    }
+  // Elements
+  const addModelBtn = document.getElementById('add-model-btn') as HTMLButtonElement;
+  const addModelModal = document.getElementById('add-model-modal') as HTMLDialogElement;
+  const addModelForm = document.getElementById('add-model-form') as HTMLFormElement;
+  const importBtn = document.getElementById('import-btn') as HTMLButtonElement;
+  const exportBtn = document.getElementById('export-btn') as HTMLButtonElement;
+  const importFile = document.getElementById('import-file') as HTMLInputElement;
 
-    // Add Model Submit
+  // Show modal
+  if (addModelBtn) {
+    addModelBtn.addEventListener('click', () => {
+      addModelModal.showModal();
+    });
+  }
+
+  // Add Model Submit
+  if (addModelForm) {
     addModelForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      
+
       const submitBtn = addModelForm.querySelector('button[type="submit"]') as HTMLButtonElement;
       const originalText = submitBtn.textContent;
       submitBtn.disabled = true;
       submitBtn.textContent = 'Verifying & Adding...';
-      errorBanner.classList.add('hidden');
 
       const formData = new FormData(addModelForm);
       const data = Object.fromEntries(formData.entries());
@@ -264,155 +259,140 @@ try {
         const response = await fetch('/api/models', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data)
+          body: JSON.stringify(data),
         });
 
         const result = await response.json();
 
         if (!response.ok) {
-           throw new Error(result.message || result.error || 'Failed to add model');
+          throw new Error(result.message || result.error || 'Failed to add model');
         }
 
         // Close modal
-        addModelModal.hidePopover();
+        addModelModal.close();
         addModelForm.reset();
 
-        showSuccess(`Model ${result.model_name} added successfully!`);
+        addToast(`Model ${result.model_name} added successfully!`, 'success');
         // Refresh page to show new model
         setTimeout(() => window.location.reload(), 1500);
-
       } catch (error) {
-        showError(error instanceof Error ? error.message : 'An error occurred');
+        addToast(error instanceof Error ? error.message : 'An error occurred', 'error');
       } finally {
         submitBtn.disabled = false;
         submitBtn.textContent = originalText;
       }
     });
+  }
 
-    // Toggle Active Status
-    document.querySelectorAll('.toggle-active-btn').forEach(btn => {
-      btn.addEventListener('click', async (e) => {
-        const target = e.currentTarget as HTMLButtonElement;
-        const id = target.dataset.id;
-        const currentActive = target.dataset.active === 'true';
-        const newActive = !currentActive;
+  // Toggle Active Status
+  document.querySelectorAll('.toggle').forEach((btn) => {
+    btn.addEventListener('change', async (e) => {
+      const target = e.currentTarget as HTMLInputElement;
+      const id = target.dataset.id;
+      const newActive = target.checked;
 
-        try {
-          const response = await fetch(`/api/models/${id}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ is_active: newActive })
-          });
+      try {
+        const response = await fetch(`/api/models/${id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ is_active: newActive }),
+        });
 
-          if (!response.ok) throw new Error('Failed to update status');
-
-          // Update UI
-          target.dataset.active = newActive.toString();
-          target.setAttribute('aria-checked', newActive.toString());
-          
-          if (newActive) {
-            target.classList.remove('bg-gray-200');
-            target.classList.add('bg-green-600');
-            target.querySelector('span[aria-hidden="true"]')?.classList.remove('translate-x-0');
-            target.querySelector('span[aria-hidden="true"]')?.classList.add('translate-x-5');
-          } else {
-            target.classList.remove('bg-green-600');
-            target.classList.add('bg-gray-200');
-            target.querySelector('span[aria-hidden="true"]')?.classList.remove('translate-x-5');
-            target.querySelector('span[aria-hidden="true"]')?.classList.add('translate-x-0');
-          }
-
-        } catch (error) {
-          showError('Failed to update model status');
+        if (!response.ok) {
+          throw new Error('Failed to update status');
         }
-      });
+
+        target.dataset.active = newActive.toString();
+      } catch {
+        addToast('Failed to update model status', 'error');
+        // Revert the toggle
+        target.checked = !newActive;
+      }
     });
+  });
 
-    // Delete Model
-    document.querySelectorAll('.delete-btn').forEach(btn => {
-      btn.addEventListener('click', async (e) => {
-        const target = e.currentTarget as HTMLButtonElement;
-        const id = target.dataset.id;
-        
-        if (!confirm('Are you sure you want to delete this model? This action cannot be undone.')) {
-          return;
-        }
+  // Delete Model
+  document.querySelectorAll('.delete-btn').forEach((btn) => {
+    btn.addEventListener('click', async (e) => {
+      const target = e.currentTarget as HTMLButtonElement;
+      const id = target.dataset.id;
 
-        target.disabled = true;
-        target.textContent = '...';
+      if (!confirm('Are you sure you want to delete this model? This action cannot be undone.')) {
+        return;
+      }
 
-        try {
-          const response = await fetch(`/api/models/${id}`, {
-            method: 'DELETE'
-          });
+      target.disabled = true;
+      target.textContent = '...';
 
-          if (!response.ok) {
-            const data = await response.json();
-            throw new Error(data.message || 'Failed to delete model');
-          }
+      try {
+        const response = await fetch(`/api/models/${id}`, {
+          method: 'DELETE',
+        });
 
-          // Remove row
-          target.closest('tr')?.remove();
-          showSuccess('Model deleted successfully');
-
-          // If no rows left, reload to show empty state
-          if (document.querySelectorAll('tbody tr').length === 0) {
-            window.location.reload();
-          }
-
-        } catch (error) {
-          showError(error instanceof Error ? error.message : 'Failed to delete model');
-          target.disabled = false;
-          target.textContent = 'Delete';
-        }
-      });
-    });
-
-    // Test Connection
-    document.querySelectorAll('.test-btn').forEach(btn => {
-      btn.addEventListener('click', async (e) => {
-        const target = e.currentTarget as HTMLButtonElement;
-        const id = target.dataset.id;
-        
-        const originalText = target.textContent;
-        target.disabled = true;
-        target.textContent = 'Testing...';
-
-        try {
-          const response = await fetch(`/api/models/${id}/test-connection`, {
-            method: 'POST'
-          });
-
+        if (!response.ok) {
           const data = await response.json();
-
-          if (!response.ok || !data.valid) {
-            throw new Error(data.message || 'Connection test failed');
-          }
-
-          showSuccess('Connection successful! Model is ready to use.');
-
-        } catch (error) {
-          showError(error instanceof Error ? error.message : 'Connection failed');
-        } finally {
-          target.disabled = false;
-          target.textContent = originalText;
+          throw new Error(data.message || 'Failed to delete model');
         }
-      });
-    });
 
-    // Export
+        // Remove row
+        target.closest('tr')?.remove();
+        addToast('Model deleted successfully', 'success');
+
+        // If no rows left, reload to show empty state
+        if (document.querySelectorAll('tbody tr').length === 0) {
+          window.location.reload();
+        }
+      } catch (error) {
+        addToast(error instanceof Error ? error.message : 'Failed to delete model', 'error');
+        target.disabled = false;
+        target.textContent = 'Delete';
+      }
+    });
+  });
+
+  // Test Connection
+  document.querySelectorAll('.test-btn').forEach((btn) => {
+    btn.addEventListener('click', async (e) => {
+      const target = e.currentTarget as HTMLButtonElement;
+      const id = target.dataset.id;
+
+      const originalText = target.textContent;
+      target.disabled = true;
+      target.textContent = 'Testing...';
+
+      try {
+        const response = await fetch(`/api/models/${id}/test-connection`, {
+          method: 'POST',
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.valid) {
+          throw new Error(data.message || 'Connection test failed');
+        }
+
+        addToast('Connection successful! Model is ready to use.', 'success');
+      } catch (error) {
+        addToast(error instanceof Error ? error.message : 'Connection failed', 'error');
+      } finally {
+        target.disabled = false;
+        target.textContent = originalText;
+      }
+    });
+  });
+
+  // Export
+  if (exportBtn) {
     exportBtn.addEventListener('click', async () => {
       try {
         const response = await fetch('/api/models');
         const data = await response.json();
-        
-        // Remove sensitive data (API keys are encrypted in DB but getModels returns them encrypted)
-        // Ideally we shouldn't even export encrypted keys for security, 
-        // but for migration/backup it might be expected. 
-        // However, standard practice is NOT to export secrets.
-        // Let's filter out api_key_encrypted for safety.
-        const exportData = data.models.map(({ api_key_encrypted, ...rest }: any) => rest);
-        
+
+        // Remove sensitive data
+        const exportData = data.models.map(
+          ({ api_key_encrypted: _api_key_encrypted, ...rest }: any) => rest
+        );
+
         const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -422,12 +402,14 @@ try {
         a.click();
         document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
-      } catch (error) {
-        showError('Failed to export models');
+      } catch {
+        addToast('Failed to export models', 'error');
       }
     });
+  }
 
-    // Import
+  // Import
+  if (importBtn && importFile) {
     importBtn.addEventListener('click', () => {
       importFile.click();
     });
@@ -441,15 +423,11 @@ try {
         try {
           const content = event.target?.result as string;
           const models = JSON.parse(content);
-          
+
           if (!Array.isArray(models)) {
             throw new Error('Invalid file format: expected an array of models');
           }
 
-          // Note: Imported models won't have API keys if we stripped them during export.
-          // This is a "Partial Import" scenario.
-          // Or if the user provides a JSON with keys.
-          
           let successCount = 0;
           let failCount = 0;
 
@@ -457,50 +435,54 @@ try {
           importBtn.textContent = 'Importing...';
 
           for (const model of models) {
-             if (!model.provider || !model.model_name) {
-               console.warn('Skipping invalid model entry', model);
-               continue;
-             }
-             
-             // If no API key, skip or mark as needing config? 
-             // We can't create a model without an API key due to validation.
-             // So we only support importing IF api_key is present in the JSON.
-             if (!model.api_key) {
-               // Prompt user? No, too complex. 
-               // Just skip and warn.
-               console.warn(`Skipping ${model.model_name}: missing API key`);
-               failCount++;
-               continue;
-             }
+            if (!model.provider || !model.model_name) {
+              console.warn('Skipping invalid model entry', model);
+              continue;
+            }
 
-             try {
-               const response = await fetch('/api/models', {
-                 method: 'POST',
-                 headers: { 'Content-Type': 'application/json' },
-                 body: JSON.stringify({
-                   provider: model.provider,
-                   model_name: model.model_name,
-                   api_key: model.api_key,
-                   notes: model.notes
-                 })
-               });
-               
-               if (response.ok) successCount++;
-               else failCount++;
-             } catch {
-               failCount++;
-             }
+            if (!model.api_key) {
+              console.warn(`Skipping ${model.model_name}: missing API key`);
+              failCount++;
+              continue;
+            }
+
+            try {
+              const response = await fetch('/api/models', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  provider: model.provider,
+                  model_name: model.model_name,
+                  api_key: model.api_key,
+                  notes: model.notes,
+                }),
+              });
+
+              if (response.ok) successCount++;
+              else failCount++;
+            } catch {
+              failCount++;
+            }
           }
 
           if (successCount > 0) {
-            showSuccess(`Imported ${successCount} models. ${failCount > 0 ? `(${failCount} failed)` : ''}`);
+            addToast(
+              `Imported ${successCount} models. ${failCount > 0 ? `(${failCount} failed)` : ''}`,
+              'success'
+            );
             setTimeout(() => window.location.reload(), 2000);
           } else {
-            showError(`Import failed. No valid models with API keys found. ${failCount} entries skipped.`);
+            addToast(
+              `Import failed. No valid models with API keys found. ${failCount} entries skipped.`,
+              'error'
+            );
           }
-
         } catch (error) {
-          showError('Failed to parse import file: ' + (error instanceof Error ? error.message : 'Unknown error'));
+          addToast(
+            'Failed to parse import file: ' +
+              (error instanceof Error ? error.message : 'Unknown error'),
+            'error'
+          );
         } finally {
           importBtn.disabled = false;
           importBtn.textContent = 'Import';
@@ -509,7 +491,5 @@ try {
       };
       reader.readAsText(file);
     });
-
-  </script>
-</body>
-</html>
+  }
+</script>

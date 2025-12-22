@@ -9,13 +9,13 @@ import {
   updateEvaluationStatus,
   updateResult,
   getResults,
-  decryptApiKey
+  decryptApiKey,
 } from './db';
-import type { RubricType, EvaluationStatus, ResultStatus } from './types';
+import type { RubricType, ResultStatus } from './types';
 
 // Timeout constants
-const MODEL_TIMEOUT_MS = 30000;  // 30 seconds per model
-const EVALUATION_TIMEOUT_MS = 300000;  // 5 minutes total
+const MODEL_TIMEOUT_MS = 30000; // 30 seconds per model
+const EVALUATION_TIMEOUT_MS = 300000; // 5 minutes total
 
 export interface EvaluationOptions {
   evaluationId: string;
@@ -37,7 +37,7 @@ export class EvaluationExecutor {
       instruction,
       rubricType,
       expectedOutput,
-      partialCreditConcepts
+      partialCreditConcepts,
     } = options;
 
     // Set hard timeout
@@ -51,7 +51,7 @@ export class EvaluationExecutor {
       updateEvaluationStatus(evaluationId, 'running');
 
       // Execute all models in parallel
-      const modelPromises = modelIds.map(modelId =>
+      const modelPromises = modelIds.map((modelId) =>
         this.executeModel(
           evaluationId,
           modelId,
@@ -69,10 +69,10 @@ export class EvaluationExecutor {
 
       // Check if all models completed or failed
       const results = getResults(evaluationId);
-      const allCompleted = results.every(r => r.status !== 'pending');
+      const allCompleted = results.every((r) => r.status !== 'pending');
 
       if (allCompleted) {
-        const hasAnySuccess = results.some(r => r.status === 'completed');
+        const hasAnySuccess = results.some((r) => r.status === 'completed');
         if (hasAnySuccess) {
           updateEvaluationStatus(evaluationId, 'completed');
         } else {
@@ -103,7 +103,7 @@ export class EvaluationExecutor {
   ): Promise<void> {
     // Find the result record for this model
     const results = getResults(evaluationId);
-    const resultRecord = results.find(r => r.model_id === modelId);
+    const resultRecord = results.find((r) => r.model_id === modelId);
     if (!resultRecord) {
       console.error(`No result record found for model ${modelId}`);
       return;
@@ -130,7 +130,7 @@ export class EvaluationExecutor {
         client.evaluate(instruction),
         new Promise<never>((_, reject) =>
           setTimeout(() => reject(new Error('Model timeout')), MODEL_TIMEOUT_MS)
-        )
+        ),
       ]);
 
       if (this.aborted) return;
@@ -152,7 +152,7 @@ export class EvaluationExecutor {
         total_tokens: modelResponse.totalTokens,
         accuracy_score: accuracyResult.score,
         accuracy_reasoning: accuracyResult.reasoning,
-        status: 'completed' as ResultStatus
+        status: 'completed' as ResultStatus,
       });
     } catch (error) {
       console.error(`Model ${modelId} execution error:`, error);
@@ -160,7 +160,7 @@ export class EvaluationExecutor {
       if (!this.aborted) {
         updateResult(resultRecord.id, {
           status: 'failed' as ResultStatus,
-          error_message: error instanceof Error ? error.message : 'Unknown error'
+          error_message: error instanceof Error ? error.message : 'Unknown error',
         });
       }
     }
@@ -176,7 +176,7 @@ export class EvaluationExecutor {
       if (result.status === 'pending') {
         updateResult(result.id, {
           status: 'failed' as ResultStatus,
-          error_message: 'Timeout'
+          error_message: 'Timeout',
         });
       }
     }

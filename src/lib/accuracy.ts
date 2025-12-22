@@ -2,7 +2,7 @@
 // Accuracy calculation functions for AI Model Evaluation Framework
 
 import type { AccuracyResult, RubricType } from './types';
-import { getSemanticSimilarityScore } from './api-clients';
+import { getSemanticSimilarityScore } from './semanticSimilarity';
 
 // ===== Exact Match Rubric =====
 
@@ -14,7 +14,7 @@ export function exactMatch(response: string, expectedOutput: string): AccuracyRe
   if (normalizedResponse === normalizedExpected) {
     return {
       score: 100,
-      reasoning: 'Response exactly matches expected output'
+      reasoning: 'Response exactly matches expected output',
     };
   }
 
@@ -22,13 +22,13 @@ export function exactMatch(response: string, expectedOutput: string): AccuracyRe
   if (normalizedResponse.toLowerCase() === normalizedExpected.toLowerCase()) {
     return {
       score: 100,
-      reasoning: 'Response matches expected output (case-insensitive)'
+      reasoning: 'Response matches expected output (case-insensitive)',
     };
   }
 
   return {
     score: 0,
-    reasoning: `Response does not match expected output. Expected: "${truncate(expectedOutput, 100)}", Got: "${truncate(response, 100)}"`
+    reasoning: `Response does not match expected output. Expected: "${truncate(expectedOutput, 100)}", Got: "${truncate(response, 100)}"`,
   };
 }
 
@@ -42,7 +42,7 @@ export function partialCredit(
   if (!concepts || concepts.length === 0) {
     return {
       score: 0,
-      reasoning: 'No concepts provided for partial credit evaluation'
+      reasoning: 'No concepts provided for partial credit evaluation',
     };
   }
 
@@ -60,9 +60,7 @@ export function partialCredit(
     } else {
       // Also check for word-by-word match for multi-word concepts
       const conceptWords = normalizedConcept.split(/\s+/);
-      const allWordsFound = conceptWords.every(word =>
-        normalizedResponse.includes(word)
-      );
+      const allWordsFound = conceptWords.every((word) => normalizedResponse.includes(word));
       if (allWordsFound) {
         foundConcepts.push(concept);
       } else {
@@ -83,7 +81,7 @@ export function partialCredit(
 
   return {
     score,
-    reasoning: truncate(reasoning, 500)
+    reasoning: truncate(reasoning, 500),
   };
 }
 
@@ -97,13 +95,13 @@ export async function semanticSimilarity(
     const result = await getSemanticSimilarityScore(response, expectedOutput);
     return {
       score: result.score,
-      reasoning: result.reasoning
+      reasoning: result.reasoning,
     };
   } catch (error) {
     console.error('Semantic similarity calculation failed:', error);
     return {
       score: 0,
-      reasoning: 'Failed to calculate semantic similarity'
+      reasoning: 'Failed to calculate semantic similarity',
     };
   }
 }
@@ -129,7 +127,7 @@ export async function calculateAccuracy(
     default:
       return {
         score: 0,
-        reasoning: `Unknown rubric type: ${rubricType}`
+        reasoning: `Unknown rubric type: ${rubricType}`,
       };
   }
 }
@@ -139,9 +137,9 @@ export async function calculateAccuracy(
 function normalizeText(text: string): string {
   return text
     .trim()
-    .replace(/\s+/g, ' ')        // Normalize whitespace
-    .replace(/[""]/g, '"')       // Normalize quotes
-    .replace(/['']/g, "'");      // Normalize apostrophes
+    .replace(/\s+/g, ' ') // Normalize whitespace
+    .replace(/[""]/g, '"') // Normalize quotes
+    .replace(/['']/g, "'"); // Normalize apostrophes
 }
 
 function truncate(text: string, maxLength: number): string {

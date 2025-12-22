@@ -15,7 +15,7 @@ import type {
   Provider,
   RubricType,
   EvaluationStatus,
-  ResultStatus
+  ResultStatus,
 } from './types';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -52,7 +52,6 @@ export function closeDatabase(): void {
 
 const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 16;
-const AUTH_TAG_LENGTH = 16;
 
 function getEncryptionKey(): Buffer {
   const key = import.meta.env?.ENCRYPTION_KEY || process.env.ENCRYPTION_KEY;
@@ -120,7 +119,7 @@ export function insertModel(
     created_at: now,
     updated_at: now,
     is_active: true,
-    notes
+    notes,
   };
 }
 
@@ -146,7 +145,7 @@ export function getModels(activeOnly = false, provider?: Provider): ModelConfigu
 
   const rows = database.prepare(query).all(...params) as Record<string, unknown>[];
 
-  return rows.map(row => ({
+  return rows.map((row) => ({
     id: row.id as string,
     provider: row.provider as Provider,
     model_name: row.model_name as string,
@@ -154,13 +153,15 @@ export function getModels(activeOnly = false, provider?: Provider): ModelConfigu
     created_at: row.created_at as string,
     updated_at: row.updated_at as string,
     is_active: Boolean(row.is_active),
-    notes: row.notes as string | undefined
+    notes: row.notes as string | undefined,
   }));
 }
 
 export function getModelById(id: string): ModelConfiguration | null {
   const database = getDatabase();
-  const row = database.prepare('SELECT * FROM ModelConfiguration WHERE id = ?').get(id) as Record<string, unknown> | undefined;
+  const row = database.prepare('SELECT * FROM ModelConfiguration WHERE id = ?').get(id) as
+    | Record<string, unknown>
+    | undefined;
 
   if (!row) return null;
 
@@ -172,7 +173,7 @@ export function getModelById(id: string): ModelConfiguration | null {
     created_at: row.created_at as string,
     updated_at: row.updated_at as string,
     is_active: Boolean(row.is_active),
-    notes: row.notes as string | undefined
+    notes: row.notes as string | undefined,
   };
 }
 
@@ -218,19 +219,23 @@ export function deleteModel(id: string): boolean {
 
 export function getModelUsageCount(id: string): number {
   const database = getDatabase();
-  const row = database.prepare(
-    'SELECT COUNT(*) as count FROM Result WHERE model_id = ?'
-  ).get(id) as { count: number };
+  const row = database
+    .prepare('SELECT COUNT(*) as count FROM Result WHERE model_id = ?')
+    .get(id) as { count: number };
   return row.count;
 }
 
 export function hasActiveEvaluations(modelId: string): boolean {
   const database = getDatabase();
-  const row = database.prepare(`
+  const row = database
+    .prepare(
+      `
     SELECT COUNT(*) as count FROM Result r
     JOIN Evaluation e ON r.evaluation_id = e.id
     WHERE r.model_id = ? AND e.status IN ('pending', 'running')
-  `).get(modelId) as { count: number };
+  `
+    )
+    .get(modelId) as { count: number };
   return row.count > 0;
 }
 
@@ -270,13 +275,15 @@ export function insertEvaluation(
     partial_credit_concepts: partialCreditConcepts,
     created_at: now,
     status: 'pending',
-    template_id: templateId
+    template_id: templateId,
   };
 }
 
 export function getEvaluation(id: string): Evaluation | null {
   const database = getDatabase();
-  const row = database.prepare('SELECT * FROM Evaluation WHERE id = ?').get(id) as Record<string, unknown> | undefined;
+  const row = database.prepare('SELECT * FROM Evaluation WHERE id = ?').get(id) as
+    | Record<string, unknown>
+    | undefined;
 
   if (!row) return null;
 
@@ -285,12 +292,14 @@ export function getEvaluation(id: string): Evaluation | null {
     instruction_text: row.instruction_text as string,
     accuracy_rubric: row.accuracy_rubric as RubricType,
     expected_output: row.expected_output as string | undefined,
-    partial_credit_concepts: row.partial_credit_concepts ? JSON.parse(row.partial_credit_concepts as string) : undefined,
+    partial_credit_concepts: row.partial_credit_concepts
+      ? JSON.parse(row.partial_credit_concepts as string)
+      : undefined,
     created_at: row.created_at as string,
     completed_at: row.completed_at as string | undefined,
     status: row.status as EvaluationStatus,
     error_message: row.error_message as string | undefined,
-    template_id: row.template_id as string | undefined
+    template_id: row.template_id as string | undefined,
   };
 }
 
@@ -300,18 +309,19 @@ export function updateEvaluationStatus(
   errorMessage?: string
 ): void {
   const database = getDatabase();
-  const completedAt = status === 'completed' || status === 'failed' ? new Date().toISOString() : null;
+  const completedAt =
+    status === 'completed' || status === 'failed' ? new Date().toISOString() : null;
 
-  database.prepare(`
+  database
+    .prepare(
+      `
     UPDATE Evaluation SET status = ?, completed_at = ?, error_message = ? WHERE id = ?
-  `).run(status, completedAt, errorMessage || null, id);
+  `
+    )
+    .run(status, completedAt, errorMessage || null, id);
 }
 
-export function getEvaluations(
-  templateId?: string,
-  limit = 50,
-  offset = 0
-): Evaluation[] {
+export function getEvaluations(templateId?: string, limit = 50, offset = 0): Evaluation[] {
   const database = getDatabase();
 
   let query = 'SELECT * FROM Evaluation';
@@ -327,26 +337,25 @@ export function getEvaluations(
 
   const rows = database.prepare(query).all(...params) as Record<string, unknown>[];
 
-  return rows.map(row => ({
+  return rows.map((row) => ({
     id: row.id as string,
     instruction_text: row.instruction_text as string,
     accuracy_rubric: row.accuracy_rubric as RubricType,
     expected_output: row.expected_output as string | undefined,
-    partial_credit_concepts: row.partial_credit_concepts ? JSON.parse(row.partial_credit_concepts as string) : undefined,
+    partial_credit_concepts: row.partial_credit_concepts
+      ? JSON.parse(row.partial_credit_concepts as string)
+      : undefined,
     created_at: row.created_at as string,
     completed_at: row.completed_at as string | undefined,
     status: row.status as EvaluationStatus,
     error_message: row.error_message as string | undefined,
-    template_id: row.template_id as string | undefined
+    template_id: row.template_id as string | undefined,
   }));
 }
 
 // ===== Result Queries =====
 
-export function insertResult(
-  evaluationId: string,
-  modelId: string
-): Result {
+export function insertResult(evaluationId: string, modelId: string): Result {
   const database = getDatabase();
   const id = uuidv4();
   const now = new Date().toISOString();
@@ -363,7 +372,7 @@ export function insertResult(
     evaluation_id: evaluationId,
     model_id: modelId,
     status: 'pending',
-    created_at: now
+    created_at: now,
   };
 }
 
@@ -393,23 +402,27 @@ export function updateResult(
   if (setClauses.length === 0) return;
 
   params.push(id);
-  database.prepare(
-    `UPDATE Result SET ${setClauses.join(', ')} WHERE id = ?`
-  ).run(...params);
+  database.prepare(`UPDATE Result SET ${setClauses.join(', ')} WHERE id = ?`).run(...params);
 }
 
-export function getResults(evaluationId: string): (Result & { model_name: string; provider: Provider })[] {
+export function getResults(
+  evaluationId: string
+): (Result & { model_name: string; provider: Provider })[] {
   const database = getDatabase();
 
-  const rows = database.prepare(`
+  const rows = database
+    .prepare(
+      `
     SELECT r.*, m.model_name, m.provider
     FROM Result r
     JOIN ModelConfiguration m ON r.model_id = m.id
     WHERE r.evaluation_id = ?
     ORDER BY r.accuracy_score DESC NULLS LAST
-  `).all(evaluationId) as Record<string, unknown>[];
+  `
+    )
+    .all(evaluationId) as Record<string, unknown>[];
 
-  return rows.map(row => ({
+  return rows.map((row) => ({
     id: row.id as string,
     evaluation_id: row.evaluation_id as string,
     model_id: row.model_id as string,
@@ -424,7 +437,7 @@ export function getResults(evaluationId: string): (Result & { model_name: string
     error_message: row.error_message as string | undefined,
     created_at: row.created_at as string,
     model_name: row.model_name as string,
-    provider: row.provider as Provider
+    provider: row.provider as Provider,
   }));
 }
 
@@ -454,7 +467,7 @@ export function getEvaluationStatus(evaluationId: string): {
     overall_status: evaluation.status,
     created_at: evaluation.created_at,
     completed_at: evaluation.completed_at,
-    results: results.map(r => ({
+    results: results.map((r) => ({
       model_id: r.model_id,
       model_name: r.model_name,
       provider: r.provider,
@@ -464,8 +477,8 @@ export function getEvaluationStatus(evaluationId: string): {
       output_tokens: r.output_tokens,
       total_tokens: r.total_tokens,
       accuracy_score: r.accuracy_score,
-      error_message: r.error_message
-    }))
+      error_message: r.error_message,
+    })),
   };
 }
 
@@ -513,11 +526,14 @@ export function insertTemplate(
     partial_credit_concepts: partialCreditConcepts,
     created_at: now,
     updated_at: now,
-    run_count: 0
+    run_count: 0,
   };
 }
 
-export function getTemplates(sortBy: 'created' | 'name' | 'run_count' = 'created', order: 'asc' | 'desc' = 'desc'): EvaluationTemplate[] {
+export function getTemplates(
+  sortBy: 'created' | 'name' | 'run_count' = 'created',
+  order: 'asc' | 'desc' = 'desc'
+): EvaluationTemplate[] {
   const database = getDatabase();
 
   const sortColumn = sortBy === 'created' ? 'created_at' : sortBy === 'name' ? 'name' : 'run_count';
@@ -525,7 +541,7 @@ export function getTemplates(sortBy: 'created' | 'name' | 'run_count' = 'created
 
   const rows = database.prepare(query).all() as Record<string, unknown>[];
 
-  return rows.map(row => ({
+  return rows.map((row) => ({
     id: row.id as string,
     name: row.name as string,
     description: row.description as string | undefined,
@@ -533,16 +549,20 @@ export function getTemplates(sortBy: 'created' | 'name' | 'run_count' = 'created
     model_ids: JSON.parse(row.model_ids as string),
     accuracy_rubric: row.accuracy_rubric as RubricType,
     expected_output: row.expected_output as string | undefined,
-    partial_credit_concepts: row.partial_credit_concepts ? JSON.parse(row.partial_credit_concepts as string) : undefined,
+    partial_credit_concepts: row.partial_credit_concepts
+      ? JSON.parse(row.partial_credit_concepts as string)
+      : undefined,
     created_at: row.created_at as string,
     updated_at: row.updated_at as string,
-    run_count: row.run_count as number
+    run_count: row.run_count as number,
   }));
 }
 
 export function getTemplateById(id: string): EvaluationTemplate | null {
   const database = getDatabase();
-  const row = database.prepare('SELECT * FROM EvaluationTemplate WHERE id = ?').get(id) as Record<string, unknown> | undefined;
+  const row = database.prepare('SELECT * FROM EvaluationTemplate WHERE id = ?').get(id) as
+    | Record<string, unknown>
+    | undefined;
 
   if (!row) return null;
 
@@ -554,10 +574,12 @@ export function getTemplateById(id: string): EvaluationTemplate | null {
     model_ids: JSON.parse(row.model_ids as string),
     accuracy_rubric: row.accuracy_rubric as RubricType,
     expected_output: row.expected_output as string | undefined,
-    partial_credit_concepts: row.partial_credit_concepts ? JSON.parse(row.partial_credit_concepts as string) : undefined,
+    partial_credit_concepts: row.partial_credit_concepts
+      ? JSON.parse(row.partial_credit_concepts as string)
+      : undefined,
     created_at: row.created_at as string,
     updated_at: row.updated_at as string,
-    run_count: row.run_count as number
+    run_count: row.run_count as number,
   };
 }
 
@@ -592,9 +614,9 @@ export function updateTemplate(
   }
 
   params.push(id);
-  database.prepare(
-    `UPDATE EvaluationTemplate SET ${setClauses.join(', ')} WHERE id = ?`
-  ).run(...params);
+  database
+    .prepare(`UPDATE EvaluationTemplate SET ${setClauses.join(', ')} WHERE id = ?`)
+    .run(...params);
 
   return getTemplateById(id);
 }
@@ -607,9 +629,9 @@ export function deleteTemplate(id: string): boolean {
 
 export function incrementTemplateRunCount(id: string): void {
   const database = getDatabase();
-  database.prepare(
-    'UPDATE EvaluationTemplate SET run_count = run_count + 1, updated_at = ? WHERE id = ?'
-  ).run(new Date().toISOString(), id);
+  database
+    .prepare('UPDATE EvaluationTemplate SET run_count = run_count + 1, updated_at = ? WHERE id = ?')
+    .run(new Date().toISOString(), id);
 }
 
 export function getTemplateHistory(
@@ -625,13 +647,11 @@ export function getTemplateHistory(
   fastest_model?: { model_name: string; execution_time_ms: number };
   result_count: number;
 }[] {
-  const database = getDatabase();
-
   const evaluations = getEvaluations(templateId, limit, offset);
 
-  return evaluations.map(evaluation => {
+  return evaluations.map((evaluation) => {
     const results = getResults(evaluation.id);
-    const completedResults = results.filter(r => r.status === 'completed');
+    const completedResults = results.filter((r) => r.status === 'completed');
 
     let bestAccuracy: number | undefined;
     let fastestModel: { model_name: string; execution_time_ms: number } | undefined;
@@ -648,7 +668,7 @@ export function getTemplateHistory(
       if (fastest.execution_time_ms !== undefined) {
         fastestModel = {
           model_name: fastest.model_name,
-          execution_time_ms: fastest.execution_time_ms
+          execution_time_ms: fastest.execution_time_ms,
         };
       }
     }
@@ -660,7 +680,7 @@ export function getTemplateHistory(
       completed_at: evaluation.completed_at,
       best_accuracy: bestAccuracy,
       fastest_model: fastestModel,
-      result_count: results.length
+      result_count: results.length,
     };
   });
 }
