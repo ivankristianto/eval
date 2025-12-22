@@ -1,6 +1,6 @@
 # eval-ai-models Agent Guide
 
-Auto-generated from CLAUDE.md and GEMINI.md. Last updated: 2025-12-21.
+Auto-generated from CLAUDE.md and GEMINI.md. Last updated: 2025-12-22.
 
 ## Project Overview
 
