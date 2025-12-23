@@ -16,6 +16,8 @@ import type {
   RubricType,
   EvaluationStatus,
   ResultStatus,
+  FilterOptions,
+  EvaluationWithStats,
 } from './types';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -323,18 +325,68 @@ export function updateEvaluationStatus(
     .run(status, completedAt, errorMessage || null, id);
 }
 
-export function getEvaluations(templateId?: string, limit = 50, offset = 0): Evaluation[] {
+export function deleteEvaluations(ids: string[]): number {
+  const database = getDatabase();
+  if (ids.length === 0) return 0;
+  
+  const placeholders = ids.map(() => '?').join(',');
+  const result = database.prepare(`DELETE FROM Evaluation WHERE id IN (${placeholders})`).run(...ids);
+  
+  return result.changes;
+}
+
+export function getEvaluations(
+  filters: FilterOptions & { templateId?: string } = {},
+  limit = 50,
+  offset = 0
+): EvaluationWithStats[] {
   const database = getDatabase();
 
-  let query = 'SELECT * FROM Evaluation';
+  let query = `
+    SELECT 
+      e.*,
+      COUNT(r.id) as results_count,
+      AVG(r.accuracy_score) as avg_accuracy,
+      AVG(r.execution_time_ms) as avg_time_ms
+    FROM Evaluation e
+    LEFT JOIN Result r ON e.id = r.evaluation_id
+  `;
+  
+  const conditions: string[] = [];
   const params: unknown[] = [];
 
-  if (templateId) {
-    query += ' WHERE template_id = ?';
-    params.push(templateId);
+  if (filters.templateId) {
+    conditions.push('e.template_id = ?');
+    params.push(filters.templateId);
   }
 
-  query += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
+  if (filters.fromDate) {
+    conditions.push('e.created_at >= ?');
+    params.push(filters.fromDate);
+  }
+
+  if (filters.toDate) {
+    conditions.push('e.created_at <= ?');
+    params.push(filters.toDate);
+  }
+
+  if (filters.rubric) {
+    conditions.push('e.accuracy_rubric = ?');
+    params.push(filters.rubric);
+  }
+
+  if (conditions.length > 0) {
+    query += ' WHERE ' + conditions.join(' AND ');
+  }
+
+  query += ' GROUP BY e.id';
+
+  if (filters.minScore !== undefined) {
+    query += ' HAVING avg_accuracy >= ?';
+    params.push(filters.minScore);
+  }
+
+  query += ' ORDER BY e.created_at DESC LIMIT ? OFFSET ?';
   params.push(limit, offset);
 
   const rows = database.prepare(query).all(...params) as Record<string, unknown>[];
@@ -352,7 +404,60 @@ export function getEvaluations(templateId?: string, limit = 50, offset = 0): Eva
     status: row.status as EvaluationStatus,
     error_message: row.error_message as string | undefined,
     template_id: row.template_id as string | undefined,
+    results_count: row.results_count as number,
+    avg_accuracy: row.avg_accuracy as number | undefined,
+    avg_time_ms: row.avg_time_ms as number | undefined,
   }));
+}
+
+export function getEvaluationsCount(
+  filters: FilterOptions & { templateId?: string } = {}
+): number {
+  const database = getDatabase();
+
+  let query = `
+    SELECT COUNT(DISTINCT e.id) as count
+    FROM Evaluation e
+    LEFT JOIN Result r ON e.id = r.evaluation_id
+  `;
+
+  const conditions: string[] = [];
+  const params: unknown[] = [];
+
+  if (filters.templateId) {
+    conditions.push('e.template_id = ?');
+    params.push(filters.templateId);
+  }
+
+  if (filters.fromDate) {
+    conditions.push('e.created_at >= ?');
+    params.push(filters.fromDate);
+  }
+
+  if (filters.toDate) {
+    conditions.push('e.created_at <= ?');
+    params.push(filters.toDate);
+  }
+
+  if (filters.rubric) {
+    conditions.push('e.accuracy_rubric = ?');
+    params.push(filters.rubric);
+  }
+
+  if (conditions.length > 0) {
+    query += ' WHERE ' + conditions.join(' AND ');
+  }
+  
+  // Note: minScore filtering requires grouping and having, which complicates COUNT.
+  // For simplicity and performance, COUNT usually ignores complex HAVING clauses unless wrapped in subquery.
+  // If minScore is present, we need a subquery.
+  if (filters.minScore !== undefined) {
+    query = `SELECT COUNT(*) as count FROM (${query} GROUP BY e.id HAVING AVG(r.accuracy_score) >= ?) as filtered`;
+    params.push(filters.minScore);
+  }
+
+  const row = database.prepare(query).get(...params) as { count: number };
+  return row.count;
 }
 
 // ===== Result Queries =====
@@ -649,7 +754,7 @@ export function getTemplateHistory(
   fastest_model?: { model_name: string; execution_time_ms: number };
   result_count: number;
 }[] {
-  const evaluations = getEvaluations(templateId, limit, offset);
+  const evaluations = getEvaluations({ templateId }, limit, offset);
 
   return evaluations.map((evaluation) => {
     const results = getResults(evaluation.id);
