@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS ModelConfiguration (
 );
 
 CREATE INDEX IF NOT EXISTS idx_model_provider_active ON ModelConfiguration(provider, is_active);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_model_provider_name ON ModelConfiguration(provider, model_name);
 
 -- EvaluationTemplate table (must come before Evaluation due to foreign key)
 CREATE TABLE IF NOT EXISTS EvaluationTemplate (

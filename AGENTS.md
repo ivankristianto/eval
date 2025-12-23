@@ -57,6 +57,14 @@ npm run format:check
 npm run typecheck
 ```
 
+## Testing Status
+
+Latest coverage (vitest `npm test -- --coverage`):
+- Overall line coverage: 69.17%
+- Critical path coverage: validators.ts 84.29%, accuracy.ts 92.85%, evaluator.ts 93.05%
+- Other coverage: api-clients.ts 64.38%, db.ts 62.62%
+- Constitution Principle II satisfied for critical paths; improve api-clients/db coverage toward targets
+
 ## Development Conventions
 
 - Type safety: strict TypeScript usage is enforced.

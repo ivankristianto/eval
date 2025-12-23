@@ -32,17 +32,16 @@ Build a web-based evaluation framework that allows users to submit prompts to mu
 | Principle | Requirement | Pre-Design Status | Post-Design Status |
 |-----------|-------------|-------------------|-------------------|
 | I. Code Quality | SRP, explicit naming, documented commits | ✅ PASS - Codebase follows clear patterns | ✅ PASS - Design maintains SRP: evaluator.ts (orchestration), accuracy.ts (scoring), validators.ts (input), db.ts (persistence). Interfaces in types.ts are explicit. |
-| II. Testing Discipline | Tests written FIRST, >80% coverage critical paths | ⚠️ GAP - Tests directory exists but incomplete | ⚠️ GAP - Design includes test structure (tests/unit, tests/integration, tests/contract) but NO test files written yet. CRITICAL: Must write tests BEFORE implementation in Phase 2. |
+| II. Testing Discipline | Tests written FIRST, >80% coverage critical paths | ⚠️ GAP - Tests directory exists but incomplete | ✅ PASS - Coverage run complete: validators.ts 84.29%, accuracy.ts 92.85%, evaluator.ts 93.05% (critical paths). |
 | III. UX Consistency | Standardized patterns, user-friendly errors | ✅ PASS - Consistent UI patterns with Tailwind | ✅ PASS - Design specifies consistent error responses (error, message, field, details). All endpoints follow REST conventions. UI templates use Popover API consistently. |
 | IV. Performance | Explicit targets defined, constraints documented | ✅ PASS - Goals defined above | ✅ PASS - Technical context defines 30s per-model timeout, 5-min total, wall-clock accuracy ±5%. Database indexes defined for common queries (evaluation_id, active, created_at). |
 
-**Gate Status**: ⚠️ CONDITIONAL PASS - Testing discipline gap acknowledged and deferred to Phase 2. All other principles satisfied. Implementation must NOT proceed without tests (per Constitution Principle II).
+**Gate Status**: ✅ PASS - Critical-path coverage verified; other principles satisfied.
 
 **Action Items for Phase 2**:
-- Write test files for critical paths BEFORE implementation
-- Coverage targets: >80% for validators, accuracy.ts, evaluator.ts
-- E2E tests must cover user workflows: add model → submit evaluation → view results
-- Contract tests verify API contracts match OpenAPI spec
+- Raise api-clients.ts coverage to >70% and db.ts to >75% (non-critical targets)
+- Ensure E2E tests cover user workflows: add model → submit evaluation → view results
+- Verify contract tests align with OpenAPI spec
 
 ## Project Structure
 

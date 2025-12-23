@@ -20,7 +20,8 @@ import type {
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const DB_PATH = join(__dirname, '../../db/evaluation.db');
+const envDbPath = import.meta.env?.EVAL_DB_PATH || process.env.EVAL_DB_PATH;
+const DB_PATH = envDbPath || join(__dirname, '../../db/evaluation.db');
 const SCHEMA_PATH = join(__dirname, '../../db/schema.sql');
 
 let db: Database.Database | null = null;
@@ -31,6 +32,7 @@ export function getDatabase(): Database.Database {
   if (!db) {
     db = new Database(DB_PATH);
     db.pragma('journal_mode = WAL');
+    db.pragma('foreign_keys = ON');
   }
   return db;
 }
