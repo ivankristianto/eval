@@ -1,0 +1,106 @@
+---
+interface Props {
+  currentPage: number;
+  totalPages: number;
+  limit: number;
+}
+
+const { currentPage, totalPages, limit } = Astro.props;
+
+// Generate page numbers to display
+const getVisiblePages = () => {
+  if (totalPages <= 7) {
+    return Array.from({ length: totalPages }, (_, i) => i + 1);
+  }
+
+  const pages = [1];
+  
+  if (currentPage > 3) {
+    pages.push(-1); // Ellipsis
+  }
+
+  const start = Math.max(2, currentPage - 1);
+  const end = Math.min(totalPages - 1, currentPage + 1);
+
+  for (let i = start; i <= end; i++) {
+    pages.push(i);
+  }
+
+  if (currentPage < totalPages - 2) {
+    pages.push(-1); // Ellipsis
+  }
+
+  if (totalPages > 1) {
+    pages.push(totalPages);
+  }
+
+  return pages;
+};
+
+const visiblePages = getVisiblePages();
+const limitOptions = [10, 20, 50, 100];
+---
+
+<div
+  class="flex flex-col sm:flex-row items-center justify-between gap-4 w-full"
+  data-pagination-root
+  data-current-page={currentPage}
+  data-total-pages={totalPages}
+  data-current-limit={limit}
+>
+  <div class="flex items-center gap-2">
+    <span class="text-sm text-base-content/70">Rows per page:</span>
+    <div class="dropdown dropdown-top">
+      <div tabindex="0" role="button" class="btn btn-sm btn-outline m-1" data-limit-label>
+        {limit}
+      </div>
+      <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-20">
+        {limitOptions.map((opt) => (
+          <li>
+            <button type="button" class={limit === opt ? "active" : ""} data-limit-option={opt}>
+              {opt}
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </div>
+
+  <div class={`join ${totalPages > 1 ? "" : "hidden"}`} data-pagination-controls>
+    <button
+      type="button"
+      class={`join-item btn btn-sm ${currentPage === 1 ? "btn-disabled" : ""}`}
+      aria-label="Previous Page"
+      data-page-action="prev"
+    >
+      «
+    </button>
+
+    <div data-pagination-pages class="contents">
+      {visiblePages.map((page) =>
+        page === -1 ? (
+          <button class="join-item btn btn-sm btn-disabled" type="button">...</button>
+        ) : (
+          <button
+            type="button"
+            class={`join-item btn btn-sm ${page === currentPage ? "btn-active" : ""}`}
+            aria-label={`Page ${page}`}
+            aria-current={page === currentPage ? "page" : undefined}
+            data-page-number={page}
+          >
+            {page}
+          </button>
+        )
+      )}
+    </div>
+
+    <button
+      type="button"
+      class={`join-item btn btn-sm ${currentPage === totalPages ? "btn-disabled" : ""}`}
+      aria-label="Next Page"
+      data-page-action="next"
+    >
+      »
+    </button>
+  </div>
+</div>

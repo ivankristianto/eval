@@ -5,11 +5,28 @@ import Badge from '../components/ui/Badge.astro';
 import Button from '../components/ui/Button.astro';
 import EmptyState from '../components/ui/EmptyState.astro';
 import NewEvaluationModal from '../components/NewEvaluationModal.astro';
-import { getEvaluations, getResults } from '../lib/db';
+import Pagination from '../components/Pagination.astro';
+import FilterBar from '../components/FilterBar.astro';
+import BulkActions from '../components/BulkActions.astro';
+import ConfirmationModal from '../components/ui/ConfirmationModal.astro';
+import { getEvaluations, getEvaluationsCount } from '../lib/db';
+import { TYPOGRAPHY } from '../lib/typography';
+import type { RubricType } from '../lib/types';
 
 // Get query params
 const url = Astro.url;
 const templateId = url.searchParams.get('template');
+const limit = 50;
+const page = 1;
+const offset = 0;
+
+const filters = {
+  templateId: templateId || undefined,
+  fromDate: url.searchParams.get('fromDate') || undefined,
+  toDate: url.searchParams.get('toDate') || undefined,
+  rubric: (url.searchParams.get('rubric') as RubricType) || undefined,
+  minScore: url.searchParams.get('minScore') ? Number(url.searchParams.get('minScore')) : undefined,
+};
 
 // Get evaluations
 let evaluations: Array<{
@@ -19,51 +36,32 @@ let evaluations: Array<{
   status: string;
   created_at: string;
   completed_at?: string;
-  best_accuracy?: number;
-  fastest_model?: { model_name: string; execution_time_ms: number };
+  avg_accuracy?: number;
+  avg_time_ms?: number;
   result_count: number;
 }> = [];
 
+let totalEvaluations = 0;
+let totalPages = 1;
+
 try {
-  const rawEvaluations = getEvaluations(templateId || undefined, 50, 0);
+  const rawEvaluations = getEvaluations(filters, limit, offset);
+  totalEvaluations = getEvaluationsCount(filters);
+  totalPages = Math.max(1, Math.ceil(totalEvaluations / limit));
 
-  evaluations = rawEvaluations.map((e) => {
-    const results = getResults(e.id);
-    const completedResults = results.filter((r) => r.status === 'completed');
-
-    let bestAccuracy: number | undefined;
-    let fastestModel: { model_name: string; execution_time_ms: number } | undefined;
-
-    if (completedResults.length > 0) {
-      const best = completedResults.reduce((a, b) =>
-        (a.accuracy_score || 0) > (b.accuracy_score || 0) ? a : b
-      );
-      bestAccuracy = best.accuracy_score;
-
-      const fastest = completedResults.reduce((a, b) =>
-        (a.execution_time_ms || Infinity) < (b.execution_time_ms || Infinity) ? a : b
-      );
-      if (fastest.execution_time_ms !== undefined) {
-        fastestModel = {
-          model_name: fastest.model_name,
-          execution_time_ms: fastest.execution_time_ms,
-        };
-      }
-    }
-
-    return {
-      id: e.id,
-      instruction_text: e.instruction_text.substring(0, 100),
-      accuracy_rubric: e.accuracy_rubric,
-      status: e.status,
-      created_at: e.created_at,
-      completed_at: e.completed_at,
-      best_accuracy: bestAccuracy,
-      fastest_model: fastestModel,
-      result_count: results.length,
-    };
-  });
-} catch {
+  evaluations = rawEvaluations.map((e) => ({
+    id: e.id,
+    instruction_text: e.instruction_text.substring(0, 100),
+    accuracy_rubric: e.accuracy_rubric,
+    status: e.status,
+    created_at: e.created_at,
+    completed_at: e.completed_at,
+    avg_accuracy: e.avg_accuracy,
+    avg_time_ms: e.avg_time_ms,
+    result_count: e.results_count,
+  }));
+} catch (e) {
+  console.error('Error fetching evaluations:', e);
   // Database may not be initialized
 }
 
@@ -91,40 +89,78 @@ function getStatusVariant(status: string): 'warning' | 'info' | 'success' | 'err
 
 <Layout title="Evaluation History - Eval AI">
   <NewEvaluationModal />
+  <ConfirmationModal
+    id="delete-modal"
+    title="Delete Evaluations"
+    message="Are you sure you want to delete the selected evaluations? This action cannot be undone."
+    confirmLabel="Delete"
+    confirmVariant="error"
+  />
 
-  <div class="flex items-center justify-between mb-8">
-    <div>
-      <h1 class="text-3xl font-bold">Evaluation History</h1>
-      <p class="mt-2 text-base-content/70">All past evaluation runs and their results.</p>
+  <div class="flex items-center justify-between mb-12 animate-reveal">
+    <div class="accent-line">
+      <h1 class="text-5xl md:text-6xl font-display font-semibold tracking-tight mb-4 text-gradient-gold">
+        Evaluation History
+      </h1>
+      <p class="mt-3 text-base-content/60 text-lg">
+        All past evaluation runs and their results.
+      </p>
     </div>
-    <Button variant="primary" onclick="document.getElementById('new-evaluation-modal').showModal()">
+    <button
+      onclick="document.getElementById('new-evaluation-modal').showModal()"
+      class="btn btn-luxe btn-luxe-primary px-8 py-3 text-base font-semibold"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+      </svg>
       New Evaluation
-    </Button>
+    </button>
   </div>
 
+  <FilterBar
+    fromDate={filters.fromDate}
+    toDate={filters.toDate}
+    rubric={filters.rubric}
+    minScore={filters.minScore}
+  />
+
   <!-- History List -->
-  <Card>
-    {
-      evaluations.length > 0 ? (
-        <div class="overflow-x-auto">
-          <table class="table table-zebra w-full">
-            <thead>
-              <tr>
-                <th>Instruction</th>
-                <th>Rubric</th>
-                <th>Models</th>
-                <th>Best Accuracy</th>
-                <th>Fastest Model</th>
-                <th>Status</th>
-                <th>Date</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {evaluations.map((evaluation) => (
-                <tr class="hover:bg-base-200 transition-colors">
-                  <td class="max-w-xs">
-                    <div class="truncate text-sm font-medium" title={evaluation.instruction_text}>
+  <div class="card-luxe overflow-hidden animate-reveal delay-200">
+    <div id="evaluations-table-wrapper" class={evaluations.length > 0 ? '' : 'hidden'}>
+      <div class="overflow-x-auto">
+        <table class="table-luxe table-evaluation" id="evaluations-table">
+          <thead>
+            <tr>
+              <th>
+                <label>
+                  <input type="checkbox" class="checkbox checkbox-sm" id="select-all" />
+                </label>
+              </th>
+              <th>Instruction</th>
+              <th>Rubric</th>
+              <th>Models</th>
+              <th>Avg. Accuracy</th>
+              <th>Avg. Time</th>
+              <th>Status</th>
+              <th>Date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="evaluations-tbody">
+            {
+              evaluations.map((evaluation) => (
+                <tr>
+                  <th>
+                    <label>
+                      <input
+                        type="checkbox"
+                        class="checkbox checkbox-sm row-checkbox"
+                        value={evaluation.id}
+                      />
+                    </label>
+                  </th>
+                  <td>
+                    <div class="text-sm font-medium line-clamp-2" title={evaluation.instruction_text}>
                       {evaluation.instruction_text}
                     </div>
                   </td>
@@ -133,58 +169,552 @@ function getStatusVariant(status: string): 'warning' | 'info' | 'success' | 'err
                       {evaluation.accuracy_rubric.replace('_', ' ')}
                     </Badge>
                   </td>
-                  <td>{evaluation.result_count}</td>
-                  <td>
-                    {evaluation.best_accuracy !== undefined ? (
-                      <span class="font-semibold text-success">{evaluation.best_accuracy}%</span>
+                  <td class="font-mono text-center">{evaluation.result_count}</td>
+                  <td class="font-mono text-center">
+                    {evaluation.avg_accuracy !== undefined ? (
+                      <span
+                        class={`font-bold text-lg ${evaluation.avg_accuracy >= 90 ? 'metric-success' : evaluation.avg_accuracy >= 70 ? 'text-warning' : 'text-error'}`}
+                      >
+                        {Math.round(evaluation.avg_accuracy)}%
+                      </span>
                     ) : (
-                      '-'
+                      <span class="text-base-content/40">—</span>
                     )}
                   </td>
-                  <td>
-                    {evaluation.fastest_model ? (
-                      <div class="text-sm">
-                        <div class="font-medium">{evaluation.fastest_model.model_name}</div>
-                        <div class="text-base-content/50">
-                          {evaluation.fastest_model.execution_time_ms}ms
-                        </div>
+                  <td class="font-mono text-center">
+                    {evaluation.avg_time_ms !== undefined ? (
+                      <div class="text-base text-base-content/70">
+                        {Math.round(evaluation.avg_time_ms)}<span class="text-xs ml-0.5">ms</span>
                       </div>
                     ) : (
-                      '-'
+                      <span class="text-base-content/40">—</span>
                     )}
                   </td>
-                  <td>
-                    <Badge variant={getStatusVariant(evaluation.status)}>
+                  <td class="text-center">
+                    <Badge variant={getStatusVariant(evaluation.status)} size="sm">
                       {evaluation.status.charAt(0).toUpperCase() + evaluation.status.slice(1)}
                     </Badge>
                   </td>
-                  <td class="text-sm text-base-content/70">
+                  <td class="text-sm text-base-content/70 whitespace-nowrap">
                     {new Date(evaluation.created_at).toLocaleString()}
                   </td>
                   <td>
                     <a
                       href={`/evaluations/${evaluation.id}`}
-                      class="btn btn-xs btn-ghost text-primary"
+                      class="inline-flex items-center gap-1 text-sm font-medium text-base-content/60 hover:text-base-content transition-colors group whitespace-nowrap"
                     >
-                      View
+                      <span>View</span>
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                      </svg>
                     </a>
                   </td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ) : (
-        <EmptyState
-          title="No evaluations yet"
-          description="Run your first evaluation to compare AI models."
-          icon={emptyIcon}
-          action={{
-            label: 'Start Evaluation',
-            onClick: "document.getElementById('new-evaluation-modal').showModal()",
-          }}
-        />
-      )
-    }
-  </Card>
+              ))
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="flex justify-center p-6 pt-4">
+        <Pagination currentPage={page} totalPages={totalPages} limit={limit} />
+      </div>
+    </div>
+    <div id="evaluations-empty" class={evaluations.length > 0 ? 'hidden' : 'p-16'}>
+      <EmptyState
+        title="No evaluations found"
+        description={Object.values(filters).some((v) => v !== undefined)
+          ? 'Try adjusting your filters.'
+          : 'Run your first evaluation to compare AI models.'}
+        icon={emptyIcon}
+        action={Object.values(filters).some((v) => v !== undefined)
+          ? undefined
+          : {
+              label: 'Start Evaluation',
+              onClick: "document.getElementById('new-evaluation-modal').showModal()",
+            }}
+      />
+    </div>
+  </div>
+
+  <BulkActions />
 </Layout>
+
+<script>
+  import { addToast } from '../lib/toastStore';
+
+  const prefsKey = 'eval_user_prefs';
+  const allowedLimits = [10, 20, 50, 100];
+  const defaultLimit = 50;
+  const defaultPage = 1;
+
+  const tableWrapper = document.getElementById('evaluations-table-wrapper');
+  const emptyState = document.getElementById('evaluations-empty');
+  const tableBody = document.getElementById('evaluations-tbody');
+  const selectAll = document.getElementById('select-all') as HTMLInputElement | null;
+  const paginationRoot = document.querySelector('[data-pagination-root]');
+  const limitLabel = paginationRoot?.querySelector('[data-limit-label]');
+  const paginationControls = paginationRoot?.querySelector('[data-pagination-controls]');
+  const paginationPages = paginationRoot?.querySelector('[data-pagination-pages]');
+  const prevButton = paginationRoot?.querySelector("[data-page-action='prev']");
+  const nextButton = paginationRoot?.querySelector("[data-page-action='next']");
+
+  const bulkBar = document.getElementById('bulk-actions-bar');
+  const bulkCount = document.getElementById('bulk-count');
+  const bulkDeleteTrigger = document.getElementById('bulk-delete-trigger');
+  const bulkCancelBtn = document.getElementById('bulk-cancel-btn');
+  const deleteModal = document.getElementById('delete-modal') as HTMLDialogElement | null;
+  const deleteConfirmBtn = document.getElementById('delete-modal-confirm');
+
+  let selectedIds = new Set<string>();
+
+  const readPrefs = () => {
+    try {
+      return JSON.parse(localStorage.getItem(prefsKey) || '{}');
+    } catch {
+      return {};
+    }
+  };
+
+  const writePrefs = (pagination) => {
+    const prefs = readPrefs();
+    const nextPrefs = {
+      ...prefs,
+      pagination: {
+        ...(prefs.pagination || {}),
+        ...pagination,
+      },
+    };
+    localStorage.setItem(prefsKey, JSON.stringify(nextPrefs));
+  };
+
+  const sanitizeLimit = (value) => (allowedLimits.includes(value) ? value : defaultLimit);
+  const sanitizePage = (value) =>
+    Number.isFinite(value) && value > 0 ? Math.floor(value) : defaultPage;
+
+  const getPaginationState = () => {
+    const prefs = readPrefs();
+    const limit = sanitizeLimit(Number(prefs.pagination?.itemsPerPage) || defaultLimit);
+    const page = sanitizePage(Number(prefs.pagination?.currentPage) || defaultPage);
+    return { page, limit };
+  };
+
+  const setPaginationState = (page, limit) => {
+    writePrefs({ itemsPerPage: limit, currentPage: page });
+  };
+
+  const updateBulkUI = () => {
+    const count = selectedIds.size;
+    if (bulkBar) {
+      if (count > 0) {
+        bulkBar.classList.remove('translate-y-24', 'opacity-0', 'pointer-events-none');
+        bulkBar.classList.add('translate-y-0', 'opacity-100');
+        if (bulkCount) bulkCount.textContent = `${count} selected`;
+      } else {
+        bulkBar.classList.add('translate-y-24', 'opacity-0', 'pointer-events-none');
+        bulkBar.classList.remove('translate-y-0', 'opacity-100');
+      }
+    }
+  };
+
+  const updateSelectAllState = () => {
+    if (!selectAll || !tableBody) return;
+    const rowCheckboxes = tableBody.querySelectorAll('.row-checkbox');
+    const total = rowCheckboxes.length;
+    const count = selectedIds.size;
+    selectAll.checked = total > 0 && count === total;
+    selectAll.indeterminate = count > 0 && count < total;
+  };
+
+  const clearSelections = () => {
+    selectedIds = new Set();
+    if (selectAll) {
+      selectAll.checked = false;
+      selectAll.indeterminate = false;
+    }
+    updateBulkUI();
+  };
+
+  const getFilterParams = () => {
+    const params = new URLSearchParams(window.location.search);
+    params.delete('page');
+    params.delete('limit');
+    return params;
+  };
+
+  const cleanPaginationParams = () => {
+    const url = new URL(window.location.href);
+    if (url.searchParams.has('page') || url.searchParams.has('limit')) {
+      url.searchParams.delete('page');
+      url.searchParams.delete('limit');
+      window.history.replaceState(null, '', url.toString());
+    }
+  };
+
+  const buildVisiblePages = (currentPage, totalPages) => {
+    if (totalPages <= 7) {
+      return Array.from({ length: totalPages }, (_, index) => index + 1);
+    }
+
+    const pages = [1];
+
+    if (currentPage > 3) {
+      pages.push(-1);
+    }
+
+    const start = Math.max(2, currentPage - 1);
+    const end = Math.min(totalPages - 1, currentPage + 1);
+
+    for (let page = start; page <= end; page += 1) {
+      pages.push(page);
+    }
+
+    if (currentPage < totalPages - 2) {
+      pages.push(-1);
+    }
+
+    if (totalPages > 1) {
+      pages.push(totalPages);
+    }
+
+    return pages;
+  };
+
+  const updatePaginationUI = (currentPage, totalPages, limit) => {
+    if (paginationRoot) {
+      paginationRoot.setAttribute('data-current-page', String(currentPage));
+      paginationRoot.setAttribute('data-total-pages', String(totalPages));
+      paginationRoot.setAttribute('data-current-limit', String(limit));
+    }
+
+    if (limitLabel) {
+      limitLabel.textContent = String(limit);
+    }
+
+    if (paginationRoot) {
+      paginationRoot.querySelectorAll('[data-limit-option]').forEach((button) => {
+        const value = Number(button.getAttribute('data-limit-option'));
+        button.classList.toggle('active', value === limit);
+      });
+    }
+
+    if (paginationControls) {
+      paginationControls.classList.toggle('hidden', totalPages <= 1);
+    }
+
+    if (prevButton) {
+      prevButton.classList.toggle('btn-disabled', currentPage <= 1);
+    }
+
+    if (nextButton) {
+      nextButton.classList.toggle('btn-disabled', currentPage >= totalPages);
+    }
+
+    if (paginationPages) {
+      paginationPages.innerHTML = '';
+      const pages = buildVisiblePages(currentPage, totalPages);
+
+      pages.forEach((page) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'join-item btn btn-sm';
+
+        if (page === -1) {
+          button.classList.add('btn-disabled');
+          button.textContent = '...';
+        } else {
+          button.setAttribute('data-page-number', String(page));
+          button.textContent = String(page);
+          button.setAttribute('aria-label', `Page ${page}`);
+          if (page === currentPage) {
+            button.classList.add('btn-active');
+            button.setAttribute('aria-current', 'page');
+          }
+        }
+
+        paginationPages.appendChild(button);
+      });
+    }
+  };
+
+  const buildStatusVariant = (status) => {
+    switch (status) {
+      case 'pending':
+        return 'warning';
+      case 'running':
+        return 'info';
+      case 'completed':
+        return 'success';
+      case 'failed':
+        return 'error';
+      default:
+        return 'neutral';
+    }
+  };
+
+  const renderEvaluations = (items) => {
+    if (!tableBody) return;
+    tableBody.innerHTML = '';
+
+    items.forEach((item) => {
+      const row = document.createElement('tr');
+      row.className = 'hover:bg-base-200 transition-colors';
+
+      const checkboxCell = document.createElement('th');
+      const checkboxLabel = document.createElement('label');
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.className = 'checkbox checkbox-sm row-checkbox';
+      checkbox.value = String(item.id);
+      checkboxLabel.appendChild(checkbox);
+      checkboxCell.appendChild(checkboxLabel);
+      row.appendChild(checkboxCell);
+
+      const instructionCell = document.createElement('td');
+      instructionCell.className = 'max-w-xs';
+      const instructionText = document.createElement('div');
+      const rawInstruction = String(item.instruction_text || '');
+      instructionText.className = 'truncate text-sm font-medium';
+      instructionText.title = rawInstruction;
+      instructionText.textContent = rawInstruction.substring(0, 100);
+      instructionCell.appendChild(instructionText);
+      row.appendChild(instructionCell);
+
+      const rubricCell = document.createElement('td');
+      const rubricBadge = document.createElement('span');
+      rubricBadge.className = 'badge badge-ghost badge-sm';
+      rubricBadge.textContent = String(item.accuracy_rubric || '').replace('_', ' ');
+      rubricCell.appendChild(rubricBadge);
+      row.appendChild(rubricCell);
+
+      const modelsCell = document.createElement('td');
+      const resultsCount = item.results_count ?? item.result_count ?? 0;
+      modelsCell.textContent = String(resultsCount);
+      row.appendChild(modelsCell);
+
+      const accuracyCell = document.createElement('td');
+      if (item.avg_accuracy !== undefined && item.avg_accuracy !== null) {
+        const accuracyValue = Math.round(Number(item.avg_accuracy));
+        const accuracySpan = document.createElement('span');
+        accuracySpan.className = 'font-semibold';
+        if (accuracyValue >= 90) {
+          accuracySpan.classList.add('text-success');
+        } else if (accuracyValue >= 70) {
+          accuracySpan.classList.add('text-warning');
+        } else {
+          accuracySpan.classList.add('text-error');
+        }
+        accuracySpan.textContent = `${accuracyValue}%`;
+        accuracyCell.appendChild(accuracySpan);
+      } else {
+        accuracyCell.textContent = '-';
+      }
+      row.appendChild(accuracyCell);
+
+      const timeCell = document.createElement('td');
+      if (item.avg_time_ms !== undefined && item.avg_time_ms !== null) {
+        const timeWrapper = document.createElement('div');
+        timeWrapper.className = 'text-sm';
+        const timeValue = document.createElement('div');
+        timeValue.className = 'text-base-content/70';
+        timeValue.textContent = `${Math.round(Number(item.avg_time_ms))}ms`;
+        timeWrapper.appendChild(timeValue);
+        timeCell.appendChild(timeWrapper);
+      } else {
+        timeCell.textContent = '-';
+      }
+      row.appendChild(timeCell);
+
+      const statusCell = document.createElement('td');
+      const statusBadge = document.createElement('span');
+      const statusVariant = buildStatusVariant(item.status);
+      statusBadge.className = `badge badge-${statusVariant}`;
+      const statusLabel = String(item.status || 'unknown');
+      statusBadge.textContent = `${statusLabel.charAt(0).toUpperCase()}${statusLabel.slice(1)}`;
+      statusCell.appendChild(statusBadge);
+      row.appendChild(statusCell);
+
+      const dateCell = document.createElement('td');
+      dateCell.className = 'text-sm text-base-content/70';
+      dateCell.textContent = new Date(item.created_at).toLocaleString();
+      row.appendChild(dateCell);
+
+      const actionCell = document.createElement('td');
+      const viewLink = document.createElement('a');
+      viewLink.className = 'btn btn-xs btn-ghost text-primary';
+      viewLink.href = `/evaluations/${item.id}`;
+      viewLink.textContent = 'View';
+      actionCell.appendChild(viewLink);
+      row.appendChild(actionCell);
+
+      tableBody.appendChild(row);
+    });
+  };
+
+  const toggleEmptyState = (total) => {
+    if (tableWrapper) {
+      tableWrapper.classList.toggle('hidden', total === 0);
+    }
+    if (emptyState) {
+      emptyState.classList.toggle('hidden', total !== 0);
+    }
+  };
+
+  const refreshEvaluations = async () => {
+    const { page, limit } = getPaginationState();
+    setPaginationState(page, limit);
+    const params = getFilterParams();
+    params.set('limit', String(limit));
+    params.set('offset', String((page - 1) * limit));
+
+    try {
+      const response = await fetch(`/api/evaluations?${params.toString()}`);
+      if (!response.ok) {
+        throw new Error('Failed to load evaluations.');
+      }
+      const data = await response.json();
+      const total = Number(data.total) || 0;
+      const totalPages = Math.max(1, Math.ceil(total / limit));
+
+      if (total > 0 && page > totalPages) {
+        setPaginationState(totalPages, limit);
+        await refreshEvaluations();
+        return;
+      }
+
+      renderEvaluations(Array.isArray(data.items) ? data.items : []);
+      updatePaginationUI(page, totalPages, limit);
+      toggleEmptyState(total);
+      clearSelections();
+    } catch (error) {
+      addToast('Error loading evaluations.', 'error');
+    }
+  };
+
+  const setupSelectionHandlers = () => {
+    if (tableBody) {
+      tableBody.addEventListener('change', (event) => {
+        const target = event.target as HTMLElement;
+        if (!(target instanceof HTMLInputElement)) return;
+        if (!target.classList.contains('row-checkbox')) return;
+
+        if (target.checked) {
+          selectedIds.add(target.value);
+        } else {
+          selectedIds.delete(target.value);
+        }
+
+        updateBulkUI();
+        updateSelectAllState();
+      });
+    }
+
+    if (selectAll) {
+      selectAll.addEventListener('change', () => {
+        const checked = selectAll.checked;
+        selectedIds = new Set();
+        tableBody?.querySelectorAll('.row-checkbox').forEach((checkbox) => {
+          const input = checkbox as HTMLInputElement;
+          input.checked = checked;
+          if (checked) {
+            selectedIds.add(input.value);
+          }
+        });
+        updateBulkUI();
+        updateSelectAllState();
+      });
+    }
+  };
+
+  const setupPaginationHandlers = () => {
+    if (!paginationRoot) return;
+
+    paginationRoot.addEventListener('click', (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) {
+        return;
+      }
+      const limitButton = target.closest('[data-limit-option]');
+      if (limitButton && !limitButton.classList.contains('active')) {
+        const limit = Number(limitButton.getAttribute('data-limit-option'));
+        if (Number.isFinite(limit)) {
+          setPaginationState(1, sanitizeLimit(limit));
+          refreshEvaluations();
+        }
+        return;
+      }
+
+      const pageButton = target.closest('[data-page-number]');
+      if (pageButton && !pageButton.classList.contains('btn-active')) {
+        const page = Number(pageButton.getAttribute('data-page-number'));
+        if (Number.isFinite(page)) {
+          const { limit } = getPaginationState();
+          setPaginationState(sanitizePage(page), limit);
+          refreshEvaluations();
+        }
+        return;
+      }
+
+      const actionButton = target.closest('[data-page-action]');
+      if (actionButton) {
+        if (actionButton.classList.contains('btn-disabled')) return;
+        const action = actionButton.getAttribute('data-page-action');
+        const { page, limit } = getPaginationState();
+        const nextPage = action === 'prev' ? page - 1 : page + 1;
+        setPaginationState(sanitizePage(nextPage), limit);
+        refreshEvaluations();
+      }
+    });
+  };
+
+  if (bulkCancelBtn) {
+    bulkCancelBtn.addEventListener('click', () => {
+      selectedIds = new Set();
+      tableBody?.querySelectorAll('.row-checkbox').forEach((checkbox) => {
+        (checkbox as HTMLInputElement).checked = false;
+      });
+      updateBulkUI();
+      updateSelectAllState();
+    });
+  }
+
+  if (bulkDeleteTrigger) {
+    bulkDeleteTrigger.addEventListener('click', () => {
+      deleteModal?.showModal();
+    });
+  }
+
+  if (deleteConfirmBtn) {
+    deleteConfirmBtn.addEventListener('click', async (event) => {
+      event.preventDefault();
+
+      try {
+        const response = await fetch('/api/evaluations', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ids: Array.from(selectedIds) }),
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          addToast(`Successfully deleted ${result.deleted} evaluations`, 'success');
+          setTimeout(() => {
+            window.location.reload();
+          }, 1000);
+        } else {
+          const err = await response.json();
+          addToast(`Error: ${err.error}`, 'error');
+        }
+      } catch (error) {
+        addToast('Network error occurred', 'error');
+      }
+
+      deleteModal?.close();
+    });
+  }
+
+  cleanPaginationParams();
+  setupSelectionHandlers();
+  setupPaginationHandlers();
+  refreshEvaluations();
+</script>

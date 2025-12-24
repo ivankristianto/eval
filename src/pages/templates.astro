@@ -44,17 +44,23 @@ const templateIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 t
 <Layout title="Evaluation Templates - Eval AI">
   <Breadcrumbs items={breadcrumbItems} />
 
-  <div class="mb-8">
-    <h1 class="text-3xl font-bold">Evaluation Templates</h1>
-    <p class="mt-2 text-base-content/70">Saved evaluation configurations for quick reuse.</p>
+  <div class="flex items-center justify-between mb-12 animate-reveal">
+    <div class="accent-line">
+      <h1 class="text-5xl md:text-6xl font-display font-semibold tracking-tight mb-4 text-gradient-gold">
+        Evaluation Templates
+      </h1>
+      <p class="mt-3 text-base-content/60 text-lg">
+        Saved evaluation configurations for quick reuse.
+      </p>
+    </div>
   </div>
 
   <!-- Templates List -->
-  <Card>
+  <div class="card-luxe overflow-hidden animate-reveal delay-200">
     {
       templates.length > 0 ? (
         <div class="overflow-x-auto">
-          <table class="table table-zebra w-full">
+          <table class="table-luxe table-templates">
             <thead>
               <tr>
                 <th>Name</th>
@@ -68,33 +74,30 @@ const templateIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 t
             </thead>
             <tbody id="templates-body">
               {templates.map((template) => (
-                <tr data-id={template.id} class="hover:bg-base-200 transition-colors">
+                <tr data-id={template.id}>
                   <td>
                     <div class="font-medium">{template.name}</div>
                     {template.description && (
                       <div class="text-xs text-base-content/50 mt-1">{template.description}</div>
                     )}
                   </td>
-                  <td class="max-w-xs">
-                    <div
-                      class="truncate text-sm text-base-content/70"
-                      title={template.instruction_text}
-                    >
+                  <td>
+                    <div class="text-sm text-base-content/70 line-clamp-2" title={template.instruction_text}>
                       {template.instruction_text}
                     </div>
                   </td>
-                  <td>{template.model_count}</td>
+                  <td class="font-mono text-center">{template.model_count}</td>
                   <td>
                     <Badge variant="ghost" size="sm">
                       {template.accuracy_rubric.replace('_', ' ')}
                     </Badge>
                   </td>
-                  <td>{template.run_count}</td>
-                  <td class="text-sm text-base-content/70">
+                  <td class="font-mono text-center">{template.run_count}</td>
+                  <td class="text-sm text-base-content/70 whitespace-nowrap">
                     {new Date(template.created_at).toLocaleDateString()}
                   </td>
                   <td>
-                    <div class="flex gap-2">
+                    <div class="flex gap-2 whitespace-nowrap">
                       <button
                         class="run-btn btn btn-xs btn-ghost text-primary"
                         data-id={template.id}
@@ -121,15 +124,17 @@ const templateIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 t
           </table>
         </div>
       ) : (
-        <EmptyState
-          title="No templates saved"
-          description="Complete an evaluation and save it as a template."
-          icon={templateIcon}
-          action={{ label: 'Go to Evaluate', href: '/' }}
-        />
+        <div class="p-16">
+          <EmptyState
+            title="No templates saved"
+            description="Complete an evaluation and save it as a template."
+            icon={templateIcon}
+            action={{ label: 'Go to Evaluate', href: '/' }}
+          />
+        </div>
       )
     }
-  </Card>
+  </div>
 </Layout>
 
 <script>

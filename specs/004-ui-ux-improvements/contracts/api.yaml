@@ -1,0 +1,96 @@
+openapi: 3.0.0
+info:
+  title: Eval AI Models API
+  version: 1.0.0
+paths:
+  /api/evaluations:
+    get:
+      summary: List evaluations with pagination and filtering
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 50
+        - in: query
+          name: offset
+          schema:
+            type: integer
+            default: 0
+        - in: query
+          name: fromDate
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: toDate
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: rubric
+          schema:
+            type: string
+        - in: query
+          name: minScore
+          schema:
+            type: number
+            format: float
+      responses:
+        '200':
+          description: List of evaluations
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Evaluation'
+                  total:
+                    type: integer
+                  page:
+                    type: integer
+                  pageSize:
+                    type: integer
+
+    delete:
+      summary: Bulk delete evaluations
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ids:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: Deletion successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deletedCount:
+                    type: integer
+
+components:
+  schemas:
+    Evaluation:
+      type: object
+      properties:
+        id:
+          type: string
+        instruction_text:
+          type: string
+        status:
+          type: string
+        created_at:
+          type: string
+        avg_accuracy:
+          type: number

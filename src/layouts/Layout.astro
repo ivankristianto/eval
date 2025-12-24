@@ -2,6 +2,7 @@
 import '../styles/global.css';
 import Navbar from '../components/layout/Navbar.astro';
 import Toast from '../components/ui/Toast.astro';
+import { TYPOGRAPHY } from '../lib/typography';
 
 export interface Props {
   title?: string;
@@ -16,16 +17,32 @@ const { title = 'Eval AI' } = Astro.props;
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{title}</title>
+
+    <!-- Terminal Luxe Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
     <!-- Prevent FOUC -->
     <script is:inline>
-      const storedTheme = localStorage.getItem('theme');
+      const prefsKey = 'eval_user_prefs';
+      const readPrefs = () => {
+        try {
+          return JSON.parse(localStorage.getItem(prefsKey) || '{}');
+        } catch {
+          return {};
+        }
+      };
+
+      const prefsTheme = readPrefs()?.theme;
+      const storedTheme = prefsTheme || localStorage.getItem('theme');
       const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches
         ? 'dark'
         : 'light';
       document.documentElement.setAttribute('data-theme', storedTheme || systemTheme);
     </script>
   </head>
-  <body class="min-h-screen bg-base-100 text-base-content font-sans antialiased">
+  <body class={`min-h-screen bg-base-100 text-base-content font-sans antialiased ${TYPOGRAPHY.body}`}>
     <Navbar />
 
     <main class="container mx-auto px-4 py-8 max-w-7xl">

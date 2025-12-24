@@ -17,77 +17,101 @@ const isActive = (href: string) => {
 };
 ---
 
-<div class="navbar bg-base-100 border-b border-base-200">
-  <div class="navbar-start">
-    <!-- Mobile hamburger menu -->
-    <div class="dropdown">
-      <div tabindex="0" role="button" class="btn btn-ghost lg:hidden" aria-label="Menu">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          class="h-5 w-5"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
+<nav class="bg-base-100/80 backdrop-blur-xl border-b border-gold-light sticky top-0 z-50 shadow-soft">
+  <div class="container mx-auto px-4 max-w-7xl">
+    <div class="flex items-center justify-between h-20">
+      <!-- Logo -->
+      <a href="/" class="flex items-center gap-3 group transition-all hover:gap-4">
+        <div class="relative">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-8 w-8 transition-all group-hover:scale-110"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="url(#goldGradient)"
             stroke-width="2"
-            d="M4 6h16M4 12h8m-8 6h16"></path>
-        </svg>
-      </div>
-      <ul
-        tabindex="0"
-        class="menu menu-sm dropdown-content mt-3 z-1 p-2 shadow bg-base-100 rounded-box w-52"
-      >
+          >
+            <defs>
+              <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style="stop-color:#d4af37;stop-opacity:1" />
+                <stop offset="100%" style="stop-color:#f0d678;stop-opacity:1" />
+              </linearGradient>
+            </defs>
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+            ></path>
+          </svg>
+          <div class="absolute inset-0 bg-gradient-gold opacity-20 blur-md group-hover:opacity-40 transition-opacity"></div>
+        </div>
+        <span class="hidden sm:inline font-display text-2xl font-semibold tracking-tight text-gradient-gold">
+          Eval AI
+        </span>
+      </a>
+
+      <!-- Desktop navigation -->
+      <div class="hidden lg:flex items-center gap-2">
         {
           navItems.map((item) => (
-            <li>
-              <a href={item.href} class={isActive(item.href) ? 'active' : ''}>
-                {item.label}
-              </a>
-            </li>
-          ))
-        }
-      </ul>
-    </div>
-
-    <!-- Logo -->
-    <a href="/" class="btn btn-ghost text-xl gap-2">
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        class="h-6 w-6 text-primary"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
-        ></path>
-      </svg>
-      <span class="hidden sm:inline font-bold">Eval AI</span>
-    </a>
-  </div>
-
-  <!-- Desktop navigation -->
-  <div class="navbar-center hidden lg:flex">
-    <ul class="menu menu-horizontal px-1 gap-1">
-      {
-        navItems.map((item) => (
-          <li>
-            <a href={item.href} class={isActive(item.href) ? 'active font-medium' : ''}>
+            <a
+              href={item.href}
+              class={`px-5 py-2.5 rounded-lg font-medium text-sm transition-all ${
+                isActive(item.href)
+                  ? 'bg-gradient-gold text-luxe-midnight shadow-gold'
+                  : 'text-base-content/70 hover:text-base-content hover:bg-base-200/50'
+              }`}
+            >
               {item.label}
             </a>
-          </li>
-        ))
-      }
-    </ul>
-  </div>
+          ))
+        }
+      </div>
 
-  <div class="navbar-end gap-2">
-    <ThemeController />
+      <!-- Mobile hamburger + Theme -->
+      <div class="flex items-center gap-3 lg:hidden">
+        <ThemeController />
+        <div class="dropdown dropdown-end">
+          <div tabindex="0" role="button" class="btn btn-ghost btn-sm" aria-label="Menu">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 6h16M4 12h8m-8 6h16"
+              ></path>
+            </svg>
+          </div>
+          <ul
+            tabindex="0"
+            class="menu menu-sm dropdown-content mt-3 p-3 shadow-elevated bg-base-100 rounded-xl w-52 border border-gold-light"
+          >
+            {
+              navItems.map((item) => (
+                <li>
+                  <a
+                    href={item.href}
+                    class={isActive(item.href) ? 'active font-semibold bg-gradient-gold text-luxe-midnight' : 'font-medium'}
+                  >
+                    {item.label}
+                  </a>
+                </li>
+              ))
+            }
+          </ul>
+        </div>
+      </div>
+
+      <!-- Desktop theme controller -->
+      <div class="hidden lg:block">
+        <ThemeController />
+      </div>
+    </div>
   </div>
-</div>
+</nav>

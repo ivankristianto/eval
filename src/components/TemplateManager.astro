@@ -3,99 +3,99 @@
 // Modal to save current evaluation as a reusable template
 ---
 
-<!-- Template Manager Modal (using HTML Popover API) -->
-<div
-  id="template-modal"
-  popover
-  class="bg-white rounded-lg shadow-xl max-w-md w-full mx-auto mt-[10vh] p-0 border-0"
->
-  <form id="template-form">
-    <div class="px-4 pt-5 pb-4 sm:p-6">
-      <div class="sm:flex sm:items-start">
-        <div class="mt-3 text-center sm:mt-0 sm:text-left w-full">
-          <h3 class="text-lg leading-6 font-medium text-gray-900">Save as Template</h3>
-          <p class="mt-1 text-sm text-gray-500">Save this evaluation configuration for reuse.</p>
+<!-- Template Manager Modal (using native dialog with Terminal Luxe styling) -->
+<dialog id="template-modal" class="modal">
+  <div class="modal-box">
+    <form method="dialog">
+      <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+    </form>
 
-          <div class="mt-4 space-y-4">
-            <!-- Template Name -->
-            <div>
-              <label for="template-name" class="block text-sm font-medium text-gray-700">
-                Template Name <span class="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                id="template-name"
-                name="name"
-                required
-                maxlength="100"
-                placeholder="e.g., Code Review Prompt Test"
-                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-              />
-            </div>
+    <h3 class="font-display text-2xl font-semibold mb-2 text-gold-accessible">Save as Template</h3>
+    <p class="text-base-content/70 mb-6">Save this evaluation configuration for reuse.</p>
 
-            <!-- Template Description -->
-            <div>
-              <label for="template-description" class="block text-sm font-medium text-gray-700">
-                Description <span class="text-gray-400">(optional)</span>
-              </label>
-              <textarea
-                id="template-description"
-                name="description"
-                rows="2"
-                maxlength="500"
-                placeholder="Brief description of what this template evaluates..."
-                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-              ></textarea>
-            </div>
-
-            <!-- Summary of what will be saved -->
-            <div class="bg-gray-50 rounded-md p-3">
-              <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Will save:</p>
-              <ul id="template-summary" class="mt-2 text-sm text-gray-600 space-y-1">
-                <!-- Populated by JavaScript -->
-              </ul>
-            </div>
-          </div>
-        </div>
+    <form id="template-form" class="space-y-5">
+      <!-- Template Name -->
+      <div class="form-control w-full">
+        <label class="label" for="template-name">
+          <span class="label-text font-medium">Template Name <span class="text-error">*</span></span>
+        </label>
+        <input
+          type="text"
+          id="template-name"
+          name="name"
+          required
+          maxlength="100"
+          placeholder="e.g., Code Review Prompt Test"
+          class="input input-bordered w-full"
+        />
       </div>
-    </div>
 
-    <!-- Error message -->
-    <div id="template-error" class="hidden px-4 sm:px-6">
-      <div class="rounded-md bg-red-50 p-3">
-        <p id="template-error-text" class="text-sm text-red-700"></p>
+      <!-- Template Description -->
+      <div class="form-control w-full">
+        <label class="label" for="template-description">
+          <span class="label-text font-medium">Description <span class="text-base-content/50">(optional)</span></span>
+        </label>
+        <textarea
+          id="template-description"
+          name="description"
+          rows="3"
+          maxlength="500"
+          placeholder="Brief description of what this template evaluates..."
+          class="textarea textarea-bordered w-full"
+        ></textarea>
       </div>
-    </div>
 
-    <!-- Success message -->
-    <div id="template-success" class="hidden px-4 sm:px-6">
-      <div class="rounded-md bg-green-50 p-3">
-        <p class="text-sm text-green-700">Template saved successfully!</p>
+      <!-- Summary of what will be saved -->
+      <div class="bg-base-200 rounded-lg p-4 border border-base-content/10">
+        <p class="text-xs font-semibold text-base-content/60 uppercase tracking-wider mb-3">WILL SAVE:</p>
+        <ul id="template-summary" class="space-y-2 text-sm text-base-content/80">
+          <!-- Populated by JavaScript -->
+        </ul>
       </div>
-    </div>
 
-    <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse rounded-b-lg gap-2">
-      <button
-        type="submit"
-        id="template-submit-btn"
-        class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:w-auto sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        Save Template
-      </button>
-      <button
-        type="button"
-        id="template-cancel-btn"
-        popovertarget="template-modal"
-        popovertargetaction="hide"
-        class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:w-auto sm:text-sm"
-      >
-        Cancel
-      </button>
-    </div>
+      <!-- Error message -->
+      <div id="template-error" class="hidden alert alert-error">
+        <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <span id="template-error-text"></span>
+      </div>
+
+      <!-- Success message -->
+      <div id="template-success" class="hidden alert alert-success">
+        <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <span>Template saved successfully!</span>
+      </div>
+
+      <!-- Actions -->
+      <div class="modal-action">
+        <button
+          type="button"
+          id="template-cancel-btn"
+          class="btn btn-ghost min-w-28"
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          id="template-submit-btn"
+          class="btn btn-luxe btn-luxe-primary min-w-28"
+        >
+          Save Template
+        </button>
+      </div>
+    </form>
+  </div>
+  <form method="dialog" class="modal-backdrop">
+    <button>close</button>
   </form>
-</div>
+</dialog>
 
 <script>
+  import { addToast } from '../lib/toastStore';
+
   // Template Manager state
   interface TemplateData {
     instruction_text: string;
@@ -105,122 +105,141 @@
     partial_credit_concepts?: string[];
   }
 
-  let pendingTemplateData: TemplateData | null = null;
+  function initTemplateManager() {
+    let pendingTemplateData: TemplateData | null = null;
 
-  // DOM Elements
-  const templateModal = document.getElementById('template-modal') as HTMLElement;
-  const templateForm = document.getElementById('template-form') as HTMLFormElement;
-  const templateNameInput = document.getElementById('template-name') as HTMLInputElement;
-  const templateDescriptionInput = document.getElementById(
-    'template-description'
-  ) as HTMLTextAreaElement;
-  const templateSummary = document.getElementById('template-summary') as HTMLUListElement;
-  const templateError = document.getElementById('template-error') as HTMLDivElement;
-  const templateErrorText = document.getElementById('template-error-text') as HTMLParagraphElement;
-  const templateSuccess = document.getElementById('template-success') as HTMLDivElement;
-  const templateSubmitBtn = document.getElementById('template-submit-btn') as HTMLButtonElement;
+    // DOM Elements
+    const templateModal = document.getElementById('template-modal') as HTMLDialogElement;
+    const templateForm = document.getElementById('template-form') as HTMLFormElement;
+    const templateNameInput = document.getElementById('template-name') as HTMLInputElement;
+    const templateDescriptionInput = document.getElementById(
+      'template-description'
+    ) as HTMLTextAreaElement;
+    const templateSummary = document.getElementById('template-summary') as HTMLUListElement;
+    const templateError = document.getElementById('template-error') as HTMLDivElement;
+    const templateErrorText = document.getElementById('template-error-text') as HTMLSpanElement;
+    const templateSuccess = document.getElementById('template-success') as HTMLDivElement;
+    const templateSubmitBtn = document.getElementById('template-submit-btn') as HTMLButtonElement;
+    const templateCancelBtn = document.getElementById('template-cancel-btn') as HTMLButtonElement;
 
-  // Open template modal with evaluation data
-  function openTemplateModal(data: TemplateData) {
-    pendingTemplateData = data;
+    if (!templateModal || !templateForm) return;
 
-    // Reset form
-    templateForm.reset();
-    templateError.classList.add('hidden');
-    templateSuccess.classList.add('hidden');
-    templateSubmitBtn.disabled = false;
-    templateSubmitBtn.textContent = 'Save Template';
+    // Open template modal with evaluation data
+    function openTemplateModal(data: TemplateData) {
+      pendingTemplateData = data;
 
-    // Populate summary
-    const instructionPreview =
-      data.instruction_text.length > 50
-        ? data.instruction_text.substring(0, 50) + '...'
-        : data.instruction_text;
+      // Reset form
+      templateForm.reset();
+      templateError.classList.add('hidden');
+      templateSuccess.classList.add('hidden');
+      templateSubmitBtn.disabled = false;
+      templateSubmitBtn.textContent = 'Save Template';
 
-    templateSummary.innerHTML = `
-      <li><span class="font-medium">Instruction:</span> "${instructionPreview}"</li>
-      <li><span class="font-medium">Models:</span> ${data.model_ids.length} selected</li>
-      <li><span class="font-medium">Rubric:</span> ${formatRubric(data.accuracy_rubric)}</li>
-    `;
+      // Populate summary
+      const instructionPreview =
+        data.instruction_text.length > 50
+          ? data.instruction_text.substring(0, 50) + '...'
+          : data.instruction_text;
 
-    // Show modal
-    templateModal.showPopover();
-    templateNameInput.focus();
-  }
+      templateSummary.innerHTML = `
+        <li><strong>Instruction:</strong> "${instructionPreview}"</li>
+        <li><strong>Models:</strong> ${data.model_ids.length} selected</li>
+        <li><strong>Rubric:</strong> ${formatRubric(data.accuracy_rubric)}</li>
+      `;
 
-  function formatRubric(rubric: string): string {
-    const rubricNames: Record<string, string> = {
-      exact_match: 'Exact Match',
-      partial_credit: 'Partial Credit',
-      semantic_similarity: 'Semantic Similarity',
-    };
-    return rubricNames[rubric] || rubric;
-  }
-
-  // Handle form submission
-  templateForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-
-    if (!pendingTemplateData) {
-      showTemplateError('No evaluation data to save');
-      return;
+      // Show modal
+      templateModal.showModal();
+      templateNameInput.focus();
     }
 
-    const name = templateNameInput.value.trim();
-    if (!name) {
-      showTemplateError('Template name is required');
-      return;
+    function formatRubric(rubric: string): string {
+      const rubricNames: Record<string, string> = {
+        exact_match: 'Exact Match',
+        partial_credit: 'Partial Credit',
+        semantic_similarity: 'Semantic Similarity',
+      };
+      return rubricNames[rubric] || rubric;
     }
 
-    // Disable submit button
-    templateSubmitBtn.disabled = true;
-    templateSubmitBtn.textContent = 'Saving...';
-    templateError.classList.add('hidden');
-
-    try {
-      const response = await fetch('/api/templates', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name,
-          description: templateDescriptionInput.value.trim() || undefined,
-          instruction_text: pendingTemplateData.instruction_text,
-          model_ids: pendingTemplateData.model_ids,
-          accuracy_rubric: pendingTemplateData.accuracy_rubric,
-          expected_output: pendingTemplateData.expected_output,
-          partial_credit_concepts: pendingTemplateData.partial_credit_concepts,
-        }),
+    // Cancel button handler
+    if (templateCancelBtn) {
+      templateCancelBtn.addEventListener('click', () => {
+        templateModal.close();
       });
+    }
 
-      const data = await response.json();
+    // Handle form submission
+    templateForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
 
-      if (response.ok) {
-        // Show success message
-        templateSuccess.classList.remove('hidden');
-        templateSubmitBtn.textContent = 'Saved!';
+      if (!pendingTemplateData) {
+        showTemplateError('No evaluation data to save');
+        return;
+      }
 
-        // Close modal after delay
-        setTimeout(() => {
-          templateModal.hidePopover();
-          pendingTemplateData = null;
-        }, 1500);
-      } else {
-        showTemplateError(data.message || data.error || 'Failed to save template');
+      const name = templateNameInput.value.trim();
+      if (!name) {
+        showTemplateError('Template name is required');
+        return;
+      }
+
+      // Disable submit button
+      templateSubmitBtn.disabled = true;
+      templateSubmitBtn.textContent = 'Saving...';
+      templateError.classList.add('hidden');
+
+      try {
+        const response = await fetch('/api/templates', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name,
+            description: templateDescriptionInput.value.trim() || undefined,
+            instruction_text: pendingTemplateData.instruction_text,
+            model_ids: pendingTemplateData.model_ids,
+            accuracy_rubric: pendingTemplateData.accuracy_rubric,
+            expected_output: pendingTemplateData.expected_output,
+            partial_credit_concepts: pendingTemplateData.partial_credit_concepts,
+          }),
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          // Show success message
+          templateSuccess.classList.remove('hidden');
+          templateSubmitBtn.textContent = 'Saved!';
+
+          // Show toast and close modal after delay
+          addToast('Template saved successfully!', 'success');
+          setTimeout(() => {
+            templateModal.close();
+            pendingTemplateData = null;
+          }, 1500);
+        } else {
+          showTemplateError(data.message || data.error || 'Failed to save template');
+          templateSubmitBtn.disabled = false;
+          templateSubmitBtn.textContent = 'Save Template';
+        }
+      } catch {
+        showTemplateError('Network error. Please try again.');
         templateSubmitBtn.disabled = false;
         templateSubmitBtn.textContent = 'Save Template';
       }
-    } catch {
-      showTemplateError('Network error. Please try again.');
-      templateSubmitBtn.disabled = false;
-      templateSubmitBtn.textContent = 'Save Template';
-    }
-  });
+    });
 
-  function showTemplateError(message: string) {
-    templateErrorText.textContent = message;
-    templateError.classList.remove('hidden');
+    function showTemplateError(message: string) {
+      if (templateErrorText) {
+        templateErrorText.textContent = message;
+      }
+      templateError.classList.remove('hidden');
+    }
+
+    // Expose function globally for other pages to call
+    (window as any).openTemplateModal = openTemplateModal;
   }
 
-  // Expose function globally for index.astro to call
-  (window as any).openTemplateModal = openTemplateModal;
+  // Initialize
+  initTemplateManager();
+  document.addEventListener('astro:page-load', initTemplateManager);
 </script>

@@ -33,7 +33,14 @@ const {
   ...rest
 } = Astro.props;
 
-const classes = ['btn', `btn-${variant}`, `btn-${size}`, outline ? 'btn-outline' : '', className]
+const luxeVariants = variant === 'primary';
+const classes = [
+  'btn',
+  luxeVariants ? 'btn-luxe btn-luxe-primary' : `btn-${variant}`,
+  `btn-${size}`,
+  outline ? 'btn-outline' : '',
+  className,
+]
   .filter(Boolean)
   .join(' ');
 ---

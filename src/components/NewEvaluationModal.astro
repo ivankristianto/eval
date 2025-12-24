@@ -15,11 +15,11 @@ try {
 ---
 
 <dialog id="new-evaluation-modal" class="modal">
-  <div class="modal-box max-w-2xl">
+  <div class="modal-box">
     <form method="dialog">
       <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
     </form>
-    <h3 class="font-bold text-lg mb-6">New Evaluation</h3>
+    <h3 class="font-display text-2xl font-semibold mb-6 text-gold-accessible">New Evaluation</h3>
 
     <form id="evaluation-form" class="space-y-4">
       <!-- Instruction -->
@@ -138,7 +138,7 @@ try {
       <div class="modal-action">
         <button
           type="button"
-          class="btn"
+          class="btn btn-ghost min-w-28"
           onclick="document.getElementById('new-evaluation-modal').close()"
         >
           Cancel
@@ -146,7 +146,7 @@ try {
         <button
           type="submit"
           id="submit-btn"
-          class="btn btn-primary"
+          class="btn btn-luxe btn-luxe-primary min-w-28"
           disabled={models.length === 0}
         >
           Run Evaluation

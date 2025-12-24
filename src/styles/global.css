@@ -1,47 +1,54 @@
 @import 'tailwindcss';
-@plugin "daisyui";
-
-/* Focus ring styles for accessibility */
-*:focus-visible {
-  @apply outline-2 outline-offset-2 outline-primary;
+@plugin "daisyui" {
+  themes:
+    light --default,
+    dark --prefersdark,
+    cupcake,
+    nord,
+    luxury,
+    silk;
 }
+@plugin "@tailwindcss/typography";
 
-/* Remove legacy custom styles now that we use DaisyUI components */
-/* The following are kept for backwards compatibility with dynamic content */
+/* Import split style files */
+@import './theme.css';
+@import './typography.css';
+@import './animations.css';
+@import './components.css';
 
-/* Status indicators - used by dynamic JavaScript */
-.status-pending {
-  @apply badge badge-warning;
-}
+/* ===================================
+   TERMINAL LUXE DESIGN SYSTEM
+   Sophisticated fusion of luxury & precision
+   =================================== */
 
-.status-running {
-  @apply badge badge-info animate-pulse;
-}
-
-.status-completed {
-  @apply badge badge-success;
-}
-
-.status-failed {
-  @apply badge badge-error;
-}
-
-/* Best performer highlighting for results table */
-.best-performer,
-tr.best-performer {
-  @apply bg-success/10;
-}
-
-/* Modal backdrop styling for popover-based modals (legacy) */
-#response-modal::backdrop,
-#template-modal::backdrop,
-#add-model-modal::backdrop {
-  background-color: rgba(0, 0, 0, 0.5);
-}
-
-/* Smooth transitions for theme switching */
+/* Global Styles */
 html {
+  font-family: var(--font-body);
   transition:
-    background-color 0.2s ease-in-out,
-    color 0.2s ease-in-out;
+    background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+body {
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Gradient mesh background */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--gradient-mesh);
+  opacity: 0.4;
+  pointer-events: none;
+  z-index: 0;
+}
+
+main {
+  position: relative;
+  z-index: 1;
 }

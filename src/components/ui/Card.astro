@@ -2,14 +2,15 @@
 export interface Props {
   title?: string;
   class?: string;
+  noPadding?: boolean;
 }
 
-const { title, class: className = '' } = Astro.props;
+const { title, class: className = '', noPadding = false } = Astro.props;
 ---
 
-<div class={`card bg-base-100 shadow-sm border border-base-200 ${className}`}>
-  <div class="card-body p-6">
-    {title && <h2 class="card-title mb-4">{title}</h2>}
+<div class={`card-luxe ${className}`}>
+  <div class={noPadding ? '' : 'p-6'}>
+    {title && <h2 class="font-display text-2xl font-semibold mb-4 text-gradient-gold">{title}</h2>}
     <slot />
   </div>
 </div>

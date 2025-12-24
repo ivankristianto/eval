@@ -96,25 +96,27 @@ function getStatusBadgeVariant(status: string) {
   <EvaluationDetailsDrawer />
   <TemplateManager />
 
-  <div class="mb-6 flex justify-between items-start">
-    <div>
-      <h1 class="text-2xl font-bold mb-2">Evaluation Results</h1>
-      <div class="flex items-center gap-2 text-sm text-base-content/70">
+  <div class="flex items-center justify-between mb-12 animate-reveal">
+    <div class="accent-line">
+      <h1 class="text-5xl md:text-6xl font-display font-semibold tracking-tight mb-4 text-gradient-gold">
+        Evaluation Results
+      </h1>
+      <div class="flex items-center gap-3 text-base text-base-content/60">
         <span>{new Date(evaluationData.created_at).toLocaleString()}</span>
         <span>•</span>
-        <Badge variant={getStatusBadgeVariant(evaluationData.status)}>
+        <Badge variant={getStatusBadgeVariant(evaluationData.status)} size="sm">
           {evaluationData.status.charAt(0).toUpperCase() + evaluationData.status.slice(1)}
         </Badge>
       </div>
     </div>
 
     <div class={evaluationData.results.length > 0 ? '' : 'hidden'} id="actions-container">
-      <Button variant="secondary" size="sm" id="save-template-btn"> Save as Template </Button>
+      <Button variant="ghost" size="md" id="save-template-btn"> Save as Template </Button>
     </div>
   </div>
 
-  <Card class="mb-6">
-    <div class="space-y-4">
+  <div class="card-luxe mb-6 animate-reveal delay-100">
+    <div class="p-6 space-y-4">
       <div>
         <h3 class="font-semibold text-sm text-base-content/70 mb-1">Instruction</h3>
         <div class="bg-base-200 p-4 rounded-lg whitespace-pre-wrap">
@@ -155,12 +157,15 @@ function getStatusBadgeVariant(status: string) {
         )
       }
     </div>
-  </Card>
+  </div>
 
-  <Card title="Model Results">
+  <div class="card-luxe overflow-hidden animate-reveal delay-200">
+    <div class="p-6">
+      <h2 class="font-display text-2xl font-semibold mb-6 text-gradient-gold">Model Results</h2>
+    </div>
     <div id="results-container">
       <div class="overflow-x-auto">
-        <table class="table table-zebra w-full" id="results-table">
+        <table class="table-luxe table-results" id="results-table">
           <thead>
             <tr>
               <th>Model</th>
@@ -182,21 +187,21 @@ function getStatusBadgeVariant(status: string) {
                     <div class="font-medium">{result.model_name}</div>
                     <div class="text-xs text-base-content/50 capitalize">{result.provider}</div>
                   </td>
-                  <td>
+                  <td class="text-center">
                     <Badge variant={getStatusBadgeVariant(result.status)} size="sm">
-                      {result.status}
+                      {result.status.charAt(0).toUpperCase() + result.status.slice(1)}
                     </Badge>
                   </td>
-                  <td>{result.execution_time_ms ?? '-'}</td>
-                  <td>{result.total_tokens ?? '-'}</td>
-                  <td>
+                  <td class="font-mono text-center">{result.execution_time_ms ?? '-'}</td>
+                  <td class="font-mono text-center">{result.total_tokens ?? '-'}</td>
+                  <td class="font-mono text-center">
                     <span
-                      class={`font-semibold ${result.accuracy_score === 100 ? 'text-success' : result.accuracy_score === 0 ? 'text-error' : ''}`}
+                      class={`font-bold text-lg ${result.accuracy_score !== undefined && result.accuracy_score >= 90 ? 'metric-success' : result.accuracy_score !== undefined && result.accuracy_score >= 70 ? 'text-warning' : result.accuracy_score !== undefined ? 'text-error' : ''}`}
                     >
                       {result.accuracy_score !== undefined ? `${result.accuracy_score}%` : '-'}
                     </span>
                   </td>
-                  <td>
+                  <td class="text-center">
                     <a href="#/" class="btn btn-xs btn-ghost text-primary">
                       View
                     </a>
@@ -214,7 +219,7 @@ function getStatusBadgeVariant(status: string) {
       <span class="loading loading-spinner loading-xs mr-2"></span>
       Updating results...
     </div>
-  </Card>
+  </div>
 </Layout>
 
 <!-- Pass data to client for drawer and polling -->

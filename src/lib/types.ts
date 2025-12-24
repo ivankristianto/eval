@@ -182,3 +182,28 @@ export interface ApiError {
   field?: string;
   details?: Record<string, unknown>;
 }
+
+// UI/UX Improvements types
+export interface FilterOptions {
+  fromDate?: string;
+  toDate?: string;
+  rubric?: string;
+  minScore?: number;
+}
+
+export interface EvaluationStats {
+  avg_accuracy?: number;
+  avg_time_ms?: number;
+  total_cost_estimate?: number;
+}
+
+export interface EvaluationWithStats extends Evaluation, EvaluationStats {
+  results_count: number;
+}
+
+export interface PaginatedResponse<T> {
+  items: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
