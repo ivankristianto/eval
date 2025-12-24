@@ -1,4 +1,5 @@
 {
+  "includeCoAuthoredBy": false,
   "permissions": {
     "allow": [
       "Bash(.specify/scripts/bash/check-prerequisites.sh:*)",
@@ -7,9 +8,10 @@
       "Bash(npm run build:*)",
       "Bash(sqlite3:*)",
       "Bash(curl:*)",
-      "WebFetch(domain:localhost)"
+      "WebFetch(domain:localhost)",
+      "Skill(frontend-design:frontend-design)",
+      "mcp__plugin_playwright_playwright__browser_close"
     ]
   },
-  "includeCoAuthoredBy": false,
   "gitAttribution": false
 }
