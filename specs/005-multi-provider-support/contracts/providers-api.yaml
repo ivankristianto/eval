@@ -1,0 +1,684 @@
+openapi: 3.1.0
+info:
+  title: Multi-Provider Management API
+  description: API endpoints for managing AI provider configurations
+  version: 1.0.0
+  contact:
+    name: eval-ai-models
+
+servers:
+  - url: http://localhost:4321/api
+    description: Local development server
+
+paths:
+  /providers:
+    get:
+      summary: List all providers
+      description: Retrieve all provider configurations, optionally filtered by active status
+      operationId: listProviders
+      tags:
+        - Providers
+      parameters:
+        - name: active_only
+          in: query
+          description: Filter to only active providers
+          required: false
+          schema:
+            type: boolean
+            default: true
+      responses:
+        '200':
+          description: List of providers
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  providers:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ProviderConfiguration'
+                  total:
+                    type: integer
+                    description: Total number of providers
+              examples:
+                success:
+                  value:
+                    providers:
+                      - id: "550e8400-e29b-41d4-a716-446655440000"
+                        provider_type: "vertexai"
+                        name: "Production Vertex AI"
+                        auth_method: "oauth"
+                        endpoint_url: null
+                        is_active: true
+                        created_at: "2025-12-24T10:00:00Z"
+                        updated_at: "2025-12-24T10:00:00Z"
+                        last_connection_test: "2025-12-24T10:05:00Z"
+                        model_count: 3
+                    total: 1
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      summary: Create a new provider
+      description: Create a new provider configuration with authentication credentials
+      operationId: createProvider
+      tags:
+        - Providers
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProviderRequest'
+            examples:
+              vertexai:
+                summary: Vertex AI with OAuth
+                value:
+                  provider_type: "vertexai"
+                  name: "Production Vertex AI"
+                  auth_method: "oauth"
+                  oauth_credentials:
+                    access_token: "ya29.a0AfH6SM..."
+                    refresh_token: "1//0gH..."
+                    token_expiry: "2025-12-24T18:00:00Z"
+                  config:
+                    projectId: "my-gcp-project"
+                    location: "us-central1"
+              openrouter:
+                summary: Open Router with API Key
+                value:
+                  provider_type: "openrouter"
+                  name: "Open Router"
+                  auth_method: "api_key"
+                  api_key: "sk-or-..."
+              ollama:
+                summary: Local Ollama
+                value:
+                  provider_type: "ollama"
+                  name: "Local Ollama"
+                  auth_method: "none"
+                  endpoint_url: "http://localhost:11434"
+      responses:
+        '201':
+          description: Provider created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  provider:
+                    $ref: '#/components/schemas/ProviderConfiguration'
+                  message:
+                    type: string
+              examples:
+                success:
+                  value:
+                    provider:
+                      id: "550e8400-e29b-41d4-a716-446655440000"
+                      provider_type: "vertexai"
+                      name: "Production Vertex AI"
+                      auth_method: "oauth"
+                      endpoint_url: null
+                      is_active: true
+                      created_at: "2025-12-24T10:00:00Z"
+                      updated_at: "2025-12-24T10:00:00Z"
+                      last_connection_test: null
+                      model_count: 0
+                    message: "Provider created successfully"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /providers/{id}:
+    get:
+      summary: Get provider details
+      description: Retrieve a specific provider configuration with associated models
+      operationId: getProvider
+      tags:
+        - Providers
+      parameters:
+        - $ref: '#/components/parameters/ProviderId'
+      responses:
+        '200':
+          description: Provider details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  provider:
+                    $ref: '#/components/schemas/ProviderConfiguration'
+                  models:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ModelConfiguration'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    patch:
+      summary: Update provider configuration
+      description: Update provider settings (name, credentials, endpoint)
+      operationId: updateProvider
+      tags:
+        - Providers
+      parameters:
+        - $ref: '#/components/parameters/ProviderId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProviderRequest'
+            examples:
+              update_credentials:
+                summary: Update API key
+                value:
+                  api_key: "sk-new-key..."
+              update_name:
+                summary: Update provider name
+                value:
+                  name: "Updated Provider Name"
+      responses:
+        '200':
+          description: Provider updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  provider:
+                    $ref: '#/components/schemas/ProviderConfiguration'
+                  message:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      summary: Delete provider
+      description: Soft delete a provider (sets is_active=false). Fails if provider has associated models or historical results.
+      operationId: deleteProvider
+      tags:
+        - Providers
+      parameters:
+        - $ref: '#/components/parameters/ProviderId'
+      responses:
+        '200':
+          description: Provider deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Provider deleted successfully"
+        '400':
+          description: Cannot delete provider with associated data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Cannot delete provider: 3 associated models exist"
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /providers/test:
+    post:
+      summary: Test provider connection
+      description: Test provider connectivity before saving configuration
+      operationId: testProviderConnection
+      tags:
+        - Providers
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TestProviderRequest'
+            examples:
+              test_existing:
+                summary: Test existing provider
+                value:
+                  provider_id: "550e8400-e29b-41d4-a716-446655440000"
+              test_new_config:
+                summary: Test new configuration
+                value:
+                  provider_type: "ollama"
+                  auth_method: "none"
+                  endpoint_url: "http://localhost:11434"
+      responses:
+        '200':
+          description: Connection test result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  available_models:
+                    type: array
+                    items:
+                      type: string
+                    description: List of models available (if applicable)
+                  test_duration_ms:
+                    type: integer
+              examples:
+                success:
+                  value:
+                    success: true
+                    message: "Connection successful"
+                    available_models: ["llama2", "mistral", "codellama"]
+                    test_duration_ms: 234
+                failure:
+                  value:
+                    success: false
+                    message: "Connection failed: ECONNREFUSED localhost:11434"
+                    available_models: []
+                    test_duration_ms: 1023
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /providers/{id}/refresh-token:
+    post:
+      summary: Refresh OAuth token
+      description: Manually trigger OAuth token refresh for a provider
+      operationId: refreshOAuthToken
+      tags:
+        - Providers
+      parameters:
+        - $ref: '#/components/parameters/ProviderId'
+      responses:
+        '200':
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  token_expiry:
+                    type: string
+                    format: date-time
+              examples:
+                success:
+                  value:
+                    message: "Token refreshed successfully"
+                    token_expiry: "2025-12-24T20:00:00Z"
+        '400':
+          description: Not an OAuth provider or refresh failed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Provider does not use OAuth authentication"
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /oauth/vertex-ai/initiate:
+    post:
+      summary: Initiate Vertex AI OAuth flow
+      description: Generate OAuth authorization URL for Vertex AI authentication
+      operationId: initiateVertexAIOAuth
+      tags:
+        - OAuth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                redirect_uri:
+                  type: string
+                  format: uri
+                  description: OAuth callback URL
+                  example: "http://localhost:4321/oauth/callback"
+              required:
+                - redirect_uri
+      responses:
+        '200':
+          description: OAuth authorization URL generated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  authorization_url:
+                    type: string
+                    format: uri
+                    description: URL to redirect user for OAuth consent
+                  state:
+                    type: string
+                    description: CSRF protection state token
+              examples:
+                success:
+                  value:
+                    authorization_url: "https://accounts.google.com/o/oauth2/v2/auth?..."
+                    state: "abc123xyz789"
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /oauth/vertex-ai/callback:
+    post:
+      summary: Handle Vertex AI OAuth callback
+      description: Exchange authorization code for access/refresh tokens
+      operationId: handleVertexAIOAuthCallback
+      tags:
+        - OAuth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code:
+                  type: string
+                  description: Authorization code from OAuth provider
+                state:
+                  type: string
+                  description: CSRF protection state token
+                provider_name:
+                  type: string
+                  description: User-friendly name for the provider
+                config:
+                  type: object
+                  properties:
+                    projectId:
+                      type: string
+                    location:
+                      type: string
+                  required:
+                    - projectId
+                    - location
+              required:
+                - code
+                - state
+                - provider_name
+                - config
+      responses:
+        '201':
+          description: Provider created with OAuth credentials
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  provider:
+                    $ref: '#/components/schemas/ProviderConfiguration'
+                  message:
+                    type: string
+        '400':
+          description: Invalid authorization code or state mismatch
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Invalid authorization code or state mismatch"
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  schemas:
+    ProviderConfiguration:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Provider unique identifier
+        provider_type:
+          type: string
+          enum: [openai, anthropic, google, vertexai, openrouter, lmstudio, ollama]
+          description: Provider type
+        name:
+          type: string
+          description: User-friendly provider name
+        auth_method:
+          type: string
+          enum: [api_key, oauth, none]
+          description: Authentication method
+        endpoint_url:
+          type: string
+          format: uri
+          nullable: true
+          description: Custom endpoint URL (for local providers)
+        is_active:
+          type: boolean
+          description: Whether provider is active
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        last_connection_test:
+          type: string
+          format: date-time
+          nullable: true
+          description: Last successful connection test timestamp
+        model_count:
+          type: integer
+          description: Number of models associated with this provider
+          readOnly: true
+      required:
+        - id
+        - provider_type
+        - name
+        - auth_method
+        - is_active
+        - created_at
+        - updated_at
+
+    ModelConfiguration:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        provider_id:
+          type: string
+          format: uuid
+          description: Reference to parent provider
+        model_name:
+          type: string
+          description: Model identifier (e.g., "gpt-4", "gemini-pro")
+        display_name:
+          type: string
+          nullable: true
+          description: User-friendly display name
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        notes:
+          type: string
+          nullable: true
+      required:
+        - id
+        - provider_id
+        - model_name
+        - is_active
+        - created_at
+        - updated_at
+
+    CreateProviderRequest:
+      type: object
+      properties:
+        provider_type:
+          type: string
+          enum: [openai, anthropic, google, vertexai, openrouter, lmstudio, ollama]
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        auth_method:
+          type: string
+          enum: [api_key, oauth, none]
+        api_key:
+          type: string
+          description: API key (required if auth_method=api_key)
+        oauth_credentials:
+          type: object
+          description: OAuth credentials (required if auth_method=oauth)
+          properties:
+            access_token:
+              type: string
+            refresh_token:
+              type: string
+            token_expiry:
+              type: string
+              format: date-time
+          required:
+            - access_token
+            - refresh_token
+            - token_expiry
+        endpoint_url:
+          type: string
+          format: uri
+          description: Endpoint URL (required for lmstudio/ollama)
+        config:
+          type: object
+          description: Provider-specific configuration (e.g., GCP project ID)
+          additionalProperties: true
+      required:
+        - provider_type
+        - name
+        - auth_method
+
+    UpdateProviderRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        api_key:
+          type: string
+        endpoint_url:
+          type: string
+          format: uri
+        is_active:
+          type: boolean
+      # At least one field must be provided
+      minProperties: 1
+
+    TestProviderRequest:
+      type: object
+      oneOf:
+        - properties:
+            provider_id:
+              type: string
+              format: uuid
+              description: Test existing provider by ID
+          required:
+            - provider_id
+        - properties:
+            provider_type:
+              type: string
+              enum: [openai, anthropic, google, vertexai, openrouter, lmstudio, ollama]
+            auth_method:
+              type: string
+              enum: [api_key, oauth, none]
+            api_key:
+              type: string
+            endpoint_url:
+              type: string
+              format: uri
+            config:
+              type: object
+              additionalProperties: true
+          required:
+            - provider_type
+            - auth_method
+
+  parameters:
+    ProviderId:
+      name: id
+      in: path
+      description: Provider unique identifier
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  responses:
+    BadRequest:
+      description: Bad request (invalid input)
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Invalid provider configuration"
+              details:
+                type: array
+                items:
+                  type: string
+                example:
+                  - "api_key is required when auth_method is 'api_key'"
+                  - "endpoint_url is required for local providers"
+
+    NotFound:
+      description: Provider not found
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Provider not found"
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "An unexpected error occurred"
+              details:
+                type: string
+                nullable: true
+
+tags:
+  - name: Providers
+    description: Provider configuration management
+  - name: OAuth
+    description: OAuth authentication flows
