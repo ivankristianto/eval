@@ -1,0 +1,45 @@
+/* Custom CSS Variables for Terminal Luxe Theme */
+:root {
+  /* Luxe Color Palette */
+  --luxe-midnight: #0a1628;
+  --luxe-navy: #1a2942;
+  --luxe-slate: #2d3f5f;
+  --luxe-gold: #d4af37;
+  --luxe-gold-light: #f0d678;
+  --luxe-emerald: #00ff87;
+  --luxe-emerald-glow: rgba(0, 255, 135, 0.2);
+  --luxe-ruby: #ff4757;
+  --luxe-amber: #ffa502;
+  --luxe-ice: #e8f4f8;
+
+  /* Gradients */
+  --gradient-gold: linear-gradient(135deg, #d4af37 0%, #f0d678 100%);
+  --gradient-emerald: linear-gradient(135deg, #00ff87 0%, #00d9ff 100%);
+  --gradient-midnight: linear-gradient(135deg, #0a1628 0%, #1a2942 100%);
+  --gradient-mesh:
+    radial-gradient(at 0% 0%, rgba(212, 175, 55, 0.1) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(0, 255, 135, 0.05) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(212, 175, 55, 0.08) 0px, transparent 50%),
+    radial-gradient(at 0% 100%, rgba(0, 255, 135, 0.03) 0px, transparent 50%);
+
+  /* Typography */
+  --font-display: 'Manrope', sans-serif;
+  --font-body: 'Manrope', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* Shadows - Layered luxury */
+  --shadow-soft: 0 2px 8px rgba(10, 22, 40, 0.04), 0 1px 2px rgba(10, 22, 40, 0.06);
+  --shadow-medium: 0 4px 16px rgba(10, 22, 40, 0.08), 0 2px 4px rgba(10, 22, 40, 0.12);
+  --shadow-elevated:
+    0 20px 40px rgba(10, 22, 40, 0.12), 0 8px 16px rgba(10, 22, 40, 0.08),
+    0 2px 4px rgba(10, 22, 40, 0.06);
+  --shadow-gold: 0 8px 32px rgba(212, 175, 55, 0.15), 0 2px 8px rgba(212, 175, 55, 0.1);
+  --shadow-emerald: 0 8px 32px rgba(0, 255, 135, 0.2), 0 2px 8px rgba(0, 255, 135, 0.15);
+}
+
+/* Dark theme overrides */
+[data-theme='dark'],
+[data-theme='luxury'] {
+  --luxe-ice: #0a1628;
+  --luxe-midnight: #e8f4f8;
+}

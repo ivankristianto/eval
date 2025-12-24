@@ -1,0 +1,576 @@
+/* ===================================
+   CARD CONSISTENCY
+   =================================== */
+
+/* Elevated Card */
+.card-luxe {
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(212, 175, 55, 0.1);
+  box-shadow: var(--shadow-elevated);
+  border-radius: 16px;
+  position: relative;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+[data-theme='dark'] .card-luxe,
+[data-theme='luxury'] .card-luxe {
+  background: rgba(26, 41, 66, 0.95);
+  border-color: rgba(212, 175, 55, 0.15);
+}
+
+/* Card with cupcake theme */
+[data-theme='cupcake'] .card-luxe {
+  background: rgba(255, 255, 255, 0.98);
+  border-color: rgba(212, 175, 55, 0.12);
+}
+
+/* Card with silk theme */
+[data-theme='silk'] .card-luxe {
+  background: rgba(255, 255, 255, 0.98);
+  border-color: rgba(212, 175, 55, 0.12);
+}
+
+.card-luxe::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--gradient-gold);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  z-index: 1;
+}
+
+.card-luxe:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-gold);
+}
+
+.card-luxe:hover::before {
+  opacity: 1;
+}
+
+/* Metric Display */
+.metric-display {
+  font-family: var(--font-mono);
+  font-size: 2.5rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+
+.metric-label {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  opacity: 0.6;
+}
+
+/* Success Metric Glow */
+.metric-success {
+  color: var(--luxe-emerald);
+  text-shadow: 0 0 20px var(--luxe-emerald-glow);
+}
+
+/* Nord theme needs more visible metrics */
+[data-theme='nord'] .metric-success {
+  color: #88c0d0;
+  text-shadow: 0 0 20px rgba(136, 192, 208, 0.3);
+}
+
+/* ===================================
+   DATA TABLE ENHANCEMENTS
+   =================================== */
+
+/* Base table luxe - flexible layout */
+.table-luxe {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+  table-layout: auto;
+}
+
+.table-luxe thead th {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 1rem 0.75rem;
+  background: rgba(212, 175, 55, 0.03);
+  border-bottom: 2px solid rgba(212, 175, 55, 0.2);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  white-space: nowrap;
+}
+
+.table-luxe tbody tr {
+  transition: all 0.2s ease;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.table-luxe tbody tr:hover {
+  background: rgba(212, 175, 55, 0.03);
+  transform: scale(1.001);
+}
+
+[data-theme='dark'] .table-luxe tbody tr:hover,
+[data-theme='luxury'] .table-luxe tbody tr:hover {
+  background: rgba(212, 175, 55, 0.05);
+}
+
+.table-luxe tbody td {
+  padding: 0.875rem 0.75rem;
+  font-size: 0.875rem;
+  vertical-align: top;
+}
+
+.table-luxe tbody td:first-child,
+.table-luxe thead th:first-child {
+  padding-left: 1rem;
+}
+
+.table-luxe tbody td:last-child,
+.table-luxe thead th:last-child {
+  padding-right: 1rem;
+}
+
+/* Specific table layouts for different pages */
+
+/* Homepage evaluation table - has checkbox column */
+.table-luxe.table-evaluation thead th:first-child {
+  width: 50px;
+}
+
+.table-luxe.table-evaluation thead th:nth-child(2) {
+  min-width: 250px;
+  max-width: 400px;
+}
+
+.table-luxe.table-evaluation tbody td:nth-child(2) {
+  max-width: 400px;
+}
+
+/* Templates table - NAME column needs width */
+.table-luxe.table-templates thead th:first-child {
+  min-width: 180px;
+  width: 20%;
+}
+
+.table-luxe.table-templates thead th:nth-child(2) {
+  min-width: 300px;
+  width: 35%;
+}
+
+.table-luxe.table-templates tbody td:first-child {
+  min-width: 180px;
+  width: 20%;
+  white-space: normal;
+  word-wrap: break-word;
+}
+
+.table-luxe.table-templates tbody td:nth-child(2) {
+  min-width: 300px;
+  width: 35%;
+  white-space: normal;
+}
+
+/* Models table - Provider/Model column needs width */
+.table-luxe.table-models thead th:first-child {
+  width: 80px;
+}
+
+.table-luxe.table-models thead th:nth-child(2) {
+  min-width: 250px;
+  width: 40%;
+}
+
+.table-luxe.table-models tbody td:nth-child(2) {
+  min-width: 250px;
+  width: 40%;
+  white-space: normal;
+  word-wrap: break-word;
+}
+
+/* Results table in evaluation details */
+.table-luxe.table-results thead th:first-child {
+  min-width: 200px;
+  width: 30%;
+}
+
+.table-luxe.table-results tbody td:first-child {
+  min-width: 200px;
+  width: 30%;
+  white-space: normal;
+  word-wrap: break-word;
+}
+
+/* Number cells in tables */
+.table-luxe td:has(.font-mono),
+.table-luxe td.font-mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Gold Accent Border */
+.border-gold {
+  border-color: var(--luxe-gold) !important;
+}
+
+.border-gold-light {
+  border-color: rgba(212, 175, 55, 0.2) !important;
+}
+
+/* ===================================
+   BUTTON CONSISTENCY
+   =================================== */
+
+/* All buttons - base styling */
+.btn {
+  font-family: var(--font-body);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  border-radius: 8px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--shadow-soft);
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-medium);
+}
+
+/* Luxe button enhancements */
+.btn-luxe {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-luxe::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  transform: translate(-50%, -50%);
+  transition:
+    width 0.6s ease,
+    height 0.6s ease;
+}
+
+.btn-luxe:hover::before {
+  width: 300px;
+  height: 300px;
+}
+
+.btn-luxe-primary {
+  background: var(--gradient-gold);
+  color: var(--luxe-midnight);
+  border: none;
+  box-shadow: var(--shadow-gold);
+}
+
+.btn-luxe-primary:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 12px 40px rgba(212, 175, 55, 0.25),
+    0 4px 12px rgba(212, 175, 55, 0.15);
+}
+
+/* ===================================
+   INPUT & FORM CONSISTENCY
+   =================================== */
+
+/* All inputs - consistent styling */
+.input,
+.textarea,
+.select {
+  border-radius: 8px;
+  border-width: 1px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--shadow-soft);
+}
+
+.input:focus,
+.textarea:focus,
+.select:focus {
+  box-shadow: var(--shadow-medium);
+  border-color: var(--luxe-gold);
+  outline: none;
+}
+
+.input-bordered,
+.textarea-bordered,
+.select-bordered {
+  border-color: rgba(212, 175, 55, 0.2);
+}
+
+[data-theme='dark'] .input-bordered,
+[data-theme='luxury'] .input-bordered,
+[data-theme='nord'] .input-bordered,
+[data-theme='dark'] .textarea-bordered,
+[data-theme='luxury'] .textarea-bordered,
+[data-theme='nord'] .textarea-bordered,
+[data-theme='dark'] .select-bordered,
+[data-theme='luxury'] .select-bordered,
+[data-theme='nord'] .select-bordered {
+  border-color: rgba(212, 175, 55, 0.25);
+}
+
+/* Checkbox consistency */
+.checkbox {
+  border-radius: 4px;
+  border-width: 2px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.checkbox:checked {
+  box-shadow: 0 0 12px rgba(212, 175, 55, 0.3);
+}
+
+/* Focus ring styles for accessibility */
+*:focus-visible {
+  outline: 2px solid var(--luxe-gold);
+  outline-offset: 2px;
+}
+
+/* Badge enhancements - prevent wrapping */
+.badge {
+  white-space: nowrap;
+}
+
+/* Status indicators - Enhanced */
+.status-pending {
+  background: var(--luxe-amber);
+  color: var(--luxe-midnight);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.25rem 0.75rem;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.status-running {
+  background: var(--gradient-emerald);
+  color: var(--luxe-midnight);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.25rem 0.75rem;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.status-completed {
+  background: var(--luxe-emerald);
+  color: var(--luxe-midnight);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.25rem 0.75rem;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  box-shadow: var(--shadow-emerald);
+}
+
+.status-failed {
+  background: var(--luxe-ruby);
+  color: white;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.25rem 0.75rem;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+/* Best performer highlighting */
+.best-performer,
+tr.best-performer {
+  background: var(--luxe-emerald-glow) !important;
+  position: relative;
+}
+
+.best-performer::before,
+tr.best-performer::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--gradient-emerald);
+}
+
+/* ===================================
+   MODAL & DRAWER CONSISTENCY
+   =================================== */
+
+/* Modal backdrop styling - consistent across all modals */
+dialog::backdrop,
+.modal::backdrop {
+  background: rgba(10, 22, 40, 0.8);
+  backdrop-filter: blur(8px);
+  z-index: 100;
+}
+
+/* Ensure modals are above drawers */
+.modal {
+  z-index: 100;
+}
+
+dialog {
+  z-index: 100;
+}
+
+/* Consistent modal box styling */
+.modal-box {
+  border-radius: 16px;
+  box-shadow: var(--shadow-elevated);
+  border: 1px solid rgba(212, 175, 55, 0.1);
+  max-width: 42rem;
+}
+
+[data-theme='dark'] .modal-box,
+[data-theme='luxury'] .modal-box {
+  background: rgba(26, 41, 66, 0.98);
+  border-color: rgba(212, 175, 55, 0.15);
+}
+
+/* Modal action buttons - consistent spacing and styling */
+.modal-action {
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+/* Enhanced modal button styling for better UX */
+.modal-action .btn-error {
+  background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+  color: white;
+  border: none;
+  font-weight: 600;
+  box-shadow:
+    0 4px 12px rgba(220, 38, 38, 0.3),
+    0 2px 4px rgba(220, 38, 38, 0.2);
+}
+
+.modal-action .btn-error:hover {
+  background: linear-gradient(135deg, #b91c1c 0%, #7f1d1d 100%);
+  transform: translateY(-1px);
+  box-shadow:
+    0 6px 16px rgba(220, 38, 38, 0.4),
+    0 3px 6px rgba(220, 38, 38, 0.25);
+}
+
+.modal-action .btn-ghost {
+  background: transparent;
+  color: var(--luxe-slate);
+  border: 2px solid rgba(45, 63, 95, 0.2);
+  font-weight: 600;
+}
+
+.modal-action .btn-ghost:hover {
+  background: rgba(45, 63, 95, 0.05);
+  border-color: rgba(45, 63, 95, 0.3);
+  transform: translateY(-1px);
+}
+
+/* Drawer consistency - ensure it's above navbar */
+.drawer-side {
+  z-index: 60;
+}
+
+.drawer-side > .drawer-overlay {
+  background: rgba(10, 22, 40, 0.8);
+  backdrop-filter: blur(8px);
+  z-index: 60;
+}
+
+/* Custom drawer styling for right-side drawers */
+[data-drawer] {
+  border-left: 1px solid rgba(212, 175, 55, 0.1);
+  box-shadow: var(--shadow-elevated);
+  border-radius: 16px 0 0 16px;
+  z-index: 60;
+}
+
+/* Drawer backdrop needs higher z-index too */
+[data-drawer-backdrop] {
+  z-index: 60;
+}
+
+[data-theme='dark'] [data-drawer],
+[data-theme='luxury'] [data-drawer] {
+  background: rgba(26, 41, 66, 0.98);
+  border-color: rgba(212, 175, 55, 0.15);
+}
+
+/* Geometric accent lines */
+.accent-line {
+  position: relative;
+  padding-left: 1.5rem;
+}
+
+.accent-line::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.5rem;
+  bottom: 0.5rem;
+  width: 3px;
+  background: var(--gradient-gold);
+  border-radius: 2px;
+}
+
+/* Responsive Table Adjustments */
+@media (max-width: 1024px) {
+  .table-luxe {
+    table-layout: auto;
+  }
+
+  .table-luxe thead th,
+  .table-luxe tbody td {
+    padding: 0.75rem 0.5rem;
+  }
+
+  .table-luxe thead th:first-child,
+  .table-luxe tbody td:first-child {
+    padding-left: 0.75rem;
+  }
+
+  .table-luxe thead th:last-child,
+  .table-luxe tbody td:last-child {
+    padding-right: 0.75rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .table-luxe thead th,
+  .table-luxe tbody td {
+    padding: 0.625rem 0.375rem;
+    font-size: 0.8125rem;
+  }
+
+  .table-luxe thead th {
+    font-size: 0.6875rem;
+  }
+}
