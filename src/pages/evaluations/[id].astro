@@ -169,8 +169,19 @@ function getStatusBadgeVariant(status: string) {
         evaluationData.system_prompt && (
           <div>
             <h3 class="font-semibold text-sm text-base-content/70 mb-1">System Prompt</h3>
-            <div class="bg-base-200 p-4 rounded-lg whitespace-pre-wrap font-mono text-sm">
-              {evaluationData.system_prompt}
+            <div class="bg-base-200 p-4 rounded-lg font-mono text-sm">
+              <div
+                id="system-prompt-text"
+                class="whitespace-pre-wrap line-clamp-5 overflow-hidden"
+              >
+                {evaluationData.system_prompt}
+              </div>
+              <button
+                id="system-prompt-toggle"
+                class="btn btn-xs btn-ghost text-primary mt-2 hidden"
+              >
+                Show more
+              </button>
             </div>
           </div>
         )
@@ -323,6 +334,28 @@ function getStatusBadgeVariant(status: string) {
 
   // Initial setup
   setupRowClickHandlers();
+
+  // System Prompt Expansion
+  const promptText = document.getElementById('system-prompt-text');
+  const promptToggle = document.getElementById('system-prompt-toggle');
+
+  if (promptText && promptToggle) {
+    // Check if truncated
+    if (promptText.scrollHeight > promptText.clientHeight) {
+      promptToggle.classList.remove('hidden');
+    }
+
+    promptToggle.addEventListener('click', () => {
+      const wasClamped = promptText.classList.contains('line-clamp-5');
+      if (wasClamped) {
+        promptText.classList.remove('line-clamp-5');
+        promptToggle.textContent = 'Show less';
+      } else {
+        promptText.classList.add('line-clamp-5');
+        promptToggle.textContent = 'Show more';
+      }
+    });
+  }
 
   // Polling logic if running
   if (evaluationStatus === 'pending' || evaluationStatus === 'running') {
