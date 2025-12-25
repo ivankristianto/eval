@@ -223,7 +223,11 @@ export class GoogleClient implements ModelClient {
   ): Promise<ModelResponse> {
     const startTime = performance.now();
 
-    const modelConfig: any = { model: this.modelName };
+    const modelConfig: {
+      model: string;
+      systemInstruction?: string;
+      generationConfig?: { temperature?: number };
+    } = { model: this.modelName };
 
     // Add system instruction if provided
     if (options?.systemPrompt) {

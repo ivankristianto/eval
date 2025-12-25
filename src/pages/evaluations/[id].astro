@@ -281,14 +281,15 @@ function getStatusBadgeVariant(status: string) {
     saveTemplateBtn.addEventListener('click', () => {
       const evalData = (window as any).__EVALUATION_DATA__;
       if (evalData && (window as any).openTemplateModal) {
-        (window as any).openTemplateModal({
-          instruction_text: evalData.instruction_text,
-          model_ids: evalData.results.map((r: any) => r.model_id),
-          accuracy_rubric: evalData.accuracy_rubric,
-          expected_output: evalData.expected_output,
-          partial_credit_concepts: evalData.partial_credit_concepts,
-        });
-      }
+                  (window as any).openTemplateModal({
+                    instruction_text: evalData.instruction_text,
+                    model_ids: evalData.results.map((r: any) => r.model_id),
+                    accuracy_rubric: evalData.accuracy_rubric,
+                    expected_output: evalData.expected_output,
+                    partial_credit_concepts: evalData.partial_credit_concepts,
+                    system_prompt: evalData.system_prompt,
+                    temperature: evalData.temperature,
+                  });      }
     });
   }
 

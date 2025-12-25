@@ -121,6 +121,8 @@
     accuracy_rubric: string;
     expected_output: string;
     partial_credit_concepts?: string[];
+    system_prompt?: string;
+    temperature?: number;
   }
 
   function initTemplateManager() {
@@ -218,6 +220,8 @@
             accuracy_rubric: pendingTemplateData.accuracy_rubric,
             expected_output: pendingTemplateData.expected_output,
             partial_credit_concepts: pendingTemplateData.partial_credit_concepts,
+            system_prompt: pendingTemplateData.system_prompt,
+            temperature: pendingTemplateData.temperature,
           }),
         });
 
