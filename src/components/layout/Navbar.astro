@@ -58,7 +58,7 @@ const isActive = (href: string) => {
               href={item.href}
               class={`px-5 py-2.5 rounded-lg font-medium text-sm transition-all ${
                 isActive(item.href)
-                  ? 'bg-gradient-gold text-luxe-midnight shadow-gold'
+                  ? 'bg-gradient-gold text-on-gold shadow-gold'
                   : 'text-base-content/70 hover:text-base-content hover:bg-base-200/50'
               }`}
             >
@@ -97,7 +97,7 @@ const isActive = (href: string) => {
                 <li>
                   <a
                     href={item.href}
-                    class={isActive(item.href) ? 'active font-semibold bg-gradient-gold text-luxe-midnight' : 'font-medium'}
+                    class={isActive(item.href) ? 'active font-semibold bg-gradient-gold text-on-gold' : 'font-medium'}
                   >
                     {item.label}
                   </a>
