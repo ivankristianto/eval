@@ -250,15 +250,17 @@ export function insertEvaluation(
   accuracyRubric: RubricType,
   expectedOutput?: string,
   partialCreditConcepts?: string[],
-  templateId?: string
+  templateId?: string,
+  systemPrompt?: string,
+  temperature?: number
 ): Evaluation {
   const database = getDatabase();
   const id = uuidv4();
   const now = new Date().toISOString();
 
   const stmt = database.prepare(`
-    INSERT INTO Evaluation (id, instruction_text, accuracy_rubric, expected_output, partial_credit_concepts, created_at, status, template_id)
-    VALUES (?, ?, ?, ?, ?, ?, 'pending', ?)
+    INSERT INTO Evaluation (id, instruction_text, accuracy_rubric, expected_output, partial_credit_concepts, created_at, status, template_id, system_prompt, temperature)
+    VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?)
   `);
 
   stmt.run(
@@ -268,7 +270,9 @@ export function insertEvaluation(
     expectedOutput || null,
     partialCreditConcepts ? JSON.stringify(partialCreditConcepts) : null,
     now,
-    templateId || null
+    templateId || null,
+    systemPrompt || null,
+    temperature ?? 0.3
   );
 
   return {
@@ -280,6 +284,8 @@ export function insertEvaluation(
     created_at: now,
     status: 'pending',
     template_id: templateId,
+    system_prompt: systemPrompt,
+    temperature: temperature ?? 0.3,
   };
 }
 
@@ -304,6 +310,8 @@ export function getEvaluation(id: string): Evaluation | null {
     status: row.status as EvaluationStatus,
     error_message: row.error_message as string | undefined,
     template_id: row.template_id as string | undefined,
+    system_prompt: row.system_prompt as string | undefined,
+    temperature: row.temperature as number | undefined,
   };
 }
 
@@ -328,10 +336,12 @@ export function updateEvaluationStatus(
 export function deleteEvaluations(ids: string[]): number {
   const database = getDatabase();
   if (ids.length === 0) return 0;
-  
+
   const placeholders = ids.map(() => '?').join(',');
-  const result = database.prepare(`DELETE FROM Evaluation WHERE id IN (${placeholders})`).run(...ids);
-  
+  const result = database
+    .prepare(`DELETE FROM Evaluation WHERE id IN (${placeholders})`)
+    .run(...ids);
+
   return result.changes;
 }
 
@@ -351,7 +361,7 @@ export function getEvaluations(
     FROM Evaluation e
     LEFT JOIN Result r ON e.id = r.evaluation_id
   `;
-  
+
   const conditions: string[] = [];
   const params: unknown[] = [];
 
@@ -410,9 +420,7 @@ export function getEvaluations(
   }));
 }
 
-export function getEvaluationsCount(
-  filters: FilterOptions & { templateId?: string } = {}
-): number {
+export function getEvaluationsCount(filters: FilterOptions & { templateId?: string } = {}): number {
   const database = getDatabase();
 
   let query = `
@@ -447,7 +455,7 @@ export function getEvaluationsCount(
   if (conditions.length > 0) {
     query += ' WHERE ' + conditions.join(' AND ');
   }
-  
+
   // Note: minScore filtering requires grouping and having, which complicates COUNT.
   // For simplicity and performance, COUNT usually ignores complex HAVING clauses unless wrapped in subquery.
   // If minScore is present, we need a subquery.
@@ -495,6 +503,8 @@ export function updateResult(
     accuracy_reasoning: string;
     status: ResultStatus;
     error_message: string;
+    system_prompt_used: string;
+    temperature_used: number;
   }>
 ): void {
   const database = getDatabase();
@@ -598,15 +608,17 @@ export function insertTemplate(
   accuracyRubric: RubricType,
   description?: string,
   expectedOutput?: string,
-  partialCreditConcepts?: string[]
+  partialCreditConcepts?: string[],
+  systemPrompt?: string,
+  temperature?: number
 ): EvaluationTemplate {
   const database = getDatabase();
   const id = uuidv4();
   const now = new Date().toISOString();
 
   const stmt = database.prepare(`
-    INSERT INTO EvaluationTemplate (id, name, description, instruction_text, model_ids, accuracy_rubric, expected_output, partial_credit_concepts, created_at, updated_at, run_count)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
+    INSERT INTO EvaluationTemplate (id, name, description, instruction_text, model_ids, accuracy_rubric, expected_output, partial_credit_concepts, created_at, updated_at, run_count, system_prompt, temperature)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)
   `);
 
   stmt.run(
@@ -619,7 +631,9 @@ export function insertTemplate(
     expectedOutput || null,
     partialCreditConcepts ? JSON.stringify(partialCreditConcepts) : null,
     now,
-    now
+    now,
+    systemPrompt || null,
+    temperature ?? 0.3
   );
 
   return {
@@ -634,6 +648,8 @@ export function insertTemplate(
     created_at: now,
     updated_at: now,
     run_count: 0,
+    system_prompt: systemPrompt,
+    temperature: temperature ?? 0.3,
   };
 }
 
@@ -662,6 +678,8 @@ export function getTemplates(
     created_at: row.created_at as string,
     updated_at: row.updated_at as string,
     run_count: row.run_count as number,
+    system_prompt: row.system_prompt as string | undefined,
+    temperature: row.temperature as number | undefined,
   }));
 }
 
@@ -687,6 +705,8 @@ export function getTemplateById(id: string): EvaluationTemplate | null {
     created_at: row.created_at as string,
     updated_at: row.updated_at as string,
     run_count: row.run_count as number,
+    system_prompt: row.system_prompt as string | undefined,
+    temperature: row.temperature as number | undefined,
   };
 }
 
@@ -700,6 +720,8 @@ export function updateTemplate(
     accuracy_rubric: RubricType;
     expected_output: string;
     partial_credit_concepts: string[];
+    system_prompt: string;
+    temperature: number;
   }>
 ): EvaluationTemplate | null {
   const database = getDatabase();

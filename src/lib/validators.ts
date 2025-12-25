@@ -473,3 +473,92 @@ export function validateCreateTemplate(data: unknown): ValidationResult {
 
   return { valid: true };
 }
+
+/**
+ * Validates system prompt text
+ *
+ * Rules (FR-016):
+ * - Must be <= 4,000 characters if provided
+ * - Empty strings are rejected
+ * - null/undefined are allowed (optional field)
+ *
+ * @param text - System prompt text to validate
+ * @returns Validation result with error message if invalid
+ */
+export function validateSystemPrompt(text: string | null | undefined): ValidationResult {
+  // null/undefined is valid (optional field)
+  if (text === null || text === undefined) {
+    return { valid: true };
+  }
+
+  // Empty string is invalid if provided
+  if (typeof text === 'string' && text.trim() === '') {
+    return {
+      valid: false,
+      error: {
+        error: 'INVALID_INPUT',
+        message:
+          'System prompt cannot be empty. Please enter text or disable the system prompt checkbox.',
+        field: 'system_prompt',
+      },
+    };
+  }
+
+  // Check maximum length (4,000 characters)
+  if (typeof text === 'string' && text.length > 4000) {
+    return {
+      valid: false,
+      error: {
+        error: 'INVALID_INPUT',
+        message: `System prompt exceeds maximum length of 4,000 characters (current: ${text.length} characters)`,
+        field: 'system_prompt',
+      },
+    };
+  }
+
+  return { valid: true };
+}
+
+/**
+ * Validates temperature parameter
+ *
+ * Rules (FR-013):
+ * - Must be a number
+ * - Must be in range [0.0, 2.0]
+ * - null/undefined defaults to 0.3
+ *
+ * @param value - Temperature value to validate
+ * @returns Validation result with error message if invalid
+ */
+export function validateTemperature(value: number | null | undefined): ValidationResult {
+  // null/undefined is valid (will default to 0.3)
+  if (value === null || value === undefined) {
+    return { valid: true };
+  }
+
+  // Type check
+  if (typeof value !== 'number' || isNaN(value)) {
+    return {
+      valid: false,
+      error: {
+        error: 'INVALID_INPUT',
+        message: 'Temperature must be a valid number',
+        field: 'temperature',
+      },
+    };
+  }
+
+  // Range check [0.0, 2.0]
+  if (value < 0.0 || value > 2.0) {
+    return {
+      valid: false,
+      error: {
+        error: 'INVALID_INPUT',
+        message: `Temperature must be between 0.0 and 2.0 (current: ${value})`,
+        field: 'temperature',
+      },
+    };
+  }
+
+  return { valid: true };
+}

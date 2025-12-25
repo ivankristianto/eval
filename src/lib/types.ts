@@ -28,6 +28,8 @@ export interface Evaluation {
   status: EvaluationStatus;
   error_message?: string;
   template_id?: string;
+  system_prompt?: string;
+  temperature?: number;
 }
 
 export interface Result {
@@ -44,6 +46,8 @@ export interface Result {
   status: ResultStatus;
   error_message?: string;
   created_at: string;
+  system_prompt_used?: string;
+  temperature_used?: number;
 }
 
 export interface EvaluationTemplate {
@@ -58,6 +62,8 @@ export interface EvaluationTemplate {
   created_at: string;
   updated_at: string;
   run_count: number;
+  system_prompt?: string;
+  temperature?: number;
 }
 
 export interface EvaluationWithResults extends Evaluation {
@@ -85,6 +91,8 @@ export interface CreateEvaluationRequest {
   rubric_type: RubricType;
   expected_output?: string;
   partial_credit_concepts?: string[];
+  system_prompt?: string;
+  temperature?: number;
 }
 
 export interface CreateEvaluationResponse {
@@ -163,6 +171,8 @@ export interface CreateTemplateRequest {
   accuracy_rubric: RubricType;
   expected_output?: string;
   partial_credit_concepts?: string[];
+  system_prompt?: string;
+  temperature?: number;
 }
 
 export interface CreateTemplateResponse {

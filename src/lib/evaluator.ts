@@ -1,5 +1,21 @@
 // src/lib/evaluator.ts
 // Evaluation orchestration for AI Model Evaluation Framework
+//
+// ERROR HANDLING POLICY (FR-017):
+// ================================
+// This module implements a FAIL-FAST approach with NO RETRY LOGIC.
+//
+// When an API provider fails during evaluation (with or without custom system_prompt/temperature):
+// 1. The specific model's result is marked as 'failed' with error_message populated
+// 2. Other models in the same evaluation continue executing independently
+// 3. If ALL models fail, the entire evaluation is marked as 'failed'
+// 4. If ANY model succeeds, the evaluation is marked as 'completed'
+// 5. NO automatic retries are performed
+// 6. NO silent fallbacks occur
+// 7. Users must manually delete and recreate the evaluation to retry
+//
+// This ensures evaluation integrity and prevents inconsistent retry behavior
+// across different failure scenarios.
 
 import { ClientFactory } from './api-clients';
 import { calculateAccuracy } from './accuracy';
@@ -17,13 +33,26 @@ import type { RubricType, ResultStatus } from './types';
 const MODEL_TIMEOUT_MS = 30000; // 30 seconds per model
 const EVALUATION_TIMEOUT_MS = 300000; // 5 minutes total
 
+/**
+ * Configuration options for executing an evaluation across multiple AI models.
+ */
 export interface EvaluationOptions {
+  /** Unique identifier for this evaluation */
   evaluationId: string;
+  /** Array of model IDs to evaluate */
   modelIds: string[];
+  /** User instruction/prompt to evaluate */
   instruction: string;
+  /** Accuracy rubric type for scoring results */
   rubricType: RubricType;
+  /** Expected output for accuracy comparison */
   expectedOutput: string;
+  /** Optional concepts for partial credit scoring */
   partialCreditConcepts?: string[];
+  /** Optional custom system prompt to shape model behavior (max 4000 chars) */
+  systemPrompt?: string;
+  /** Optional sampling temperature 0.0-2.0 (default: 0.3 if not specified) */
+  temperature?: number;
 }
 
 export class EvaluationExecutor {
@@ -38,6 +67,8 @@ export class EvaluationExecutor {
       rubricType,
       expectedOutput,
       partialCreditConcepts,
+      systemPrompt,
+      temperature,
     } = options;
 
     // Set hard timeout
@@ -58,7 +89,9 @@ export class EvaluationExecutor {
           instruction,
           rubricType,
           expectedOutput,
-          partialCreditConcepts
+          partialCreditConcepts,
+          systemPrompt,
+          temperature
         )
       );
 
@@ -67,7 +100,10 @@ export class EvaluationExecutor {
 
       if (this.aborted) return;
 
-      // Check if all models completed or failed
+      // Determine final evaluation status (FR-017: FAIL-FAST policy)
+      // - If ANY model succeeds → evaluation is 'completed'
+      // - If ALL models fail → evaluation is 'failed' with message 'All models failed'
+      // - NO retries are attempted at any level
       const results = getResults(evaluationId);
       const allCompleted = results.every((r) => r.status !== 'pending');
 
@@ -76,6 +112,7 @@ export class EvaluationExecutor {
         if (hasAnySuccess) {
           updateEvaluationStatus(evaluationId, 'completed');
         } else {
+          // All models failed - mark entire evaluation as failed
           updateEvaluationStatus(evaluationId, 'failed', 'All models failed');
         }
       }
@@ -99,7 +136,9 @@ export class EvaluationExecutor {
     instruction: string,
     rubricType: RubricType,
     expectedOutput: string,
-    partialCreditConcepts?: string[]
+    partialCreditConcepts?: string[],
+    systemPrompt?: string,
+    temperature?: number
   ): Promise<void> {
     // Find the result record for this model
     const results = getResults(evaluationId);
@@ -127,7 +166,7 @@ export class EvaluationExecutor {
       const client = ClientFactory.createClient(model.provider, apiKey, model.model_name);
 
       const modelResponse = await Promise.race([
-        client.evaluate(instruction),
+        client.evaluate(instruction, { systemPrompt, temperature }),
         new Promise<never>((_, reject) =>
           setTimeout(() => reject(new Error('Model timeout')), MODEL_TIMEOUT_MS)
         ),
@@ -153,10 +192,16 @@ export class EvaluationExecutor {
         accuracy_score: accuracyResult.score,
         accuracy_reasoning: accuracyResult.reasoning,
         status: 'completed' as ResultStatus,
+        system_prompt_used: systemPrompt,
+        temperature_used: temperature ?? 0.3,
       });
     } catch (error) {
       console.error(`Model ${modelId} execution error:`, error);
 
+      // FAIL-FAST: Mark this model's result as failed with NO RETRY (FR-017)
+      // The error is captured in error_message for debugging
+      // Other models in this evaluation continue executing
+      // The entire evaluation will only be marked 'failed' if ALL models fail
       if (!this.aborted) {
         updateResult(resultRecord.id, {
           status: 'failed' as ResultStatus,
