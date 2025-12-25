@@ -1,7 +1,10 @@
 ---
+import fs from 'node:fs';
+import path from 'node:path';
 import '../styles/global.css';
 import Navbar from '../components/layout/Navbar.astro';
 import Toast from '../components/ui/Toast.astro';
+import Alert from '../components/ui/Alert.astro';
 import { TYPOGRAPHY } from '../lib/typography';
 
 export interface Props {
@@ -9,6 +12,10 @@ export interface Props {
 }
 
 const { title = 'Eval AI' } = Astro.props;
+
+// Check for .env file existence
+const envPath = path.resolve(process.cwd(), '.env');
+const hasEnvFile = fs.existsSync(envPath);
 ---
 
 <!doctype html>
@@ -50,6 +57,17 @@ const { title = 'Eval AI' } = Astro.props;
     class={`min-h-screen bg-base-100 text-base-content font-sans antialiased ${TYPOGRAPHY.body}`}
   >
     <Navbar />
+
+    {
+      !hasEnvFile && (
+        <div class="container mx-auto px-4 mt-4 max-w-7xl">
+          <Alert variant="warning" title="Configuration Missing">
+            No <code>.env</code> file found. Please copy <code>.env.example</code> to{' '}
+            <code>.env</code> and configure your API keys.
+          </Alert>
+        </div>
+      )
+    }
 
     <main class="container mx-auto px-4 py-8 max-w-7xl">
       <slot />
