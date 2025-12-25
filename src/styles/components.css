@@ -249,7 +249,9 @@ textarea.border-gold,
   @apply absolute top-1/2 left-1/2 w-0 h-0 rounded-full -translate-x-1/2 -translate-y-1/2;
   content: '';
   background: rgba(255, 255, 255, 0.2);
-  transition: width 0.6s ease, height 0.6s ease;
+  transition:
+    width 0.6s ease,
+    height 0.6s ease;
 }
 
 .btn-luxe:hover::before {
@@ -265,7 +267,9 @@ textarea.border-gold,
 
 .btn-luxe-primary:hover {
   @apply -translate-y-0.5;
-  box-shadow: 0 12px 40px rgba(212, 175, 55, 0.25), 0 4px 12px rgba(212, 175, 55, 0.15);
+  box-shadow:
+    0 12px 40px rgba(212, 175, 55, 0.25),
+    0 4px 12px rgba(212, 175, 55, 0.15);
 }
 
 /* ===================================
@@ -417,13 +421,17 @@ dialog {
 .modal-action .btn-error {
   @apply text-white border-none font-semibold;
   background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
-  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3), 0 2px 4px rgba(220, 38, 38, 0.2);
+  box-shadow:
+    0 4px 12px rgba(220, 38, 38, 0.3),
+    0 2px 4px rgba(220, 38, 38, 0.2);
 }
 
 .modal-action .btn-error:hover {
   @apply -translate-y-px;
   background: linear-gradient(135deg, #b91c1c 0%, #7f1d1d 100%);
-  box-shadow: 0 6px 16px rgba(220, 38, 38, 0.4), 0 3px 6px rgba(220, 38, 38, 0.25);
+  box-shadow:
+    0 6px 16px rgba(220, 38, 38, 0.4),
+    0 3px 6px rgba(220, 38, 38, 0.25);
 }
 
 .modal-action .btn-ghost {
