@@ -84,6 +84,57 @@ try {
           placeholder="concept1, concept2, concept3..."></textarea>
       </div>
 
+      <!-- System Prompt (optional, hidden by default) -->
+      <div class="form-control w-full">
+        <label class="cursor-pointer label justify-start gap-3">
+          <input type="checkbox" id="use-system-prompt" class="checkbox checkbox-primary" />
+          <span class="label-text font-medium">Use System Prompt</span>
+        </label>
+      </div>
+
+      <div id="system-prompt-container" class="hidden form-control w-full">
+        <label class="label" for="system_prompt">
+          <span class="label-text font-medium">System Prompt</span>
+          <span class="label-text-alt text-base-content/50">Max 4,000 characters</span>
+        </label>
+        <textarea
+          id="system_prompt"
+          name="system_prompt"
+          rows="3"
+          maxlength="4000"
+          class="textarea textarea-bordered w-full"
+          placeholder="You are a helpful assistant that..."></textarea>
+        <label class="label">
+          <span class="label-text-alt text-base-content/50">
+            Provide custom instructions to shape model behavior
+          </span>
+        </label>
+      </div>
+
+      <!-- Temperature Slider -->
+      <div class="form-control w-full">
+        <label class="label" for="temperature">
+          <span class="label-text font-medium">Temperature</span>
+          <span class="label-text-alt font-mono text-base-content/70">
+            <span id="temperature-value">0.3</span>
+          </span>
+        </label>
+        <input
+          type="range"
+          id="temperature"
+          name="temperature"
+          min="0"
+          max="2"
+          step="0.1"
+          value="0.3"
+          class="range range-primary"
+        />
+        <div class="flex justify-between text-xs text-base-content/50 px-1 mt-1">
+          <span>0.0 (Deterministic)</span>
+          <span>2.0 (Creative)</span>
+        </div>
+      </div>
+
       <!-- Model Selection -->
       <div class="form-control w-full">
         <label class="label">
@@ -168,6 +219,12 @@ try {
     const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
     const rubricSelect = document.getElementById('rubric_type') as HTMLSelectElement;
     const conceptsContainer = document.getElementById('concepts-container') as HTMLDivElement;
+    const systemPromptCheckbox = document.getElementById('use-system-prompt') as HTMLInputElement;
+    const systemPromptContainer = document.getElementById(
+      'system-prompt-container'
+    ) as HTMLDivElement;
+    const temperatureSlider = document.getElementById('temperature') as HTMLInputElement;
+    const temperatureValue = document.getElementById('temperature-value') as HTMLSpanElement;
 
     if (!modal || !form) return;
 
@@ -175,6 +232,20 @@ try {
     if (rubricSelect && conceptsContainer) {
       rubricSelect.addEventListener('change', () => {
         conceptsContainer.classList.toggle('hidden', rubricSelect.value !== 'partial_credit');
+      });
+    }
+
+    // Show/hide system prompt textarea based on checkbox
+    if (systemPromptCheckbox && systemPromptContainer) {
+      systemPromptCheckbox.addEventListener('change', () => {
+        systemPromptContainer.classList.toggle('hidden', !systemPromptCheckbox.checked);
+      });
+    }
+
+    // Update temperature display value
+    if (temperatureSlider && temperatureValue) {
+      temperatureSlider.addEventListener('input', () => {
+        temperatureValue.textContent = parseFloat(temperatureSlider.value).toFixed(1);
       });
     }
 
@@ -194,6 +265,8 @@ try {
       const rubricType = formData.get('rubric_type') as string;
       const expectedOutput = formData.get('expected_output') as string;
       const conceptsRaw = formData.get('partial_credit_concepts') as string;
+      const systemPromptRaw = formData.get('system_prompt') as string;
+      const temperatureRaw = formData.get('temperature') as string;
 
       const partialCreditConcepts =
         rubricType === 'partial_credit' && conceptsRaw
@@ -202,6 +275,15 @@ try {
               .map((c) => c.trim())
               .filter(Boolean)
           : undefined;
+
+      // Only include system prompt if checkbox is checked and text is provided
+      const systemPrompt =
+        systemPromptCheckbox?.checked && systemPromptRaw?.trim()
+          ? systemPromptRaw.trim()
+          : undefined;
+
+      // Parse temperature value
+      const temperature = parseFloat(temperatureRaw);
 
       submitBtn.disabled = true;
       submitBtn.textContent = 'Running...';
@@ -216,6 +298,8 @@ try {
             rubric_type: rubricType,
             expected_output: expectedOutput,
             partial_credit_concepts: partialCreditConcepts,
+            system_prompt: systemPrompt,
+            temperature,
           }),
         });
 

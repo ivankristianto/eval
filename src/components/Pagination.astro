@@ -14,7 +14,7 @@ const getVisiblePages = () => {
   }
 
   const pages = [1];
-  
+
   if (currentPage > 3) {
     pages.push(-1); // Ellipsis
   }
@@ -55,21 +55,23 @@ const limitOptions = [10, 20, 50, 100];
         {limit}
       </div>
       <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-20">
-        {limitOptions.map((opt) => (
-          <li>
-            <button type="button" class={limit === opt ? "active" : ""} data-limit-option={opt}>
-              {opt}
-            </button>
-          </li>
-        ))}
+        {
+          limitOptions.map((opt) => (
+            <li>
+              <button type="button" class={limit === opt ? 'active' : ''} data-limit-option={opt}>
+                {opt}
+              </button>
+            </li>
+          ))
+        }
       </ul>
     </div>
   </div>
 
-  <div class={`join ${totalPages > 1 ? "" : "hidden"}`} data-pagination-controls>
+  <div class={`join ${totalPages > 1 ? '' : 'hidden'}`} data-pagination-controls>
     <button
       type="button"
-      class={`join-item btn btn-sm ${currentPage === 1 ? "btn-disabled" : ""}`}
+      class={`join-item btn btn-sm ${currentPage === 1 ? 'btn-disabled' : ''}`}
       aria-label="Previous Page"
       data-page-action="prev"
     >
@@ -77,26 +79,30 @@ const limitOptions = [10, 20, 50, 100];
     </button>
 
     <div data-pagination-pages class="contents">
-      {visiblePages.map((page) =>
-        page === -1 ? (
-          <button class="join-item btn btn-sm btn-disabled" type="button">...</button>
-        ) : (
-          <button
-            type="button"
-            class={`join-item btn btn-sm ${page === currentPage ? "btn-active" : ""}`}
-            aria-label={`Page ${page}`}
-            aria-current={page === currentPage ? "page" : undefined}
-            data-page-number={page}
-          >
-            {page}
-          </button>
+      {
+        visiblePages.map((page) =>
+          page === -1 ? (
+            <button class="join-item btn btn-sm btn-disabled" type="button">
+              ...
+            </button>
+          ) : (
+            <button
+              type="button"
+              class={`join-item btn btn-sm ${page === currentPage ? 'btn-active' : ''}`}
+              aria-label={`Page ${page}`}
+              aria-current={page === currentPage ? 'page' : undefined}
+              data-page-number={page}
+            >
+              {page}
+            </button>
+          )
         )
-      )}
+      }
     </div>
 
     <button
       type="button"
-      class={`join-item btn btn-sm ${currentPage === totalPages ? "btn-disabled" : ""}`}
+      class={`join-item btn btn-sm ${currentPage === totalPages ? 'btn-disabled' : ''}`}
       aria-label="Next Page"
       data-page-action="next"
     >

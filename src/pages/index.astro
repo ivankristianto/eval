@@ -99,19 +99,26 @@ function getStatusVariant(status: string): 'warning' | 'info' | 'success' | 'err
 
   <div class="flex items-center justify-between mb-12 animate-reveal">
     <div class="accent-line">
-      <h1 class="text-5xl md:text-6xl font-display font-semibold tracking-tight mb-4 text-gradient-gold">
+      <h1
+        class="text-5xl md:text-6xl font-display font-semibold tracking-tight mb-4 text-gradient-gold"
+      >
         Evaluation History
       </h1>
-      <p class="mt-3 text-base-content/60 text-lg">
-        All past evaluation runs and their results.
-      </p>
+      <p class="mt-3 text-base-content/60 text-lg">All past evaluation runs and their results.</p>
     </div>
     <button
       onclick="document.getElementById('new-evaluation-modal').showModal()"
       class="btn btn-luxe btn-luxe-primary px-8 py-3 text-base font-semibold"
     >
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        class="h-5 w-5 mr-2"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"
+        ></path>
       </svg>
       New Evaluation
     </button>
@@ -160,7 +167,10 @@ function getStatusVariant(status: string): 'warning' | 'info' | 'success' | 'err
                     </label>
                   </th>
                   <td>
-                    <div class="text-sm font-medium line-clamp-2" title={evaluation.instruction_text}>
+                    <div
+                      class="text-sm font-medium line-clamp-2"
+                      title={evaluation.instruction_text}
+                    >
                       {evaluation.instruction_text}
                     </div>
                   </td>
@@ -184,7 +194,8 @@ function getStatusVariant(status: string): 'warning' | 'info' | 'success' | 'err
                   <td class="font-mono text-center">
                     {evaluation.avg_time_ms !== undefined ? (
                       <div class="text-base text-base-content/70">
-                        {Math.round(evaluation.avg_time_ms)}<span class="text-xs ml-0.5">ms</span>
+                        {Math.round(evaluation.avg_time_ms)}
+                        <span class="text-xs ml-0.5">ms</span>
                       </div>
                     ) : (
                       <span class="text-base-content/40">—</span>
@@ -204,8 +215,19 @@ function getStatusVariant(status: string): 'warning' | 'info' | 'success' | 'err
                       class="inline-flex items-center gap-1 text-sm font-medium text-base-content/60 hover:text-base-content transition-colors group whitespace-nowrap"
                     >
                       <span>View</span>
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="h-4 w-4 transition-transform group-hover:translate-x-1"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M9 5l7 7-7 7"
+                        />
                       </svg>
                     </a>
                   </td>
