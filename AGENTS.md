@@ -94,6 +94,14 @@ Latest coverage (vitest `npm test -- --coverage`):
 - Unused variables: warn (prefix with `_` to ignore)
 - Explicit `any`: warn
 
+## Styling Conventions
+
+**TOP PRIORITY**: Always use Tailwind CSS v4 utility classes for styling.
+- Use Tailwind v4 syntax and features (e.g., `@theme` directive, CSS variables)
+- Leverage daisyUI component classes when appropriate
+- Only fall back to custom CSS when Tailwind utilities cannot achieve the desired result
+- When custom CSS is necessary, document why Tailwind was insufficient
+
 ## Recent Changes
 
 - 001-eval-ai-models: Added TypeScript 5.6+ on Node.js 22+ + Astro 5.x (SSR),
