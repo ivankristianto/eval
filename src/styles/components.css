@@ -87,7 +87,7 @@
 }
 
 .table-luxe thead th {
-  @apply text-xs font-semibold uppercase tracking-widest px-3 py-4 sticky top-0 z-10 whitespace-nowrap border-b-2;
+  @apply text-xs font-semibold uppercase tracking-widest px-3 py-4 sticky top-0 z-10 whitespace-nowrap border-b-2 align-middle;
   font-family: var(--font-family-body);
   background: rgba(212, 175, 55, 0.03);
   border-bottom-color: rgba(212, 175, 55, 0.2);
@@ -109,7 +109,7 @@
 }
 
 .table-luxe tbody td {
-  @apply px-3 py-3.5 text-sm align-top;
+  @apply px-3 py-3.5 text-sm align-middle;
 }
 
 .table-luxe tbody td:first-child,
