@@ -1,6 +1,5 @@
 ---
 import Layout from '../../layouts/Layout.astro';
-import Card from '../../components/ui/Card.astro';
 import Badge from '../../components/ui/Badge.astro';
 import Button from '../../components/ui/Button.astro';
 import Breadcrumbs from '../../components/ui/Breadcrumbs.astro';
@@ -35,6 +34,8 @@ let evaluationData: {
     accuracy_score?: number;
     accuracy_reasoning?: string;
     status: string;
+    system_prompt_used?: string;
+    temperature_used?: number;
   }>;
 } | null = null;
 
@@ -65,6 +66,8 @@ if (id) {
           accuracy_score: r.accuracy_score,
           accuracy_reasoning: r.accuracy_reasoning,
           status: r.status,
+          system_prompt_used: r.system_prompt_used,
+          temperature_used: r.temperature_used,
         })),
       };
     }
@@ -174,18 +177,24 @@ function getStatusBadgeVariant(status: string) {
         )
       }
 
-      {
-        evaluationData.temperature !== undefined &&
-          evaluationData.temperature !== null &&
-          evaluationData.temperature !== 0.3 && (
-            <div>
-              <h3 class="font-semibold text-sm text-base-content/70 mb-1">Temperature</h3>
-              <div class="bg-base-200 p-4 rounded-lg font-mono text-sm">
-                {evaluationData.temperature.toFixed(1)}
-              </div>
-            </div>
-          )
-      }
+      <div>
+        <h3 class="font-semibold text-sm text-base-content/70 mb-1">Temperature</h3>
+        <div class="bg-base-200 p-4 rounded-lg font-mono text-sm">
+          {
+            (() => {
+              const temp =
+                evaluationData.temperature !== undefined && evaluationData.temperature !== null
+                  ? evaluationData.temperature
+                  : 0.3;
+              const isDefault =
+                temp === 0.3 ||
+                evaluationData.temperature === undefined ||
+                evaluationData.temperature === null;
+              return `${temp.toFixed(1)}${isDefault ? ' (default)' : ''}`;
+            })()
+          }
+        </div>
+      </div>
     </div>
   </div>
 
@@ -299,6 +308,8 @@ function getStatusBadgeVariant(status: string) {
             accuracyScore: result.accuracy_score,
             inputTokens: result.input_tokens,
             outputTokens: result.output_tokens,
+            totalTokens: result.total_tokens,
+            temperature: result.temperature_used,
           });
         }
       });
