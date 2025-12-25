@@ -10,7 +10,11 @@
       "Bash(curl:*)",
       "WebFetch(domain:localhost)",
       "Skill(frontend-design:frontend-design)",
-      "mcp__plugin_playwright_playwright__browser_close"
+      "mcp__plugin_playwright_playwright__browser_close",
+      "Skill(speckit.specify)",
+      "Bash(test:*)",
+      "Bash(npm run format:*)",
+      "Bash(cat:*)"
     ]
   },
   "gitAttribution": false
