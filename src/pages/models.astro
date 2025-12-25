@@ -382,7 +382,7 @@ const modelIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text
 
         const data = await response.json();
 
-        if (!response.ok || !data.valid) {
+        if (!response.ok || data.status !== 'valid') {
           throw new Error(data.message || 'Connection test failed');
         }
 
