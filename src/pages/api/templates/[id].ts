@@ -9,6 +9,8 @@ import {
   validateInstruction,
   validateRubricType,
   validateModelIds,
+  validateSystemPrompt,
+  validateTemperature,
 } from '../../../lib/validators';
 import type { RubricType } from '../../../lib/types';
 
@@ -75,6 +77,8 @@ export const GET: APIRoute = async ({ params }) => {
         created_at: template.created_at,
         updated_at: template.updated_at,
         run_count: template.run_count,
+        system_prompt: template.system_prompt,
+        temperature: template.temperature,
       }),
       {
         status: 200,
@@ -182,6 +186,26 @@ export const PATCH: APIRoute = async ({ params, request }) => {
       }
     }
 
+    if (body.system_prompt !== undefined) {
+      const validation = validateSystemPrompt(body.system_prompt);
+      if (!validation.valid) {
+        return new Response(JSON.stringify(validation.error), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
+    if (body.temperature !== undefined) {
+      const validation = validateTemperature(body.temperature);
+      if (!validation.valid) {
+        return new Response(JSON.stringify(validation.error), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
     // Build updates object
     const updates: Partial<{
       name: string;
@@ -191,6 +215,8 @@ export const PATCH: APIRoute = async ({ params, request }) => {
       accuracy_rubric: RubricType;
       expected_output: string;
       partial_credit_concepts: string[];
+      system_prompt: string;
+      temperature: number;
     }> = {};
 
     if (body.name !== undefined) updates.name = body.name;
@@ -201,6 +227,8 @@ export const PATCH: APIRoute = async ({ params, request }) => {
     if (body.expected_output !== undefined) updates.expected_output = body.expected_output;
     if (body.partial_credit_concepts !== undefined)
       updates.partial_credit_concepts = body.partial_credit_concepts;
+    if (body.system_prompt !== undefined) updates.system_prompt = body.system_prompt;
+    if (body.temperature !== undefined) updates.temperature = body.temperature;
 
     const updated = updateTemplate(id, updates);
 

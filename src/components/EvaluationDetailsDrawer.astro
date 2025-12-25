@@ -1,47 +1,16 @@
 ---
-// This drawer shows details of a selected model's evaluation result
-// It will be populated dynamically via JavaScript
+import Drawer from './ui/Drawer.astro';
 ---
 
-<!-- Drawer backdrop -->
-<div
-  id="details-drawer-backdrop"
-  class="fixed inset-0 bg-black/50 z-40 hidden opacity-0 transition-opacity duration-300"
->
-</div>
-
-<!-- Drawer panel -->
-<div
-  id="details-drawer"
-  class="fixed top-0 right-0 h-full w-full max-w-md bg-base-100 shadow-xl z-50 transform translate-x-full transition-transform duration-300 ease-in-out overflow-hidden flex flex-col"
->
-  <!-- Header -->
-  <div class="flex items-center justify-between p-4 border-b border-base-200">
-    <h2 class="text-lg font-semibold" id="details-drawer-title">Evaluation Details</h2>
-    <button
-      type="button"
-      class="btn btn-ghost btn-sm btn-circle"
-      id="details-drawer-close"
-      aria-label="Close"
-    >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        class="h-5 w-5"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M6 18L18 6M6 6l12 12"></path>
-      </svg>
-    </button>
-  </div>
+<Drawer id="details-drawer" width="md">
+  <Fragment slot="title">
+    <h2 class="font-display text-2xl font-semibold text-gradient-gold" id="details-drawer-title">
+      Evaluation Details
+    </h2>
+  </Fragment>
 
   <!-- Content -->
-  <div class="flex-1 overflow-y-auto p-4 space-y-6">
+  <div class="space-y-6">
     <!-- Full Prompt -->
     <div>
       <h3 class="text-sm font-semibold text-base-content/70 mb-2">Full Prompt:</h3>
@@ -83,6 +52,14 @@
           <div class="font-semibold" id="details-accuracy">-</div>
         </div>
         <div class="bg-base-200 p-3 rounded-lg">
+          <div class="text-xs text-base-content/50">Temperature</div>
+          <div class="font-semibold font-mono" id="details-temperature">-</div>
+        </div>
+        <div class="bg-base-200 p-3 rounded-lg">
+          <div class="text-xs text-base-content/50">Total Tokens</div>
+          <div class="font-semibold" id="details-total-tokens">-</div>
+        </div>
+        <div class="bg-base-200 p-3 rounded-lg">
           <div class="text-xs text-base-content/50">Input Tokens</div>
           <div class="font-semibold" id="details-input-tokens">-</div>
         </div>
@@ -93,40 +70,10 @@
       </div>
     </div>
   </div>
-</div>
+</Drawer>
 
 <script>
-  function initDetailsDrawer() {
-    const drawer = document.getElementById('details-drawer');
-    const backdrop = document.getElementById('details-drawer-backdrop');
-    const closeBtn = document.getElementById('details-drawer-close');
-    const title = document.getElementById('details-drawer-title');
-
-    function closeDrawer() {
-      if (drawer) {
-        drawer.classList.add('translate-x-full');
-      }
-      if (backdrop) {
-        backdrop.classList.add('opacity-0');
-        setTimeout(() => {
-          backdrop.classList.add('hidden');
-        }, 300);
-      }
-      document.body.classList.remove('overflow-hidden');
-    }
-
-    function openDrawer() {
-      if (backdrop) {
-        backdrop.classList.remove('hidden');
-        backdrop.offsetHeight; // Trigger reflow
-        backdrop.classList.remove('opacity-0');
-      }
-      if (drawer) {
-        drawer.classList.remove('translate-x-full');
-      }
-      document.body.classList.add('overflow-hidden');
-    }
-
+  function initEvaluationDetailsDrawer() {
     // Populate drawer with data
     function showDetails(data: {
       modelName: string;
@@ -138,15 +85,22 @@
       accuracyScore?: number;
       inputTokens?: number;
       outputTokens?: number;
+      totalTokens?: number;
+      temperature?: number;
     }) {
+      // Update title
+      const title = document.getElementById('details-drawer-title');
       if (title) title.textContent = `Evaluation Details: ${data.modelName}`;
 
+      // Update content
       const promptEl = document.getElementById('details-prompt');
       const expectedEl = document.getElementById('details-expected');
       const responseEl = document.getElementById('details-response');
       const reasoningEl = document.getElementById('details-reasoning');
       const timeEl = document.getElementById('details-time');
       const accuracyEl = document.getElementById('details-accuracy');
+      const temperatureEl = document.getElementById('details-temperature');
+      const totalTokensEl = document.getElementById('details-total-tokens');
       const inputTokensEl = document.getElementById('details-input-tokens');
       const outputTokensEl = document.getElementById('details-output-tokens');
 
@@ -157,34 +111,28 @@
       if (timeEl) timeEl.textContent = data.executionTime ? `${data.executionTime}ms` : '-';
       if (accuracyEl)
         accuracyEl.textContent = data.accuracyScore !== undefined ? `${data.accuracyScore}%` : '-';
+      if (temperatureEl) {
+        const temp = data.temperature !== undefined ? data.temperature : 0.3;
+        const isDefault = temp === 0.3 || data.temperature === undefined;
+        temperatureEl.textContent = `${temp.toFixed(1)}${isDefault ? ' (default)' : ''}`;
+      }
+      if (totalTokensEl) totalTokensEl.textContent = data.totalTokens?.toString() || '-';
       if (inputTokensEl) inputTokensEl.textContent = data.inputTokens?.toString() || '-';
       if (outputTokensEl) outputTokensEl.textContent = data.outputTokens?.toString() || '-';
 
-      openDrawer();
+      // Open drawer using the window function provided by Drawer component
+      if (window.openDrawer) {
+        window.openDrawer('details-drawer');
+      }
     }
 
     // Expose to window
-    (window as any).showEvaluationDetails = showDetails;
-    (window as any).closeDetailsDrawer = closeDrawer;
-
-    // Event listeners
-    if (closeBtn) {
-      closeBtn.addEventListener('click', closeDrawer);
-    }
-
-    if (backdrop) {
-      backdrop.addEventListener('click', closeDrawer);
-    }
-
-    // ESC key to close
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && drawer && !drawer.classList.contains('translate-x-full')) {
-        closeDrawer();
-      }
-    });
+    window.showEvaluationDetails = showDetails;
   }
 
   // Initialize
-  initDetailsDrawer();
-  document.addEventListener('astro:page-load', initDetailsDrawer);
+  initEvaluationDetailsDrawer();
+
+  // Re-initialize on Astro page transitions
+  document.addEventListener('astro:page-load', initEvaluationDetailsDrawer);
 </script>

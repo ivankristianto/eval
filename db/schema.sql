@@ -31,7 +31,9 @@ CREATE TABLE IF NOT EXISTS EvaluationTemplate (
   expected_output TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now')),
-  run_count INTEGER NOT NULL DEFAULT 0
+  run_count INTEGER NOT NULL DEFAULT 0,
+  system_prompt TEXT,
+  temperature REAL DEFAULT 0.3 CHECK (temperature >= 0.0 AND temperature <= 2.0)
 );
 
 CREATE INDEX IF NOT EXISTS idx_template_created_at ON EvaluationTemplate(created_at DESC);
@@ -49,6 +51,8 @@ CREATE TABLE IF NOT EXISTS Evaluation (
   status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'running', 'completed', 'failed')),
   error_message TEXT,
   template_id TEXT,
+  system_prompt TEXT,
+  temperature REAL DEFAULT 0.3 CHECK (temperature >= 0.0 AND temperature <= 2.0),
   FOREIGN KEY (template_id) REFERENCES EvaluationTemplate(id) ON DELETE SET NULL
 );
 
@@ -71,6 +75,8 @@ CREATE TABLE IF NOT EXISTS Result (
   status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'completed', 'failed')),
   error_message TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  system_prompt_used TEXT,
+  temperature_used REAL,
   FOREIGN KEY (evaluation_id) REFERENCES Evaluation(id) ON DELETE CASCADE,
   FOREIGN KEY (model_id) REFERENCES ModelConfiguration(id) ON DELETE RESTRICT
 );

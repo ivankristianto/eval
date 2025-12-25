@@ -8,13 +8,13 @@ interface Props {
   confirmVariant?: 'primary' | 'error' | 'warning';
 }
 
-const { 
-  id, 
-  title, 
-  message, 
-  confirmLabel = 'Confirm', 
+const {
+  id,
+  title,
+  message,
+  confirmLabel = 'Confirm',
   cancelLabel = 'Cancel',
-  confirmVariant = 'primary' 
+  confirmVariant = 'primary',
 } = Astro.props;
 ---
 
@@ -25,7 +25,9 @@ const {
     <div class="modal-action">
       <form method="dialog" class="flex gap-3 w-full justify-end">
         <button class="btn btn-ghost min-w-24">{cancelLabel}</button>
-        <button class={`btn btn-${confirmVariant} min-w-24`} id={`${id}-confirm`} value="confirm">{confirmLabel}</button>
+        <button class={`btn btn-${confirmVariant} min-w-24`} id={`${id}-confirm`} value="confirm"
+          >{confirmLabel}</button
+        >
       </form>
     </div>
   </div>

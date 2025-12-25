@@ -17,7 +17,8 @@
       <!-- Template Name -->
       <div class="form-control w-full">
         <label class="label" for="template-name">
-          <span class="label-text font-medium">Template Name <span class="text-error">*</span></span>
+          <span class="label-text font-medium">Template Name <span class="text-error">*</span></span
+          >
         </label>
         <input
           type="text"
@@ -33,7 +34,9 @@
       <!-- Template Description -->
       <div class="form-control w-full">
         <label class="label" for="template-description">
-          <span class="label-text font-medium">Description <span class="text-base-content/50">(optional)</span></span>
+          <span class="label-text font-medium"
+            >Description <span class="text-base-content/50">(optional)</span></span
+          >
         </label>
         <textarea
           id="template-description"
@@ -41,13 +44,14 @@
           rows="3"
           maxlength="500"
           placeholder="Brief description of what this template evaluates..."
-          class="textarea textarea-bordered w-full"
-        ></textarea>
+          class="textarea textarea-bordered w-full"></textarea>
       </div>
 
       <!-- Summary of what will be saved -->
       <div class="bg-base-200 rounded-lg p-4 border border-base-content/10">
-        <p class="text-xs font-semibold text-base-content/60 uppercase tracking-wider mb-3">WILL SAVE:</p>
+        <p class="text-xs font-semibold text-base-content/60 uppercase tracking-wider mb-3">
+          WILL SAVE:
+        </p>
         <ul id="template-summary" class="space-y-2 text-sm text-base-content/80">
           <!-- Populated by JavaScript -->
         </ul>
@@ -55,27 +59,41 @@
 
       <!-- Error message -->
       <div id="template-error" class="hidden alert alert-error">
-        <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="stroke-current shrink-0 h-6 w-6"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
         </svg>
         <span id="template-error-text"></span>
       </div>
 
       <!-- Success message -->
       <div id="template-success" class="hidden alert alert-success">
-        <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="stroke-current shrink-0 h-6 w-6"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
         </svg>
         <span>Template saved successfully!</span>
       </div>
 
       <!-- Actions -->
       <div class="modal-action">
-        <button
-          type="button"
-          id="template-cancel-btn"
-          class="btn btn-ghost min-w-28"
-        >
+        <button type="button" id="template-cancel-btn" class="btn btn-ghost min-w-28">
           Cancel
         </button>
         <button
@@ -103,6 +121,8 @@
     accuracy_rubric: string;
     expected_output: string;
     partial_credit_concepts?: string[];
+    system_prompt?: string;
+    temperature?: number;
   }
 
   function initTemplateManager() {
@@ -200,6 +220,8 @@
             accuracy_rubric: pendingTemplateData.accuracy_rubric,
             expected_output: pendingTemplateData.expected_output,
             partial_credit_concepts: pendingTemplateData.partial_credit_concepts,
+            system_prompt: pendingTemplateData.system_prompt,
+            temperature: pendingTemplateData.temperature,
           }),
         });
 
@@ -236,7 +258,7 @@
     }
 
     // Expose function globally for other pages to call
-    (window as any).openTemplateModal = openTemplateModal;
+    window.openTemplateModal = openTemplateModal;
   }
 
   // Initialize

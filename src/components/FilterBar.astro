@@ -29,9 +29,7 @@ const rubrics: { value: RubricType; label: string }[] = [
 ---
 
 <form method="get" class="card-luxe p-5 mb-8 animate-reveal delay-100">
-  {preservedParams.map(param => (
-    <input type="hidden" name={param.key} value={param.value} />
-  ))}
+  {preservedParams.map((param) => <input type="hidden" name={param.key} value={param.value} />)}
 
   <div class="flex flex-wrap items-end gap-4">
     <div class="form-control">
@@ -62,11 +60,18 @@ const rubrics: { value: RubricType; label: string }[] = [
       <label class="label">
         <span class="metric-label text-xs">Rubric</span>
       </label>
-      <select name="rubric" class="select select-bordered select-sm border-gold-light focus:border-luxe-gold transition-colors">
+      <select
+        name="rubric"
+        class="select select-bordered select-sm border-gold-light focus:border-luxe-gold transition-colors"
+      >
         <option value="">All Rubrics</option>
-        {rubrics.map(r => (
-          <option value={r.value} selected={r.value === rubric}>{r.label}</option>
-        ))}
+        {
+          rubrics.map((r) => (
+            <option value={r.value} selected={r.value === rubric}>
+              {r.label}
+            </option>
+          ))
+        }
       </select>
     </div>
 
@@ -92,7 +97,13 @@ const rubrics: { value: RubricType; label: string }[] = [
     </div>
 
     <div class="form-control pb-0.5">
-      <a href={Astro.url.pathname + (preservedParams.length ? '?' + new URLSearchParams(preservedParams.map(p => [p.key, p.value])).toString() : '')} class="btn btn-ghost btn-sm">
+      <a
+        href={Astro.url.pathname +
+          (preservedParams.length
+            ? '?' + new URLSearchParams(preservedParams.map((p) => [p.key, p.value])).toString()
+            : '')}
+        class="btn btn-ghost btn-sm"
+      >
         Reset
       </a>
     </div>

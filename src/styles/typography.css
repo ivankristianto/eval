@@ -1,12 +1,12 @@
 /* Typography Classes */
 .font-display {
-  font-family: var(--font-display);
+  font-family: var(--font-family-display);
   font-weight: 600;
   letter-spacing: -0.02em;
 }
 
 .font-mono {
-  font-family: var(--font-mono);
+  font-family: var(--font-family-mono);
   font-variant-numeric: tabular-nums;
 }
 
@@ -17,7 +17,7 @@ h3,
 h4,
 h5,
 h6 {
-  font-family: var(--font-display);
+  font-family: var(--font-family-display);
   font-weight: 600;
   letter-spacing: -0.02em;
 }
@@ -52,6 +52,21 @@ h6 {
 [data-theme='nord'] .text-gold-accessible {
   color: #f0d678;
   font-weight: 600;
+}
+
+/* Text for use ON gold backgrounds - optimal contrast across all themes */
+/* Using compound selector for proper specificity without !important */
+/* Gold gradient is bright across all themes, so dark text works universally */
+
+.bg-gradient-gold.text-on-gold,
+.bg-gradient-gold .text-on-gold,
+a.text-on-gold,
+button.text-on-gold {
+  color: #0a1628;
+}
+
+.menu a.text-on-gold.active {
+  color: #0a1628;
 }
 
 .text-gradient-emerald {

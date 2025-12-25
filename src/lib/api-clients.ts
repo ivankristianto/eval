@@ -7,7 +7,10 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import type { Provider, ModelResponse } from './types';
 
 export interface ModelClient {
-  evaluate(instruction: string): Promise<ModelResponse>;
+  evaluate(
+    instruction: string,
+    options?: { systemPrompt?: string; temperature?: number }
+  ): Promise<ModelResponse>;
   testConnection(): Promise<boolean>;
 }
 
@@ -22,7 +25,18 @@ export class OpenAIClient implements ModelClient {
     this.modelName = modelName;
   }
 
-  async evaluate(instruction: string): Promise<ModelResponse> {
+  /**
+   * Evaluates an instruction using the OpenAI API.
+   * @param instruction - The user instruction/prompt to evaluate
+   * @param options - Optional configuration
+   * @param options.systemPrompt - Custom system prompt to shape model behavior (max 4000 chars)
+   * @param options.temperature - Sampling temperature 0.0-2.0 (default: 0.3 if not specified)
+   * @returns Model response with text, token counts, and execution time
+   */
+  async evaluate(
+    instruction: string,
+    options?: { systemPrompt?: string; temperature?: number }
+  ): Promise<ModelResponse> {
     const startTime = performance.now();
 
     // Newer OpenAI models (o1, o3, gpt-5+) require max_completion_tokens instead of max_tokens
@@ -35,24 +49,61 @@ export class OpenAIClient implements ModelClient {
       ? { max_completion_tokens: 4096 }
       : { max_tokens: 4096 };
 
+    // Some models (o1, o3, gpt-5 series) don't support temperature customization
+    const supportsTemperature =
+      !this.modelName.startsWith('o1') &&
+      !this.modelName.startsWith('o3') &&
+      !this.modelName.startsWith('gpt-5');
+
+    // Build messages array with system prompt if provided
+    const messages: Array<{ role: 'system' | 'user'; content: string }> = [];
+    if (options?.systemPrompt) {
+      messages.push({ role: 'system', content: options.systemPrompt });
+    }
+    messages.push({ role: 'user', content: instruction });
+
     const response = await this.client.chat.completions.create({
       model: this.modelName,
-      messages: [{ role: 'user', content: instruction }],
+      messages,
+      ...(supportsTemperature &&
+        options?.temperature !== undefined && { temperature: options.temperature }),
       ...tokenParam,
-    } as any);
+    } as OpenAI.ChatCompletionCreateParamsNonStreaming);
 
     const executionTime = Math.round(performance.now() - startTime);
 
     const choice = response.choices[0];
     const usage = response.usage;
 
-    return {
+    const result = {
       response: choice?.message?.content || '',
       inputTokens: usage?.prompt_tokens || 0,
       outputTokens: usage?.completion_tokens || 0,
       totalTokens: usage?.total_tokens || 0,
       executionTime,
     };
+
+    // Debug logging
+    if (process.env.DEBUG === 'true') {
+      console.log('[OpenAI Debug]', {
+        model: this.modelName,
+        systemPrompt: options?.systemPrompt
+          ? `"${options.systemPrompt.substring(0, 50)}..."`
+          : 'none',
+        temperature: supportsTemperature
+          ? (options?.temperature ?? 'default')
+          : 'not supported (using model default)',
+        response: result.response.substring(0, 200) + (result.response.length > 200 ? '...' : ''),
+        tokens: {
+          input: result.inputTokens,
+          output: result.outputTokens,
+          total: result.totalTokens,
+        },
+        executionTime: `${result.executionTime}ms`,
+      });
+    }
+
+    return result;
   }
 
   async testConnection(): Promise<boolean> {
@@ -76,12 +127,25 @@ export class AnthropicClient implements ModelClient {
     this.modelName = modelName;
   }
 
-  async evaluate(instruction: string): Promise<ModelResponse> {
+  /**
+   * Evaluates an instruction using the Anthropic API.
+   * @param instruction - The user instruction/prompt to evaluate
+   * @param options - Optional configuration
+   * @param options.systemPrompt - Custom system prompt to shape model behavior (max 4000 chars)
+   * @param options.temperature - Sampling temperature 0.0-2.0 (default: 0.3 if not specified)
+   * @returns Model response with text, token counts, and execution time
+   */
+  async evaluate(
+    instruction: string,
+    options?: { systemPrompt?: string; temperature?: number }
+  ): Promise<ModelResponse> {
     const startTime = performance.now();
 
     const response = await this.client.messages.create({
       model: this.modelName,
       max_tokens: 4096,
+      ...(options?.systemPrompt && { system: options.systemPrompt }),
+      ...(options?.temperature !== undefined && { temperature: options.temperature }),
       messages: [{ role: 'user', content: instruction }],
     });
 
@@ -90,13 +154,33 @@ export class AnthropicClient implements ModelClient {
     const textContent = response.content.find((block) => block.type === 'text');
     const responseText = textContent && 'text' in textContent ? textContent.text : '';
 
-    return {
+    const result = {
       response: responseText,
       inputTokens: response.usage.input_tokens,
       outputTokens: response.usage.output_tokens,
       totalTokens: response.usage.input_tokens + response.usage.output_tokens,
       executionTime,
     };
+
+    // Debug logging
+    if (process.env.DEBUG === 'true') {
+      console.log('[Anthropic Debug]', {
+        model: this.modelName,
+        systemPrompt: options?.systemPrompt
+          ? `"${options.systemPrompt.substring(0, 50)}..."`
+          : 'none',
+        temperature: options?.temperature ?? 'default',
+        response: result.response.substring(0, 200) + (result.response.length > 200 ? '...' : ''),
+        tokens: {
+          input: result.inputTokens,
+          output: result.outputTokens,
+          total: result.totalTokens,
+        },
+        executionTime: `${result.executionTime}ms`,
+      });
+    }
+
+    return result;
   }
 
   async testConnection(): Promise<boolean> {
@@ -125,10 +209,39 @@ export class GoogleClient implements ModelClient {
     this.modelName = modelName;
   }
 
-  async evaluate(instruction: string): Promise<ModelResponse> {
+  /**
+   * Evaluates an instruction using the Google Generative AI API.
+   * @param instruction - The user instruction/prompt to evaluate
+   * @param options - Optional configuration
+   * @param options.systemPrompt - Custom system prompt to shape model behavior (max 4000 chars)
+   * @param options.temperature - Sampling temperature 0.0-2.0 (default: 0.3 if not specified)
+   * @returns Model response with text, token counts, and execution time
+   */
+  async evaluate(
+    instruction: string,
+    options?: { systemPrompt?: string; temperature?: number }
+  ): Promise<ModelResponse> {
     const startTime = performance.now();
 
-    const model = this.client.getGenerativeModel({ model: this.modelName });
+    const modelConfig: {
+      model: string;
+      systemInstruction?: string;
+      generationConfig?: { temperature?: number };
+    } = { model: this.modelName };
+
+    // Add system instruction if provided
+    if (options?.systemPrompt) {
+      modelConfig.systemInstruction = options.systemPrompt;
+    }
+
+    // Add generation config with temperature if provided
+    if (options?.temperature !== undefined) {
+      modelConfig.generationConfig = {
+        temperature: options.temperature,
+      };
+    }
+
+    const model = this.client.getGenerativeModel(modelConfig);
     const result = await model.generateContent(instruction);
 
     const executionTime = Math.round(performance.now() - startTime);
@@ -138,13 +251,34 @@ export class GoogleClient implements ModelClient {
 
     const usage = response.usageMetadata;
 
-    return {
+    const resultObj = {
       response: text,
       inputTokens: usage?.promptTokenCount || 0,
       outputTokens: usage?.candidatesTokenCount || 0,
       totalTokens: usage?.totalTokenCount || 0,
       executionTime,
     };
+
+    // Debug logging
+    if (process.env.DEBUG === 'true') {
+      console.log('[Google Debug]', {
+        model: this.modelName,
+        systemPrompt: options?.systemPrompt
+          ? `"${options.systemPrompt.substring(0, 50)}..."`
+          : 'none',
+        temperature: options?.temperature ?? 'default',
+        response:
+          resultObj.response.substring(0, 200) + (resultObj.response.length > 200 ? '...' : ''),
+        tokens: {
+          input: resultObj.inputTokens,
+          output: resultObj.outputTokens,
+          total: resultObj.totalTokens,
+        },
+        executionTime: `${resultObj.executionTime}ms`,
+      });
+    }
+
+    return resultObj;
   }
 
   async testConnection(): Promise<boolean> {
@@ -182,87 +316,4 @@ export class ClientFactory {
     const client = this.createClient(provider, apiKey, modelName);
     return client.testConnection();
   }
-}
-
-// ===== Helper for semantic similarity scoring =====
-
-// @deprecated: Use getSemanticSimilarityScore from semanticSimilarity.ts
-export async function getSemanticSimilarityScore(
-  response: string,
-  expectedOutput: string,
-  apiKey?: string
-): Promise<{ score: number; reasoning: string }> {
-  // Use Anthropic Claude for semantic similarity scoring if API key is available
-  const anthropicKey = apiKey || process.env.ANTHROPIC_API_KEY;
-
-  if (!anthropicKey) {
-    // Fallback to basic text similarity if no API key
-    return fallbackSimilarity(response, expectedOutput);
-  }
-
-  try {
-    const client = new Anthropic({ apiKey: anthropicKey });
-
-    const result = await client.messages.create({
-      model: 'claude-3-haiku-20240307',
-      max_tokens: 100,
-      messages: [
-        {
-          role: 'user',
-          content: `Compare these two texts for semantic similarity. Rate the similarity from 0 to 100, where 100 means identical meaning.
-
-Text A: "${response.substring(0, 1000)}"
-
-Text B: "${expectedOutput.substring(0, 1000)}"
-
-Reply with ONLY a JSON object in this exact format: {"score": <number>, "reasoning": "<brief explanation>"}`,
-        },
-      ],
-    });
-
-    const textContent = result.content.find((block) => block.type === 'text');
-    const text = textContent && 'text' in textContent ? textContent.text : '';
-
-    try {
-      const parsed = JSON.parse(text);
-      return {
-        score: Math.min(100, Math.max(0, Math.round(parsed.score))),
-        reasoning: String(parsed.reasoning).substring(0, 500),
-      };
-    } catch {
-      // If parsing fails, try to extract score from text
-      const scoreMatch = text.match(/\d+/);
-      return {
-        score: scoreMatch ? Math.min(100, Math.max(0, parseInt(scoreMatch[0], 10))) : 50,
-        reasoning: 'Semantic similarity score extracted from model response',
-      };
-    }
-  } catch (error) {
-    console.error('Semantic similarity scoring failed:', error);
-    return fallbackSimilarity(response, expectedOutput);
-  }
-}
-
-// @deprecated: Use fallbackSimilarity from semanticSimilarity.ts
-function fallbackSimilarity(
-  response: string,
-  expectedOutput: string
-): { score: number; reasoning: string } {
-  // Simple word overlap similarity as fallback
-  const responseWords = new Set(response.toLowerCase().split(/\s+/));
-  const expectedWords = new Set(expectedOutput.toLowerCase().split(/\s+/));
-
-  let overlap = 0;
-  for (const word of responseWords) {
-    if (expectedWords.has(word)) {
-      overlap++;
-    }
-  }
-
-  const score = Math.round((overlap / Math.max(responseWords.size, expectedWords.size)) * 100);
-
-  return {
-    score,
-    reasoning: `Fallback word overlap similarity: ${overlap} common words`,
-  };
 }
