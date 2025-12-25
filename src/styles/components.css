@@ -4,13 +4,10 @@
 
 /* Elevated Card */
 .card-luxe {
+  @apply relative rounded-2xl border backdrop-blur-xl transition-all duration-400;
   background: rgba(255, 255, 255, 0.98);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(212, 175, 55, 0.1);
+  border-color: rgba(212, 175, 55, 0.1);
   box-shadow: var(--shadow-elevated);
-  border-radius: 16px;
-  position: relative;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 [data-theme='dark'] .card-luxe,
@@ -32,43 +29,29 @@
 }
 
 .card-luxe::before {
+  @apply absolute inset-x-0 top-0 h-px opacity-0 transition-opacity duration-400 z-[1];
   content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
   background: var(--gradient-gold);
-  opacity: 0;
-  transition: opacity 0.4s ease;
-  z-index: 1;
 }
 
 .card-luxe:hover {
-  transform: translateY(-2px);
+  @apply -translate-y-0.5;
   box-shadow: var(--shadow-gold);
 }
 
 .card-luxe:hover::before {
-  opacity: 1;
+  @apply opacity-100;
 }
 
 /* Metric Display */
 .metric-display {
+  @apply text-5xl font-bold leading-none tracking-tighter;
   font-family: var(--font-mono);
-  font-size: 2.5rem;
-  font-weight: 700;
-  line-height: 1;
-  letter-spacing: -0.03em;
 }
 
 .metric-label {
+  @apply text-xs font-medium uppercase tracking-widest opacity-60;
   font-family: var(--font-body);
-  font-size: 0.75rem;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  opacity: 0.6;
 }
 
 /* Success Metric Glow */
@@ -87,37 +70,37 @@
    DATA TABLE ENHANCEMENTS
    =================================== */
 
+/* Hide scrollbar for table containers */
+.overflow-x-auto {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+.overflow-x-auto::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
 /* Base table luxe - flexible layout */
 .table-luxe {
-  border-collapse: separate;
-  border-spacing: 0;
-  width: 100%;
+  @apply w-full border-separate border-spacing-0;
   table-layout: auto;
 }
 
 .table-luxe thead th {
+  @apply text-xs font-semibold uppercase tracking-widest px-3 py-4 sticky top-0 z-10 whitespace-nowrap border-b-2;
   font-family: var(--font-body);
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  padding: 1rem 0.75rem;
   background: rgba(212, 175, 55, 0.03);
-  border-bottom: 2px solid rgba(212, 175, 55, 0.2);
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  white-space: nowrap;
+  border-bottom-color: rgba(212, 175, 55, 0.2);
 }
 
 .table-luxe tbody tr {
-  transition: all 0.2s ease;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  @apply transition-all duration-200 border-b;
+  border-bottom-color: rgba(0, 0, 0, 0.05);
 }
 
 .table-luxe tbody tr:hover {
+  @apply scale-[1.001];
   background: rgba(212, 175, 55, 0.03);
-  transform: scale(1.001);
 }
 
 [data-theme='dark'] .table-luxe tbody tr:hover,
@@ -126,96 +109,78 @@
 }
 
 .table-luxe tbody td {
-  padding: 0.875rem 0.75rem;
-  font-size: 0.875rem;
-  vertical-align: top;
+  @apply px-3 py-3.5 text-sm align-top;
 }
 
 .table-luxe tbody td:first-child,
 .table-luxe thead th:first-child {
-  padding-left: 1rem;
+  @apply pl-4;
 }
 
 .table-luxe tbody td:last-child,
 .table-luxe thead th:last-child {
-  padding-right: 1rem;
+  @apply pr-4;
 }
 
 /* Specific table layouts for different pages */
 
 /* Homepage evaluation table - has checkbox column */
 .table-luxe.table-evaluation thead th:first-child {
-  width: 50px;
+  @apply w-[50px];
 }
 
 .table-luxe.table-evaluation thead th:nth-child(2) {
-  min-width: 250px;
-  max-width: 400px;
+  @apply min-w-[250px] max-w-[400px];
 }
 
 .table-luxe.table-evaluation tbody td:nth-child(2) {
-  max-width: 400px;
+  @apply max-w-[400px];
 }
 
 /* Templates table - NAME column needs width */
 .table-luxe.table-templates thead th:first-child {
-  min-width: 180px;
-  width: 20%;
+  @apply min-w-[180px] w-1/5;
 }
 
 .table-luxe.table-templates thead th:nth-child(2) {
-  min-width: 300px;
-  width: 35%;
+  @apply min-w-[300px] w-[35%];
 }
 
 .table-luxe.table-templates tbody td:first-child {
-  min-width: 180px;
-  width: 20%;
-  white-space: normal;
-  word-wrap: break-word;
+  @apply min-w-[180px] w-1/5 whitespace-normal break-words;
 }
 
 .table-luxe.table-templates tbody td:nth-child(2) {
-  min-width: 300px;
-  width: 35%;
-  white-space: normal;
+  @apply min-w-[300px] w-[35%] whitespace-normal;
 }
 
 /* Models table - Provider/Model column needs width */
 .table-luxe.table-models thead th:first-child {
-  width: 80px;
+  @apply w-20;
 }
 
 .table-luxe.table-models thead th:nth-child(2) {
-  min-width: 250px;
-  width: 40%;
+  @apply min-w-[250px] w-2/5;
 }
 
 .table-luxe.table-models tbody td:nth-child(2) {
-  min-width: 250px;
-  width: 40%;
-  white-space: normal;
-  word-wrap: break-word;
+  @apply min-w-[250px] w-2/5 whitespace-normal break-words;
 }
 
 /* Results table in evaluation details */
 .table-luxe.table-results thead th:first-child {
-  min-width: 200px;
-  width: 30%;
+  @apply min-w-[200px] w-[30%];
 }
 
 .table-luxe.table-results tbody td:first-child {
-  min-width: 200px;
-  width: 30%;
-  white-space: normal;
-  word-wrap: break-word;
+  @apply min-w-[200px] w-[30%] whitespace-normal break-words;
 }
 
 /* Number cells in tables */
 .table-luxe td:has(.font-mono),
 .table-luxe td.font-mono {
+  @apply tabular-nums;
   font-family: var(--font-mono);
-  font-variant-numeric: tabular-nums;
 }
 
 /* Gold Accent Border */
@@ -233,57 +198,42 @@
 
 /* All buttons - base styling */
 .btn {
+  @apply font-semibold tracking-wide rounded-lg transition-all duration-200;
   font-family: var(--font-body);
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  border-radius: 8px;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: var(--shadow-soft);
 }
 
 .btn:hover {
-  transform: translateY(-1px);
+  @apply -translate-y-px;
   box-shadow: var(--shadow-medium);
 }
 
 /* Luxe button enhancements */
 .btn-luxe {
-  position: relative;
-  overflow: hidden;
+  @apply relative overflow-hidden;
 }
 
 .btn-luxe::before {
+  @apply absolute top-1/2 left-1/2 w-0 h-0 rounded-full -translate-x-1/2 -translate-y-1/2;
   content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 0;
-  height: 0;
-  border-radius: 50%;
   background: rgba(255, 255, 255, 0.2);
-  transform: translate(-50%, -50%);
-  transition:
-    width 0.6s ease,
-    height 0.6s ease;
+  transition: width 0.6s ease, height 0.6s ease;
 }
 
 .btn-luxe:hover::before {
-  width: 300px;
-  height: 300px;
+  @apply w-[300px] h-[300px];
 }
 
 .btn-luxe-primary {
+  @apply border-none;
   background: var(--gradient-gold);
   color: var(--luxe-midnight);
-  border: none;
   box-shadow: var(--shadow-gold);
 }
 
 .btn-luxe-primary:hover {
-  transform: translateY(-2px);
-  box-shadow:
-    0 12px 40px rgba(212, 175, 55, 0.25),
-    0 4px 12px rgba(212, 175, 55, 0.15);
+  @apply -translate-y-0.5;
+  box-shadow: 0 12px 40px rgba(212, 175, 55, 0.25), 0 4px 12px rgba(212, 175, 55, 0.15);
 }
 
 /* ===================================
@@ -294,18 +244,16 @@
 .input,
 .textarea,
 .select {
-  border-radius: 8px;
-  border-width: 1px;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  @apply rounded-lg border transition-all duration-200;
   box-shadow: var(--shadow-soft);
 }
 
 .input:focus,
 .textarea:focus,
 .select:focus {
+  @apply outline-none;
   box-shadow: var(--shadow-medium);
   border-color: var(--luxe-gold);
-  outline: none;
 }
 
 .input-bordered,
@@ -328,9 +276,7 @@
 
 /* Checkbox consistency */
 .checkbox {
-  border-radius: 4px;
-  border-width: 2px;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  @apply rounded border-2 transition-all duration-200;
 }
 
 .checkbox:checked {
@@ -339,85 +285,55 @@
 
 /* Focus ring styles for accessibility */
 *:focus-visible {
-  outline: 2px solid var(--luxe-gold);
-  outline-offset: 2px;
+  @apply outline-2 outline-offset-2;
+  outline-color: var(--luxe-gold);
 }
 
 /* Badge enhancements - prevent wrapping */
 .badge {
-  white-space: nowrap;
+  @apply whitespace-nowrap;
 }
 
 /* Status indicators - Enhanced */
 .status-pending {
+  @apply text-xs font-semibold px-3 py-1 rounded-md uppercase tracking-wider whitespace-nowrap;
+  font-family: var(--font-mono);
   background: var(--luxe-amber);
   color: var(--luxe-midnight);
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  font-weight: 600;
-  padding: 0.25rem 0.75rem;
-  border-radius: 6px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  white-space: nowrap;
 }
 
 .status-running {
+  @apply text-xs font-semibold px-3 py-1 rounded-md uppercase tracking-wider whitespace-nowrap animate-pulse;
+  font-family: var(--font-mono);
   background: var(--gradient-emerald);
   color: var(--luxe-midnight);
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  font-weight: 600;
-  padding: 0.25rem 0.75rem;
-  border-radius: 6px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  white-space: nowrap;
-  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
 .status-completed {
+  @apply text-xs font-semibold px-3 py-1 rounded-md uppercase tracking-wider whitespace-nowrap;
+  font-family: var(--font-mono);
   background: var(--luxe-emerald);
   color: var(--luxe-midnight);
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  font-weight: 600;
-  padding: 0.25rem 0.75rem;
-  border-radius: 6px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  white-space: nowrap;
   box-shadow: var(--shadow-emerald);
 }
 
 .status-failed {
-  background: var(--luxe-ruby);
-  color: white;
+  @apply text-xs font-semibold px-3 py-1 rounded-md uppercase tracking-wider whitespace-nowrap text-white;
   font-family: var(--font-mono);
-  font-size: 0.75rem;
-  font-weight: 600;
-  padding: 0.25rem 0.75rem;
-  border-radius: 6px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  white-space: nowrap;
+  background: var(--luxe-ruby);
 }
 
 /* Best performer highlighting */
 .best-performer,
 tr.best-performer {
+  @apply relative;
   background: var(--luxe-emerald-glow) !important;
-  position: relative;
 }
 
 .best-performer::before,
 tr.best-performer::before {
+  @apply absolute left-0 top-0 bottom-0 w-1;
   content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 4px;
   background: var(--gradient-emerald);
 }
 
@@ -428,26 +344,24 @@ tr.best-performer::before {
 /* Modal backdrop styling - consistent across all modals */
 dialog::backdrop,
 .modal::backdrop {
+  @apply backdrop-blur-lg z-[100];
   background: rgba(10, 22, 40, 0.8);
-  backdrop-filter: blur(8px);
-  z-index: 100;
 }
 
 /* Ensure modals are above drawers */
 .modal {
-  z-index: 100;
+  @apply z-[100];
 }
 
 dialog {
-  z-index: 100;
+  @apply z-[100];
 }
 
 /* Consistent modal box styling */
 .modal-box {
-  border-radius: 16px;
+  @apply rounded-2xl border max-w-2xl;
   box-shadow: var(--shadow-elevated);
-  border: 1px solid rgba(212, 175, 55, 0.1);
-  max-width: 42rem;
+  border-color: rgba(212, 175, 55, 0.1);
 }
 
 [data-theme='dark'] .modal-box,
@@ -458,64 +372,54 @@ dialog {
 
 /* Modal action buttons - consistent spacing and styling */
 .modal-action {
-  gap: 0.75rem;
-  margin-top: 1.5rem;
+  @apply gap-3 mt-6;
 }
 
 /* Enhanced modal button styling for better UX */
 .modal-action .btn-error {
+  @apply text-white border-none font-semibold;
   background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
-  color: white;
-  border: none;
-  font-weight: 600;
-  box-shadow:
-    0 4px 12px rgba(220, 38, 38, 0.3),
-    0 2px 4px rgba(220, 38, 38, 0.2);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3), 0 2px 4px rgba(220, 38, 38, 0.2);
 }
 
 .modal-action .btn-error:hover {
+  @apply -translate-y-px;
   background: linear-gradient(135deg, #b91c1c 0%, #7f1d1d 100%);
-  transform: translateY(-1px);
-  box-shadow:
-    0 6px 16px rgba(220, 38, 38, 0.4),
-    0 3px 6px rgba(220, 38, 38, 0.25);
+  box-shadow: 0 6px 16px rgba(220, 38, 38, 0.4), 0 3px 6px rgba(220, 38, 38, 0.25);
 }
 
 .modal-action .btn-ghost {
-  background: transparent;
+  @apply bg-transparent border-2 font-semibold;
   color: var(--luxe-slate);
-  border: 2px solid rgba(45, 63, 95, 0.2);
-  font-weight: 600;
+  border-color: rgba(45, 63, 95, 0.2);
 }
 
 .modal-action .btn-ghost:hover {
+  @apply -translate-y-px;
   background: rgba(45, 63, 95, 0.05);
   border-color: rgba(45, 63, 95, 0.3);
-  transform: translateY(-1px);
 }
 
 /* Drawer consistency - ensure it's above navbar */
 .drawer-side {
-  z-index: 60;
+  @apply z-[60];
 }
 
 .drawer-side > .drawer-overlay {
+  @apply backdrop-blur-lg z-[60];
   background: rgba(10, 22, 40, 0.8);
-  backdrop-filter: blur(8px);
-  z-index: 60;
 }
 
 /* Custom drawer styling for right-side drawers */
 [data-drawer] {
-  border-left: 1px solid rgba(212, 175, 55, 0.1);
+  @apply border-l rounded-l-2xl z-[60];
+  border-color: rgba(212, 175, 55, 0.1);
   box-shadow: var(--shadow-elevated);
-  border-radius: 16px 0 0 16px;
-  z-index: 60;
 }
 
 /* Drawer backdrop needs higher z-index too */
 [data-drawer-backdrop] {
-  z-index: 60;
+  @apply z-[60];
 }
 
 [data-theme='dark'] [data-drawer],
@@ -526,19 +430,13 @@ dialog {
 
 /* Geometric accent lines */
 .accent-line {
-  position: relative;
-  padding-left: 1.5rem;
+  @apply relative pl-6;
 }
 
 .accent-line::before {
+  @apply absolute left-0 top-2 bottom-2 w-0.5 rounded-sm;
   content: '';
-  position: absolute;
-  left: 0;
-  top: 0.5rem;
-  bottom: 0.5rem;
-  width: 3px;
   background: var(--gradient-gold);
-  border-radius: 2px;
 }
 
 /* Responsive Table Adjustments */
@@ -549,28 +447,27 @@ dialog {
 
   .table-luxe thead th,
   .table-luxe tbody td {
-    padding: 0.75rem 0.5rem;
+    @apply px-2 py-3;
   }
 
   .table-luxe thead th:first-child,
   .table-luxe tbody td:first-child {
-    padding-left: 0.75rem;
+    @apply pl-3;
   }
 
   .table-luxe thead th:last-child,
   .table-luxe tbody td:last-child {
-    padding-right: 0.75rem;
+    @apply pr-3;
   }
 }
 
 @media (max-width: 640px) {
   .table-luxe thead th,
   .table-luxe tbody td {
-    padding: 0.625rem 0.375rem;
-    font-size: 0.8125rem;
+    @apply px-1.5 py-2.5 text-[0.8125rem];
   }
 
   .table-luxe thead th {
-    font-size: 0.6875rem;
+    @apply text-[0.6875rem];
   }
 }

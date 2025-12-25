@@ -47,12 +47,12 @@ const modelIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text
   <!-- Header -->
   <div class="flex items-center justify-between mb-12 animate-reveal">
     <div class="accent-line">
-      <h1 class="text-5xl md:text-6xl font-display font-semibold tracking-tight mb-4 text-gradient-gold">
+      <h1
+        class="text-5xl md:text-6xl font-display font-semibold tracking-tight mb-4 text-gradient-gold"
+      >
         Model Management
       </h1>
-      <p class="mt-3 text-base-content/60 text-lg">
-        Configure AI models for evaluation.
-      </p>
+      <p class="mt-3 text-base-content/60 text-lg">Configure AI models for evaluation.</p>
     </div>
     <div class="flex flex-wrap gap-2">
       <Button id="import-btn" variant="ghost" size="md">
@@ -127,7 +127,10 @@ const modelIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text
           required
         />
         <p class="text-xs text-base-content/50 -mt-2">
-          Must match the provider's API model identifier.
+          Must match the provider's API model identifier. Use <a
+            href="https://models.dev/"
+            target="_new">Models.dev</a
+          > to find model ID.
         </p>
         <Input label="API Key" name="api_key" type="password" placeholder="sk-..." required />
         <p class="text-xs text-base-content/50 -mt-2">
@@ -145,7 +148,11 @@ const modelIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text
             placeholder="Internal notes about this model..."></textarea>
         </div>
         <div class="modal-action">
-          <button type="button" class="btn btn-ghost min-w-24" onclick="add_model_modal.close()">Cancel</button>
+          <button
+            type="button"
+            class="btn btn-ghost min-w-24"
+            onclick="document.getElementById('add-model-modal').close()">Cancel</button
+          >
           <button type="submit" class="btn btn-luxe btn-luxe-primary min-w-24">Add Model</button>
         </div>
       </form>
@@ -194,7 +201,9 @@ const modelIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text
                       )}
                     </div>
                   </td>
-                  <td class="text-base-content/70 whitespace-nowrap">{model.usage_count} evaluations</td>
+                  <td class="text-base-content/70 whitespace-nowrap">
+                    {model.usage_count} evaluations
+                  </td>
                   <td class="text-base-content/70 whitespace-nowrap">
                     {new Date(model.created_at).toLocaleDateString()}
                   </td>
