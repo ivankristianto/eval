@@ -18,7 +18,7 @@ const widthClasses = {
 <!-- Drawer backdrop -->
 <div
   id={`${id}-backdrop`}
-  class="fixed inset-0 bg-black/80 backdrop-blur-sm z-60 hidden opacity-0 transition-opacity duration-300"
+  class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] hidden opacity-0 transition-opacity duration-300"
   data-drawer-backdrop={id}
 >
 </div>
@@ -26,7 +26,7 @@ const widthClasses = {
 <!-- Drawer panel -->
 <div
   id={id}
-  class={`fixed top-0 right-0 h-full w-full ${widthClasses[width]} bg-base-100 z-70 transform translate-x-full transition-transform duration-300 ease-in-out overflow-hidden flex flex-col`}
+  class={`fixed top-0 right-0 h-full w-full ${widthClasses[width]} bg-base-100 z-[70] transform translate-x-full transition-transform duration-300 ease-in-out overflow-hidden flex flex-col`}
   data-drawer
 >
   <!-- Header -->

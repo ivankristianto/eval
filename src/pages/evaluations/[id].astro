@@ -100,7 +100,6 @@ function getStatusBadgeVariant(status: string) {
 <Layout title="Evaluation Details - Eval AI">
   <Breadcrumbs items={breadcrumbItems} />
 
-  <EvaluationDetailsDrawer />
   <TemplateManager />
 
   <div class="flex items-center justify-between mb-12 animate-reveal">
@@ -259,6 +258,11 @@ function getStatusBadgeVariant(status: string) {
       Updating results...
     </div>
   </div>
+
+  <!-- Overlays at body level for proper z-index stacking -->
+  <Fragment slot="overlays">
+    <EvaluationDetailsDrawer />
+  </Fragment>
 </Layout>
 
 <!-- Pass data to client for drawer and polling -->

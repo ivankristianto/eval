@@ -55,5 +55,8 @@ const { title = 'Eval AI' } = Astro.props;
     </main>
 
     <Toast />
+
+    <!-- Optional overlays slot - for drawers, modals, etc. that need body-level positioning -->
+    <slot name="overlays" />
   </body>
 </html>
