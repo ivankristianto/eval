@@ -553,6 +553,8 @@ export function getResults(
     status: row.status as ResultStatus,
     error_message: row.error_message as string | undefined,
     created_at: row.created_at as string,
+    system_prompt_used: row.system_prompt_used as string | undefined,
+    temperature_used: row.temperature_used as number | undefined,
     model_name: row.model_name as string,
     provider: row.provider as Provider,
   }));
