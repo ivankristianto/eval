@@ -1,4 +1,4 @@
-import { randomUUID } from "crypto";
+import { randomUUID } from 'crypto';
 import type {
   Evaluation,
   EvaluationTemplate,
@@ -6,7 +6,7 @@ import type {
   Provider,
   Result,
   RubricType,
-} from "../../src/lib/types";
+} from '../../src/lib/types';
 
 type ResultWithModel = Result & { model_name: string; provider: Provider };
 
@@ -105,21 +105,23 @@ export function createMockDb() {
     accuracyRubric: RubricType,
     expectedOutput?: string,
     partialCreditConcepts?: string[],
-    templateId?: string
+    templateId?: string,
+    systemPrompt?: string,
+    temperature?: number
   ): Evaluation => {
     const id = randomUUID();
     const createdAt = now();
     const evaluation: Evaluation = {
       id,
       instruction_text: instructionText,
-      expected_output: expectedOutput ?? null,
+      expected_output: expectedOutput,
       accuracy_rubric: accuracyRubric,
-      partial_credit_concepts: partialCreditConcepts ?? null,
-      status: "pending",
+      partial_credit_concepts: partialCreditConcepts,
+      status: 'pending',
       created_at: createdAt,
-      started_at: null,
-      completed_at: null,
-      template_id: templateId ?? null,
+      template_id: templateId,
+      system_prompt: systemPrompt,
+      temperature: temperature ?? 0.3,
     };
     store.evaluations.set(id, evaluation);
     return evaluation;
@@ -127,13 +129,13 @@ export function createMockDb() {
 
   const updateEvaluationStatus = (
     id: string,
-    status: Evaluation["status"],
+    status: Evaluation['status'],
     errorMessage?: string
   ) => {
     const evaluation = store.evaluations.get(id);
     if (!evaluation) return;
     evaluation.status = status;
-    if (status === "completed" || status === "failed") {
+    if (status === 'completed' || status === 'failed') {
       evaluation.completed_at = now();
     }
     if (errorMessage) {
@@ -150,19 +152,10 @@ export function createMockDb() {
       id,
       evaluation_id: evaluationId,
       model_id: modelId,
-      response_text: null,
-      execution_time_ms: null,
-      input_tokens: null,
-      output_tokens: null,
-      total_tokens: null,
-      accuracy_score: null,
-      accuracy_reasoning: null,
-      status: "pending",
-      error_message: null,
+      status: 'pending',
       created_at: createdAt,
-      completed_at: null,
-      model_name: model?.model_name ?? "unknown",
-      provider: model?.provider ?? "openai",
+      model_name: model?.model_name ?? 'unknown',
+      provider: model?.provider ?? 'openai',
     };
     store.results.set(id, result);
     return result;
@@ -178,7 +171,7 @@ export function createMockDb() {
       total_tokens: number;
       accuracy_score: number;
       accuracy_reasoning: string;
-      status: Result["status"];
+      status: Result['status'];
       error_message: string;
     }>
   ) => {
@@ -193,7 +186,9 @@ export function createMockDb() {
   };
 
   const getResults = (evaluationId: string): ResultWithModel[] => {
-    return Array.from(store.results.values()).filter((result) => result.evaluation_id === evaluationId);
+    return Array.from(store.results.values()).filter(
+      (result) => result.evaluation_id === evaluationId
+    );
   };
 
   const getEvaluationStatus = (evaluationId: string) => {
@@ -226,19 +221,23 @@ export function createMockDb() {
     accuracyRubric: RubricType,
     description?: string,
     expectedOutput?: string,
-    partialCreditConcepts?: string[]
+    partialCreditConcepts?: string[],
+    systemPrompt?: string,
+    temperature?: number
   ): EvaluationTemplate => {
     const id = randomUUID();
     const createdAt = now();
     const template: EvaluationTemplate = {
       id,
       name,
-      description: description ?? null,
+      description,
       instruction_text: instructionText,
       model_ids: modelIds,
       accuracy_rubric: accuracyRubric,
-      expected_output: expectedOutput ?? null,
-      partial_credit_concepts: partialCreditConcepts ?? null,
+      expected_output: expectedOutput,
+      partial_credit_concepts: partialCreditConcepts,
+      system_prompt: systemPrompt,
+      temperature,
       created_at: createdAt,
       updated_at: createdAt,
       run_count: 0,
@@ -247,12 +246,15 @@ export function createMockDb() {
     return template;
   };
 
-  const getTemplates = (sortBy: "created" | "name" | "run_count", order: "asc" | "desc") => {
+  const getTemplates = (
+    sortBy: 'created' | 'name' | 'run_count' = 'created',
+    order: 'asc' | 'desc' = 'desc'
+  ) => {
     const items = Array.from(store.templates.values());
-    const dir = order === "asc" ? 1 : -1;
+    const dir = order === 'asc' ? 1 : -1;
     items.sort((a, b) => {
-      if (sortBy === "name") return a.name.localeCompare(b.name) * dir;
-      if (sortBy === "run_count") return (a.run_count - b.run_count) * dir;
+      if (sortBy === 'name') return a.name.localeCompare(b.name) * dir;
+      if (sortBy === 'run_count') return (a.run_count - b.run_count) * dir;
       return a.created_at.localeCompare(b.created_at) * dir;
     });
     return items;
@@ -299,7 +301,7 @@ export function createMockDb() {
   };
 
   const decryptApiKey = (encrypted: string) => {
-    return encrypted.replace(/^enc:/, "");
+    return encrypted.replace(/^enc:/, '');
   };
 
   return {

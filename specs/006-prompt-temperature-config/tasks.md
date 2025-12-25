@@ -37,8 +37,8 @@ Single Astro project: `src/`, `tests/` at repository root
 
 ### Tests for Phase 1 Setup
 
-- [ ] T001 [P] Create validation tests in `tests/unit/validators.test.ts` with boundary cases: empty string, 4000 chars, 4001 chars for system prompt; -0.1, 0.0, 0.1, 1.5, 2.0, 2.1 for temperature
-- [ ] T002 [P] Create database schema tests in `tests/integration/schema.test.ts` verifying columns exist with correct types, defaults, and constraints after migration
+- [x] T001 [P] Create validation tests in `tests/unit/validators.test.ts` with boundary cases: empty string, 4000 chars, 4001 chars for system prompt; -0.1, 0.0, 0.1, 1.5, 2.0, 2.1 for temperature
+- [x] T002 [P] Create database schema tests in `tests/integration/schema.test.ts` verifying columns exist with correct types, defaults, and constraints after migration
 
 ### Implementation for Phase 1
 
@@ -63,9 +63,9 @@ Single Astro project: `src/`, `tests/` at repository root
 
 ### Tests for Phase 2 Foundational
 
-- [ ] T011 [P] Create OpenAI client tests in `tests/unit/api-clients.test.ts` verifying: system prompt added to messages array as role=system, temperature passed to API request
-- [ ] T012 [P] Create Anthropic client tests in `tests/unit/api-clients.test.ts` verifying: system prompt passed to separate system parameter, temperature in request
-- [ ] T013 [P] Create Google client tests in `tests/unit/api-clients.test.ts` verifying: system prompt in systemInstruction parameter, temperature in generationConfig.temperature
+- [x] T011 [P] Create OpenAI client tests in `tests/unit/api-clients.test.ts` verifying: system prompt added to messages array as role=system, temperature passed to API request
+- [x] T012 [P] Create Anthropic client tests in `tests/unit/api-clients.test.ts` verifying: system prompt passed to separate system parameter, temperature in request
+- [x] T013 [P] Create Google client tests in `tests/unit/api-clients.test.ts` verifying: system prompt in systemInstruction parameter, temperature in generationConfig.temperature
 - [ ] T014 [P] Create API endpoint tests in `tests/integration/api-endpoints.test.ts` verifying: POST /api/evaluate accepts system_prompt and temperature, validates both, returns 400 on invalid input
 
 ### Type System Updates
@@ -122,7 +122,7 @@ Single Astro project: `src/`, `tests/` at repository root
 - [x] T040 [US1] Update result recording to capture `system_prompt_used` from evaluation context in `src/lib/db.ts`
 - [x] T040b [US1] **CRITICAL**: Populate `system_prompt_used` in Result records from evaluation's `system_prompt` when recording results in `src/lib/evaluator.ts` and `src/lib/db.ts` - audit field must be denormalized
 - [x] T041 [US1] Modify evaluator.ts to pass system_prompt to each client's evaluate() call in `src/lib/evaluator.ts`
-- [ ] T042 [US1] Add system_prompt to evaluation detail response/display - update GET endpoint to include system_prompt field
+- [x] T042 [US1] Add system_prompt to evaluation detail response/display - update GET endpoint to include system_prompt field
 
 **Checkpoint**: User Story 1 is complete and independently testable. Users can now enable/disable system prompts and have them applied to evaluations.
 
@@ -165,8 +165,8 @@ Single Astro project: `src/`, `tests/` at repository root
 - [x] T059 [US2] Update result recording to capture `temperature_used` from evaluation context in `src/lib/db.ts`
 - [x] T059b [US2] **CRITICAL**: Populate `temperature_used` in Result records from evaluation's `temperature` when recording results in `src/lib/evaluator.ts` and `src/lib/db.ts` - audit field must be denormalized
 - [x] T060 [US2] Modify evaluator.ts to pass temperature to each client's evaluate() call in `src/lib/evaluator.ts`
-- [ ] T061 [US2] Add temperature to evaluation detail response/display - update GET endpoint to include temperature field
-- [ ] T062 [US2] Update evaluation comparison/results view to display temperature alongside other metrics in `src/pages/evaluations/[id].astro` or results component
+- [x] T061 [US2] Add temperature to evaluation detail response/display - update GET endpoint to include temperature field
+- [x] T062 [US2] Update evaluation comparison/results view to display temperature alongside other metrics in `src/pages/evaluations/[id].astro` or results component
 
 **Checkpoint**: User Story 2 is complete and independently testable. Users can now adjust temperature via slider and have it applied to evaluations. Both US1 and US2 work independently.
 
@@ -196,7 +196,7 @@ Single Astro project: `src/`, `tests/` at repository root
 - [x] T068 [US3] Add validation calls in template creation endpoint for both system_prompt and temperature in `src/pages/api/templates/index.ts`
 - [x] T069 [US3] Update template creation in database layer to store `system_prompt` and `temperature` in EvaluationTemplate record in `src/lib/db.ts`
 - [x] T070 [US3] Update PUT `/api/templates/:id` endpoint in `src/pages/api/templates/[id].ts` to handle updates to `system_prompt` and `temperature` fields
-- [ ] T071 [US3] Update evaluation creation from template: when loading template data, extract system_prompt and temperature from template record in `src/lib/db.ts`
+- [x] T071 [US3] Update evaluation creation from template: when loading template data, extract system_prompt and temperature from template record in `src/lib/db.ts`
 - [x] T072 [US3] Update template detail response to include system_prompt and temperature fields in GET endpoint in `src/pages/api/templates/[id].ts`
 - [ ] T073 [US3] Update template creation form (if separate component or modal) to include system prompt checkbox and temperature slider (same as evaluation form)
 - [ ] T074 [US3] When creating evaluation from template, pre-fill system prompt checkbox and temperature slider with template values in `src/components/NewEvaluationModal.astro` or equivalent template creation component
