@@ -1,8 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import Card from '../components/ui/Card.astro';
 import Badge from '../components/ui/Badge.astro';
-import Button from '../components/ui/Button.astro';
 import EmptyState from '../components/ui/EmptyState.astro';
 import NewEvaluationModal from '../components/NewEvaluationModal.astro';
 import Pagination from '../components/Pagination.astro';
@@ -10,7 +8,6 @@ import FilterBar from '../components/FilterBar.astro';
 import BulkActions from '../components/BulkActions.astro';
 import ConfirmationModal from '../components/ui/ConfirmationModal.astro';
 import { getEvaluations, getEvaluationsCount } from '../lib/db';
-import { TYPOGRAPHY } from '../lib/typography';
 import type { RubricType } from '../lib/types';
 
 // Get query params
@@ -608,7 +605,7 @@ function getStatusVariant(status: string): 'warning' | 'info' | 'success' | 'err
       updatePaginationUI(page, totalPages, limit);
       toggleEmptyState(total);
       clearSelections();
-    } catch (error) {
+    } catch {
       addToast('Error loading evaluations.', 'error');
     }
   };
@@ -727,7 +724,7 @@ function getStatusVariant(status: string): 'warning' | 'info' | 'success' | 'err
           const err = await response.json();
           addToast(`Error: ${err.error}`, 'error');
         }
-      } catch (error) {
+      } catch {
         addToast('Network error occurred', 'error');
       }
 

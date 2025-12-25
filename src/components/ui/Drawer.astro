@@ -104,7 +104,7 @@ const widthClasses = {
       if (backdrop) {
         backdrop.classList.remove('hidden');
         // Trigger reflow for animation
-        backdrop.offsetHeight;
+        void backdrop.offsetHeight;
         backdrop.classList.remove('opacity-0');
       }
       if (drawer) {
@@ -114,8 +114,8 @@ const widthClasses = {
     }
 
     // Expose to window for external control
-    (window as any).openDrawer = openDrawer;
-    (window as any).closeDrawer = closeDrawer;
+    window.openDrawer = openDrawer;
+    window.closeDrawer = closeDrawer;
 
     // Setup close buttons
     document.querySelectorAll('[data-drawer-close]').forEach((btn) => {

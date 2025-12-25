@@ -1,6 +1,5 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import Card from '../components/ui/Card.astro';
 import Breadcrumbs from '../components/ui/Breadcrumbs.astro';
 import Button from '../components/ui/Button.astro';
 import Input from '../components/ui/Input.astro';
@@ -405,7 +404,7 @@ const modelIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text
 
         // Remove sensitive data
         const exportData = data.models.map(
-          ({ api_key_encrypted: _api_key_encrypted, ...rest }: any) => rest
+          ({ api_key_encrypted: _api_key_encrypted, ...rest }: Record<string, unknown>) => rest
         );
 
         const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });

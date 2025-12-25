@@ -121,13 +121,13 @@ import Drawer from './ui/Drawer.astro';
       if (outputTokensEl) outputTokensEl.textContent = data.outputTokens?.toString() || '-';
 
       // Open drawer using the window function provided by Drawer component
-      if ((window as any).openDrawer) {
-        (window as any).openDrawer('details-drawer');
+      if (window.openDrawer) {
+        window.openDrawer('details-drawer');
       }
     }
 
     // Expose to window
-    (window as any).showEvaluationDetails = showDetails;
+    window.showEvaluationDetails = showDetails;
   }
 
   // Initialize

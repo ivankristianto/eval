@@ -68,7 +68,7 @@ export class OpenAIClient implements ModelClient {
       ...(supportsTemperature &&
         options?.temperature !== undefined && { temperature: options.temperature }),
       ...tokenParam,
-    } as any);
+    } as OpenAI.ChatCompletionCreateParamsNonStreaming);
 
     const executionTime = Math.round(performance.now() - startTime);
 

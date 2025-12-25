@@ -271,21 +271,21 @@ function getStatusBadgeVariant(status: string) {
 </script>
 
 <script>
-  let currentResults = (window as any).__EVALUATION_DATA__?.results || [];
-  const evaluationId = (window as any).__EVALUATION_DATA__?.id;
-  const evaluationStatus = (window as any).__EVALUATION_DATA__?.status;
+  let currentResults = window.__EVALUATION_DATA__?.results || [];
+  const evaluationId = window.__EVALUATION_DATA__?.id;
+  const evaluationStatus = window.__EVALUATION_DATA__?.status;
   const saveTemplateBtn = document.getElementById('save-template-btn');
 
   // Save as Template
   if (saveTemplateBtn) {
     saveTemplateBtn.addEventListener('click', () => {
-      const evalData = (window as any).__EVALUATION_DATA__;
-      if (evalData && (window as any).openTemplateModal) {
-                  (window as any).openTemplateModal({
+      const evalData = window.__EVALUATION_DATA__;
+      if (evalData && window.openTemplateModal) {
+                  window.openTemplateModal({
                     instruction_text: evalData.instruction_text,
-                    model_ids: evalData.results.map((r: any) => r.model_id),
+                    model_ids: evalData.results.map((r) => r.model_id),
                     accuracy_rubric: evalData.accuracy_rubric,
-                    expected_output: evalData.expected_output,
+                    expected_output: evalData.expected_output || '',
                     partial_credit_concepts: evalData.partial_credit_concepts,
                     system_prompt: evalData.system_prompt,
                     temperature: evalData.temperature,
@@ -300,13 +300,13 @@ function getStatusBadgeVariant(status: string) {
       row.addEventListener('click', () => {
         const index = parseInt((row as HTMLElement).dataset.resultIndex || '0', 10);
         const result = currentResults[index];
-        const evalData = (window as any).__EVALUATION_DATA__;
+        const evalData = window.__EVALUATION_DATA__;
 
-        if (result && (window as any).showEvaluationDetails) {
-          (window as any).showEvaluationDetails({
+        if (result && window.showEvaluationDetails && evalData) {
+          window.showEvaluationDetails({
             modelName: result.model_name,
             prompt: evalData.instruction_text,
-            expectedOutput: evalData.expected_output,
+            expectedOutput: evalData.expected_output || '',
             response: result.response_text || '[No response]',
             reasoning: result.accuracy_reasoning || 'No reasoning available',
             executionTime: result.execution_time_ms,
@@ -342,7 +342,14 @@ function getStatusBadgeVariant(status: string) {
         const tbody = document.getElementById('results-body');
         if (tbody) {
           tbody.innerHTML = results
-            .map((r: any, index: number) => {
+            .map((r: {
+              status: string;
+              accuracy_score?: number;
+              model_name: string;
+              provider: string;
+              execution_time_ms?: number;
+              total_tokens?: number;
+            }, index: number) => {
               // Reconstruct badge variant logic
               let badgeClass = 'badge-warning';
               if (r.status === 'completed') badgeClass = 'badge-success';
@@ -382,7 +389,7 @@ function getStatusBadgeVariant(status: string) {
 
         // Check if all complete
         const allDone = results.every(
-          (r: any) => r.status === 'completed' || r.status === 'failed'
+          (r: { status: string }) => r.status === 'completed' || r.status === 'failed'
         );
         if (allDone) {
           clearInterval(interval);
