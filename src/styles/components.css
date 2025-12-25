@@ -29,7 +29,7 @@
 }
 
 .card-luxe::before {
-  @apply absolute inset-x-0 top-0 h-px opacity-0 transition-opacity duration-400 z-[1];
+  @apply absolute inset-x-0 top-0 h-px opacity-0 transition-opacity duration-400 z-1;
   content: '';
   background: var(--gradient-gold);
 }
@@ -147,7 +147,7 @@
 }
 
 .table-luxe.table-templates tbody td:first-child {
-  @apply min-w-[180px] w-1/5 whitespace-normal break-words;
+  @apply min-w-[180px] w-1/5 whitespace-normal wrap-break-word;
 }
 
 .table-luxe.table-templates tbody td:nth-child(2) {
@@ -164,7 +164,7 @@
 }
 
 .table-luxe.table-models tbody td:nth-child(2) {
-  @apply min-w-[250px] w-2/5 whitespace-normal break-words;
+  @apply min-w-[250px] w-2/5 whitespace-normal wrap-break-word;
 }
 
 /* Results table in evaluation details */
@@ -173,7 +173,7 @@
 }
 
 .table-luxe.table-results tbody td:first-child {
-  @apply min-w-[200px] w-[30%] whitespace-normal break-words;
+  @apply min-w-[200px] w-[30%] whitespace-normal wrap-break-word;
 }
 
 /* Number cells in tables */
@@ -386,17 +386,17 @@ tr.best-performer::before {
 /* Modal backdrop styling - consistent across all modals */
 dialog::backdrop,
 .modal::backdrop {
-  @apply backdrop-blur-lg z-[100];
+  @apply backdrop-blur-lg z-100;
   background: rgba(10, 22, 40, 0.8);
 }
 
 /* Ensure modals are above drawers */
 .modal {
-  @apply z-[100];
+  @apply z-100;
 }
 
 dialog {
-  @apply z-[100];
+  @apply z-100;
 }
 
 /* Consistent modal box styling */
@@ -448,24 +448,24 @@ dialog {
 
 /* Drawer consistency - ensure it's above navbar */
 .drawer-side {
-  @apply z-[60];
+  @apply z-60;
 }
 
 .drawer-side > .drawer-overlay {
-  @apply backdrop-blur-lg z-[60];
+  @apply backdrop-blur-lg z-60;
   background: rgba(10, 22, 40, 0.8);
 }
 
 /* Custom drawer styling for right-side drawers */
 [data-drawer] {
-  @apply border-l rounded-l-2xl z-[60];
+  @apply border-l rounded-l-2xl z-60;
   border-color: rgba(212, 175, 55, 0.1);
   box-shadow: var(--shadow-elevated);
 }
 
 /* Drawer backdrop needs higher z-index too */
 [data-drawer-backdrop] {
-  @apply z-[60];
+  @apply z-60;
 }
 
 [data-theme='dark'] [data-drawer],
