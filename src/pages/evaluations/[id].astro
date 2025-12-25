@@ -19,6 +19,8 @@ let evaluationData: {
   accuracy_rubric: string;
   expected_output?: string;
   partial_credit_concepts?: string[];
+  system_prompt?: string;
+  temperature?: number;
   status: string;
   created_at: string;
   results: Array<{
@@ -47,6 +49,8 @@ if (id) {
         accuracy_rubric: evaluation.accuracy_rubric,
         expected_output: evaluation.expected_output,
         partial_credit_concepts: evaluation.partial_credit_concepts,
+        system_prompt: evaluation.system_prompt,
+        temperature: evaluation.temperature,
         status: evaluation.status,
         created_at: evaluation.created_at,
         results: results.map((r) => ({
@@ -98,7 +102,9 @@ function getStatusBadgeVariant(status: string) {
 
   <div class="flex items-center justify-between mb-12 animate-reveal">
     <div class="accent-line">
-      <h1 class="text-5xl md:text-6xl font-display font-semibold tracking-tight mb-4 text-gradient-gold">
+      <h1
+        class="text-5xl md:text-6xl font-display font-semibold tracking-tight mb-4 text-gradient-gold"
+      >
         Evaluation Results
       </h1>
       <div class="flex items-center gap-3 text-base text-base-content/60">
@@ -155,6 +161,30 @@ function getStatusBadgeVariant(status: string) {
             </div>
           </div>
         )
+      }
+
+      {
+        evaluationData.system_prompt && (
+          <div>
+            <h3 class="font-semibold text-sm text-base-content/70 mb-1">System Prompt</h3>
+            <div class="bg-base-200 p-4 rounded-lg whitespace-pre-wrap font-mono text-sm">
+              {evaluationData.system_prompt}
+            </div>
+          </div>
+        )
+      }
+
+      {
+        evaluationData.temperature !== undefined &&
+          evaluationData.temperature !== null &&
+          evaluationData.temperature !== 0.3 && (
+            <div>
+              <h3 class="font-semibold text-sm text-base-content/70 mb-1">Temperature</h3>
+              <div class="bg-base-200 p-4 rounded-lg font-mono text-sm">
+                {evaluationData.temperature.toFixed(1)}
+              </div>
+            </div>
+          )
       }
     </div>
   </div>
