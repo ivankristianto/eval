@@ -1,4 +1,10 @@
 ---
+/**
+ * Evaluation details drawer component
+ *
+ * Displays detailed information about an evaluation result including
+ * prompt, response, reasoning, and metrics.
+ */
 import Drawer from './ui/Drawer.astro';
 ---
 
@@ -73,21 +79,33 @@ import Drawer from './ui/Drawer.astro';
 </Drawer>
 
 <script>
+  import { openDrawer } from '../lib/drawer-events';
+
+  /**
+   * Evaluation details data structure
+   */
+  interface EvaluationDetails {
+    modelName: string;
+    prompt: string;
+    expectedOutput: string;
+    response: string;
+    reasoning: string;
+    executionTime?: number;
+    accuracyScore?: number;
+    inputTokens?: number;
+    outputTokens?: number;
+    totalTokens?: number;
+    temperature?: number;
+  }
+
+  /**
+   * Initialize evaluation details drawer functionality
+   */
   function initEvaluationDetailsDrawer() {
-    // Populate drawer with data
-    function showDetails(data: {
-      modelName: string;
-      prompt: string;
-      expectedOutput: string;
-      response: string;
-      reasoning: string;
-      executionTime?: number;
-      accuracyScore?: number;
-      inputTokens?: number;
-      outputTokens?: number;
-      totalTokens?: number;
-      temperature?: number;
-    }) {
+    /**
+     * Populate drawer with evaluation data and open it
+     */
+    function showDetails(data: EvaluationDetails) {
       // Update title
       const title = document.getElementById('details-drawer-title');
       if (title) title.textContent = `Evaluation Details: ${data.modelName}`;
@@ -120,19 +138,25 @@ import Drawer from './ui/Drawer.astro';
       if (inputTokensEl) inputTokensEl.textContent = data.inputTokens?.toString() || '-';
       if (outputTokensEl) outputTokensEl.textContent = data.outputTokens?.toString() || '-';
 
-      // Open drawer using the window function provided by Drawer component
-      if (window.openDrawer) {
-        window.openDrawer('details-drawer');
-      }
+      // Open drawer using event-based API
+      openDrawer('details-drawer');
     }
 
-    // Expose to window
+    // Expose to window (maintaining backward compatibility)
     window.showEvaluationDetails = showDetails;
   }
 
-  // Initialize
-  initEvaluationDetailsDrawer();
+  // Initialize only once
+  if (!document.documentElement.dataset.detailsDrawerInitialized) {
+    initEvaluationDetailsDrawer();
+    document.documentElement.dataset.detailsDrawerInitialized = 'true';
+  }
 
   // Re-initialize on Astro page transitions
-  document.addEventListener('astro:page-load', initEvaluationDetailsDrawer);
+  document.addEventListener('astro:page-load', () => {
+    if (!document.documentElement.dataset.detailsDrawerInitialized) {
+      initEvaluationDetailsDrawer();
+      document.documentElement.dataset.detailsDrawerInitialized = 'true';
+    }
+  });
 </script>

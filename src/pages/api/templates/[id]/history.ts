@@ -37,7 +37,7 @@ export const GET: APIRoute = async ({ params, url }) => {
     }
 
     // Parse pagination params
-    const limit = Math.min(100, Math.max(1, parseInt(url.searchParams.get('limit') || '20', 10)));
+    const limit = Math.min(100, Math.max(1, parseInt(url.searchParams.get('limit') || '10', 10)));
     const offset = Math.max(0, parseInt(url.searchParams.get('offset') || '0', 10));
 
     const history = getTemplateHistory(id, limit, offset);

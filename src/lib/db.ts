@@ -347,7 +347,7 @@ export function deleteEvaluations(ids: string[]): number {
 
 export function getEvaluations(
   filters: FilterOptions & { templateId?: string } = {},
-  limit = 50,
+  limit = 10,
   offset = 0
 ): EvaluationWithStats[] {
   const database = getDatabase();
@@ -767,7 +767,7 @@ export function incrementTemplateRunCount(id: string): void {
 
 export function getTemplateHistory(
   templateId: string,
-  limit = 20,
+  limit = 10,
   offset = 0
 ): {
   evaluation_id: string;

@@ -56,7 +56,7 @@ describe('GET /api/evaluations', () => {
 
     expect(db.getEvaluations).toHaveBeenCalledWith(
       expect.objectContaining({ fromDate: '2023-01-01' }),
-      50, // limit
+      10, // limit
       0 // offset
     );
   });

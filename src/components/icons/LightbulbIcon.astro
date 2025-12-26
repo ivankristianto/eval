@@ -1,0 +1,44 @@
+---
+/**
+ * Lightbulb icon component (Logo)
+ *
+ * @param size - Icon size (default: 'md')
+ * @param class - Additional CSS classes
+ */
+export interface Props {
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+  class?: string;
+}
+
+const sizeClasses = {
+  xs: 'w-3 h-3',
+  sm: 'w-4 h-4',
+  md: 'w-5 h-5',
+  lg: 'w-6 h-6',
+  xl: 'w-8 h-8',
+};
+
+const { size = 'md', class: className = '' } = Astro.props;
+const classes = `${sizeClasses[size]} ${className}`;
+---
+
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  class={classes}
+  fill="none"
+  viewBox="0 0 24 24"
+  stroke="url(#goldGradient)"
+  stroke-width="2"
+>
+  <defs>
+    <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#d4af37;stop-opacity:1"></stop>
+      <stop offset="100%" style="stop-color:#f0d678;stop-opacity:1"></stop>
+    </linearGradient>
+  </defs>
+  <path
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+  ></path>
+</svg>

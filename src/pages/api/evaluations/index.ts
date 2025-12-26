@@ -3,11 +3,11 @@ import { getEvaluations, getEvaluationsCount, deleteEvaluations } from '../../..
 import type { RubricType } from '../../../lib/types';
 
 export const GET: APIRoute = async ({ url }) => {
-  const limit = Number(url.searchParams.get('limit')) || 50;
+  const limit = Number(url.searchParams.get('limit')) || 10;
   const offset = Number(url.searchParams.get('offset')) || 0;
 
   const filters = {
-    templateId: url.searchParams.get('templateId') || undefined,
+    templateId: url.searchParams.get('template') || undefined,
     fromDate: url.searchParams.get('fromDate') || undefined,
     toDate: url.searchParams.get('toDate') || undefined,
     rubric: (url.searchParams.get('rubric') as RubricType) || undefined,
