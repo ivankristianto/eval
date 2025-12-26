@@ -100,9 +100,9 @@
 
 ### Database Access Layer for Training
 
-- [ ] T013 [P] Create test file tests/unit/persona-db.test.ts with CRUD operations for personas
+- [X] T013 [P] Create test file tests/unit/persona-db.test.ts with CRUD operations for personas
 
-- [ ] T014 Create src/lib/persona-db.ts implementing (complete database access layer):
+- [X] T014 Create src/lib/persona-db.ts implementing (complete database access layer):
   - createPersona(name, description, taskPrompt, taskModelId, judgeModelId, promptEngineerModelId) → Persona
   - getPersona(id) → Persona | null
   - listPersonas(status?) → Persona[]
@@ -110,7 +110,7 @@
   - deletePersona(id) → void
   - + Similar for TrainingPair, TrainingIteration, JudgeDecision, HumanReview, IterationMetrics
 
-- [ ] T015 [P] Create test file tests/integration/persona-db.test.ts with transaction and cascade delete tests
+- [X] T015 [P] Create test file tests/integration/persona-db.test.ts with transaction and cascade delete tests
 
 **Acceptance Criteria**:
 - All CRUD operations work correctly
@@ -123,15 +123,15 @@
 
 ### State Management for Training Loop
 
-- [ ] T016 [P] Create test file tests/unit/training-state.test.ts with checkpoint save/resume tests
+- [X] T016 [P] Create test file tests/unit/training-state.test.ts with checkpoint save/resume tests
 
-- [ ] T017 Create src/lib/training-state.ts implementing TrainingStateManager class:
+- [X] T017 Create src/lib/training-state.ts implementing TrainingStateManager class:
   - saveCheckpoint(sessionId, iteration, checkpoint) → void (ACID transaction)
   - pause(sessionId, reason) → void
   - resume(sessionId) → CheckpointData | null
   - verifyCheckpointIntegrity(sessionId) → boolean
 
-- [ ] T018 [P] Create test file tests/integration/training-state.test.ts with simulated crash recovery scenarios
+- [X] T018 [P] Create test file tests/integration/training-state.test.ts with simulated crash recovery scenarios
 
 **Acceptance Criteria**:
 - Checkpoints saved atomically (no partial saves)
