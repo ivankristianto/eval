@@ -13,7 +13,7 @@ import type { RubricType } from '../lib/types';
 // Get query params
 const url = Astro.url;
 const templateId = url.searchParams.get('template');
-const limit = 50;
+const limit = 10;
 const page = 1;
 const offset = 0;
 
@@ -264,7 +264,7 @@ function getStatusVariant(status: string): 'warning' | 'info' | 'success' | 'err
 
   const prefsKey = 'eval_user_prefs';
   const allowedLimits = [10, 20, 50, 100];
-  const defaultLimit = 50;
+  const defaultLimit = 10;
   const defaultPage = 1;
 
   const tableWrapper = document.getElementById('evaluations-table-wrapper');
