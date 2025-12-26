@@ -3,7 +3,11 @@
 
 import type { APIRoute } from 'astro';
 import { insertTemplate, getTemplates } from '../../lib/db';
-import { validateCreateTemplate } from '../../lib/validators';
+import {
+  validateCreateTemplate,
+  validateSystemPrompt,
+  validateTemperature,
+} from '../../lib/validators';
 import type { RubricType } from '../../lib/types';
 
 // POST /api/templates - Create new template
@@ -28,7 +32,27 @@ export const POST: APIRoute = async ({ request }) => {
       accuracy_rubric,
       expected_output,
       partial_credit_concepts,
+      system_prompt,
+      temperature,
     } = body;
+
+    // Validate system prompt if provided
+    const systemPromptValidation = validateSystemPrompt(system_prompt);
+    if (!systemPromptValidation.valid) {
+      return new Response(JSON.stringify(systemPromptValidation.error), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Validate temperature if provided
+    const temperatureValidation = validateTemperature(temperature);
+    if (!temperatureValidation.valid) {
+      return new Response(JSON.stringify(temperatureValidation.error), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
 
     // Create template
     const template = insertTemplate(
@@ -38,7 +62,9 @@ export const POST: APIRoute = async ({ request }) => {
       accuracy_rubric as RubricType,
       description,
       expected_output,
-      partial_credit_concepts
+      partial_credit_concepts,
+      system_prompt,
+      temperature
     );
 
     return new Response(

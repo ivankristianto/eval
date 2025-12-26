@@ -99,7 +99,9 @@ export const POST: APIRoute = async ({ params, request }) => {
       template.accuracy_rubric,
       template.expected_output,
       template.partial_credit_concepts,
-      template.id
+      template.id,
+      template.system_prompt,
+      template.temperature
     );
 
     // Create result records for each model
@@ -118,6 +120,8 @@ export const POST: APIRoute = async ({ params, request }) => {
       rubricType: template.accuracy_rubric,
       expectedOutput: template.expected_output || '',
       partialCreditConcepts: template.partial_credit_concepts,
+      systemPrompt: template.system_prompt,
+      temperature: template.temperature,
     });
 
     return new Response(

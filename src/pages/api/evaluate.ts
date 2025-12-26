@@ -4,7 +4,11 @@
 import type { APIRoute } from 'astro';
 import { insertEvaluation, insertResult, getModelById } from '../../lib/db';
 import { startEvaluation } from '../../lib/evaluator';
-import { validateCreateEvaluation } from '../../lib/validators';
+import {
+  validateCreateEvaluation,
+  validateSystemPrompt,
+  validateTemperature,
+} from '../../lib/validators';
 import type { RubricType } from '../../lib/types';
 
 export const POST: APIRoute = async ({ request }) => {
@@ -20,7 +24,33 @@ export const POST: APIRoute = async ({ request }) => {
       });
     }
 
-    const { instruction, model_ids, rubric_type, expected_output, partial_credit_concepts } = body;
+    const {
+      instruction,
+      model_ids,
+      rubric_type,
+      expected_output,
+      partial_credit_concepts,
+      system_prompt,
+      temperature,
+    } = body;
+
+    // Validate system prompt if provided
+    const systemPromptValidation = validateSystemPrompt(system_prompt);
+    if (!systemPromptValidation.valid) {
+      return new Response(JSON.stringify(systemPromptValidation.error), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Validate temperature if provided
+    const temperatureValidation = validateTemperature(temperature);
+    if (!temperatureValidation.valid) {
+      return new Response(JSON.stringify(temperatureValidation.error), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
 
     // Validate all models exist and are active
     const models: { id: string; model_name: string; provider: string }[] = [];
@@ -64,7 +94,10 @@ export const POST: APIRoute = async ({ request }) => {
       instruction,
       rubric_type as RubricType,
       expected_output,
-      partial_credit_concepts
+      partial_credit_concepts,
+      undefined, // templateId
+      system_prompt,
+      temperature
     );
 
     // Create result records for each model
@@ -80,6 +113,8 @@ export const POST: APIRoute = async ({ request }) => {
       rubricType: rubric_type as RubricType,
       expectedOutput: expected_output,
       partialCreditConcepts: partial_credit_concepts,
+      systemPrompt: system_prompt,
+      temperature,
     });
 
     return new Response(

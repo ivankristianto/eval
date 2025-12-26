@@ -1,4 +1,25 @@
 ---
+import Icon from './Icon.astro';
+
+/**
+ * Drawer component for side panel overlays
+ *
+ * @example
+ * <Drawer id="details-drawer" title="Details" width="lg">
+ *   <p>Content goes here</p>
+ *   <div slot="footer">
+ *     <Button>Close</Button>
+ *   </div>
+ * </Drawer>
+ *
+ * @param id - Unique identifier for the drawer (required)
+ * @param title - Optional drawer title displayed in header
+ * @param width - Drawer width size (default: 'md')
+ *
+ * @slot default - Main drawer content
+ * @slot title - Custom title content (overrides title prop)
+ * @slot footer - Optional footer content with border separator
+ */
 export interface Props {
   id: string;
   title?: string;
@@ -18,7 +39,7 @@ const widthClasses = {
 <!-- Drawer backdrop -->
 <div
   id={`${id}-backdrop`}
-  class="fixed inset-0 bg-black/80 backdrop-blur-sm z-40 hidden opacity-0 transition-opacity duration-300"
+  class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] hidden opacity-0 transition-opacity duration-300"
   data-drawer-backdrop={id}
 >
 </div>
@@ -26,7 +47,7 @@ const widthClasses = {
 <!-- Drawer panel -->
 <div
   id={id}
-  class={`fixed top-0 right-0 h-full w-full ${widthClasses[width]} bg-base-100 z-50 transform translate-x-full transition-transform duration-300 ease-in-out overflow-hidden flex flex-col`}
+  class={`fixed top-0 right-0 h-full w-full ${widthClasses[width]} bg-base-100 z-[70] transform translate-x-full transition-transform duration-300 ease-in-out overflow-hidden flex flex-col`}
   data-drawer
 >
   <!-- Header -->
@@ -45,19 +66,7 @@ const widthClasses = {
       data-drawer-close={id}
       aria-label="Close"
     >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        class="h-5 w-5"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M6 18L18 6M6 6l12 12"></path>
-      </svg>
+      <Icon name="close" size="md" />
     </button>
   </div>
 
@@ -77,9 +86,20 @@ const widthClasses = {
 </div>
 
 <script>
-  // Drawer controller
+  import { DRAWER_EVENTS } from '../../lib/drawer-events';
+  import type { DrawerEventDetail } from '../../lib/drawer-events';
+  import { initializeOnce } from '../../lib/client-utils';
+
+  /**
+   * Drawer controller using custom events
+   *
+   * This implementation replaces global window functions with
+   * CustomEvent-based communication for better isolation and testability.
+   */
   function initDrawers() {
-    // Close drawer function
+    /**
+     * Close a drawer with animation
+     */
     function closeDrawer(drawerId: string) {
       const drawer = document.getElementById(drawerId);
       const backdrop = document.getElementById(`${drawerId}-backdrop`);
@@ -96,7 +116,9 @@ const widthClasses = {
       document.body.classList.remove('overflow-hidden');
     }
 
-    // Open drawer function
+    /**
+     * Open a drawer with animation
+     */
     function openDrawer(drawerId: string) {
       const drawer = document.getElementById(drawerId);
       const backdrop = document.getElementById(`${drawerId}-backdrop`);
@@ -104,7 +126,7 @@ const widthClasses = {
       if (backdrop) {
         backdrop.classList.remove('hidden');
         // Trigger reflow for animation
-        backdrop.offsetHeight;
+        void backdrop.offsetHeight;
         backdrop.classList.remove('opacity-0');
       }
       if (drawer) {
@@ -113,24 +135,51 @@ const widthClasses = {
       document.body.classList.add('overflow-hidden');
     }
 
-    // Expose to window for external control
-    (window as any).openDrawer = openDrawer;
-    (window as any).closeDrawer = closeDrawer;
+    /**
+     * Toggle a drawer's state
+     */
+    function toggleDrawer(drawerId: string) {
+      const drawer = document.getElementById(drawerId);
+      if (drawer && drawer.classList.contains('translate-x-full')) {
+        openDrawer(drawerId);
+      } else {
+        closeDrawer(drawerId);
+      }
+    }
 
-    // Setup close buttons
-    document.querySelectorAll('[data-drawer-close]').forEach((btn) => {
-      btn.addEventListener('click', (e) => {
-        const drawerId = (e.currentTarget as HTMLElement).dataset.drawerClose;
-        if (drawerId) closeDrawer(drawerId);
-      });
+    // Listen for custom events
+    document.addEventListener(DRAWER_EVENTS.OPEN, (e) => {
+      const event = e as CustomEvent<DrawerEventDetail>;
+      openDrawer(event.detail.id);
     });
 
-    // Setup backdrop click to close
-    document.querySelectorAll('[data-drawer-backdrop]').forEach((backdrop) => {
-      backdrop.addEventListener('click', (e) => {
-        const drawerId = (e.currentTarget as HTMLElement).dataset.drawerBackdrop;
+    document.addEventListener(DRAWER_EVENTS.CLOSE, (e) => {
+      const event = e as CustomEvent<DrawerEventDetail>;
+      closeDrawer(event.detail.id);
+    });
+
+    document.addEventListener(DRAWER_EVENTS.TOGGLE, (e) => {
+      const event = e as CustomEvent<DrawerEventDetail>;
+      toggleDrawer(event.detail.id);
+    });
+
+    // Setup close buttons using event delegation
+    document.addEventListener('click', (e) => {
+      const target = e.target as HTMLElement;
+      const closeBtn = target.closest('[data-drawer-close]') as HTMLElement;
+      if (closeBtn) {
+        const drawerId = closeBtn.dataset.drawerClose;
         if (drawerId) closeDrawer(drawerId);
-      });
+      }
+    });
+
+    // Setup backdrop click to close using event delegation
+    document.addEventListener('click', (e) => {
+      const target = e.target as HTMLElement;
+      if (target.hasAttribute('data-drawer-backdrop')) {
+        const drawerId = target.dataset.drawerBackdrop;
+        if (drawerId) closeDrawer(drawerId);
+      }
     });
 
     // ESC key to close
@@ -145,9 +194,9 @@ const widthClasses = {
     });
   }
 
-  // Initialize on load
-  initDrawers();
-
-  // Re-initialize on Astro page transitions
-  document.addEventListener('astro:page-load', initDrawers);
+  // Initialize once and re-initialize on Astro page transitions
+  initializeOnce('drawers', initDrawers);
+  document.addEventListener('astro:page-load', () => {
+    initializeOnce('drawers', initDrawers);
+  });
 </script>

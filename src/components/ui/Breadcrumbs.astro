@@ -1,4 +1,16 @@
 ---
+/**
+ * Breadcrumbs component for navigation trails
+ *
+ * @example
+ * <Breadcrumbs items={[
+ *   { label: 'Home', href: '/' },
+ *   { label: 'Evaluations', href: '/evaluations' },
+ *   { label: 'Results' }
+ * ]} />
+ *
+ * @param items - Array of breadcrumb items. Last item is rendered as plain text, others as links if href provided
+ */
 export interface Props {
   items: Array<{
     label: string;

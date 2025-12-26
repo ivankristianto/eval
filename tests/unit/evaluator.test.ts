@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { ModelConfiguration, Result, ResultStatus } from "../../src/lib/types";
+import type { ModelConfiguration, Provider, Result, ResultStatus } from "../../src/lib/types";
 import {
   EvaluationExecutor,
   cancelEvaluation,
@@ -18,7 +18,7 @@ import {
 } from "../../src/lib/db";
 
 const models = new Map<string, ModelConfiguration>();
-let results: Result[] = [];
+let results: (Result & { model_name: string; provider: Provider })[] = [];
 let consoleErrorSpy: ReturnType<typeof vi.spyOn> | null = null;
 
 vi.mock("../../src/lib/db", () => {
@@ -69,12 +69,15 @@ const addModel = (overrides: Partial<ModelConfiguration> = {}) => {
 };
 
 const addResult = (evaluationId: string, modelId: string) => {
-  const result: Result = {
+  const model = models.get(modelId);
+  const result: Result & { model_name: string; provider: Provider } = {
     id: `result-${results.length + 1}`,
     evaluation_id: evaluationId,
     model_id: modelId,
     status: "pending",
     created_at: nowIso(),
+    model_name: model?.model_name ?? "unknown",
+    provider: model?.provider ?? "openai",
   };
   results.push(result);
   return result;
@@ -127,6 +130,7 @@ describe("EvaluationExecutor", () => {
         totalTokens: 22,
         executionTime: 120,
       }),
+      testConnection: vi.fn().mockResolvedValue(true),
     });
     mockCalculateAccuracy.mockResolvedValue({ score: 88, reasoning: "Solid" });
 
@@ -167,7 +171,10 @@ describe("EvaluationExecutor", () => {
       executionTime: 50,
     });
 
-    mockCreateClient.mockReturnValue({ evaluate });
+    mockCreateClient.mockReturnValue({
+      evaluate,
+      testConnection: vi.fn().mockResolvedValue(true),
+    });
     mockCalculateAccuracy.mockResolvedValue({ score: 90, reasoning: "Good" });
 
     const executor = new EvaluationExecutor();
@@ -198,7 +205,8 @@ describe("EvaluationExecutor", () => {
     const result = addResult(evaluationId, model.id);
 
     mockCreateClient.mockReturnValue({
-      evaluate: vi.fn(() => new Promise(() => undefined)),
+      evaluate: vi.fn(() => new Promise(() => undefined)) as any,
+      testConnection: vi.fn().mockResolvedValue(true),
     });
 
     const executor = new EvaluationExecutor();
@@ -237,7 +245,10 @@ describe("EvaluationExecutor", () => {
 
     mockCreateClient.mockImplementation((_provider, _apiKey, modelName) => {
       if (modelName === "slow") {
-        return { evaluate: vi.fn(() => new Promise(() => undefined)) };
+        return {
+          evaluate: vi.fn(() => new Promise(() => undefined)) as any,
+          testConnection: vi.fn().mockResolvedValue(true),
+        };
       }
       return {
         evaluate: vi.fn().mockResolvedValue({
@@ -247,6 +258,7 @@ describe("EvaluationExecutor", () => {
           totalTokens: 2,
           executionTime: 25,
         }),
+        testConnection: vi.fn().mockResolvedValue(true),
       };
     });
 
@@ -288,6 +300,7 @@ describe("EvaluationExecutor", () => {
         totalTokens: 2,
         executionTime: 212,
       }),
+      testConnection: vi.fn().mockResolvedValue(true),
     });
     mockCalculateAccuracy.mockResolvedValue({ score: 60, reasoning: "Ok" });
 
@@ -362,6 +375,7 @@ describe("EvaluationExecutor", () => {
         totalTokens: 11,
         executionTime: 40,
       }),
+      testConnection: vi.fn().mockResolvedValue(true),
     });
     mockCalculateAccuracy.mockResolvedValue({ score: 92, reasoning: "Great" });
 
@@ -395,6 +409,7 @@ describe("EvaluationExecutor", () => {
 
     mockCreateClient.mockReturnValue({
       evaluate: vi.fn().mockRejectedValue(new Error("API failure")),
+      testConnection: vi.fn().mockResolvedValue(true),
     });
 
     const executor = new EvaluationExecutor();
@@ -422,6 +437,7 @@ describe("EvaluationExecutor", () => {
 
     mockCreateClient.mockReturnValue({
       evaluate: vi.fn().mockRejectedValue(new Error("HTTP 429")),
+      testConnection: vi.fn().mockResolvedValue(true),
     });
 
     const executor = new EvaluationExecutor();
@@ -451,6 +467,7 @@ describe("EvaluationExecutor", () => {
 
     mockCreateClient.mockReturnValue({
       evaluate: vi.fn().mockRejectedValue(new Error("API failure")),
+      testConnection: vi.fn().mockResolvedValue(true),
     });
 
     const executor = new EvaluationExecutor();
@@ -490,6 +507,7 @@ describe("EvaluationExecutor", () => {
         totalTokens: 2,
         executionTime: 5,
       }),
+      testConnection: vi.fn().mockResolvedValue(true),
     });
 
     const executor = new EvaluationExecutor();

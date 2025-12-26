@@ -1,6 +1,5 @@
 ---
 import Layout from '../../layouts/Layout.astro';
-import Card from '../../components/ui/Card.astro';
 import Badge from '../../components/ui/Badge.astro';
 import Button from '../../components/ui/Button.astro';
 import Breadcrumbs from '../../components/ui/Breadcrumbs.astro';
@@ -19,6 +18,8 @@ let evaluationData: {
   accuracy_rubric: string;
   expected_output?: string;
   partial_credit_concepts?: string[];
+  system_prompt?: string;
+  temperature?: number;
   status: string;
   created_at: string;
   results: Array<{
@@ -33,6 +34,8 @@ let evaluationData: {
     accuracy_score?: number;
     accuracy_reasoning?: string;
     status: string;
+    system_prompt_used?: string;
+    temperature_used?: number;
   }>;
 } | null = null;
 
@@ -47,6 +50,8 @@ if (id) {
         accuracy_rubric: evaluation.accuracy_rubric,
         expected_output: evaluation.expected_output,
         partial_credit_concepts: evaluation.partial_credit_concepts,
+        system_prompt: evaluation.system_prompt,
+        temperature: evaluation.temperature,
         status: evaluation.status,
         created_at: evaluation.created_at,
         results: results.map((r) => ({
@@ -61,6 +66,8 @@ if (id) {
           accuracy_score: r.accuracy_score,
           accuracy_reasoning: r.accuracy_reasoning,
           status: r.status,
+          system_prompt_used: r.system_prompt_used,
+          temperature_used: r.temperature_used,
         })),
       };
     }
@@ -93,12 +100,13 @@ function getStatusBadgeVariant(status: string) {
 <Layout title="Evaluation Details - Eval AI">
   <Breadcrumbs items={breadcrumbItems} />
 
-  <EvaluationDetailsDrawer />
   <TemplateManager />
 
   <div class="flex items-center justify-between mb-12 animate-reveal">
     <div class="accent-line">
-      <h1 class="text-5xl md:text-6xl font-display font-semibold tracking-tight mb-4 text-gradient-gold">
+      <h1
+        class="text-5xl md:text-6xl font-display font-semibold tracking-tight mb-4 text-gradient-gold"
+      >
         Evaluation Results
       </h1>
       <div class="flex items-center gap-3 text-base text-base-content/60">
@@ -156,6 +164,47 @@ function getStatusBadgeVariant(status: string) {
           </div>
         )
       }
+
+      {
+        evaluationData.system_prompt && (
+          <div>
+            <h3 class="font-semibold text-sm text-base-content/70 mb-1">System Prompt</h3>
+            <div class="bg-base-200 p-4 rounded-lg font-mono text-sm">
+              <div
+                id="system-prompt-text"
+                class="whitespace-pre-wrap line-clamp-5 overflow-hidden"
+              >
+                {evaluationData.system_prompt}
+              </div>
+              <button
+                id="system-prompt-toggle"
+                class="btn btn-xs btn-ghost text-primary mt-2 hidden"
+              >
+                Show more
+              </button>
+            </div>
+          </div>
+        )
+      }
+
+      <div>
+        <h3 class="font-semibold text-sm text-base-content/70 mb-1">Temperature</h3>
+        <div class="bg-base-200 p-4 rounded-lg font-mono text-sm">
+          {
+            (() => {
+              const temp =
+                evaluationData.temperature !== undefined && evaluationData.temperature !== null
+                  ? evaluationData.temperature
+                  : 0.3;
+              const isDefault =
+                temp === 0.3 ||
+                evaluationData.temperature === undefined ||
+                evaluationData.temperature === null;
+              return `${temp.toFixed(1)}${isDefault ? ' (default)' : ''}`;
+            })()
+          }
+        </div>
+      </div>
     </div>
   </div>
 
@@ -220,6 +269,11 @@ function getStatusBadgeVariant(status: string) {
       Updating results...
     </div>
   </div>
+
+  <!-- Overlays at body level for proper z-index stacking -->
+  <Fragment slot="overlays">
+    <EvaluationDetailsDrawer />
+  </Fragment>
 </Layout>
 
 <!-- Pass data to client for drawer and polling -->
@@ -228,24 +282,25 @@ function getStatusBadgeVariant(status: string) {
 </script>
 
 <script>
-  let currentResults = (window as any).__EVALUATION_DATA__?.results || [];
-  const evaluationId = (window as any).__EVALUATION_DATA__?.id;
-  const evaluationStatus = (window as any).__EVALUATION_DATA__?.status;
+  let currentResults = window.__EVALUATION_DATA__?.results || [];
+  const evaluationId = window.__EVALUATION_DATA__?.id;
+  const evaluationStatus = window.__EVALUATION_DATA__?.status;
   const saveTemplateBtn = document.getElementById('save-template-btn');
 
   // Save as Template
   if (saveTemplateBtn) {
     saveTemplateBtn.addEventListener('click', () => {
-      const evalData = (window as any).__EVALUATION_DATA__;
-      if (evalData && (window as any).openTemplateModal) {
-        (window as any).openTemplateModal({
-          instruction_text: evalData.instruction_text,
-          model_ids: evalData.results.map((r: any) => r.model_id),
-          accuracy_rubric: evalData.accuracy_rubric,
-          expected_output: evalData.expected_output,
-          partial_credit_concepts: evalData.partial_credit_concepts,
-        });
-      }
+      const evalData = window.__EVALUATION_DATA__;
+      if (evalData && window.openTemplateModal) {
+                  window.openTemplateModal({
+                    instruction_text: evalData.instruction_text,
+                    model_ids: evalData.results.map((r) => r.model_id),
+                    accuracy_rubric: evalData.accuracy_rubric,
+                    expected_output: evalData.expected_output || '',
+                    partial_credit_concepts: evalData.partial_credit_concepts,
+                    system_prompt: evalData.system_prompt,
+                    temperature: evalData.temperature,
+                  });      }
     });
   }
 
@@ -256,19 +311,21 @@ function getStatusBadgeVariant(status: string) {
       row.addEventListener('click', () => {
         const index = parseInt((row as HTMLElement).dataset.resultIndex || '0', 10);
         const result = currentResults[index];
-        const evalData = (window as any).__EVALUATION_DATA__;
+        const evalData = window.__EVALUATION_DATA__;
 
-        if (result && (window as any).showEvaluationDetails) {
-          (window as any).showEvaluationDetails({
+        if (result && window.showEvaluationDetails && evalData) {
+          window.showEvaluationDetails({
             modelName: result.model_name,
             prompt: evalData.instruction_text,
-            expectedOutput: evalData.expected_output,
+            expectedOutput: evalData.expected_output || '',
             response: result.response_text || '[No response]',
             reasoning: result.accuracy_reasoning || 'No reasoning available',
             executionTime: result.execution_time_ms,
             accuracyScore: result.accuracy_score,
             inputTokens: result.input_tokens,
             outputTokens: result.output_tokens,
+            totalTokens: result.total_tokens,
+            temperature: result.temperature_used,
           });
         }
       });
@@ -277,6 +334,28 @@ function getStatusBadgeVariant(status: string) {
 
   // Initial setup
   setupRowClickHandlers();
+
+  // System Prompt Expansion
+  const promptText = document.getElementById('system-prompt-text');
+  const promptToggle = document.getElementById('system-prompt-toggle');
+
+  if (promptText && promptToggle) {
+    // Check if truncated
+    if (promptText.scrollHeight > promptText.clientHeight) {
+      promptToggle.classList.remove('hidden');
+    }
+
+    promptToggle.addEventListener('click', () => {
+      const wasClamped = promptText.classList.contains('line-clamp-5');
+      if (wasClamped) {
+        promptText.classList.remove('line-clamp-5');
+        promptToggle.textContent = 'Show less';
+      } else {
+        promptText.classList.add('line-clamp-5');
+        promptToggle.textContent = 'Show more';
+      }
+    });
+  }
 
   // Polling logic if running
   if (evaluationStatus === 'pending' || evaluationStatus === 'running') {
@@ -296,7 +375,14 @@ function getStatusBadgeVariant(status: string) {
         const tbody = document.getElementById('results-body');
         if (tbody) {
           tbody.innerHTML = results
-            .map((r: any, index: number) => {
+            .map((r: {
+              status: string;
+              accuracy_score?: number;
+              model_name: string;
+              provider: string;
+              execution_time_ms?: number;
+              total_tokens?: number;
+            }, index: number) => {
               // Reconstruct badge variant logic
               let badgeClass = 'badge-warning';
               if (r.status === 'completed') badgeClass = 'badge-success';
@@ -336,7 +422,7 @@ function getStatusBadgeVariant(status: string) {
 
         // Check if all complete
         const allDone = results.every(
-          (r: any) => r.status === 'completed' || r.status === 'failed'
+          (r: { status: string }) => r.status === 'completed' || r.status === 'failed'
         );
         if (allDone) {
           clearInterval(interval);

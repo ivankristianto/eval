@@ -1,0 +1,73 @@
+---
+import { getSelectClasses } from '../../lib/component-classes';
+
+/**
+ * Select component for dropdown menus
+ *
+ * @example
+ * <Select name="role" label="User Role">
+ *   <option value="admin">Admin</option>
+ *   <option value="user">User</option>
+ * </Select>
+ *
+ * @param label - Label text displayed above the select
+ * @param name - Select name attribute (required)
+ * @param size - Select size (default: 'md')
+ * @param required - Whether the field is required (default: false)
+ * @param disabled - Whether the field is disabled (default: false)
+ * @param error - Error message to display below the select
+ * @param class - Additional CSS classes to apply
+ */
+export interface Props {
+  label?: string;
+  name: string;
+  size?: 'lg' | 'md' | 'sm' | 'xs';
+  required?: boolean;
+  disabled?: boolean;
+  error?: string;
+  class?: string;
+}
+
+const {
+  label,
+  name,
+  size = 'md',
+  required = false,
+  disabled = false,
+  error,
+  class: className = '',
+  ...rest
+} = Astro.props;
+
+const selectClasses = getSelectClasses(!!error, size, className);
+---
+
+<div class="form-control w-full">
+  {
+    label && (
+      <label class="label" for={name}>
+        <span class="label-text">
+          {label} {required && <span class="text-error">*</span>}
+        </span>
+      </label>
+    )
+  }
+  <select
+    id={name}
+    name={name}
+    required={required}
+    disabled={disabled}
+    class={selectClasses}
+    aria-describedby={error ? `${name}-error` : undefined}
+    {...rest}
+  >
+    <slot />
+  </select>
+  {
+    error && (
+      <label class="label">
+        <span id={`${name}-error`} class="label-text-alt text-error">{error}</span>
+      </label>
+    )
+  }
+</div>

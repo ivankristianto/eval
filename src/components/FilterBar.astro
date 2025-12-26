@@ -1,5 +1,8 @@
 ---
 import type { RubricType } from '../lib/types';
+import Input from './ui/Input.astro';
+import Select from './ui/Select.astro';
+import Button from './ui/Button.astro';
 
 interface Props {
   fromDate?: string;
@@ -29,72 +32,80 @@ const rubrics: { value: RubricType; label: string }[] = [
 ---
 
 <form method="get" class="card-luxe p-5 mb-8 animate-reveal delay-100">
-  {preservedParams.map(param => (
-    <input type="hidden" name={param.key} value={param.value} />
-  ))}
+  {preservedParams.map((param) => <input type="hidden" name={param.key} value={param.value} />)}
 
   <div class="flex flex-wrap items-end gap-4">
-    <div class="form-control">
-      <label class="label">
-        <span class="metric-label text-xs">From Date</span>
-      </label>
-      <input
+    <div class="w-40">
+      <Input
         type="date"
         name="fromDate"
+        label="From Date"
         value={fromDate}
-        class="input input-bordered input-sm border-gold-light focus:border-luxe-gold transition-colors"
+        size="sm"
+        class="border-gold-light focus:border-luxe-gold transition-colors"
       />
     </div>
 
-    <div class="form-control">
-      <label class="label">
-        <span class="metric-label text-xs">To Date</span>
-      </label>
-      <input
+    <div class="w-40">
+      <Input
         type="date"
         name="toDate"
+        label="To Date"
         value={toDate}
-        class="input input-bordered input-sm border-gold-light focus:border-luxe-gold transition-colors"
+        size="sm"
+        class="border-gold-light focus:border-luxe-gold transition-colors"
       />
     </div>
 
-    <div class="form-control">
-      <label class="label">
-        <span class="metric-label text-xs">Rubric</span>
-      </label>
-      <select name="rubric" class="select select-bordered select-sm border-gold-light focus:border-luxe-gold transition-colors">
+    <div class="w-48">
+      <Select
+        name="rubric"
+        label="Rubric"
+        size="sm"
+        class="border-gold-light focus:border-luxe-gold transition-colors"
+      >
         <option value="">All Rubrics</option>
-        {rubrics.map(r => (
-          <option value={r.value} selected={r.value === rubric}>{r.label}</option>
-        ))}
-      </select>
+        {
+          rubrics.map((r) => (
+            <option value={r.value} selected={r.value === rubric}>
+              {r.label}
+            </option>
+          ))
+        }
+      </Select>
     </div>
 
-    <div class="form-control w-28">
-      <label class="label">
-        <span class="metric-label text-xs">Min Score</span>
-      </label>
-      <input
+    <div class="w-28">
+      <Input
         type="number"
         name="minScore"
+        label="Min Score"
         value={minScore}
         min="0"
         max="100"
-        class="input input-bordered input-sm font-mono border-gold-light focus:border-luxe-gold transition-colors"
+        size="sm"
+        class="font-mono border-gold-light focus:border-luxe-gold transition-colors"
         placeholder="0-100"
       />
     </div>
 
-    <div class="form-control pb-0.5">
-      <button type="submit" class="btn btn-luxe btn-luxe-primary btn-sm font-semibold">
+    <div class="pb-1">
+      <Button type="submit" variant="primary" size="sm" class="font-semibold">
         Filter
-      </button>
+      </Button>
     </div>
 
-    <div class="form-control pb-0.5">
-      <a href={Astro.url.pathname + (preservedParams.length ? '?' + new URLSearchParams(preservedParams.map(p => [p.key, p.value])).toString() : '')} class="btn btn-ghost btn-sm">
+    <div class="pb-1">
+      <Button
+        href={Astro.url.pathname +
+          (preservedParams.length
+            ? '?' + new URLSearchParams(preservedParams.map((p) => [p.key, p.value])).toString()
+            : '')}
+        variant="ghost"
+        size="sm"
+      >
         Reset
-      </a>
+      </Button>
     </div>
   </div>
 </form>

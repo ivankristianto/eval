@@ -46,15 +46,15 @@
   0%,
   100% {
     text-shadow:
-      0 0 10px var(--luxe-emerald-glow),
-      0 0 20px var(--luxe-emerald-glow),
-      0 0 30px var(--luxe-emerald-glow);
+      0 0 10px var(--color-luxe-emerald-glow),
+      0 0 20px var(--color-luxe-emerald-glow),
+      0 0 30px var(--color-luxe-emerald-glow);
   }
   50% {
     text-shadow:
-      0 0 15px var(--luxe-emerald-glow),
-      0 0 30px var(--luxe-emerald-glow),
-      0 0 45px var(--luxe-emerald-glow);
+      0 0 15px var(--color-luxe-emerald-glow),
+      0 0 30px var(--color-luxe-emerald-glow),
+      0 0 45px var(--color-luxe-emerald-glow);
   }
 }
 

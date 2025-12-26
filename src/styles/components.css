@@ -5,31 +5,31 @@
 /* Elevated Card */
 .card-luxe {
   @apply relative rounded-2xl border backdrop-blur-xl transition-all duration-400;
-  background: rgba(255, 255, 255, 0.98);
-  border-color: rgba(212, 175, 55, 0.1);
+  background: var(--color-bg-card-light);
+  border-color: var(--color-gold-border-subtle);
   box-shadow: var(--shadow-elevated);
 }
 
 [data-theme='dark'] .card-luxe,
 [data-theme='luxury'] .card-luxe {
-  background: rgba(26, 41, 66, 0.95);
-  border-color: rgba(212, 175, 55, 0.15);
+  background: var(--color-bg-card-dark-alt);
+  border-color: var(--color-gold-border);
 }
 
 /* Card with cupcake theme */
 [data-theme='cupcake'] .card-luxe {
-  background: rgba(255, 255, 255, 0.98);
-  border-color: rgba(212, 175, 55, 0.12);
+  background: var(--color-bg-card-light);
+  border-color: var(--color-gold-border-light);
 }
 
 /* Card with silk theme */
 [data-theme='silk'] .card-luxe {
-  background: rgba(255, 255, 255, 0.98);
-  border-color: rgba(212, 175, 55, 0.12);
+  background: var(--color-bg-card-light);
+  border-color: var(--color-gold-border-light);
 }
 
 .card-luxe::before {
-  @apply absolute inset-x-0 top-0 h-px opacity-0 transition-opacity duration-400 z-[1];
+  @apply absolute inset-x-0 top-0 h-px opacity-0 transition-opacity duration-400 z-1;
   content: '';
   background: var(--gradient-gold);
 }
@@ -46,18 +46,18 @@
 /* Metric Display */
 .metric-display {
   @apply text-5xl font-bold leading-none tracking-tighter;
-  font-family: var(--font-mono);
+  font-family: var(--font-family-mono);
 }
 
 .metric-label {
   @apply text-xs font-medium uppercase tracking-widest opacity-60;
-  font-family: var(--font-body);
+  font-family: var(--font-family-body);
 }
 
 /* Success Metric Glow */
 .metric-success {
-  color: var(--luxe-emerald);
-  text-shadow: 0 0 20px var(--luxe-emerald-glow);
+  color: var(--color-luxe-emerald);
+  text-shadow: 0 0 20px var(--color-luxe-emerald-glow);
 }
 
 /* Nord theme needs more visible metrics */
@@ -87,29 +87,29 @@
 }
 
 .table-luxe thead th {
-  @apply text-xs font-semibold uppercase tracking-widest px-3 py-4 sticky top-0 z-10 whitespace-nowrap border-b-2;
-  font-family: var(--font-body);
-  background: rgba(212, 175, 55, 0.03);
-  border-bottom-color: rgba(212, 175, 55, 0.2);
+  @apply text-xs font-semibold uppercase tracking-widest px-3 py-4 sticky top-0 z-10 whitespace-nowrap border-b-2 align-middle;
+  font-family: var(--font-family-body);
+  background: var(--color-gold-bg-subtle);
+  border-bottom-color: var(--color-gold-border-medium);
 }
 
 .table-luxe tbody tr {
   @apply transition-all duration-200 border-b;
-  border-bottom-color: rgba(0, 0, 0, 0.05);
+  border-bottom-color: var(--color-border-subtle);
 }
 
 .table-luxe tbody tr:hover {
   @apply scale-[1.001];
-  background: rgba(212, 175, 55, 0.03);
+  background: var(--color-gold-bg-subtle);
 }
 
 [data-theme='dark'] .table-luxe tbody tr:hover,
 [data-theme='luxury'] .table-luxe tbody tr:hover {
-  background: rgba(212, 175, 55, 0.05);
+  background: var(--color-gold-bg-light);
 }
 
 .table-luxe tbody td {
-  @apply px-3 py-3.5 text-sm align-top;
+  @apply px-3 py-3.5 text-sm align-middle;
 }
 
 .table-luxe tbody td:first-child,
@@ -147,7 +147,7 @@
 }
 
 .table-luxe.table-templates tbody td:first-child {
-  @apply min-w-[180px] w-1/5 whitespace-normal break-words;
+  @apply min-w-[180px] w-1/5 whitespace-normal wrap-break-word;
 }
 
 .table-luxe.table-templates tbody td:nth-child(2) {
@@ -164,7 +164,7 @@
 }
 
 .table-luxe.table-models tbody td:nth-child(2) {
-  @apply min-w-[250px] w-2/5 whitespace-normal break-words;
+  @apply min-w-[250px] w-2/5 whitespace-normal wrap-break-word;
 }
 
 /* Results table in evaluation details */
@@ -173,23 +173,55 @@
 }
 
 .table-luxe.table-results tbody td:first-child {
-  @apply min-w-[200px] w-[30%] whitespace-normal break-words;
+  @apply min-w-[200px] w-[30%] whitespace-normal wrap-break-word;
 }
 
 /* Number cells in tables */
 .table-luxe td:has(.font-mono),
 .table-luxe td.font-mono {
   @apply tabular-nums;
-  font-family: var(--font-mono);
+  font-family: var(--font-family-mono);
 }
 
 /* Gold Accent Border */
-.border-gold {
-  border-color: var(--luxe-gold) !important;
+/* Using element + class selectors for proper specificity without !important */
+nav.border-gold-light,
+div.border-gold-light,
+input.border-gold-light,
+select.border-gold-light,
+textarea.border-gold-light,
+.input.border-gold-light,
+.select.border-gold-light,
+.textarea.border-gold-light {
+  border-color: var(--color-gold-border-medium);
 }
 
-.border-gold-light {
-  border-color: rgba(212, 175, 55, 0.2) !important;
+nav.border-gold,
+div.border-gold,
+input.border-gold,
+select.border-gold,
+textarea.border-gold,
+.input.border-gold,
+.select.border-gold,
+.textarea.border-gold {
+  border-color: var(--color-luxe-gold);
+}
+
+/* ===================================
+   BACKGROUND UTILITIES
+   =================================== */
+
+/* Gradient background utilities - work across all themes */
+.bg-gradient-gold {
+  background: var(--gradient-gold);
+}
+
+.bg-gradient-emerald {
+  background: var(--gradient-emerald);
+}
+
+.bg-gradient-midnight {
+  background: var(--gradient-midnight);
 }
 
 /* ===================================
@@ -199,7 +231,7 @@
 /* All buttons - base styling */
 .btn {
   @apply font-semibold tracking-wide rounded-lg transition-all duration-200;
-  font-family: var(--font-body);
+  font-family: var(--font-family-body);
   box-shadow: var(--shadow-soft);
 }
 
@@ -216,8 +248,10 @@
 .btn-luxe::before {
   @apply absolute top-1/2 left-1/2 w-0 h-0 rounded-full -translate-x-1/2 -translate-y-1/2;
   content: '';
-  background: rgba(255, 255, 255, 0.2);
-  transition: width 0.6s ease, height 0.6s ease;
+  background: var(--color-bg-overlay-light);
+  transition:
+    width 0.6s ease,
+    height 0.6s ease;
 }
 
 .btn-luxe:hover::before {
@@ -227,13 +261,15 @@
 .btn-luxe-primary {
   @apply border-none;
   background: var(--gradient-gold);
-  color: var(--luxe-midnight);
+  color: var(--color-luxe-midnight);
   box-shadow: var(--shadow-gold);
 }
 
 .btn-luxe-primary:hover {
   @apply -translate-y-0.5;
-  box-shadow: 0 12px 40px rgba(212, 175, 55, 0.25), 0 4px 12px rgba(212, 175, 55, 0.15);
+  box-shadow:
+    0 12px 40px var(--color-gold-border-strong),
+    0 4px 12px var(--color-gold-border);
 }
 
 /* ===================================
@@ -253,13 +289,13 @@
 .select:focus {
   @apply outline-none;
   box-shadow: var(--shadow-medium);
-  border-color: var(--luxe-gold);
+  border-color: var(--color-luxe-gold);
 }
 
 .input-bordered,
 .textarea-bordered,
 .select-bordered {
-  border-color: rgba(212, 175, 55, 0.2);
+  border-color: var(--color-gold-border-medium);
 }
 
 [data-theme='dark'] .input-bordered,
@@ -271,7 +307,7 @@
 [data-theme='dark'] .select-bordered,
 [data-theme='luxury'] .select-bordered,
 [data-theme='nord'] .select-bordered {
-  border-color: rgba(212, 175, 55, 0.25);
+  border-color: var(--color-gold-border-strong);
 }
 
 /* Checkbox consistency */
@@ -280,13 +316,57 @@
 }
 
 .checkbox:checked {
-  box-shadow: 0 0 12px rgba(212, 175, 55, 0.3);
+  box-shadow: 0 0 12px var(--color-gold-glow-soft);
+}
+
+/* Luxe checkbox - gold themed variant */
+.checkbox-luxe {
+  @apply rounded border-2 transition-all duration-200;
+  border-color: var(--color-gold-border-strong);
+}
+
+.checkbox-luxe:checked {
+  background-color: var(--color-luxe-gold);
+  border-color: var(--color-luxe-gold);
+  box-shadow: 0 0 12px var(--color-gold-glow-medium);
+}
+
+.checkbox-luxe:hover:not(:checked) {
+  border-color: var(--color-luxe-gold);
+}
+
+/* Luxe range slider - gold themed variant */
+.range-luxe {
+  @apply appearance-none h-2 rounded-full transition-all duration-200;
+  background: var(--color-gold-border);
+}
+
+.range-luxe::-webkit-slider-thumb {
+  @apply appearance-none w-5 h-5 rounded-full cursor-pointer transition-all duration-200;
+  background: var(--gradient-gold);
+  box-shadow: 0 2px 8px var(--color-gold-glow-medium);
+}
+
+.range-luxe::-moz-range-thumb {
+  @apply w-5 h-5 rounded-full border-0 cursor-pointer transition-all duration-200;
+  background: var(--gradient-gold);
+  box-shadow: 0 2px 8px var(--color-gold-glow-medium);
+}
+
+.range-luxe::-webkit-slider-thumb:hover {
+  @apply scale-110;
+  box-shadow: 0 4px 12px var(--color-gold-glow-strong);
+}
+
+.range-luxe::-moz-range-thumb:hover {
+  @apply scale-110;
+  box-shadow: 0 4px 12px var(--color-gold-glow-strong);
 }
 
 /* Focus ring styles for accessibility */
 *:focus-visible {
   @apply outline-2 outline-offset-2;
-  outline-color: var(--luxe-gold);
+  outline-color: var(--color-luxe-gold);
 }
 
 /* Badge enhancements - prevent wrapping */
@@ -297,37 +377,43 @@
 /* Status indicators - Enhanced */
 .status-pending {
   @apply text-xs font-semibold px-3 py-1 rounded-md uppercase tracking-wider whitespace-nowrap;
-  font-family: var(--font-mono);
-  background: var(--luxe-amber);
-  color: var(--luxe-midnight);
+  font-family: var(--font-family-mono);
+  background: var(--color-luxe-amber);
+  color: var(--color-luxe-midnight);
 }
 
 .status-running {
   @apply text-xs font-semibold px-3 py-1 rounded-md uppercase tracking-wider whitespace-nowrap animate-pulse;
-  font-family: var(--font-mono);
+  font-family: var(--font-family-mono);
   background: var(--gradient-emerald);
-  color: var(--luxe-midnight);
+  color: var(--color-luxe-midnight);
 }
 
 .status-completed {
   @apply text-xs font-semibold px-3 py-1 rounded-md uppercase tracking-wider whitespace-nowrap;
-  font-family: var(--font-mono);
-  background: var(--luxe-emerald);
-  color: var(--luxe-midnight);
+  font-family: var(--font-family-mono);
+  background: var(--color-luxe-emerald);
+  color: var(--color-luxe-midnight);
   box-shadow: var(--shadow-emerald);
 }
 
 .status-failed {
   @apply text-xs font-semibold px-3 py-1 rounded-md uppercase tracking-wider whitespace-nowrap text-white;
-  font-family: var(--font-mono);
-  background: var(--luxe-ruby);
+  font-family: var(--font-family-mono);
+  background: var(--color-luxe-ruby);
 }
 
 /* Best performer highlighting */
-.best-performer,
-tr.best-performer {
+/* Using element + class selector for proper specificity without !important */
+tr.best-performer,
+div.best-performer {
   @apply relative;
-  background: var(--luxe-emerald-glow) !important;
+  background: var(--color-luxe-emerald-glow);
+}
+
+/* Override table hover states */
+.table-luxe tbody tr.best-performer:hover {
+  background: var(--color-luxe-emerald-glow);
 }
 
 .best-performer::before,
@@ -344,30 +430,30 @@ tr.best-performer::before {
 /* Modal backdrop styling - consistent across all modals */
 dialog::backdrop,
 .modal::backdrop {
-  @apply backdrop-blur-lg z-[100];
-  background: rgba(10, 22, 40, 0.8);
+  @apply backdrop-blur-lg z-100;
+  background: var(--color-backdrop);
 }
 
 /* Ensure modals are above drawers */
 .modal {
-  @apply z-[100];
+  @apply z-100;
 }
 
 dialog {
-  @apply z-[100];
+  @apply z-100;
 }
 
 /* Consistent modal box styling */
 .modal-box {
   @apply rounded-2xl border max-w-2xl;
   box-shadow: var(--shadow-elevated);
-  border-color: rgba(212, 175, 55, 0.1);
+  border-color: var(--color-gold-border-subtle);
 }
 
 [data-theme='dark'] .modal-box,
 [data-theme='luxury'] .modal-box {
-  background: rgba(26, 41, 66, 0.98);
-  border-color: rgba(212, 175, 55, 0.15);
+  background: var(--color-bg-card-dark);
+  border-color: var(--color-gold-border);
 }
 
 /* Modal action buttons - consistent spacing and styling */
@@ -379,53 +465,57 @@ dialog {
 .modal-action .btn-error {
   @apply text-white border-none font-semibold;
   background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
-  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3), 0 2px 4px rgba(220, 38, 38, 0.2);
+  box-shadow:
+    0 4px 12px rgba(220, 38, 38, 0.3),
+    0 2px 4px rgba(220, 38, 38, 0.2);
 }
 
 .modal-action .btn-error:hover {
   @apply -translate-y-px;
   background: linear-gradient(135deg, #b91c1c 0%, #7f1d1d 100%);
-  box-shadow: 0 6px 16px rgba(220, 38, 38, 0.4), 0 3px 6px rgba(220, 38, 38, 0.25);
+  box-shadow:
+    0 6px 16px rgba(220, 38, 38, 0.4),
+    0 3px 6px rgba(220, 38, 38, 0.25);
 }
 
 .modal-action .btn-ghost {
   @apply bg-transparent border-2 font-semibold;
-  color: var(--luxe-slate);
-  border-color: rgba(45, 63, 95, 0.2);
+  color: var(--color-luxe-slate);
+  border-color: var(--color-slate-border-light);
 }
 
 .modal-action .btn-ghost:hover {
   @apply -translate-y-px;
-  background: rgba(45, 63, 95, 0.05);
-  border-color: rgba(45, 63, 95, 0.3);
+  background: var(--color-slate-border-subtle);
+  border-color: var(--color-slate-border-medium);
 }
 
 /* Drawer consistency - ensure it's above navbar */
 .drawer-side {
-  @apply z-[60];
+  @apply z-60;
 }
 
 .drawer-side > .drawer-overlay {
-  @apply backdrop-blur-lg z-[60];
-  background: rgba(10, 22, 40, 0.8);
+  @apply backdrop-blur-lg z-60;
+  background: var(--color-backdrop);
 }
 
 /* Custom drawer styling for right-side drawers */
 [data-drawer] {
-  @apply border-l rounded-l-2xl z-[60];
-  border-color: rgba(212, 175, 55, 0.1);
+  @apply border-l rounded-l-2xl z-60;
+  border-color: var(--color-gold-border-subtle);
   box-shadow: var(--shadow-elevated);
 }
 
 /* Drawer backdrop needs higher z-index too */
 [data-drawer-backdrop] {
-  @apply z-[60];
+  @apply z-60;
 }
 
 [data-theme='dark'] [data-drawer],
 [data-theme='luxury'] [data-drawer] {
-  background: rgba(26, 41, 66, 0.98);
-  border-color: rgba(212, 175, 55, 0.15);
+  background: var(--color-bg-card-dark);
+  border-color: var(--color-gold-border);
 }
 
 /* Geometric accent lines */

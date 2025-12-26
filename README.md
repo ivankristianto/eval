@@ -17,7 +17,7 @@ Compare and evaluate multiple AI models (OpenAI, Anthropic, Google) against spec
 
 ## Tech Stack
 
-- **Runtime**: Node.js (v22+)
+- **Runtime**: Node.js (v22+) or Bun (v1.3+)
 - **Framework**: Astro (SSR)
 - **Database**: SQLite (better-sqlite3)
 - **Styling**: Tailwind CSS + DaisyUI
@@ -27,37 +27,45 @@ Compare and evaluate multiple AI models (OpenAI, Anthropic, Google) against spec
 
 ### Prerequisites
 
-- Node.js v22+
+- Node.js v22+ or Bun v1.3+
 - npm v9+
 - API Keys for OpenAI, Anthropic, or Google Gemini
 
 ### Installation
 
 1. **Clone the repository**
+
    ```bash
    git clone <repository-url>
    cd eval-ai-models
    ```
 
 2. **Install dependencies**
+
    ```bash
-   npm install
+   npm install # or
+   bun install
    ```
 
 3. **Configure environment**
+
    ```bash
    cp .env.example .env
    # Edit .env and add your API keys
    ```
 
 4. **Initialize database**
+
    ```bash
-   npm run db:init
+   npm run db:init # or
+   bun run db:init
    ```
 
 5. **Start development server**
+
    ```bash
-   npm run dev
+   npm run dev # or
+   bun dev
    ```
 
    Visit `http://localhost:3000` to start evaluating models.
@@ -93,11 +101,13 @@ See `specs/001-eval-ai-models/contracts/` for detailed API specifications.
 
 - **Database Errors**: If you encounter database issues, try resetting it (warning: clears all data):
   ```bash
-  npm run db:reset
+  npm run db:reset # or
+  bun run db:reset
   ```
 - **Port Conflicts**: If port 3000 is in use, run:
   ```bash
-  npm run dev -- --port 3001
+  npm run dev -- --port 3001 # or
+  bun dev -- --port 3001
   ```
 - **API Key Issues**: Ensure your keys in `.env` are correct and have active quotas.
 
@@ -108,11 +118,16 @@ Run the test suites to ensure everything is working:
 ```bash
 npm test          # Unit and Integration tests
 npm run test:e2e  # End-to-End tests
+# or
+bun test
+bun run test:e2e
 ```
 
 If Playwright browsers are missing, install them once:
+
 ```bash
-npx playwright install
+npx playwright install # or
+bunx playwright install
 ```
 
 ## License
