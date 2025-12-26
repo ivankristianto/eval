@@ -1,31 +1,27 @@
 ---
-import { getInputClasses } from '../../lib/component-classes';
+import { getSelectClasses } from '../../lib/component-classes';
 
 /**
- * Input component for form fields with label and error handling
+ * Select component for dropdown menus
  *
  * @example
- * <Input name="email" label="Email Address" type="email" required />
- * <Input name="password" label="Password" type="password" error="Invalid password" />
+ * <Select name="role" label="User Role">
+ *   <option value="admin">Admin</option>
+ *   <option value="user">User</option>
+ * </Select>
  *
- * @param label - Label text displayed above the input
- * @param name - Input name attribute (required)
- * @param type - Input type attribute (default: 'text')
- * @param size - Input size (default: 'md')
- * @param placeholder - Placeholder text
- * @param value - Input value
+ * @param label - Label text displayed above the select
+ * @param name - Select name attribute (required)
+ * @param size - Select size (default: 'md')
  * @param required - Whether the field is required (default: false)
  * @param disabled - Whether the field is disabled (default: false)
- * @param error - Error message to display below the input
+ * @param error - Error message to display below the select
  * @param class - Additional CSS classes to apply
  */
 export interface Props {
   label?: string;
   name: string;
-  type?: 'text' | 'password' | 'email' | 'number' | 'search' | 'url' | 'date' | 'datetime-local';
   size?: 'lg' | 'md' | 'sm' | 'xs';
-  placeholder?: string;
-  value?: string | number;
   required?: boolean;
   disabled?: boolean;
   error?: string;
@@ -35,10 +31,7 @@ export interface Props {
 const {
   label,
   name,
-  type = 'text',
   size = 'md',
-  placeholder,
-  value,
   required = false,
   disabled = false,
   error,
@@ -46,7 +39,7 @@ const {
   ...rest
 } = Astro.props;
 
-const inputClasses = getInputClasses(!!error, size, className);
+const selectClasses = getSelectClasses(!!error, size, className);
 ---
 
 <div class="form-control w-full">
@@ -59,18 +52,17 @@ const inputClasses = getInputClasses(!!error, size, className);
       </label>
     )
   }
-  <input
+  <select
     id={name}
     name={name}
-    type={type}
-    placeholder={placeholder}
-    value={value}
     required={required}
     disabled={disabled}
-    class={inputClasses}
+    class={selectClasses}
     aria-describedby={error ? `${name}-error` : undefined}
     {...rest}
-  />
+  >
+    <slot />
+  </select>
   {
     error && (
       <label class="label">

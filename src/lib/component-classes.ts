@@ -86,10 +86,33 @@ export const INPUT_STYLES = {
     error: 'input-error',
     disabled: 'input-disabled',
   },
+  sizes: {
+    lg: 'input-lg',
+    md: 'input-md',
+    sm: 'input-sm',
+    xs: 'input-xs',
+  },
   wrapper: 'form-control w-full',
   label: 'label',
   labelText: 'label-text',
   errorText: 'label-text-alt text-error',
+} as const;
+
+/**
+ * Select style constants
+ */
+export const SELECT_STYLES = {
+  base: 'select select-bordered w-full',
+  states: {
+    error: 'select-error',
+    disabled: 'select-disabled',
+  },
+  sizes: {
+    lg: 'select-lg',
+    md: 'select-md',
+    sm: 'select-sm',
+    xs: 'select-xs',
+  },
 } as const;
 
 /**
@@ -218,10 +241,35 @@ export function getAlertClasses(variant: keyof typeof ALERT_STYLES.variants = 'i
 }
 
 /**
- * Generate input class names based on state
+ * Generate input class names based on state and size
  */
-export function getInputClasses(hasError = false, className = ''): string {
-  return joinClasses(INPUT_STYLES.base, hasError && INPUT_STYLES.states.error, className);
+export function getInputClasses(
+  hasError = false,
+  size: keyof typeof INPUT_STYLES.sizes = 'md',
+  className = ''
+): string {
+  return cn(
+    INPUT_STYLES.base,
+    INPUT_STYLES.sizes[size],
+    hasError && INPUT_STYLES.states.error,
+    className
+  );
+}
+
+/**
+ * Generate select class names based on state and size
+ */
+export function getSelectClasses(
+  hasError = false,
+  size: keyof typeof SELECT_STYLES.sizes = 'md',
+  className = ''
+): string {
+  return cn(
+    SELECT_STYLES.base,
+    SELECT_STYLES.sizes[size],
+    hasError && SELECT_STYLES.states.error,
+    className
+  );
 }
 
 /**

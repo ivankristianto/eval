@@ -1,0 +1,37 @@
+---
+/**
+ * Menu/Hamburger icon component
+ *
+ * @param size - Icon size (default: 'md')
+ * @param class - Additional CSS classes
+ */
+export interface Props {
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+  class?: string;
+}
+
+const sizeClasses = {
+  xs: 'w-3 h-3',
+  sm: 'w-4 h-4',
+  md: 'w-5 h-5',
+  lg: 'w-6 h-6',
+  xl: 'w-8 h-8',
+};
+
+const { size = 'md', class: className = '' } = Astro.props;
+const classes = `${sizeClasses[size]} ${className}`;
+---
+
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  class={classes}
+  fill="none"
+  viewBox="0 0 24 24"
+  stroke="currentColor"
+>
+  <path
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    stroke-width="2"
+    d="M4 6h16M4 12h8m-8 6h16"></path>
+</svg>
