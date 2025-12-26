@@ -56,6 +56,27 @@
   --color-gold-border-strong: rgba(212, 175, 55, 0.25);
   --color-gold-bg-subtle: rgba(212, 175, 55, 0.03);
   --color-gold-bg-light: rgba(212, 175, 55, 0.05);
+
+  /* Gold glow variants - for shadows and interactive states */
+  --color-gold-glow-soft: rgba(212, 175, 55, 0.3);
+  --color-gold-glow-medium: rgba(212, 175, 55, 0.4);
+  --color-gold-glow-strong: rgba(212, 175, 55, 0.5);
+
+  /* Card and modal backgrounds - theme aware */
+  --color-bg-card-light: rgba(255, 255, 255, 0.98);
+  --color-bg-card-dark: rgba(26, 41, 66, 0.98);
+  --color-bg-card-dark-alt: rgba(26, 41, 66, 0.95);
+  --color-bg-overlay-light: rgba(255, 255, 255, 0.2);
+
+  /* Slate color variants - for neutral UI elements */
+  --color-slate-border-subtle: rgba(45, 63, 95, 0.05);
+  --color-slate-border-light: rgba(45, 63, 95, 0.2);
+  --color-slate-border-medium: rgba(45, 63, 95, 0.3);
+
+  /* Neutral border */
+  --color-border-subtle: rgba(0, 0, 0, 0.05);
+
+  /* Backdrop */
   --color-backdrop: rgba(10, 22, 40, 0.8);
 }
 

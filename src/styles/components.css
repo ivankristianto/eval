@@ -5,26 +5,26 @@
 /* Elevated Card */
 .card-luxe {
   @apply relative rounded-2xl border backdrop-blur-xl transition-all duration-400;
-  background: rgba(255, 255, 255, 0.98);
+  background: var(--color-bg-card-light);
   border-color: var(--color-gold-border-subtle);
   box-shadow: var(--shadow-elevated);
 }
 
 [data-theme='dark'] .card-luxe,
 [data-theme='luxury'] .card-luxe {
-  background: rgba(26, 41, 66, 0.95);
+  background: var(--color-bg-card-dark-alt);
   border-color: var(--color-gold-border);
 }
 
 /* Card with cupcake theme */
 [data-theme='cupcake'] .card-luxe {
-  background: rgba(255, 255, 255, 0.98);
+  background: var(--color-bg-card-light);
   border-color: var(--color-gold-border-light);
 }
 
 /* Card with silk theme */
 [data-theme='silk'] .card-luxe {
-  background: rgba(255, 255, 255, 0.98);
+  background: var(--color-bg-card-light);
   border-color: var(--color-gold-border-light);
 }
 
@@ -95,7 +95,7 @@
 
 .table-luxe tbody tr {
   @apply transition-all duration-200 border-b;
-  border-bottom-color: rgba(0, 0, 0, 0.05);
+  border-bottom-color: var(--color-border-subtle);
 }
 
 .table-luxe tbody tr:hover {
@@ -248,7 +248,7 @@ textarea.border-gold,
 .btn-luxe::before {
   @apply absolute top-1/2 left-1/2 w-0 h-0 rounded-full -translate-x-1/2 -translate-y-1/2;
   content: '';
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--color-bg-overlay-light);
   transition:
     width 0.6s ease,
     height 0.6s ease;
@@ -268,8 +268,8 @@ textarea.border-gold,
 .btn-luxe-primary:hover {
   @apply -translate-y-0.5;
   box-shadow:
-    0 12px 40px rgba(212, 175, 55, 0.25),
-    0 4px 12px rgba(212, 175, 55, 0.15);
+    0 12px 40px var(--color-gold-border-strong),
+    0 4px 12px var(--color-gold-border);
 }
 
 /* ===================================
@@ -316,7 +316,51 @@ textarea.border-gold,
 }
 
 .checkbox:checked {
-  box-shadow: 0 0 12px rgba(212, 175, 55, 0.3);
+  box-shadow: 0 0 12px var(--color-gold-glow-soft);
+}
+
+/* Luxe checkbox - gold themed variant */
+.checkbox-luxe {
+  @apply rounded border-2 transition-all duration-200;
+  border-color: var(--color-gold-border-strong);
+}
+
+.checkbox-luxe:checked {
+  background-color: var(--color-luxe-gold);
+  border-color: var(--color-luxe-gold);
+  box-shadow: 0 0 12px var(--color-gold-glow-medium);
+}
+
+.checkbox-luxe:hover:not(:checked) {
+  border-color: var(--color-luxe-gold);
+}
+
+/* Luxe range slider - gold themed variant */
+.range-luxe {
+  @apply appearance-none h-2 rounded-full transition-all duration-200;
+  background: var(--color-gold-border);
+}
+
+.range-luxe::-webkit-slider-thumb {
+  @apply appearance-none w-5 h-5 rounded-full cursor-pointer transition-all duration-200;
+  background: var(--gradient-gold);
+  box-shadow: 0 2px 8px var(--color-gold-glow-medium);
+}
+
+.range-luxe::-moz-range-thumb {
+  @apply w-5 h-5 rounded-full border-0 cursor-pointer transition-all duration-200;
+  background: var(--gradient-gold);
+  box-shadow: 0 2px 8px var(--color-gold-glow-medium);
+}
+
+.range-luxe::-webkit-slider-thumb:hover {
+  @apply scale-110;
+  box-shadow: 0 4px 12px var(--color-gold-glow-strong);
+}
+
+.range-luxe::-moz-range-thumb:hover {
+  @apply scale-110;
+  box-shadow: 0 4px 12px var(--color-gold-glow-strong);
 }
 
 /* Focus ring styles for accessibility */
@@ -408,7 +452,7 @@ dialog {
 
 [data-theme='dark'] .modal-box,
 [data-theme='luxury'] .modal-box {
-  background: rgba(26, 41, 66, 0.98);
+  background: var(--color-bg-card-dark);
   border-color: var(--color-gold-border);
 }
 
@@ -437,13 +481,13 @@ dialog {
 .modal-action .btn-ghost {
   @apply bg-transparent border-2 font-semibold;
   color: var(--color-luxe-slate);
-  border-color: rgba(45, 63, 95, 0.2);
+  border-color: var(--color-slate-border-light);
 }
 
 .modal-action .btn-ghost:hover {
   @apply -translate-y-px;
-  background: rgba(45, 63, 95, 0.05);
-  border-color: rgba(45, 63, 95, 0.3);
+  background: var(--color-slate-border-subtle);
+  border-color: var(--color-slate-border-medium);
 }
 
 /* Drawer consistency - ensure it's above navbar */
@@ -470,7 +514,7 @@ dialog {
 
 [data-theme='dark'] [data-drawer],
 [data-theme='luxury'] [data-drawer] {
-  background: rgba(26, 41, 66, 0.98);
+  background: var(--color-bg-card-dark);
   border-color: var(--color-gold-border);
 }
 
