@@ -16,34 +16,8 @@
 <script>
   import { toasts, removeToast } from '../../lib/toastStore';
   import type { Toast } from '../../lib/toastStore';
-
-  /**
-   * Create SVG icon element for toast notification
-   */
-  function createToastIcon(type: Toast['type']): SVGElement {
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.setAttribute('fill', 'none');
-    svg.setAttribute('viewBox', '0 0 24 24');
-    svg.classList.add('stroke-current', 'shrink-0', 'w-6', 'h-6');
-
-    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    path.setAttribute('stroke-linecap', 'round');
-    path.setAttribute('stroke-linejoin', 'round');
-    path.setAttribute('stroke-width', '2');
-
-    // Set path data based on type
-    const iconPaths: Record<Toast['type'], string> = {
-      info: 'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
-      success: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z',
-      warning: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z',
-      error: 'M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z',
-    };
-
-    path.setAttribute('d', iconPaths[type]);
-    svg.appendChild(path);
-
-    return svg;
-  }
+  import { createIconElement } from '../../lib/icons';
+  import { initializeOnce } from '../../lib/client-utils';
 
   /**
    * Create toast alert element using DOM methods (no innerHTML for security)
@@ -61,8 +35,8 @@
 
     alertDiv.className = `alert ${alertClasses[toast.type]} shadow-lg`;
 
-    // Create and append icon
-    const icon = createToastIcon(toast.type);
+    // Create and append icon using shared icon utility
+    const icon = createIconElement(toast.type, 'lg');
     alertDiv.appendChild(icon);
 
     // Create and append message
@@ -106,9 +80,9 @@
     }
   }
 
-  // Initialize on load
-  initToasts();
-
-  // Re-initialize on Astro page transitions
-  document.addEventListener('astro:page-load', initToasts);
+  // Initialize once and re-initialize on Astro page transitions
+  initializeOnce('toasts', initToasts);
+  document.addEventListener('astro:page-load', () => {
+    initializeOnce('toasts', initToasts);
+  });
 </script>

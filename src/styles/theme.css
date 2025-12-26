@@ -47,6 +47,16 @@
   --font-display: 'Manrope', sans-serif;
   --font-body: 'Manrope', sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
+
+  /* Border and background color variants - for consistent gold accents */
+  --color-gold-border-subtle: rgba(212, 175, 55, 0.1);
+  --color-gold-border-light: rgba(212, 175, 55, 0.12);
+  --color-gold-border: rgba(212, 175, 55, 0.15);
+  --color-gold-border-medium: rgba(212, 175, 55, 0.2);
+  --color-gold-border-strong: rgba(212, 175, 55, 0.25);
+  --color-gold-bg-subtle: rgba(212, 175, 55, 0.03);
+  --color-gold-bg-light: rgba(212, 175, 55, 0.05);
+  --color-backdrop: rgba(10, 22, 40, 0.8);
 }
 
 /* Dark theme overrides */

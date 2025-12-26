@@ -6,26 +6,26 @@
 .card-luxe {
   @apply relative rounded-2xl border backdrop-blur-xl transition-all duration-400;
   background: rgba(255, 255, 255, 0.98);
-  border-color: rgba(212, 175, 55, 0.1);
+  border-color: var(--color-gold-border-subtle);
   box-shadow: var(--shadow-elevated);
 }
 
 [data-theme='dark'] .card-luxe,
 [data-theme='luxury'] .card-luxe {
   background: rgba(26, 41, 66, 0.95);
-  border-color: rgba(212, 175, 55, 0.15);
+  border-color: var(--color-gold-border);
 }
 
 /* Card with cupcake theme */
 [data-theme='cupcake'] .card-luxe {
   background: rgba(255, 255, 255, 0.98);
-  border-color: rgba(212, 175, 55, 0.12);
+  border-color: var(--color-gold-border-light);
 }
 
 /* Card with silk theme */
 [data-theme='silk'] .card-luxe {
   background: rgba(255, 255, 255, 0.98);
-  border-color: rgba(212, 175, 55, 0.12);
+  border-color: var(--color-gold-border-light);
 }
 
 .card-luxe::before {
@@ -89,8 +89,8 @@
 .table-luxe thead th {
   @apply text-xs font-semibold uppercase tracking-widest px-3 py-4 sticky top-0 z-10 whitespace-nowrap border-b-2 align-middle;
   font-family: var(--font-family-body);
-  background: rgba(212, 175, 55, 0.03);
-  border-bottom-color: rgba(212, 175, 55, 0.2);
+  background: var(--color-gold-bg-subtle);
+  border-bottom-color: var(--color-gold-border-medium);
 }
 
 .table-luxe tbody tr {
@@ -100,12 +100,12 @@
 
 .table-luxe tbody tr:hover {
   @apply scale-[1.001];
-  background: rgba(212, 175, 55, 0.03);
+  background: var(--color-gold-bg-subtle);
 }
 
 [data-theme='dark'] .table-luxe tbody tr:hover,
 [data-theme='luxury'] .table-luxe tbody tr:hover {
-  background: rgba(212, 175, 55, 0.05);
+  background: var(--color-gold-bg-light);
 }
 
 .table-luxe tbody td {
@@ -193,7 +193,7 @@ textarea.border-gold-light,
 .input.border-gold-light,
 .select.border-gold-light,
 .textarea.border-gold-light {
-  border-color: rgba(212, 175, 55, 0.2);
+  border-color: var(--color-gold-border-medium);
 }
 
 nav.border-gold,
@@ -295,7 +295,7 @@ textarea.border-gold,
 .input-bordered,
 .textarea-bordered,
 .select-bordered {
-  border-color: rgba(212, 175, 55, 0.2);
+  border-color: var(--color-gold-border-medium);
 }
 
 [data-theme='dark'] .input-bordered,
@@ -307,7 +307,7 @@ textarea.border-gold,
 [data-theme='dark'] .select-bordered,
 [data-theme='luxury'] .select-bordered,
 [data-theme='nord'] .select-bordered {
-  border-color: rgba(212, 175, 55, 0.25);
+  border-color: var(--color-gold-border-strong);
 }
 
 /* Checkbox consistency */
@@ -387,7 +387,7 @@ tr.best-performer::before {
 dialog::backdrop,
 .modal::backdrop {
   @apply backdrop-blur-lg z-100;
-  background: rgba(10, 22, 40, 0.8);
+  background: var(--color-backdrop);
 }
 
 /* Ensure modals are above drawers */
@@ -403,13 +403,13 @@ dialog {
 .modal-box {
   @apply rounded-2xl border max-w-2xl;
   box-shadow: var(--shadow-elevated);
-  border-color: rgba(212, 175, 55, 0.1);
+  border-color: var(--color-gold-border-subtle);
 }
 
 [data-theme='dark'] .modal-box,
 [data-theme='luxury'] .modal-box {
   background: rgba(26, 41, 66, 0.98);
-  border-color: rgba(212, 175, 55, 0.15);
+  border-color: var(--color-gold-border);
 }
 
 /* Modal action buttons - consistent spacing and styling */
@@ -453,13 +453,13 @@ dialog {
 
 .drawer-side > .drawer-overlay {
   @apply backdrop-blur-lg z-60;
-  background: rgba(10, 22, 40, 0.8);
+  background: var(--color-backdrop);
 }
 
 /* Custom drawer styling for right-side drawers */
 [data-drawer] {
   @apply border-l rounded-l-2xl z-60;
-  border-color: rgba(212, 175, 55, 0.1);
+  border-color: var(--color-gold-border-subtle);
   box-shadow: var(--shadow-elevated);
 }
 
@@ -471,7 +471,7 @@ dialog {
 [data-theme='dark'] [data-drawer],
 [data-theme='luxury'] [data-drawer] {
   background: rgba(26, 41, 66, 0.98);
-  border-color: rgba(212, 175, 55, 0.15);
+  border-color: var(--color-gold-border);
 }
 
 /* Geometric accent lines */

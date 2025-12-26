@@ -1,4 +1,6 @@
 ---
+import Icon from './Icon.astro';
+
 /**
  * Drawer component for side panel overlays
  *
@@ -64,19 +66,7 @@ const widthClasses = {
       data-drawer-close={id}
       aria-label="Close"
     >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        class="h-5 w-5"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M6 18L18 6M6 6l12 12"></path>
-      </svg>
+      <Icon name="close" size="md" />
     </button>
   </div>
 
@@ -98,6 +88,7 @@ const widthClasses = {
 <script>
   import { DRAWER_EVENTS } from '../../lib/drawer-events';
   import type { DrawerEventDetail } from '../../lib/drawer-events';
+  import { initializeOnce } from '../../lib/client-utils';
 
   /**
    * Drawer controller using custom events
@@ -203,17 +194,9 @@ const widthClasses = {
     });
   }
 
-  // Initialize only once
-  if (!document.documentElement.dataset.drawersInitialized) {
-    initDrawers();
-    document.documentElement.dataset.drawersInitialized = 'true';
-  }
-
-  // Re-initialize on Astro page transitions
+  // Initialize once and re-initialize on Astro page transitions
+  initializeOnce('drawers', initDrawers);
   document.addEventListener('astro:page-load', () => {
-    if (!document.documentElement.dataset.drawersInitialized) {
-      initDrawers();
-      document.documentElement.dataset.drawersInitialized = 'true';
-    }
+    initializeOnce('drawers', initDrawers);
   });
 </script>

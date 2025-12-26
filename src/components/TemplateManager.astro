@@ -1,6 +1,7 @@
 ---
 // src/components/TemplateManager.astro
 // Modal to save current evaluation as a reusable template
+import Icon from './ui/Icon.astro';
 ---
 
 <!-- Template Manager Modal (using native dialog with Terminal Luxe styling) -->
@@ -59,35 +60,13 @@
 
       <!-- Error message -->
       <div id="template-error" class="hidden alert alert-error">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          class="stroke-current shrink-0 h-6 w-6"
-          fill="none"
-          viewBox="0 0 24 24"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-        </svg>
+        <Icon name="error" size="lg" />
         <span id="template-error-text"></span>
       </div>
 
       <!-- Success message -->
       <div id="template-success" class="hidden alert alert-success">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          class="stroke-current shrink-0 h-6 w-6"
-          fill="none"
-          viewBox="0 0 24 24"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-        </svg>
+        <Icon name="success" size="lg" />
         <span>Template saved successfully!</span>
       </div>
 
@@ -113,6 +92,7 @@
 
 <script>
   import { addToast } from '../lib/toastStore';
+  import { initializeOnce } from '../lib/client-utils';
 
   // Template Manager state
   interface TemplateData {
@@ -261,7 +241,9 @@
     window.openTemplateModal = openTemplateModal;
   }
 
-  // Initialize
-  initTemplateManager();
-  document.addEventListener('astro:page-load', initTemplateManager);
+  // Initialize once and re-initialize on Astro page transitions
+  initializeOnce('templateManager', initTemplateManager);
+  document.addEventListener('astro:page-load', () => {
+    initializeOnce('templateManager', initTemplateManager);
+  });
 </script>

@@ -1,0 +1,36 @@
+---
+import { ICON_PATHS, ICON_SIZES } from '../../lib/icons';
+import type { IconName } from '../../lib/icons';
+
+export interface Props {
+  /**
+   * Icon name from the icon registry
+   */
+  name: IconName;
+  /**
+   * Icon size (default: 'md')
+   */
+  size?: keyof typeof ICON_SIZES;
+  /**
+   * Additional CSS classes
+   */
+  class?: string;
+}
+
+const { name, size = 'md', class: className = '' } = Astro.props;
+const sizeClass = ICON_SIZES[size];
+---
+
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  class={`stroke-current shrink-0 ${sizeClass} ${className}`}
+  fill="none"
+  viewBox="0 0 24 24"
+>
+  <path
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    stroke-width="2"
+    d={ICON_PATHS[name]}
+  ></path>
+</svg>

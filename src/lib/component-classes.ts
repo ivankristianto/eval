@@ -137,6 +137,19 @@ export const TOAST_STYLES = {
 } as const;
 
 /**
+ * Table style constants
+ */
+export const TABLE_STYLES = {
+  base: 'table-luxe',
+  variants: {
+    evaluation: 'table-evaluation',
+    templates: 'table-templates',
+    models: 'table-models',
+    results: 'table-results',
+  },
+} as const;
+
+/**
  * Z-index layer constants for consistent stacking
  */
 export const Z_INDEX = {
@@ -149,6 +162,19 @@ export const Z_INDEX = {
  * Utility function to join class names, filtering out falsy values
  */
 export function joinClasses(...classes: (string | undefined | false | null)[]): string {
+  return classes.filter(Boolean).join(' ');
+}
+
+/**
+ * Universal class name utility (alias for joinClasses)
+ * Recommended for all new component development for consistency
+ *
+ * @example
+ * ```typescript
+ * cn('base-class', condition && 'conditional-class', className)
+ * ```
+ */
+export function cn(...classes: (string | undefined | false | null)[]): string {
   return classes.filter(Boolean).join(' ');
 }
 
@@ -203,4 +229,21 @@ export function getInputClasses(hasError = false, className = ''): string {
  */
 export function getDrawerPanelClasses(width: keyof typeof DRAWER_STYLES.widths = 'md'): string {
   return joinClasses(DRAWER_STYLES.panel, 'w-full', DRAWER_STYLES.widths[width]);
+}
+
+/**
+ * Generate card class names
+ */
+export function getCardClasses(className = ''): string {
+  return cn(CARD_STYLES.base, className);
+}
+
+/**
+ * Generate table class names with optional variant
+ */
+export function getTableClasses(
+  variant?: keyof typeof TABLE_STYLES.variants,
+  className = '',
+): string {
+  return cn(TABLE_STYLES.base, variant && TABLE_STYLES.variants[variant], className);
 }
