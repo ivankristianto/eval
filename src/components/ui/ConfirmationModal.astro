@@ -1,5 +1,23 @@
 ---
-interface Props {
+/**
+ * Confirmation modal for user actions requiring confirmation
+ *
+ * @example
+ * <ConfirmationModal
+ *   id="delete-modal"
+ *   title="Delete Item"
+ *   message="Are you sure you want to delete this item?"
+ *   confirmVariant="error"
+ * />
+ *
+ * @param id - Unique identifier for the modal (required)
+ * @param title - Modal title/heading (required)
+ * @param message - Confirmation message to display (required)
+ * @param confirmLabel - Text for confirm button (default: 'Confirm')
+ * @param cancelLabel - Text for cancel button (default: 'Cancel')
+ * @param confirmVariant - Visual style of confirm button (default: 'primary')
+ */
+export interface Props {
   id: string;
   title: string;
   message: string;
@@ -18,9 +36,9 @@ const {
 } = Astro.props;
 ---
 
-<dialog id={id} class="modal">
+<dialog id={id} class="modal" aria-labelledby={`${id}-title`}>
   <div class="modal-box">
-    <h3 class="font-display text-2xl font-semibold mb-4 text-gold-accessible">{title}</h3>
+    <h3 id={`${id}-title`} class="font-display text-2xl font-semibold mb-4 text-gold-accessible">{title}</h3>
     <p class="py-4 text-base-content/80 leading-relaxed">{message}</p>
     <div class="modal-action">
       <form method="dialog" class="flex gap-3 w-full justify-end">

@@ -1,4 +1,16 @@
 ---
+/**
+ * Alert component for displaying contextual notifications
+ *
+ * @example
+ * <Alert variant="success" title="Operation completed">
+ *   Your evaluation has been saved successfully.
+ * </Alert>
+ *
+ * @param variant - Visual style of the alert (default: 'info')
+ * @param title - Optional heading text displayed in bold
+ * @param class - Additional CSS classes to apply
+ */
 export interface Props {
   variant?: 'info' | 'success' | 'warning' | 'error';
   class?: string;

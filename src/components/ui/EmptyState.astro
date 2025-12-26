@@ -1,6 +1,21 @@
 ---
 import Button from './Button.astro';
 
+/**
+ * EmptyState component for displaying placeholder content
+ *
+ * @example
+ * <EmptyState
+ *   title="No evaluations found"
+ *   description="Get started by creating your first evaluation"
+ *   action={{ label: "Create Evaluation", href: "/new" }}
+ * />
+ *
+ * @param title - Main heading text (required)
+ * @param description - Descriptive text explaining the empty state (required)
+ * @param icon - Optional SVG icon markup to display above title
+ * @param action - Optional action button configuration
+ */
 export interface Props {
   title: string;
   description: string;

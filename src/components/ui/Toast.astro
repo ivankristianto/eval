@@ -1,63 +1,114 @@
 ---
-
+/**
+ * Toast notification container component
+ *
+ * Subscribes to the toast store and renders toast notifications
+ * with proper accessibility attributes and DOM manipulation.
+ *
+ * @remarks
+ * This component automatically manages toast lifecycle including
+ * rendering, animations, and removal. No props required.
+ */
 ---
 
-<div id="toast-container" class="toast toast-end toast-bottom z-50"></div>
+<div id="toast-container" role="status" aria-live="polite" aria-atomic="true" class="toast toast-end toast-bottom z-50"></div>
 
 <script>
   import { toasts, removeToast } from '../../lib/toastStore';
+  import type { Toast } from '../../lib/toastStore';
 
-  const container = document.getElementById('toast-container');
+  /**
+   * Create SVG icon element for toast notification
+   */
+  function createToastIcon(type: Toast['type']): SVGElement {
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('fill', 'none');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.classList.add('stroke-current', 'shrink-0', 'w-6', 'h-6');
 
-  if (container) {
-    toasts.subscribe((currentToasts) => {
-      // Clear current content
-      container.innerHTML = '';
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('stroke-linecap', 'round');
+    path.setAttribute('stroke-linejoin', 'round');
+    path.setAttribute('stroke-width', '2');
 
-      // Render toasts
-      currentToasts.forEach((toast) => {
-        const alertDiv = document.createElement('div');
+    // Set path data based on type
+    const iconPaths: Record<Toast['type'], string> = {
+      info: 'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
+      success: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z',
+      warning: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z',
+      error: 'M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z',
+    };
 
-        // Map types to DaisyUI alert classes
-        let alertClass = 'alert-info';
-        if (toast.type === 'success') alertClass = 'alert-success';
-        if (toast.type === 'warning') alertClass = 'alert-warning';
-        if (toast.type === 'error') alertClass = 'alert-error';
+    path.setAttribute('d', iconPaths[type]);
+    svg.appendChild(path);
 
-        alertDiv.className = `alert ${alertClass} shadow-lg`;
-
-        // Icon selection based on type
-        let iconSvg = '';
-        if (toast.type === 'info') {
-          iconSvg =
-            '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>';
-        } else if (toast.type === 'success') {
-          iconSvg =
-            '<svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>';
-        } else if (toast.type === 'warning') {
-          iconSvg =
-            '<svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>';
-        } else if (toast.type === 'error') {
-          iconSvg =
-            '<svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>';
-        }
-
-        alertDiv.innerHTML = `
-          ${iconSvg}
-          <span>${toast.message}</span>
-          <button class="btn btn-xs btn-ghost" data-id="${toast.id}">✕</button>
-        `;
-
-        // Add close handler
-        const closeBtn = alertDiv.querySelector('button');
-        if (closeBtn) {
-          closeBtn.addEventListener('click', () => {
-            removeToast(toast.id);
-          });
-        }
-
-        container.appendChild(alertDiv);
-      });
-    });
+    return svg;
   }
+
+  /**
+   * Create toast alert element using DOM methods (no innerHTML for security)
+   */
+  function createToastElement(toast: Toast): HTMLElement {
+    const alertDiv = document.createElement('div');
+
+    // Map types to DaisyUI alert classes
+    const alertClasses: Record<Toast['type'], string> = {
+      info: 'alert-info',
+      success: 'alert-success',
+      warning: 'alert-warning',
+      error: 'alert-error',
+    };
+
+    alertDiv.className = `alert ${alertClasses[toast.type]} shadow-lg`;
+
+    // Create and append icon
+    const icon = createToastIcon(toast.type);
+    alertDiv.appendChild(icon);
+
+    // Create and append message
+    const messageSpan = document.createElement('span');
+    messageSpan.textContent = toast.message;
+    alertDiv.appendChild(messageSpan);
+
+    // Create and append close button
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'btn btn-xs btn-ghost';
+    closeBtn.textContent = '✕';
+    closeBtn.setAttribute('aria-label', 'Close notification');
+    closeBtn.dataset.id = toast.id;
+    closeBtn.addEventListener('click', () => {
+      removeToast(toast.id);
+    });
+    alertDiv.appendChild(closeBtn);
+
+    return alertDiv;
+  }
+
+  /**
+   * Initialize toast container and subscribe to store updates
+   */
+  function initToasts() {
+    const container = document.getElementById('toast-container');
+
+    if (container) {
+      toasts.subscribe((currentToasts) => {
+        // Clear current content
+        while (container.firstChild) {
+          container.removeChild(container.firstChild);
+        }
+
+        // Render toasts using DOM methods
+        currentToasts.forEach((toast) => {
+          const toastElement = createToastElement(toast);
+          container.appendChild(toastElement);
+        });
+      });
+    }
+  }
+
+  // Initialize on load
+  initToasts();
+
+  // Re-initialize on Astro page transitions
+  document.addEventListener('astro:page-load', initToasts);
 </script>

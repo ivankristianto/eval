@@ -1,4 +1,20 @@
 ---
+/**
+ * Button component for actions and navigation
+ *
+ * @example
+ * <Button variant="primary" size="md">Click me</Button>
+ * <Button href="/path" variant="accent">Link button</Button>
+ *
+ * @param variant - Visual style of the button (default: 'neutral')
+ * @param size - Size of the button (default: 'md')
+ * @param outline - Whether to use outline style (default: false)
+ * @param type - Button type when rendered as <button> (default: 'button')
+ * @param class - Additional CSS classes to apply
+ * @param href - When provided, renders as <a> instead of <button>
+ * @param disabled - Disables the button (default: false)
+ * @param id - HTML id attribute
+ */
 export interface Props {
   variant?:
     | 'primary'
@@ -18,7 +34,6 @@ export interface Props {
   href?: string;
   disabled?: boolean;
   id?: string;
-  [key: string]: any;
 }
 
 const {
