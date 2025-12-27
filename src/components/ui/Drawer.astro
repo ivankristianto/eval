@@ -91,14 +91,15 @@ const widthClasses = {
   import { initializeOnce } from '../../lib/client-utils';
 
   /**
-   * Drawer controller using custom events
+   * Drawer controller using custom events.
    *
    * This implementation replaces global window functions with
    * CustomEvent-based communication for better isolation and testability.
    */
   function initDrawers() {
     /**
-     * Close a drawer with animation
+     * Closes a drawer with animation.
+     * @param drawerId - Unique identifier of the drawer to close
      */
     function closeDrawer(drawerId: string) {
       const drawer = document.getElementById(drawerId);
@@ -117,7 +118,8 @@ const widthClasses = {
     }
 
     /**
-     * Open a drawer with animation
+     * Opens a drawer with animation.
+     * @param drawerId - Unique identifier of the drawer to open
      */
     function openDrawer(drawerId: string) {
       const drawer = document.getElementById(drawerId);
@@ -136,7 +138,8 @@ const widthClasses = {
     }
 
     /**
-     * Toggle a drawer's state
+     * Toggles a drawer's state between open and closed.
+     * @param drawerId - Unique identifier of the drawer to toggle
      */
     function toggleDrawer(drawerId: string) {
       const drawer = document.getElementById(drawerId);

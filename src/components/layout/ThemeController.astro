@@ -104,6 +104,10 @@ import MoonIcon from '../icons/MoonIcon.astro';
 <script>
   const prefsKey = 'eval_user_prefs';
 
+  /**
+   * Reads user preferences from local storage.
+   * @returns Parsed preferences object or empty object
+   */
   const readPrefs = () => {
     try {
       return JSON.parse(localStorage.getItem(prefsKey) || '{}');
@@ -112,6 +116,10 @@ import MoonIcon from '../icons/MoonIcon.astro';
     }
   };
 
+  /**
+   * Writes a theme selection to user preferences.
+   * @param theme - Theme identifier string
+   */
   const writePrefs = (theme: string) => {
     const prefs = readPrefs();
     const nextPrefs = {
@@ -121,6 +129,10 @@ import MoonIcon from '../icons/MoonIcon.astro';
     localStorage.setItem(prefsKey, JSON.stringify(nextPrefs));
   };
 
+  /**
+   * Initializes the theme controller by setting up radio button event listeners
+   * and applying the stored theme preference.
+   */
   function initThemeController() {
     const themeRadios = document.querySelectorAll('input[name="theme-dropdown"]');
     const storedTheme = readPrefs()?.theme || localStorage.getItem('theme');

@@ -13,7 +13,11 @@ const navItems = [
 // Check current path for active state
 const currentPath = Astro.url.pathname;
 
-// Helper to check active state including sub-routes
+/**
+ * Checks if a given navigation link is currently active.
+ * @param href - The link path to check
+ * @returns True if the path matches the current URL or is a parent route
+ */
 const isActive = (href: string) => {
   if (href === '/') return currentPath === '/';
   return currentPath.startsWith(href);

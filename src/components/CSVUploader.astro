@@ -348,6 +348,10 @@ const { personaId } = Astro.props;
     }
   });
 
+  /**
+   * Validates and processes a selected file.
+   * @param file - The File object to process
+   */
   function handleFileSelect(file) {
     // Validate file type
     if (!file.name.endsWith('.csv')) {
@@ -369,12 +373,20 @@ const { personaId } = Astro.props;
     hideMessages();
   }
 
+  /**
+   * Formats file size in bytes to a human-readable string.
+   * @param bytes - Size in bytes
+   * @returns Formatted string (e.g., "1.2 MB")
+   */
   function formatFileSize(bytes) {
     if (bytes < 1024) return bytes + ' B';
     if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
     return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
   }
 
+  /**
+   * Hides all error and success message containers.
+   */
   function hideMessages() {
     errorMessages.classList.add('hidden');
     successMessage.classList.add('hidden');

@@ -203,6 +203,11 @@ try {
   import { addToast } from '../lib/toastStore';
   import { initializeOnce } from '../lib/client-utils';
 
+  /**
+   * Initializes the new evaluation modal functionality.
+   * Sets up event listeners for rubric changes, system prompt toggles,
+   * temperature updates, and form submission.
+   */
   function initNewEvaluationModal() {
     const modal = document.getElementById('new-evaluation-modal') as HTMLDialogElement;
     const form = document.getElementById('evaluation-form') as HTMLFormElement;

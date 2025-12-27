@@ -21,12 +21,22 @@ const total =
   matrix.false_positives +
   matrix.false_negatives;
 
+/**
+ * Calculates percentage of a value relative to the total count.
+ * @param value - Individual count value
+ * @returns Formatted percentage string
+ */
 function getPercentage(value: number): string {
   if (total === 0) return '0.0';
   return ((value / total) * 100).toFixed(1);
 }
 
-// Helper to determine cell color intensity based on count
+/**
+ * Determines cell color intensity based on its contribution to the total.
+ * @param value - Cell count value
+ * @param isCorrect - Whether this cell represents a correct prediction
+ * @returns DaisyUI background and text color classes
+ */
 function getCellColor(value: number, isCorrect: boolean): string {
   if (total === 0) return 'bg-base-300';
 

@@ -23,7 +23,11 @@ const progressPercentage =
     ? Math.round((persona.current_iteration / persona.max_iterations) * 100)
     : 0;
 
-// Get status variant
+/**
+ * Maps persona status to DaisyUI color variants.
+ * @param status - Persona lifecycle status
+ * @returns Color variant string
+ */
 function getStatusVariant(status: string): 'warning' | 'info' | 'success' | 'error' {
   switch (status) {
     case 'draft':
@@ -39,7 +43,11 @@ function getStatusVariant(status: string): 'warning' | 'info' | 'success' | 'err
   }
 }
 
-// Get iteration status variant
+/**
+ * Maps iteration status to DaisyUI color variants.
+ * @param status - Training iteration status
+ * @returns Color variant string
+ */
 function getIterationStatusVariant(status: string): 'warning' | 'info' | 'success' | 'error' {
   switch (status) {
     case 'in_progress':

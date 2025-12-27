@@ -94,7 +94,9 @@ import Icon from './ui/Icon.astro';
   import { addToast } from '../lib/toastStore';
   import { initializeOnce } from '../lib/client-utils';
 
-  // Template Manager state
+  /**
+   * Data required to create a template from an existing evaluation.
+   */
   interface TemplateData {
     instruction_text: string;
     model_ids: string[];
@@ -105,6 +107,9 @@ import Icon from './ui/Icon.astro';
     temperature?: number;
   }
 
+  /**
+   * Initializes the template manager functionality.
+   */
   function initTemplateManager() {
     let pendingTemplateData: TemplateData | null = null;
 
@@ -124,7 +129,10 @@ import Icon from './ui/Icon.astro';
 
     if (!templateModal || !templateForm) return;
 
-    // Open template modal with evaluation data
+    /**
+     * Opens the template modal and populates it with evaluation data.
+     * @param data - Evaluation data to save as a template
+     */
     function openTemplateModal(data: TemplateData) {
       pendingTemplateData = data;
 
@@ -152,6 +160,11 @@ import Icon from './ui/Icon.astro';
       templateNameInput.focus();
     }
 
+    /**
+     * Formats technical rubric names for display.
+     * @param rubric - Internal rubric key
+     * @returns User-friendly rubric name
+     */
     function formatRubric(rubric: string): string {
       const rubricNames: Record<string, string> = {
         exact_match: 'Exact Match',
@@ -230,6 +243,10 @@ import Icon from './ui/Icon.astro';
       }
     });
 
+    /**
+     * Displays an error message in the modal.
+     * @param message - Error text to display
+     */
     function showTemplateError(message: string) {
       if (templateErrorText) {
         templateErrorText.textContent = message;

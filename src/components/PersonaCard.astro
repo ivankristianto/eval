@@ -13,7 +13,11 @@ export interface Props {
 
 const { persona } = Astro.props;
 
-// Helper function to get status variant
+/**
+ * Maps persona status to DaisyUI color variants.
+ * @param status - Persona lifecycle status
+ * @returns Color variant string
+ */
 function getStatusVariant(status: string): 'warning' | 'info' | 'success' | 'error' {
   switch (status) {
     case 'draft':

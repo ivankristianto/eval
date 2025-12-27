@@ -40,7 +40,11 @@ export interface Props {
 
 const { decision, personaId, iterationNumber } = Astro.props;
 
-// Helper to get badge variant based on decision
+/**
+ * Maps judge decisions to DaisyUI badge variants.
+ * @param judgeDecision - The decision made by the judge
+ * @returns 'success' for agreement, 'error' for disagreement
+ */
 function getDecisionVariant(
   judgeDecision: JudgeDecisionType
 ): 'success' | 'error' {

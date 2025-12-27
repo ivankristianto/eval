@@ -82,7 +82,7 @@ import Drawer from './ui/Drawer.astro';
   import { openDrawer } from '../lib/drawer-events';
 
   /**
-   * Evaluation details data structure
+   * Data structure containing details for a single model evaluation result.
    */
   interface EvaluationDetails {
     modelName: string;
@@ -99,11 +99,12 @@ import Drawer from './ui/Drawer.astro';
   }
 
   /**
-   * Initialize evaluation details drawer functionality
+   * Initialize evaluation details drawer functionality.
    */
   function initEvaluationDetailsDrawer() {
     /**
-     * Populate drawer with evaluation data and open it
+     * Populates the drawer with evaluation data and opens it.
+     * @param data - Evaluation details to display
      */
     function showDetails(data: EvaluationDetails) {
       // Update title

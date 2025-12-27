@@ -27,7 +27,9 @@
   import { initializeOnce } from '../../lib/client-utils';
 
   /**
-   * Create toast alert element using DOM methods (no innerHTML for security)
+   * Create toast alert element using DOM methods (no innerHTML for security).
+   * @param toast - Toast message data
+   * @returns Configured alert HTMLElement
    */
   function createToastElement(toast: Toast): HTMLElement {
     const alertDiv = document.createElement('div');
@@ -66,7 +68,7 @@
   }
 
   /**
-   * Initialize toast container and subscribe to store updates
+   * Initialize toast container and subscribe to store updates.
    */
   function initToasts() {
     const container = document.getElementById('toast-container');
