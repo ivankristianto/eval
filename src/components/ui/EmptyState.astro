@@ -1,8 +1,7 @@
 ---
-import Button from './Button.astro';
-
 /**
- * EmptyState component for displaying placeholder content
+ * EmptyState component.
+ * Displays a helpful message and optional action when no content is available.
  *
  * @example
  * <EmptyState
@@ -16,6 +15,7 @@ import Button from './Button.astro';
  * @param icon - Optional SVG icon markup to display above title
  * @param action - Optional action button configuration
  */
+import Button from './Button.astro';
 export interface Props {
   title: string;
   description: string;

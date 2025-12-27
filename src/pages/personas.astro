@@ -124,12 +124,16 @@ const personaIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 te
 <script>
   import { addToast } from '../lib/toastStore';
 
-  // Create persona button - redirect to create page
+  /**
+   * Handles navigation to the persona creation page.
+   */
   document.getElementById('create-persona-btn')?.addEventListener('click', () => {
     window.location.href = '/personas/create';
   });
 
-  // Status filter
+  /**
+   * Handles status filter changes by updating the URL query parameters.
+   */
   document.getElementById('status-filter')?.addEventListener('change', (e) => {
     const select = e.target as HTMLSelectElement;
     const status = select.value;
@@ -144,7 +148,10 @@ const personaIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 te
     window.location.href = url.toString();
   });
 
-  // Delete persona buttons
+  /**
+   * Initializes delete buttons for each persona card.
+   * Prompts for confirmation before proceeding with deletion.
+   */
   document.querySelectorAll('.delete-persona-btn').forEach((btn) => {
     btn.addEventListener('click', async (e) => {
       const target = e.target as HTMLButtonElement;
@@ -175,7 +182,10 @@ const personaIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 te
     });
   });
 
-  // Start training buttons
+  /**
+   * Initializes "Start Training" buttons for each persona card.
+   * Calls the training start API and redirects to the metrics dashboard on success.
+   */
   document.querySelectorAll('.start-training-btn').forEach((btn) => {
     btn.addEventListener('click', async (e) => {
       const button = e.currentTarget as HTMLButtonElement;

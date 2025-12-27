@@ -1,4 +1,10 @@
 ---
+/**
+ * Global Layout component.
+ * Provides the base HTML structure, typography, navbar, and global UI elements like toasts.
+ *
+ * @param title - Page title for the browser tab
+ */
 import fs from 'node:fs';
 import path from 'node:path';
 import '../styles/global.css';
@@ -37,6 +43,11 @@ const hasEnvFile = fs.existsSync(envPath);
     <!-- Prevent FOUC -->
     <script is:inline>
       const prefsKey = 'eval_user_prefs';
+
+      /**
+       * Reads user preferences from local storage.
+       * @returns Parsed preferences or empty object
+       */
       const readPrefs = () => {
         try {
           return JSON.parse(localStorage.getItem(prefsKey) || '{}');

@@ -404,7 +404,10 @@ const breadcrumbItems = [
     });
   });
 
-  // Disable options based on selected providers
+  /**
+   * Updates model select options based on currently selected providers.
+   * Disables providers that are already selected in other dropdowns to enforce separation.
+   */
   function updateAvailableOptions() {
     const selectedProviders: Record<string, string> = {};
 
@@ -452,7 +455,11 @@ const breadcrumbItems = [
     validateModelSeparation();
   }
 
-  // Validate model separation on change
+  /**
+   * Validates that all three selected models come from different providers.
+   * Updates validation error UI if requirements are not met.
+   * @returns True if selection is valid or incomplete, false if invalid
+   */
   function validateModelSeparation() {
     const taskModelOption = taskModelSelect.selectedOptions[0];
     const judgeModelOption = judgeModelSelect.selectedOptions[0];

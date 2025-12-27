@@ -1,8 +1,7 @@
 ---
-import { getInputClasses } from '../../lib/component-classes';
-
 /**
- * Input component for form fields with label and error handling
+ * Input component.
+ * Provides a styled form input field with integrated label and error message handling.
  *
  * @example
  * <Input name="email" label="Email Address" type="email" required />
@@ -19,6 +18,7 @@ import { getInputClasses } from '../../lib/component-classes';
  * @param error - Error message to display below the input
  * @param class - Additional CSS classes to apply
  */
+import { getInputClasses } from '../../lib/component-classes';
 export interface Props {
   label?: string;
   name: string;

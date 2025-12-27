@@ -219,7 +219,10 @@ const metrics = db
 <script define:vars={{ personaId: id, iterationNumber }}>
   let refinementData = null;
 
-  // Fetch refined prompt on page load
+  /**
+   * Fetches the AI-generated refined prompt for the current iteration.
+   * Updates the UI with loading, success, or error states.
+   */
   async function fetchRefinement() {
     const loadingState = document.getElementById('loading-state');
     const errorState = document.getElementById('error-state');
@@ -261,13 +264,14 @@ const metrics = db
     }
   }
 
-  // Render diff viewer dynamically
+  /**
+   * Renders a side-by-side comparison of current and improved prompts.
+   * @param beforePrompt - The existing judge prompt
+   * @param afterPrompt - The AI-generated improved prompt
+   */
   function renderDiffViewer(beforePrompt, afterPrompt) {
     const container = document.getElementById('diff-viewer-container');
     if (!container) return;
-
-    const beforeLines = beforePrompt.split('\n');
-    const afterLines = afterPrompt.split('\n');
 
     container.innerHTML = `
       <div class="grid grid-cols-2 gap-4">
@@ -291,7 +295,11 @@ const metrics = db
     `;
   }
 
-  // Accept refined prompt
+  /**
+   * Sends the accepted prompt to the API to store as a new version.
+   * @param promptText - The prompt content to store
+   * @param reason - Change reason ('ai-generated' or 'manual-edit')
+   */
   async function acceptPrompt(promptText, reason) {
     try {
       const response = await fetch(
@@ -356,7 +364,11 @@ const metrics = db
     fetchRefinement();
   });
 
-  // Helper function
+  /**
+   * Escapes HTML special characters.
+   * @param unsafe - Unescaped string
+   * @returns Safe HTML string
+   */
   function escapeHtml(unsafe) {
     return unsafe
       .replace(/&/g, '&amp;')

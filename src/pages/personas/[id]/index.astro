@@ -57,7 +57,11 @@ if (Astro.url.searchParams.get('tab') === 'training-progress') {
     .get(id) as any;
 }
 
-// Helper to format model display
+/**
+ * Formats a model ID into a user-friendly name and provider string.
+ * @param modelId - UUID of the model configuration
+ * @returns Formatted model name (e.g., "gpt-4o (openai)")
+ */
 function getModelName(modelId: string) {
   const model = modelMap[modelId];
   if (model) {
@@ -72,7 +76,11 @@ const breadcrumbItems = [
   { label: persona.name },
 ];
 
-// Helper function to get status variant
+/**
+ * Maps persona status to DaisyUI color variants.
+ * @param status - Persona lifecycle status
+ * @returns Color variant string
+ */
 function getStatusVariant(status: string): 'warning' | 'info' | 'success' | 'error' {
   switch (status) {
     case 'draft':

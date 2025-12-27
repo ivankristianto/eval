@@ -38,7 +38,11 @@ const promptVersions = db
 const currentPrompt =
   promptVersions.length > 0 ? promptVersions[0].prompt_text : persona.task_prompt;
 
-// Helper function to get persona status variant
+/**
+ * Maps persona status to DaisyUI color variants.
+ * @param status - Persona lifecycle status
+ * @returns Color variant string
+ */
 function getPersonaStatusVariant(status: string): 'warning' | 'info' | 'success' | 'error' {
   switch (status) {
     case 'draft':
@@ -311,7 +315,11 @@ const breadcrumbItems = [
     });
   });
 
-  // Helper function to escape HTML
+  /**
+   * Helper function to escape HTML special characters.
+   * @param unsafe - Unescaped string
+   * @returns Safely escaped HTML string
+   */
   function escapeHtml(unsafe: string): string {
     return unsafe
       .replace(/&/g, '&amp;')

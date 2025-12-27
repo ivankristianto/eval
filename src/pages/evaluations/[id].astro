@@ -302,7 +302,10 @@ function getStatusBadgeVariant(status: string) {
     });
   }
 
-  // Setup row click handlers
+  /**
+   * Initializes click event listeners for all result rows.
+   * Clicking a row opens the evaluation details drawer.
+   */
   function setupRowClickHandlers() {
     const rows = document.querySelectorAll('[data-result-index]');
     rows.forEach((row) => {

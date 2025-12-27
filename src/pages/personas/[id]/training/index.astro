@@ -244,6 +244,10 @@ function getStatusVariant(status: string): 'warning' | 'info' | 'success' | 'err
   const visibleCountEl = document.getElementById('visible-count');
   const totalCountEl = document.getElementById('total-count');
 
+  /**
+   * Filters the training pairs table based on the search input.
+   * Updates the visible row count in the UI.
+   */
   function performSearch() {
     const searchTerm = searchInput.value.toLowerCase().trim();
     let visibleCount = 0;
