@@ -1,0 +1,2664 @@
+openapi: 3.0.3
+info:
+  title: eval-ai-models REST API
+  version: 0.1.0
+  description: |
+    REST API contract for evaluation and training endpoints in eval-ai-models.
+  license:
+    name: UNLICENSED
+servers:
+  - url: http://127.0.0.1:4321
+    description: Local dev server
+
+security: []
+
+tags:
+  - name: Evaluations
+    description: Create and manage evaluation runs.
+  - name: Results
+    description: Fetch evaluation results and rankings.
+  - name: Models
+    description: Manage model configurations and API keys.
+  - name: Templates
+    description: Manage evaluation templates.
+  - name: Personas
+    description: Manage judge personas and prompt history.
+  - name: Training
+    description: Persona training workflows and validation.
+
+paths:
+  /api/evaluate:
+    post:
+      tags: [Evaluations]
+      summary: Create evaluation
+      operationId: createEvaluation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EvaluationCreateRequest'
+      responses:
+        '201':
+          description: Evaluation created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EvaluationCreateResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/evaluation-status:
+    get:
+      tags: [Evaluations]
+      summary: Get evaluation status
+      operationId: getEvaluationStatus
+      parameters:
+        - name: evaluation_id
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Evaluation status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EvaluationStatusResponse'
+        '400':
+          description: Missing evaluation_id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Evaluation not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/results:
+    get:
+      tags: [Results]
+      summary: Get evaluation results
+      operationId: getEvaluationResults
+      parameters:
+        - name: evaluation_id
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Evaluation results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EvaluationResultsResponse'
+        '400':
+          description: Missing evaluation_id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Evaluation not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/cancel-evaluation:
+    post:
+      tags: [Evaluations]
+      summary: Cancel evaluation
+      operationId: cancelEvaluation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CancelEvaluationRequest'
+      responses:
+        '200':
+          description: Evaluation cancelled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CancelEvaluationResponse'
+        '400':
+          description: Missing evaluation_id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Evaluation not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Evaluation already completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/evaluations:
+    get:
+      tags: [Evaluations]
+      summary: List evaluations
+      operationId: listEvaluations
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 10
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: template
+          in: query
+          schema:
+            type: string
+        - name: fromDate
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: toDate
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: rubric
+          in: query
+          schema:
+            $ref: '#/components/schemas/RubricType'
+        - name: minScore
+          in: query
+          schema:
+            type: number
+      responses:
+        '200':
+          description: Evaluation list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EvaluationListResponse'
+        '400':
+          description: Invalid filter parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags: [Evaluations]
+      summary: Delete evaluations
+      operationId: deleteEvaluations
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EvaluationDeleteRequest'
+      responses:
+        '200':
+          description: Evaluations deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EvaluationDeleteResponse'
+        '400':
+          description: Invalid IDs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/models:
+    post:
+      tags: [Models]
+      summary: Create model
+      operationId: createModel
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ModelCreateRequest'
+      responses:
+        '201':
+          description: Model created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelCreateResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: API key authentication failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    get:
+      tags: [Models]
+      summary: List models
+      operationId: listModels
+      parameters:
+        - name: active_only
+          in: query
+          schema:
+            type: boolean
+            default: false
+        - name: provider
+          in: query
+          schema:
+            $ref: '#/components/schemas/Provider'
+      responses:
+        '200':
+          description: Model list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  models:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ModelListItem'
+                required: [models]
+        '400':
+          description: Invalid provider
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/models/{id}:
+    get:
+      tags: [Models]
+      summary: Get model
+      operationId: getModel
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Model detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelDetail'
+        '400':
+          description: Missing model ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Model not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    patch:
+      tags: [Models]
+      summary: Update model
+      operationId: updateModel
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ModelUpdateRequest'
+      responses:
+        '200':
+          description: Model updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelUpdateResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Model not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Cannot update model
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags: [Models]
+      summary: Delete model
+      operationId: deleteModel
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Model deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelDeleteResponse'
+        '400':
+          description: Missing model ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Model not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Cannot delete model with results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/models/{id}/test-connection:
+    post:
+      tags: [Models]
+      summary: Test model API key
+      operationId: testModelConnection
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ModelTestConnectionRequest'
+      responses:
+        '200':
+          description: API key valid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelTestConnectionResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: API key invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Model not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/templates:
+    post:
+      tags: [Templates]
+      summary: Create template
+      operationId: createTemplate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TemplateCreateRequest'
+      responses:
+        '201':
+          description: Template created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemplateCreateResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    get:
+      tags: [Templates]
+      summary: List templates
+      operationId: listTemplates
+      parameters:
+        - name: sort_by
+          in: query
+          schema:
+            type: string
+            enum: [created, name, run_count]
+            default: created
+        - name: order
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+      responses:
+        '200':
+          description: Template list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  templates:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TemplateListItem'
+                required: [templates]
+        '400':
+          description: Invalid sort parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/templates/{id}:
+    get:
+      tags: [Templates]
+      summary: Get template
+      operationId: getTemplate
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Template detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemplateDetail'
+        '400':
+          description: Missing template ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Template not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    patch:
+      tags: [Templates]
+      summary: Update template
+      operationId: updateTemplate
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TemplateUpdateRequest'
+      responses:
+        '200':
+          description: Template updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemplateUpdateResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Template not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags: [Templates]
+      summary: Delete template
+      operationId: deleteTemplate
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Template deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemplateDeleteResponse'
+        '400':
+          description: Missing template ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Template not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/templates/{id}/run:
+    post:
+      tags: [Templates]
+      summary: Run template evaluation
+      operationId: runTemplate
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TemplateRunRequest'
+      responses:
+        '201':
+          description: Evaluation created from template
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemplateRunResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Template not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/templates/{id}/history:
+    get:
+      tags: [Templates]
+      summary: Get template history
+      operationId: getTemplateHistory
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        '200':
+          description: Template history
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemplateHistoryResponse'
+        '400':
+          description: Missing template ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Template not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/personas:
+    post:
+      tags: [Personas]
+      summary: Create persona
+      operationId: createPersona
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PersonaCreateRequest'
+      responses:
+        '201':
+          description: Persona created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Persona'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    get:
+      tags: [Personas]
+      summary: List personas
+      operationId: listPersonas
+      parameters:
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/PersonaStatus'
+      responses:
+        '200':
+          description: Persona list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Persona'
+        '400':
+          description: Invalid status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/personas/{id}:
+    get:
+      tags: [Personas]
+      summary: Get persona
+      operationId: getPersona
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Persona detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Persona'
+        '400':
+          description: Missing persona ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Persona not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      tags: [Personas]
+      summary: Update persona (alias for PATCH)
+      operationId: updatePersona
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PersonaUpdateRequest'
+      responses:
+        '200':
+          description: Persona updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PersonaUpdateResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Persona not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    patch:
+      tags: [Personas]
+      summary: Update persona
+      operationId: patchPersona
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PersonaUpdateRequest'
+      responses:
+        '200':
+          description: Persona updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PersonaUpdateResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Persona not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags: [Personas]
+      summary: Delete persona
+      operationId: deletePersona
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Persona deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PersonaDeleteResponse'
+        '400':
+          description: Missing persona ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Persona not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/personas/{id}/prompts:
+    get:
+      tags: [Personas]
+      summary: List judge prompt versions
+      operationId: listPersonaPrompts
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Prompt versions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgePromptListResponse'
+        '400':
+          description: Missing persona ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Persona not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/personas/{id}/iterations/{num}/decisions:
+    get:
+      tags: [Training]
+      summary: List judge decisions for an iteration
+      operationId: listIterationDecisions
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: num
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Decisions for iteration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IterationDecisionsResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Persona or iteration not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/personas/{id}/iterations/{num}/feedback:
+    post:
+      tags: [Training]
+      summary: Submit human review feedback
+      operationId: submitHumanReview
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: num
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HumanReviewRequest'
+      responses:
+        '201':
+          description: Human review created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HumanReviewResponse'
+        '200':
+          description: Human review updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HumanReviewResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Persona, iteration, or decision not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/personas/{id}/training/start:
+    post:
+      tags: [Training]
+      summary: Start training iteration
+      operationId: startTrainingIteration
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '202':
+          description: Training started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrainingStartResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Persona not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/personas/{id}/training/status:
+    get:
+      tags: [Training]
+      summary: Get training status
+      operationId: getTrainingStatus
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Training status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrainingStatusResponse'
+        '400':
+          description: Missing persona ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Persona not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/personas/{id}/training/upload:
+    post:
+      tags: [Training]
+      summary: Upload training pairs
+      operationId: uploadTrainingPairs
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+              required: [file]
+          application/json:
+            schema:
+              type: object
+              properties:
+                csv:
+                  type: string
+                content:
+                  type: string
+          text/csv:
+            schema:
+              type: string
+      responses:
+        '201':
+          description: Training pairs uploaded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrainingUploadResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Persona not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/personas/{id}/training/pairs:
+    get:
+      tags: [Training]
+      summary: List training pairs
+      operationId: listTrainingPairs
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Training pairs list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrainingPairsResponse'
+        '400':
+          description: Missing persona ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Persona not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/training/validate-models:
+    post:
+      tags: [Training]
+      summary: Validate persona model separation
+      operationId: validateModelSeparation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ModelSeparationRequest'
+      responses:
+        '200':
+          description: Validation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelSeparationResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    get:
+      tags: [Training]
+      summary: Get model separation metadata
+      operationId: getModelSeparationMetadata
+      parameters:
+        - name: action
+          in: query
+          schema:
+            type: string
+            enum: [providers, models, suggestions]
+        - name: provider
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Providers, models, or suggestions
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ProviderListResponse'
+                  - $ref: '#/components/schemas/ModelsByProviderResponse'
+                  - $ref: '#/components/schemas/ModelSuggestionsResponse'
+                  - $ref: '#/components/schemas/ModelSeparationMetadataResponse'
+        '400':
+          description: Invalid query parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    DateTime:
+      type: string
+      format: date-time
+    DateTimeOrEmpty:
+      description: ISO 8601 timestamp or empty string.
+      oneOf:
+        - $ref: '#/components/schemas/DateTime'
+        - type: string
+          enum: ['']
+
+    Provider:
+      type: string
+      enum: [openai, anthropic, google]
+
+    RubricType:
+      type: string
+      enum: [exact_match, partial_credit, semantic_similarity]
+
+    EvaluationStatus:
+      type: string
+      enum: [pending, running, completed, failed]
+
+    ResultStatus:
+      type: string
+      enum: [pending, completed, failed]
+
+    PersonaStatus:
+      type: string
+      enum: [draft, training, trained, incomplete]
+
+    IterationStatus:
+      type: string
+      enum: [in_progress, paused, completed, failed]
+
+    SessionStatus:
+      type: string
+      enum: [pending, in_progress, paused, completed, failed]
+
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        code:
+          type: string
+        field:
+          type: string
+        details:
+          description: Extra error details.
+          oneOf:
+            - type: object
+              additionalProperties: true
+            - type: array
+              items: {}
+            - type: string
+      additionalProperties: true
+
+    EvaluationCreateRequest:
+      type: object
+      required: [instruction, model_ids, rubric_type]
+      properties:
+        instruction:
+          type: string
+        model_ids:
+          type: array
+          items:
+            type: string
+        rubric_type:
+          $ref: '#/components/schemas/RubricType'
+        expected_output:
+          type: string
+        partial_credit_concepts:
+          type: array
+          items:
+            type: string
+        system_prompt:
+          type: string
+        temperature:
+          type: number
+
+    EvaluationCreateResponse:
+      type: object
+      required: [evaluation_id, status, models]
+      properties:
+        evaluation_id:
+          type: string
+        status:
+          $ref: '#/components/schemas/EvaluationStatus'
+        models:
+          type: array
+          items:
+            $ref: '#/components/schemas/EvaluationModelStatus'
+
+    EvaluationModelStatus:
+      type: object
+      required: [model_id, model_name, provider, status]
+      properties:
+        model_id:
+          type: string
+        model_name:
+          type: string
+        provider:
+          $ref: '#/components/schemas/Provider'
+        status:
+          $ref: '#/components/schemas/ResultStatus'
+
+    EvaluationStatusResponse:
+      type: object
+      required: [evaluation_id, overall_status, created_at, results]
+      properties:
+        evaluation_id:
+          type: string
+        overall_status:
+          $ref: '#/components/schemas/EvaluationStatus'
+        created_at:
+          $ref: '#/components/schemas/DateTime'
+        completed_at:
+          $ref: '#/components/schemas/DateTime'
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/EvaluationStatusResult'
+
+    EvaluationStatusResult:
+      type: object
+      required: [model_id, model_name, provider, status]
+      properties:
+        model_id:
+          type: string
+        model_name:
+          type: string
+        provider:
+          $ref: '#/components/schemas/Provider'
+        status:
+          $ref: '#/components/schemas/ResultStatus'
+        execution_time_ms:
+          type: number
+        input_tokens:
+          type: number
+        output_tokens:
+          type: number
+        total_tokens:
+          type: number
+        accuracy_score:
+          type: number
+        error_message:
+          type: string
+
+    EvaluationResultsResponse:
+      type: object
+      required:
+        - evaluation_id
+        - evaluation_status
+        - instruction_text
+        - accuracy_rubric
+        - expected_output
+        - created_at
+        - completed_at
+        - results
+      properties:
+        evaluation_id:
+          type: string
+        evaluation_status:
+          $ref: '#/components/schemas/EvaluationStatus'
+        instruction_text:
+          type: string
+        accuracy_rubric:
+          $ref: '#/components/schemas/RubricType'
+        expected_output:
+          type: string
+        created_at:
+          $ref: '#/components/schemas/DateTime'
+        completed_at:
+          $ref: '#/components/schemas/DateTime'
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/EvaluationResultDetail'
+
+    EvaluationResultDetail:
+      type: object
+      required:
+        - model_id
+        - model_name
+        - provider
+        - status
+        - execution_time_ms
+        - input_tokens
+        - output_tokens
+        - total_tokens
+        - accuracy_score
+        - accuracy_reasoning
+        - response_text
+      properties:
+        model_id:
+          type: string
+        model_name:
+          type: string
+        provider:
+          $ref: '#/components/schemas/Provider'
+        status:
+          $ref: '#/components/schemas/ResultStatus'
+        execution_time_ms:
+          type: number
+        input_tokens:
+          type: number
+        output_tokens:
+          type: number
+        total_tokens:
+          type: number
+        accuracy_score:
+          type: number
+        accuracy_reasoning:
+          type: string
+        response_text:
+          type: string
+
+    CancelEvaluationRequest:
+      type: object
+      required: [evaluation_id]
+      properties:
+        evaluation_id:
+          type: string
+
+    CancelEvaluationResponse:
+      type: object
+      required: [evaluation_id, status, message]
+      properties:
+        evaluation_id:
+          type: string
+        status:
+          type: string
+          enum: [cancelled]
+        message:
+          type: string
+
+    EvaluationListItem:
+      type: object
+      required:
+        - id
+        - instruction_text
+        - accuracy_rubric
+        - created_at
+        - status
+        - results_count
+      properties:
+        id:
+          type: string
+        instruction_text:
+          type: string
+        accuracy_rubric:
+          $ref: '#/components/schemas/RubricType'
+        expected_output:
+          type: string
+        partial_credit_concepts:
+          type: array
+          items:
+            type: string
+        created_at:
+          $ref: '#/components/schemas/DateTime'
+        completed_at:
+          $ref: '#/components/schemas/DateTimeOrEmpty'
+        status:
+          $ref: '#/components/schemas/EvaluationStatus'
+        error_message:
+          type: string
+        template_id:
+          type: string
+        results_count:
+          type: number
+        avg_accuracy:
+          type: number
+        avg_time_ms:
+          type: number
+
+    EvaluationListResponse:
+      type: object
+      required: [items, total, page, pageSize]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/EvaluationListItem'
+        total:
+          type: number
+        page:
+          type: number
+        pageSize:
+          type: number
+
+    EvaluationDeleteRequest:
+      type: object
+      required: [ids]
+      properties:
+        ids:
+          type: array
+          items:
+            type: string
+
+    EvaluationDeleteResponse:
+      type: object
+      required: [deleted]
+      properties:
+        deleted:
+          type: number
+
+    ModelCreateRequest:
+      type: object
+      required: [provider, model_name, api_key]
+      properties:
+        provider:
+          $ref: '#/components/schemas/Provider'
+        model_name:
+          type: string
+        api_key:
+          type: string
+        notes:
+          type: string
+
+    ModelCreateResponse:
+      type: object
+      required: [id, provider, model_name, is_active, created_at, validation_status]
+      properties:
+        id:
+          type: string
+        provider:
+          $ref: '#/components/schemas/Provider'
+        model_name:
+          type: string
+        is_active:
+          type: boolean
+        created_at:
+          $ref: '#/components/schemas/DateTime'
+        validation_status:
+          type: string
+          enum: [valid, invalid]
+        error_message:
+          type: string
+
+    ModelListItem:
+      type: object
+      required: [id, provider, model_name, is_active, created_at, usage_count]
+      properties:
+        id:
+          type: string
+        provider:
+          $ref: '#/components/schemas/Provider'
+        model_name:
+          type: string
+        is_active:
+          type: boolean
+        created_at:
+          $ref: '#/components/schemas/DateTime'
+        notes:
+          type: string
+        usage_count:
+          type: number
+
+    ModelDetail:
+      type: object
+      required: [id, provider, model_name, is_active, created_at, updated_at, usage_count]
+      properties:
+        id:
+          type: string
+        provider:
+          $ref: '#/components/schemas/Provider'
+        model_name:
+          type: string
+        is_active:
+          type: boolean
+        created_at:
+          $ref: '#/components/schemas/DateTime'
+        updated_at:
+          $ref: '#/components/schemas/DateTime'
+        notes:
+          type: string
+        usage_count:
+          type: number
+
+    ModelUpdateRequest:
+      type: object
+      properties:
+        is_active:
+          type: boolean
+        notes:
+          type: string
+        api_key:
+          type: string
+
+    ModelUpdateResponse:
+      type: object
+      required: [id, provider, model_name, is_active, updated_at, validation_status]
+      properties:
+        id:
+          type: string
+        provider:
+          $ref: '#/components/schemas/Provider'
+        model_name:
+          type: string
+        is_active:
+          type: boolean
+        updated_at:
+          $ref: '#/components/schemas/DateTime'
+        validation_status:
+          type: string
+          enum: [valid, invalid]
+        error_message:
+          type: string
+
+    ModelDeleteResponse:
+      type: object
+      required: [id, message]
+      properties:
+        id:
+          type: string
+        message:
+          type: string
+
+    ModelTestConnectionRequest:
+      type: object
+      properties:
+        api_key:
+          type: string
+
+    ModelTestConnectionResponse:
+      type: object
+      required: [model_id, provider, model_name, status, message]
+      properties:
+        model_id:
+          type: string
+        provider:
+          $ref: '#/components/schemas/Provider'
+        model_name:
+          type: string
+        status:
+          type: string
+          enum: [valid]
+        message:
+          type: string
+
+    TemplateCreateRequest:
+      type: object
+      required: [name, instruction_text, model_ids, accuracy_rubric]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        instruction_text:
+          type: string
+        model_ids:
+          type: array
+          items:
+            type: string
+        accuracy_rubric:
+          $ref: '#/components/schemas/RubricType'
+        expected_output:
+          type: string
+        partial_credit_concepts:
+          type: array
+          items:
+            type: string
+        system_prompt:
+          type: string
+        temperature:
+          type: number
+
+    TemplateCreateResponse:
+      type: object
+      required: [id, name, instruction_text, model_count, accuracy_rubric, created_at, run_count]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        instruction_text:
+          type: string
+        model_count:
+          type: number
+        accuracy_rubric:
+          $ref: '#/components/schemas/RubricType'
+        created_at:
+          $ref: '#/components/schemas/DateTime'
+        run_count:
+          type: number
+
+    TemplateListItem:
+      type: object
+      required: [id, name, instruction_text, model_count, accuracy_rubric, created_at, run_count]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        instruction_text:
+          description: Truncated preview of the instruction text.
+          type: string
+        model_count:
+          type: number
+        accuracy_rubric:
+          $ref: '#/components/schemas/RubricType'
+        created_at:
+          $ref: '#/components/schemas/DateTime'
+        run_count:
+          type: number
+
+    TemplateModel:
+      type: object
+      required: [id, model_name, provider, is_active]
+      properties:
+        id:
+          type: string
+        model_name:
+          type: string
+        provider:
+          $ref: '#/components/schemas/Provider'
+        is_active:
+          type: boolean
+
+    TemplateDetail:
+      type: object
+      required:
+        - id
+        - name
+        - instruction_text
+        - model_ids
+        - accuracy_rubric
+        - created_at
+        - updated_at
+        - run_count
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        instruction_text:
+          type: string
+        model_ids:
+          type: array
+          items:
+            type: string
+        models:
+          type: array
+          items:
+            $ref: '#/components/schemas/TemplateModel'
+        accuracy_rubric:
+          $ref: '#/components/schemas/RubricType'
+        expected_output:
+          type: string
+        partial_credit_concepts:
+          type: array
+          items:
+            type: string
+        created_at:
+          $ref: '#/components/schemas/DateTime'
+        updated_at:
+          $ref: '#/components/schemas/DateTime'
+        run_count:
+          type: number
+        system_prompt:
+          type: string
+        temperature:
+          type: number
+
+    TemplateUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        instruction_text:
+          type: string
+        model_ids:
+          type: array
+          items:
+            type: string
+        accuracy_rubric:
+          $ref: '#/components/schemas/RubricType'
+        expected_output:
+          type: string
+        partial_credit_concepts:
+          type: array
+          items:
+            type: string
+        system_prompt:
+          type: string
+        temperature:
+          type: number
+
+    TemplateUpdateResponse:
+      type: object
+      required: [id, name, updated_at, run_count]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        updated_at:
+          $ref: '#/components/schemas/DateTime'
+        run_count:
+          type: number
+
+    TemplateDeleteResponse:
+      type: object
+      required: [id, message]
+      properties:
+        id:
+          type: string
+        message:
+          type: string
+
+    TemplateRunRequest:
+      type: object
+      properties:
+        model_ids:
+          type: array
+          items:
+            type: string
+
+    TemplateRunResponse:
+      type: object
+      required: [evaluation_id, template_id, status, models]
+      properties:
+        evaluation_id:
+          type: string
+        template_id:
+          type: string
+        status:
+          $ref: '#/components/schemas/EvaluationStatus'
+        models:
+          type: array
+          items:
+            $ref: '#/components/schemas/EvaluationModelStatus'
+
+    TemplateHistoryResponse:
+      type: object
+      required: [template_id, template_name, total_runs, runs]
+      properties:
+        template_id:
+          type: string
+        template_name:
+          type: string
+        total_runs:
+          type: number
+        runs:
+          type: array
+          items:
+            $ref: '#/components/schemas/TemplateHistoryItem'
+
+    TemplateHistoryItem:
+      type: object
+      required: [evaluation_id, created_at, status, result_count]
+      properties:
+        evaluation_id:
+          type: string
+        created_at:
+          $ref: '#/components/schemas/DateTime'
+        status:
+          $ref: '#/components/schemas/EvaluationStatus'
+        completed_at:
+          $ref: '#/components/schemas/DateTime'
+        best_accuracy:
+          type: number
+        fastest_model:
+          type: object
+          properties:
+            model_name:
+              type: string
+            execution_time_ms:
+              type: number
+        result_count:
+          type: number
+
+    Persona:
+      type: object
+      required:
+        - id
+        - name
+        - task_prompt
+        - task_model_id
+        - judge_model_id
+        - prompt_engineer_model_id
+        - status
+        - target_f1_score
+        - max_iterations
+        - current_iteration
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        task_prompt:
+          type: string
+        task_model_id:
+          type: string
+        judge_model_id:
+          type: string
+        prompt_engineer_model_id:
+          type: string
+        status:
+          $ref: '#/components/schemas/PersonaStatus'
+        target_f1_score:
+          type: number
+        max_iterations:
+          type: number
+        current_iteration:
+          type: number
+        best_f1_score:
+          type: number
+          nullable: true
+        best_f1_iteration:
+          type: number
+          nullable: true
+        created_at:
+          $ref: '#/components/schemas/DateTime'
+        updated_at:
+          $ref: '#/components/schemas/DateTime'
+        created_by:
+          type: string
+          nullable: true
+
+    PersonaCreateRequest:
+      type: object
+      required:
+        - name
+        - task_prompt
+        - initial_judge_prompt
+        - task_model_id
+        - judge_model_id
+        - prompt_engineer_model_id
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        task_prompt:
+          type: string
+        initial_judge_prompt:
+          type: string
+        task_model_id:
+          type: string
+        judge_model_id:
+          type: string
+        prompt_engineer_model_id:
+          type: string
+        target_f1_score:
+          type: number
+        max_iterations:
+          type: number
+        created_by:
+          type: string
+
+    PersonaUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        task_prompt:
+          type: string
+        status:
+          $ref: '#/components/schemas/PersonaStatus'
+        current_iteration:
+          type: number
+        best_f1_score:
+          type: number
+          nullable: true
+        best_f1_iteration:
+          type: number
+          nullable: true
+
+    PersonaUpdateResponse:
+      type: object
+      required:
+        - id
+        - name
+        - task_prompt
+        - status
+        - current_iteration
+        - updated_at
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        task_prompt:
+          type: string
+        status:
+          $ref: '#/components/schemas/PersonaStatus'
+        current_iteration:
+          type: number
+        best_f1_score:
+          type: number
+          nullable: true
+        best_f1_iteration:
+          type: number
+          nullable: true
+        updated_at:
+          $ref: '#/components/schemas/DateTime'
+
+    PersonaDeleteResponse:
+      type: object
+      required: [id, message]
+      properties:
+        id:
+          type: string
+        message:
+          type: string
+
+    JudgePromptVersion:
+      type: object
+      required:
+        - id
+        - persona_id
+        - iteration_number
+        - prompt_text
+        - created_by
+        - created_at
+      properties:
+        id:
+          type: string
+        persona_id:
+          type: string
+        iteration_number:
+          type: number
+        prompt_text:
+          type: string
+        improvement_rationale:
+          type: string
+          nullable: true
+        created_by:
+          type: string
+          enum: [human, ai]
+        created_at:
+          $ref: '#/components/schemas/DateTime'
+
+    JudgePromptListResponse:
+      type: object
+      required: [prompts, count]
+      properties:
+        prompts:
+          type: array
+          items:
+            $ref: '#/components/schemas/JudgePromptVersion'
+        count:
+          type: number
+
+    IterationSummary:
+      type: object
+      required: [id, number, status]
+      properties:
+        id:
+          type: string
+        number:
+          type: number
+        status:
+          $ref: '#/components/schemas/IterationStatus'
+
+    TrainingPair:
+      type: object
+      required: [id, persona_id, input, expected_output, created_at]
+      properties:
+        id:
+          type: string
+        persona_id:
+          type: string
+        input:
+          type: string
+        expected_output:
+          type: string
+        created_at:
+          $ref: '#/components/schemas/DateTime'
+
+    TrainingPairSummary:
+      type: object
+      required: [id, input, expected_output]
+      properties:
+        id:
+          type: string
+        input:
+          type: string
+        expected_output:
+          type: string
+
+    JudgeDecisionDetail:
+      type: object
+      required: [generated_output, decision, created_at]
+      properties:
+        generated_output:
+          type: string
+        decision:
+          type: string
+          enum: [agree, disagree]
+        confidence:
+          type: number
+          nullable: true
+        reasoning:
+          type: string
+          nullable: true
+        created_at:
+          $ref: '#/components/schemas/DateTime'
+
+    HumanReviewDetail:
+      type: object
+      required: [id, decision, created_at]
+      properties:
+        id:
+          type: string
+        decision:
+          type: string
+          enum: [agree, disagree]
+        confidence:
+          type: number
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        created_at:
+          $ref: '#/components/schemas/DateTime'
+
+    IterationDecisionItem:
+      type: object
+      required: [decision_id, training_pair, judge]
+      properties:
+        decision_id:
+          type: string
+        training_pair:
+          $ref: '#/components/schemas/TrainingPairSummary'
+        judge:
+          $ref: '#/components/schemas/JudgeDecisionDetail'
+        human_review:
+          $ref: '#/components/schemas/HumanReviewDetail'
+          nullable: true
+
+    IterationDecisionsResponse:
+      type: object
+      required: [iteration, decisions, summary]
+      properties:
+        iteration:
+          $ref: '#/components/schemas/IterationSummary'
+        decisions:
+          type: array
+          items:
+            $ref: '#/components/schemas/IterationDecisionItem'
+        summary:
+          type: object
+          required: [total, reviewed, pending]
+          properties:
+            total:
+              type: number
+            reviewed:
+              type: number
+            pending:
+              type: number
+
+    HumanReviewRequest:
+      type: object
+      required: [decision_id, human_decision]
+      properties:
+        decision_id:
+          type: string
+        human_decision:
+          type: string
+          enum: [agree, disagree]
+        human_confidence:
+          type: number
+        notes:
+          type: string
+
+    HumanReviewResponse:
+      type: object
+      required: [id, decision_id, human_decision]
+      properties:
+        id:
+          type: string
+        decision_id:
+          type: string
+        human_decision:
+          type: string
+          enum: [agree, disagree]
+        human_confidence:
+          type: number
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        created_at:
+          $ref: '#/components/schemas/DateTime'
+        updated:
+          type: boolean
+
+    TrainingStartResponse:
+      type: object
+      required: [session_id, iteration]
+      properties:
+        session_id:
+          type: string
+        iteration:
+          type: object
+          required: [id, iteration_number, status, started_at]
+          properties:
+            id:
+              type: string
+            iteration_number:
+              type: number
+            status:
+              $ref: '#/components/schemas/IterationStatus'
+            started_at:
+              $ref: '#/components/schemas/DateTime'
+
+    TrainingIterationMetrics:
+      type: object
+      required: [f1_score, precision, recall, cohens_kappa, accuracy, confusion_matrix]
+      properties:
+        f1_score:
+          type: number
+          nullable: true
+        precision:
+          type: number
+          nullable: true
+        recall:
+          type: number
+          nullable: true
+        cohens_kappa:
+          type: number
+          nullable: true
+        accuracy:
+          type: number
+          nullable: true
+        confusion_matrix:
+          type: object
+          required: [true_positives, true_negatives, false_positives, false_negatives]
+          properties:
+            true_positives:
+              type: number
+            true_negatives:
+              type: number
+            false_positives:
+              type: number
+            false_negatives:
+              type: number
+
+    TrainingIterationStatus:
+      type: object
+      required:
+        - id
+        - iteration_number
+        - status
+        - total_pairs_evaluated
+        - pairs_reviewed_by_human
+        - started_at
+      properties:
+        id:
+          type: string
+        iteration_number:
+          type: number
+        status:
+          $ref: '#/components/schemas/IterationStatus'
+        total_pairs_evaluated:
+          type: number
+        pairs_reviewed_by_human:
+          type: number
+        started_at:
+          $ref: '#/components/schemas/DateTime'
+        completed_at:
+          $ref: '#/components/schemas/DateTime'
+        error_message:
+          type: string
+          nullable: true
+        metrics:
+          $ref: '#/components/schemas/TrainingIterationMetrics'
+
+    TrainingLoopState:
+      type: object
+      required:
+        - session_id
+        - persona_id
+        - current_iteration
+        - total_iterations
+        - status
+        - task_results_evaluated
+        - judge_model_id
+        - prompt_engineer_model_id
+        - task_model_id
+        - created_at
+        - updated_at
+      properties:
+        session_id:
+          type: string
+        persona_id:
+          type: string
+        current_iteration:
+          type: number
+        total_iterations:
+          type: number
+        status:
+          $ref: '#/components/schemas/SessionStatus'
+        task_results_evaluated:
+          type: number
+        judge_model_id:
+          type: string
+        prompt_engineer_model_id:
+          type: string
+        task_model_id:
+          type: string
+        created_at:
+          $ref: '#/components/schemas/DateTime'
+        updated_at:
+          $ref: '#/components/schemas/DateTime'
+        error_message:
+          type: string
+          nullable: true
+        pause_reason:
+          type: string
+          nullable: true
+
+    TrainingStatusResponse:
+      type: object
+      required: [persona_id]
+      properties:
+        persona_id:
+          type: string
+        current_iteration:
+          $ref: '#/components/schemas/TrainingIterationStatus'
+          nullable: true
+        training_loop_state:
+          $ref: '#/components/schemas/TrainingLoopState'
+          nullable: true
+
+    TrainingUploadResponse:
+      type: object
+      required: [count, pairs, message]
+      properties:
+        count:
+          type: number
+        pairs:
+          type: array
+          items:
+            $ref: '#/components/schemas/TrainingPair'
+        message:
+          type: string
+
+    TrainingPairsResponse:
+      type: object
+      required: [persona_id, count, pairs]
+      properties:
+        persona_id:
+          type: string
+        count:
+          type: number
+        pairs:
+          type: array
+          items:
+            $ref: '#/components/schemas/TrainingPair'
+
+    ModelSeparationRequest:
+      type: object
+      required: [task_model_id, judge_model_id, prompt_engineer_model_id]
+      properties:
+        task_model_id:
+          type: string
+        judge_model_id:
+          type: string
+        prompt_engineer_model_id:
+          type: string
+
+    ModelSeparationResponse:
+      type: object
+      required: [isValid, errors, warnings]
+      properties:
+        isValid:
+          type: boolean
+        errors:
+          type: array
+          items:
+            type: string
+        warnings:
+          type: array
+          items:
+            type: string
+        models:
+          type: object
+          properties:
+            task:
+              $ref: '#/components/schemas/ModelProviderPair'
+            judge:
+              $ref: '#/components/schemas/ModelProviderPair'
+            promptEngineer:
+              $ref: '#/components/schemas/ModelProviderPair'
+
+    ModelProviderPair:
+      type: object
+      required: [id, provider]
+      properties:
+        id:
+          type: string
+        provider:
+          $ref: '#/components/schemas/Provider'
+
+    ProviderListResponse:
+      type: object
+      required: [providers]
+      properties:
+        providers:
+          type: array
+          items:
+            type: string
+
+    ModelInfo:
+      type: object
+      required: [id, provider, model_name, is_active]
+      properties:
+        id:
+          type: string
+        provider:
+          $ref: '#/components/schemas/Provider'
+        model_name:
+          type: string
+        is_active:
+          type: number
+
+    ModelsByProviderResponse:
+      type: object
+      required: [models]
+      properties:
+        models:
+          type: array
+          items:
+            $ref: '#/components/schemas/ModelInfo'
+
+    ModelSuggestion:
+      type: object
+      required: [task, judge, promptEngineer]
+      properties:
+        task:
+          $ref: '#/components/schemas/ModelInfo'
+        judge:
+          $ref: '#/components/schemas/ModelInfo'
+        promptEngineer:
+          $ref: '#/components/schemas/ModelInfo'
+
+    ModelSuggestionsResponse:
+      type: object
+      required: [suggestions]
+      properties:
+        suggestions:
+          type: array
+          items:
+            $ref: '#/components/schemas/ModelSuggestion'
+
+    ModelSeparationMetadataResponse:
+      type: object
+      required: [providers, suggestions]
+      properties:
+        providers:
+          type: array
+          items:
+            type: string
+        suggestions:
+          type: array
+          items:
+            $ref: '#/components/schemas/ModelSuggestion'
