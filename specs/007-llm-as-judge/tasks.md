@@ -568,9 +568,9 @@
 
 ### Failure Analysis & Context Building
 
-- [ ] T061 [P] Create test file tests/unit/failure-analysis.test.ts for analyzing iteration failures
+- [X] T061 [P] Create test file tests/unit/failure-analysis.test.ts for analyzing iteration failures
 
-- [ ] T062 Create src/lib/failure-analysis.ts implementing:
+- [X] T062 Create src/lib/failure-analysis.ts implementing:
   - analyzeIterationFailures(iterationId) → FailureAnalysisContext
   - Extract false positives: judge agreed but human disagreed
   - Extract false negatives: judge disagreed but human agreed
@@ -588,16 +588,16 @@
 
 ### Prompt Refinement via LLM
 
-- [ ] T063 [P] Create test file tests/integration/prompt-refinement.test.ts with LLM mock
+- [X] T063 [P] Create test file tests/integration/prompt-refinement.test.ts with LLM mock
 
-- [ ] T064 Create src/lib/prompt-engineer.ts implementing:
+- [X] T064 Create src/lib/prompt-engineer.ts implementing:
   - refineJudgePrompt(failureContext, promptEngineerModel) → {improved_prompt, rationale, expected_impact}
   - Build detailed context prompt with metrics, failure patterns, correct examples
   - Call Prompt Engineer Model with chain-of-thought instructions
   - Parse JSON response
   - Handle LLM failures gracefully (return improved_prompt = null to fall back to manual refinement)
 
-- [ ] T065 [P] Create test file tests/unit/prompt-engineer-edge-cases.test.ts for LLM response parsing
+- [X] T065 [P] Create test file tests/unit/prompt-engineer-edge-cases.test.ts for LLM response parsing
 
 **Acceptance Criteria**:
 - Builds comprehensive failure context from iteration data
@@ -610,9 +610,9 @@
 
 ### Prompt Version Management
 
-- [ ] T066 [P] Create test file tests/unit/prompt-version-manager.test.ts for version tracking
+- [X] T066 [P] Create test file tests/unit/prompt-version-manager.test.ts for version tracking
 
-- [ ] T067 Create src/lib/prompt-version-manager.ts implementing:
+- [X] T067 Create src/lib/prompt-version-manager.ts implementing:
   - storePromptVersion(personaId, iterationNumber, promptText, rationale, createdBy)
   - Only store if prompt significantly changed (not just formatting)
   - Compare with previous prompt; skip if identical
@@ -629,15 +629,15 @@
 
 ### API Endpoints
 
-- [ ] T068 [P] Create test file tests/integration/prompt-refinement-api.test.ts
+- [X] T068 [P] Create test file tests/integration/prompt-refinement-api.test.ts
 
-- [ ] T069 Create src/pages/api/personas/[id]/iterations/[num]/refine-prompt.ts implementing:
+- [X] T069 Create src/pages/api/personas/[id]/iterations/[num]/refine-prompt.ts implementing:
   - POST /api/personas/[id]/iterations/[num]/refine-prompt: Trigger prompt refinement
   - Call failure-analysis.analyzeIterationFailures()
   - Call prompt-engineer.refineJudgePrompt()
   - Return: {improved_prompt, rationale, expected_impact} or {error} if LLM fails
 
-- [ ] T070 Create src/pages/api/personas/[id]/iterations/[num]/accept-prompt.ts implementing:
+- [X] T070 Create src/pages/api/personas/[id]/iterations/[num]/accept-prompt.ts implementing:
   - POST /api/personas/[id]/iterations/[num]/accept-prompt: Accept refined prompt for next iteration
   - Accept: {prompt_text, reason: "ai-generated"|"manual-edit"}
   - Store via prompt-version-manager
@@ -653,15 +653,15 @@
 
 ### UI Components & Pages
 
-- [ ] T071 Create src/pages/personas/[id]/judge-prompts.astro implementing:
+- [X] T071 Create src/pages/personas/[id]/judge-prompts.astro implementing:
   - Display judge prompt version history
   - Show which version was "ai-generated" vs "manual"
   - Show iteration number for each version
   - "View Diff" button to compare versions
 
-- [ ] T072 Create src/components/PromptDiffViewer.astro for side-by-side prompt comparison
+- [X] T072 Create src/components/PromptDiffViewer.astro for side-by-side prompt comparison
 
-- [ ] T073 Create src/pages/personas/[id]/refine-prompt.astro implementing:
+- [X] T073 Create src/pages/personas/[id]/refine-prompt.astro implementing:
   - After iteration completes: show AI-generated refined prompt suggestion
   - Display current metrics and failure analysis
   - "Accept" button to use refined prompt
