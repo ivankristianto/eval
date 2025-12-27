@@ -18,7 +18,9 @@
       "Bash(ls:*)",
       "Bash(npm test:*)",
       "Bash(npm run lint:*)",
-      "Bash(node fix-tests.cjs:*)"
+      "Bash(node fix-tests.cjs:*)",
+      "Bash(git rev-parse:*)",
+      "Bash(node -e:*)"
     ]
   },
   "gitAttribution": false
