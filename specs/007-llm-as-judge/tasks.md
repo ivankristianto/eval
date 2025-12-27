@@ -327,20 +327,20 @@
 
 - [ ] T036 [P] Create test file tests/e2e/training-data-upload.test.ts for upload workflow
 
-- [ ] T037 Create src/components/CSVUploader.astro implementing:
+- [X] T037 Create src/components/CSVUploader.astro implementing:
   - Drag-drop zone for CSV file
   - File size/type validation
   - Upload progress indicator
   - Error message display
   - Success message with pair count
 
-- [ ] T038 Create src/pages/personas/[id]/training/index.astro (Training Data tab) implementing:
+- [X] T038 Create src/pages/personas/[id]/training/index.astro (Training Data tab) implementing:
   - Display uploaded training pairs in table (input, expected_output)
   - "Upload New Data" button
   - Pair count display (X of Y)
   - Pair search/filter by input text
 
-- [ ] T039 [P] Create test file tests/integration/training-data-display.test.ts
+- [X] T039 [P] Create test file tests/integration/training-data-display.test.ts
 
 **Acceptance Criteria**:
 - CSV uploader displays file input
@@ -354,7 +354,7 @@
 
 ### Integration & E2E Tests
 
-- [ ] T040 Create end-to-end test tests/e2e/training-data-upload.test.ts covering:
+- [X] T040 Create end-to-end test tests/e2e/training-data-upload.test.ts covering:
   - Create persona (prerequisite)
   - Navigate to training data tab
   - Drag-drop CSV file (or use file picker)
@@ -386,16 +386,16 @@
 
 ### Training Loop Orchestration
 
-- [ ] T041 [P] Create test file tests/unit/training-loop.test.ts for iteration orchestration
+- [X] T041 [P] Create test file tests/unit/training-loop.test.ts for iteration orchestration
 
-- [ ] T042 Create src/lib/training-loop.ts implementing IterativeTrainingLoop class:
+- [X] T042 Create src/lib/training-loop.ts implementing IterativeTrainingLoop class:
   - execute(taskResultIds) → Promise<void> (fire-and-forget, persists state)
   - evaluateWithJudge(taskResultIds) → judge outputs and store judge_decisions
   - calculateMetricsInWorker(judgeResults) → MetricsResult
   - sessionId property for tracking
   - pause() method to pause training
 
-- [ ] T043 [P] Create test file tests/integration/training-loop-flow.test.ts with simulated iteration flow
+- [X] T043 [P] Create test file tests/integration/training-loop-flow.test.ts with simulated iteration flow
 
 **Acceptance Criteria**:
 - Iteration loop runs complete cycle: judge → feedback → metrics
@@ -408,16 +408,16 @@
 
 ### Judge Evaluation Module
 
-- [ ] T044 [P] Create test file tests/unit/judge-evaluator.test.ts for judge decision parsing
+- [X] T044 [P] Create test file tests/unit/judge-evaluator.test.ts for judge decision parsing
 
-- [ ] T045 Create src/lib/judge-evaluator.ts implementing:
+- [X] T045 Create src/lib/judge-evaluator.ts implementing:
   - evaluateOutput(input, correctOutput, suggestedOutput, judgePrompt, judgeModel) → JudgeDecisionResult
   - Call judge model with formatted prompt
   - Parse JSON response: {decision: "agree"|"disagree", confidence: 0.0-1.0, reasoning: string}
   - Handle parsing errors gracefully
   - Store decision to database
 
-- [ ] T046 [P] Create test file tests/integration/judge-api-calls.test.ts with mock API client tests
+- [X] T046 [P] Create test file tests/integration/judge-api-calls.test.ts with mock API client tests
 
 **Acceptance Criteria**:
 - Correctly formats judge prompt with input/output/criteria
@@ -433,18 +433,18 @@
 
 - [ ] T047 [P] Create test file tests/e2e/human-review.test.ts for decision review workflow
 
-- [ ] T048 Create src/pages/api/personas/[id]/iterations/[num]/decisions.ts implementing:
+- [X] T048 Create src/pages/api/personas/[id]/iterations/[num]/decisions.ts implementing:
   - GET /api/personas/[id]/iterations/[num]/decisions: Fetch all judge decisions awaiting human review
   - Return: {input, expected_output, suggested_output, judge_decision, judge_reasoning, decision_id}
 
-- [ ] T049 Create src/pages/api/personas/[id]/iterations/[num]/feedback.ts implementing:
+- [X] T049 Create src/pages/api/personas/[id]/iterations/[num]/feedback.ts implementing:
   - POST /api/personas/[id]/iterations/[num]/feedback: Submit human review feedback
   - Accept: {decision_id, human_decision: "agree"|"disagree", notes?: string}
   - Store HumanReview record
   - Return 201 with stored feedback
   - Constraint (per FR-007, A-012): Feedback is REQUIRED on all decisions in iteration; return 400 if any decisions remain without feedback after submission (incomplete feedback must be completed before proceeding)
 
-- [ ] T050 Create src/pages/personas/[id]/review/[iteration].astro implementing:
+- [X] T050 Create src/pages/personas/[id]/review/[iteration].astro implementing:
   - Split view: left side shows decision, right side shows feedback form
   - Display: input, expected_output, suggested_output, judge_decision, judge_reasoning
   - Buttons: "Agree with Judge" / "Disagree with Judge"
@@ -452,7 +452,7 @@
   - Progress: "X of Y decisions reviewed"
   - Previous/Next navigation between decisions
 
-- [ ] T051 [P] Create src/components/JudgeDecisionReview.astro as reusable decision card component
+- [X] T051 [P] Create src/components/JudgeDecisionReview.astro as reusable decision card component
 
 **Acceptance Criteria**:
 - Decisions fetch correctly from API
@@ -467,9 +467,9 @@
 
 ### Metrics Calculation & Storage
 
-- [ ] T052 [P] Create test file tests/integration/metrics-calculation.test.ts with full metrics flow
+- [X] T052 [P] Create test file tests/integration/metrics-calculation.test.ts with full metrics flow
 
-- [ ] T053 Create src/lib/metrics-orchestrator.ts implementing:
+- [X] T053 Create src/lib/metrics-orchestrator.ts implementing:
   - calculateIterationMetrics(iterationId) → MetricsResult
   - Constraint (per FR-008, A-012): Verify all judge_decisions have human_reviews before calculating; throw error if any decisions lack feedback
   - Fetch all judge_decisions and human_reviews for iteration
@@ -488,15 +488,15 @@
 
 ### API Integration
 
-- [ ] T054 [P] Create test file tests/integration/iteration-api.test.ts for full iteration endpoints
+- [X] T054 [P] Create test file tests/integration/iteration-api.test.ts for full iteration endpoints
 
-- [ ] T055 Create src/pages/api/personas/[id]/training/start.ts implementing:
+- [X] T055 Create src/pages/api/personas/[id]/training/start.ts implementing:
   - POST /api/personas/[id]/training/start: Start new training iteration
   - Create training_iteration record
   - Start IterativeTrainingLoop.execute() (fire-and-forget)
   - Return 202 with session_id and training_iteration record
 
-- [ ] T056 Create src/pages/api/personas/[id]/training/status.ts implementing:
+- [X] T056 Create src/pages/api/personas/[id]/training/status.ts implementing:
   - GET /api/personas/[id]/training/status: Get current training status
   - Return latest iteration with metrics and human review count
 
@@ -510,17 +510,18 @@
 
 ### UI Pages & Components
 
-- [ ] T057 [P] Create src/components/MetricCard.astro for displaying single metric with trend
+- [X] T057 [P] Create src/components/MetricCard.astro for displaying single metric with trend
 
-- [ ] T058 Create src/components/ConfusionMatrix.astro for 2x2 visual grid (TP/TN/FP/FN)
+- [X] T058 Create src/components/ConfusionMatrix.astro for 2x2 visual grid (TP/TN/FP/FN)
 
-- [ ] T059 Create src/pages/personas/[id]/training/index.astro (Training Progress tab) implementing:
+- [X] T059 Create training progress UI (implemented as src/pages/personas/[id]/metrics.astro and src/components/TrainingProgress.astro):
   - Show current iteration number and status
   - Display: F1 Score, Precision, Recall, Cohen's Kappa metrics
   - Show confusion matrix visualization
   - Progress bar: "X of Y iterations completed"
   - "Start Training" button (if not started)
   - "Review Decisions" button (if awaiting human review)
+  - Note: Implemented as dedicated metrics page rather than replacing training data page at /training/index.astro
 
 **Acceptance Criteria**:
 - Metrics display correctly with proper formatting
