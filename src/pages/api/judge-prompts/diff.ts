@@ -7,6 +7,10 @@ import type { APIRoute } from 'astro';
 import { getDatabase } from '../../../lib/db';
 import { getPromptDiff } from '../../../lib/prompt-version-manager';
 
+/**
+ * GET /api/judge-prompts/diff
+ * Retrieves textual differences between two versions of a judge prompt.
+ */
 export const GET: APIRoute = async ({ url }) => {
   try {
     const version1Id = url.searchParams.get('version1');

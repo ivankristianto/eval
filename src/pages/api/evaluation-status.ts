@@ -4,6 +4,10 @@
 import type { APIRoute } from 'astro';
 import { getEvaluationStatus } from '../../lib/db';
 
+/**
+ * GET /api/evaluation-status
+ * Retrieves current overall and per-model status for a specific evaluation.
+ */
 export const GET: APIRoute = async ({ url }) => {
   try {
     const evaluationId = url.searchParams.get('evaluation_id');

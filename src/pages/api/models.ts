@@ -7,7 +7,11 @@ import { ClientFactory } from '../../lib/api-clients';
 import { validateCreateModel, validateProvider } from '../../lib/validators';
 import type { Provider } from '../../lib/types';
 
-// POST /api/models - Create new model
+/**
+ * POST /api/models
+ * Creates a new model configuration.
+ * Verifies API connectivity before persisting to database.
+ */
 export const POST: APIRoute = async ({ request }) => {
   try {
     const body = await request.json();
@@ -72,7 +76,11 @@ export const POST: APIRoute = async ({ request }) => {
   }
 };
 
-// GET /api/models - List all models
+/**
+ * GET /api/models
+ * Lists all configured models.
+ * Supports filtering by provider and active status.
+ */
 export const GET: APIRoute = async ({ url }) => {
   try {
     const activeOnly = url.searchParams.get('active_only') === 'true';

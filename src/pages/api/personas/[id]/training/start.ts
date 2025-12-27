@@ -8,6 +8,11 @@ import { getDatabase } from '../../../../../lib/db';
 import { IterativeTrainingLoop } from '../../../../../lib/training-loop';
 import { v4 as uuidv4 } from 'uuid';
 
+/**
+ * POST /api/personas/[id]/training/start
+ * Initiates a new training iteration for a specific persona.
+ * Validates that minimum training data requirements are met.
+ */
 export const POST: APIRoute = async ({ params }) => {
   try {
     const { id } = params;

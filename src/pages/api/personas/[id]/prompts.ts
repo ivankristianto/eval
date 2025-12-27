@@ -6,6 +6,11 @@ import { getDatabase } from '../../../../lib/db';
 import type { JudgePromptVersion } from '../../../../types/training';
 
 // GET /api/personas/[id]/prompts - Get all judge prompt versions for a persona
+/**
+ * GET /api/personas/[id]/prompts
+ * Retrieves all judge prompt versions for a specific persona.
+ * Sorted by iteration number descending.
+ */
 export const GET: APIRoute = async ({ params }) => {
   try {
     const { id } = params;

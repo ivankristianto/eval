@@ -14,7 +14,10 @@ import {
 } from '../../../lib/validators';
 import type { RubricType } from '../../../lib/types';
 
-// GET /api/templates/:id - Get template details
+/**
+ * GET /api/templates/:id
+ * Retrieves detailed configuration for a specific evaluation template.
+ */
 export const GET: APIRoute = async ({ params }) => {
   try {
     const { id } = params;
@@ -100,7 +103,11 @@ export const GET: APIRoute = async ({ params }) => {
   }
 };
 
-// PATCH /api/templates/:id - Update template
+/**
+ * PATCH /api/templates/:id
+ * Updates an existing evaluation template.
+ * Validates only the provided fields.
+ */
 export const PATCH: APIRoute = async ({ params, request }) => {
   try {
     const { id } = params;
@@ -272,7 +279,10 @@ export const PATCH: APIRoute = async ({ params, request }) => {
   }
 };
 
-// DELETE /api/templates/:id - Delete template
+/**
+ * DELETE /api/templates/:id
+ * Deletes an evaluation template.
+ */
 export const DELETE: APIRoute = async ({ params }) => {
   try {
     const { id } = params;

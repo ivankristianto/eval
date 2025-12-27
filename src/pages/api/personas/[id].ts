@@ -5,7 +5,10 @@ import type { APIRoute, APIContext } from 'astro';
 import { getPersona, updatePersona, deletePersona } from '../../../lib/persona-db';
 import type { Persona } from '../../../types/training';
 
-// GET /api/personas/:id - Get persona details
+/**
+ * GET /api/personas/:id
+ * Retrieves detailed configuration and metrics for a specific persona.
+ */
 export const GET: APIRoute = async ({ params }) => {
   try {
     const { id } = params;
@@ -78,12 +81,19 @@ export const GET: APIRoute = async ({ params }) => {
   }
 };
 
-// PUT /api/personas/:id - Update persona (alias for PATCH)
+/**
+ * PUT /api/personas/:id
+ * Alias for PATCH /api/personas/:id
+ */
 export const PUT: APIRoute = async (context: APIContext) => {
   return PATCH(context);
 };
 
-// PATCH /api/personas/:id - Update persona
+/**
+ * PATCH /api/personas/:id
+ * Updates an existing persona configuration.
+ * Only allowed fields are updated.
+ */
 export const PATCH: APIRoute = async ({ params, request }) => {
   try {
     const { id } = params;
@@ -189,7 +199,10 @@ export const PATCH: APIRoute = async ({ params, request }) => {
   }
 };
 
-// DELETE /api/personas/:id - Delete persona
+/**
+ * DELETE /api/personas/:id
+ * Deletes a persona and all its associated training data.
+ */
 export const DELETE: APIRoute = async ({ params }) => {
   try {
     const { id } = params;

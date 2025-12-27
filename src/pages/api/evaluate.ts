@@ -11,6 +11,11 @@ import {
 } from '../../lib/validators';
 import type { RubricType } from '../../lib/types';
 
+/**
+ * POST /api/evaluate
+ * Submits a new evaluation request for one or more models.
+ * Validates inputs, creates database records, and starts background execution.
+ */
 export const POST: APIRoute = async ({ request }) => {
   try {
     const body = await request.json();

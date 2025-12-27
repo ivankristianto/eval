@@ -12,7 +12,10 @@ import {
 import { ClientFactory } from '../../../lib/api-clients';
 import { validateApiKeyFormat } from '../../../lib/validators';
 
-// GET /api/models/:id - Get model details
+/**
+ * GET /api/models/:id
+ * Retrieves detailed configuration for a specific model.
+ */
 export const GET: APIRoute = async ({ params }) => {
   try {
     const { id } = params;
@@ -77,7 +80,11 @@ export const GET: APIRoute = async ({ params }) => {
   }
 };
 
-// PATCH /api/models/:id - Update model
+/**
+ * PATCH /api/models/:id
+ * Updates an existing model configuration.
+ * Validates new API keys if provided.
+ */
 export const PATCH: APIRoute = async ({ params, request }) => {
   try {
     const { id } = params;
@@ -199,7 +206,11 @@ export const PATCH: APIRoute = async ({ params, request }) => {
   }
 };
 
-// DELETE /api/models/:id - Delete model
+/**
+ * DELETE /api/models/:id
+ * Deletes a model configuration.
+ * Prevents deletion if the model has associated evaluation results.
+ */
 export const DELETE: APIRoute = async ({ params }) => {
   try {
     const { id } = params;

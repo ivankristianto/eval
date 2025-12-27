@@ -4,6 +4,11 @@
 import type { APIRoute } from 'astro';
 import { getEvaluation, getResults } from '../../lib/db';
 
+/**
+ * GET /api/results
+ * Retrieves all model results for a specific evaluation.
+ * Results are sorted by accuracy score descending.
+ */
 export const GET: APIRoute = async ({ url }) => {
   try {
     const evaluationId = url.searchParams.get('evaluation_id');

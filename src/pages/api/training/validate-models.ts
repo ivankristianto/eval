@@ -9,7 +9,10 @@ import {
   suggestModelCombinations,
 } from '../../../lib/model-separation-validator';
 
-// POST /api/training/validate-models - Validate model combination
+/**
+ * POST /api/training/validate-models
+ * Validates that task, judge, and prompt engineer models are from different providers.
+ */
 export const POST: APIRoute = async ({ request }) => {
   try {
     const body = await request.json();
@@ -64,7 +67,10 @@ export const POST: APIRoute = async ({ request }) => {
   }
 };
 
-// GET /api/training/validate-models - Get available providers and models
+/**
+ * GET /api/training/validate-models
+ * Retrieves available providers, models, or suggested model combinations.
+ */
 export const GET: APIRoute = async ({ url }) => {
   try {
     const action = url.searchParams.get('action');

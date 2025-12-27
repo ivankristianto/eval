@@ -6,6 +6,10 @@
 import type { APIRoute } from 'astro';
 import { getDatabase } from '../../../../../lib/db';
 
+/**
+ * GET /api/personas/[id]/training/status
+ * Retrieves current training status, metrics, and loop state for a persona.
+ */
 export const GET: APIRoute = async ({ params }) => {
   try {
     const { id } = params;

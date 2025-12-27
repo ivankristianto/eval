@@ -6,6 +6,11 @@ import { getModelById, decryptApiKey } from '../../../../lib/db';
 import { ClientFactory } from '../../../../lib/api-clients';
 import { validateApiKeyFormat } from '../../../../lib/validators';
 
+/**
+ * POST /api/models/:id/test-connection
+ * Tests the API connectivity for a specific model configuration.
+ * Can test either the stored API key or a new key provided in the request body.
+ */
 export const POST: APIRoute = async ({ params, request }) => {
   try {
     const { id } = params;

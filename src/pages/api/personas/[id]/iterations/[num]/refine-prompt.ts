@@ -8,6 +8,11 @@ import { getDatabase } from '../../../../../../lib/db';
 import { analyzeIterationFailures } from '../../../../../../lib/failure-analysis';
 import { refineJudgePrompt } from '../../../../../../lib/prompt-engineer';
 
+/**
+ * POST /api/personas/[id]/iterations/[num]/refine-prompt
+ * Triggers AI-powered prompt refinement based on failure analysis.
+ * Requires the iteration to be in 'completed' status.
+ */
 export const POST: APIRoute = async ({ params }) => {
   try {
     const { id, num } = params;

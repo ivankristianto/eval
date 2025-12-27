@@ -5,6 +5,10 @@ import type { APIRoute } from 'astro';
 import { getEvaluation } from '../../lib/db';
 import { cancelEvaluation } from '../../lib/evaluator';
 
+/**
+ * POST /api/cancel-evaluation
+ * Cancels a running evaluation process.
+ */
 export const POST: APIRoute = async ({ request }) => {
   try {
     const body = await request.json();

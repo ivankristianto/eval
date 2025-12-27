@@ -16,6 +16,10 @@ import { getDatabase } from '../../../../../lib/db';
  * Response: 200 with training pairs array
  *          404 with { error: string }
  */
+/**
+ * GET /api/personas/:id/training/pairs
+ * Retrieves all training pairs associated with a specific persona.
+ */
 export const GET: APIRoute = async ({ params }) => {
   try {
     const { id } = params;

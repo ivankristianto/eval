@@ -2,6 +2,10 @@ import type { APIRoute } from 'astro';
 import { getEvaluations, getEvaluationsCount, deleteEvaluations } from '../../../lib/db';
 import type { RubricType } from '../../../lib/types';
 
+/**
+ * GET /api/evaluations
+ * Lists evaluations with optional filtering and pagination.
+ */
 export const GET: APIRoute = async ({ url }) => {
   const limit = Number(url.searchParams.get('limit')) || 10;
   const offset = Number(url.searchParams.get('offset')) || 0;
@@ -39,6 +43,10 @@ export const GET: APIRoute = async ({ url }) => {
   }
 };
 
+/**
+ * DELETE /api/evaluations
+ * Bulk deletes multiple evaluations by ID.
+ */
 export const DELETE: APIRoute = async ({ request }) => {
   try {
     const { ids } = await request.json();

@@ -12,6 +12,11 @@ import {
 import { startEvaluation } from '../../../../lib/evaluator';
 import { validateModelIds } from '../../../../lib/validators';
 
+/**
+ * POST /api/templates/:id/run
+ * Executes a new evaluation based on the specified template.
+ * Supports overriding the default models configured in the template.
+ */
 export const POST: APIRoute = async ({ params, request }) => {
   try {
     const { id } = params;

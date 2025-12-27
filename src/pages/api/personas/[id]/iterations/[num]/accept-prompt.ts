@@ -7,6 +7,11 @@ import type { APIRoute } from 'astro';
 import { getDatabase } from '../../../../../../lib/db';
 import { storePromptVersion } from '../../../../../../lib/prompt-version-manager';
 
+/**
+ * POST /api/personas/[id]/iterations/[num]/accept-prompt
+ * Accepts a refined prompt (either AI-generated or manually edited).
+ * Stores the new version in the database if it differs from the previous one.
+ */
 export const POST: APIRoute = async ({ params, request }) => {
   try {
     const { id, num } = params;

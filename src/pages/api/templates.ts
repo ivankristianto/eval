@@ -10,7 +10,11 @@ import {
 } from '../../lib/validators';
 import type { RubricType } from '../../lib/types';
 
-// POST /api/templates - Create new template
+/**
+ * POST /api/templates
+ * Creates a new evaluation template for reusable configurations.
+ * Validates inputs and persists the template to the database.
+ */
 export const POST: APIRoute = async ({ request }) => {
   try {
     const body = await request.json();
@@ -97,7 +101,11 @@ export const POST: APIRoute = async ({ request }) => {
   }
 };
 
-// GET /api/templates - List all templates
+/**
+ * GET /api/templates
+ * Lists all evaluation templates.
+ * Supports sorting by creation date, name, or run count.
+ */
 export const GET: APIRoute = async ({ url }) => {
   try {
     const sortBy = (url.searchParams.get('sort_by') || 'created') as
