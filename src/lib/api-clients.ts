@@ -391,6 +391,8 @@ export class ClientFactory {
  * @param modelId - Database ID of the model configuration
  * @param instruction - Instruction to evaluate
  * @param options - Execution options
+ * @param options.systemPrompt - Optional system prompt to guide the model
+ * @param options.temperature - Optional temperature for response generation
  * @returns Generated response text
  */
 export async function callModel(

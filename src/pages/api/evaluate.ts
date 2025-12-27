@@ -15,6 +15,9 @@ import type { RubricType } from '../../lib/types';
  * POST /api/evaluate
  * Submits a new evaluation request for one or more models.
  * Validates inputs, creates database records, and starts background execution.
+ * @param root0
+ * @param root0.request
+ * @returns {Promise<Response>}
  */
 export const POST: APIRoute = async ({ request }) => {
   try {

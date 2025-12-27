@@ -8,6 +8,9 @@ import { cancelEvaluation } from '../../lib/evaluator';
 /**
  * POST /api/cancel-evaluation
  * Cancels a running evaluation process.
+ * @param root0
+ * @param root0.request
+ * @returns {Promise<Response>}
  */
 export const POST: APIRoute = async ({ request }) => {
   try {

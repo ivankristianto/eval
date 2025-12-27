@@ -7,6 +7,12 @@
  * Base error class for all training-related errors
  */
 export class TrainingError extends Error {
+  /**
+   * Initializes a new TrainingError instance.
+   * @param message - Error message
+   * @param code - Unique error code for identification
+   * @param details - Optional additional error details
+   */
   constructor(
     message: string,
     public code: string,
@@ -22,6 +28,11 @@ export class TrainingError extends Error {
  * Thrown when task, judge, and prompt engineer models are not from different providers
  */
 export class ModelSeparationError extends TrainingError {
+  /**
+   * Initializes a new ModelSeparationError instance.
+   * @param message - Error message
+   * @param details - Optional additional error details
+   */
   constructor(message: string, details?: unknown) {
     super(message, 'MODEL_SEPARATION_ERROR', details);
     this.name = 'ModelSeparationError';
@@ -33,6 +44,11 @@ export class ModelSeparationError extends TrainingError {
  * Thrown for invalid CSV format, wrong columns, or constraint violations
  */
 export class CSVValidationError extends TrainingError {
+  /**
+   * Initializes a new CSVValidationError instance.
+   * @param message - Error message
+   * @param details - Optional additional error details
+   */
   constructor(message: string, details?: unknown) {
     super(message, 'CSV_VALIDATION_ERROR', details);
     this.name = 'CSVValidationError';
@@ -44,6 +60,11 @@ export class CSVValidationError extends TrainingError {
  * Thrown when trying to start training without data, or resume when not paused
  */
 export class TrainingStateError extends TrainingError {
+  /**
+   * Initializes a new TrainingStateError instance.
+   * @param message - Error message
+   * @param details - Optional additional error details
+   */
   constructor(message: string, details?: unknown) {
     super(message, 'TRAINING_STATE_ERROR', details);
     this.name = 'TrainingStateError';
@@ -55,6 +76,11 @@ export class TrainingStateError extends TrainingError {
  * Thrown when human feedback is incomplete or metrics computation encounters edge cases
  */
 export class MetricsCalculationError extends TrainingError {
+  /**
+   * Initializes a new MetricsCalculationError instance.
+   * @param message - Error message
+   * @param details - Optional additional error details
+   */
   constructor(message: string, details?: unknown) {
     super(message, 'METRICS_CALCULATION_ERROR', details);
     this.name = 'MetricsCalculationError';
@@ -66,6 +92,11 @@ export class MetricsCalculationError extends TrainingError {
  * Thrown for model API failures (rate limits, timeouts, parsing errors)
  */
 export class LLMAPIError extends TrainingError {
+  /**
+   * Initializes a new LLMAPIError instance.
+   * @param message - Error message
+   * @param details - Optional additional error details
+   */
   constructor(message: string, details?: unknown) {
     super(message, 'LLM_API_ERROR', details);
     this.name = 'LLMAPIError';
@@ -77,6 +108,11 @@ export class LLMAPIError extends TrainingError {
  * Thrown when prompt engineer LLM fails to generate improved prompt
  */
 export class PromptRefinementError extends TrainingError {
+  /**
+   * Initializes a new PromptRefinementError instance.
+   * @param message - Error message
+   * @param details - Optional additional error details
+   */
   constructor(message: string, details?: unknown) {
     super(message, 'PROMPT_REFINEMENT_ERROR', details);
     this.name = 'PromptRefinementError';
@@ -88,6 +124,11 @@ export class PromptRefinementError extends TrainingError {
  * Thrown for constraint violations, FK errors, or transaction rollbacks
  */
 export class DatabaseError extends TrainingError {
+  /**
+   * Initializes a new DatabaseError instance.
+   * @param message - Error message
+   * @param details - Optional additional error details
+   */
   constructor(message: string, details?: unknown) {
     super(message, 'DATABASE_ERROR', details);
     this.name = 'DatabaseError';
@@ -99,6 +140,11 @@ export class DatabaseError extends TrainingError {
  * Generic validation error for input validation
  */
 export class ValidationError extends TrainingError {
+  /**
+   * Initializes a new ValidationError instance.
+   * @param message - Error message
+   * @param details - Optional additional error details
+   */
   constructor(message: string, details?: unknown) {
     super(message, 'VALIDATION_ERROR', details);
     this.name = 'ValidationError';

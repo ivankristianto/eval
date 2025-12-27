@@ -7,6 +7,9 @@ import { getEvaluationStatus } from '../../lib/db';
 /**
  * GET /api/evaluation-status
  * Retrieves current overall and per-model status for a specific evaluation.
+ * @param root0
+ * @param root0.url
+ * @returns {Promise<Response>}
  */
 export const GET: APIRoute = async ({ url }) => {
   try {

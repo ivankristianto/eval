@@ -73,6 +73,9 @@ const DEFAULT_WEIGHTS = {
  * @param expectedOutput - The ground truth output text
  * @param apiKey - Optional Anthropic API key
  * @param options - Configuration options for model, threshold and weights
+ * @param options.model
+ * @param options.threshold
+ * @param options.weights
  * @returns Promise resolving to semantic similarity results
  */
 export async function getSemanticSimilarityScore(
