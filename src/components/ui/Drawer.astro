@@ -1,8 +1,8 @@
 ---
-import Icon from './Icon.astro';
-
 /**
- * Drawer component for side panel overlays
+ * Drawer component.
+ * Provides a slide-out side panel for displaying detailed information or secondary actions.
+ * Controlled via custom events for consistent behavior across the application.
  *
  * @example
  * <Drawer id="details-drawer" title="Details" width="lg">
@@ -20,6 +20,7 @@ import Icon from './Icon.astro';
  * @slot title - Custom title content (overrides title prop)
  * @slot footer - Optional footer content with border separator
  */
+import Icon from './Icon.astro';
 export interface Props {
   id: string;
   title?: string;

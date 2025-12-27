@@ -6,9 +6,7 @@
  */
 import Layout from '../../../layouts/Layout.astro';
 import { getDatabase } from '../../../lib/db';
-import Badge from '../../../components/ui/Badge.astro';
 import MetricCard from '../../../components/MetricCard.astro';
-import PromptDiffViewer from '../../../components/PromptDiffViewer.astro';
 
 const { id } = Astro.params;
 const iterationNum = Astro.url.searchParams.get('iteration');

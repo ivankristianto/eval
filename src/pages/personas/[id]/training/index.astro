@@ -242,7 +242,6 @@ function getStatusVariant(status: string): 'warning' | 'info' | 'success' | 'err
   const searchBtn = document.getElementById('search-btn');
   const pairRows = document.querySelectorAll('.pair-row');
   const visibleCountEl = document.getElementById('visible-count');
-  const totalCountEl = document.getElementById('total-count');
 
   /**
    * Filters the training pairs table based on the search input.
@@ -305,8 +304,6 @@ function getStatusVariant(status: string): 'warning' | 'info' | 'success' | 'err
           const error = await response.json();
           throw new Error(error.message || 'Failed to start training');
         }
-
-        const result = await response.json();
 
         // Redirect to metrics/training page
         window.location.href = `/personas/${personaId}/metrics`;
