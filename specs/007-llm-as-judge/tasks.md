@@ -88,7 +88,7 @@
   - Verify exactly 3 different providers
   - Check models are active (not deleted)
 
-- [ ] T012 [P] Create test file tests/integration/model-separation-validator.test.ts with database integration tests
+- [X] T012 [P] Create test file tests/integration/model-separation-validator.test.ts with database integration tests
 
 **Acceptance Criteria**:
 - Validation enforces strict 3-provider separation per spec clarification Q3
@@ -178,21 +178,21 @@
 
 ### API Endpoints
 
-- [ ] T021 [P] Create test file tests/integration/personas-api.test.ts for CRUD endpoints
+- [X] T021 [P] Create test file tests/integration/personas-api.test.ts for CRUD endpoints
 
-- [ ] T022 Create src/pages/api/personas/index.ts implementing:
+- [X] T022 Create src/pages/api/personas/index.ts implementing:
   - POST /api/personas: Create new persona
     - Accept: {name, description, task_prompt, task_model_id, judge_model_id, prompt_engineer_model_id}
     - Validate via persona-validator
     - Return 201 with created persona or 400 with errors
   - GET /api/personas: List all personas with optional filtering by status
 
-- [ ] T023 Create src/pages/api/personas/[id].ts implementing:
+- [X] T023 Create src/pages/api/personas/[id].ts implementing:
   - GET /api/personas/[id]: Fetch specific persona with all details
   - PUT /api/personas/[id]: Update persona name/description
   - DELETE /api/personas/[id]: Delete persona (cascade deletes training data)
 
-- [ ] T024 Create src/pages/api/training/validate-models.ts implementing:
+- [X] T024 Create src/pages/api/training/validate-models.ts implementing:
   - POST /api/training/validate-models: Validate model separation before creating persona
 
 **Acceptance Criteria**:
@@ -208,20 +208,20 @@
 
 - [ ] T025 [P] Create test file tests/e2e/persona-creation.test.ts for end-to-end persona creation
 
-- [ ] T026 Create src/pages/personas.astro implementing:
+- [X] T026 Create src/pages/personas.astro implementing:
   - Display list of all personas as cards (PersonaCard component)
   - Show status badge (draft/training/trained/incomplete)
   - Display F1 score and iteration count for trained personas
   - "Create New Persona" button
   - Filter by status dropdown
 
-- [ ] T027 Create src/pages/personas/[id]/index.astro implementing:
+- [X] T027 Create src/pages/personas/[id]/index.astro implementing:
   - Persona detail page with tabs: Overview, Training Data, Training Progress, Judge Prompts, Settings
   - Overview tab: Name, description, models selected, status, created date
   - Settings tab: Allow editing task name/description
   - Action buttons: Start Training, Delete, Export (Phase 3)
 
-- [ ] T028 [P] Create src/components/PersonaCard.astro as summary card for persona list (name, status, F1, iteration count, action menu)
+- [X] T028 [P] Create src/components/PersonaCard.astro as summary card for persona list (name, status, F1, iteration count, action menu)
 
 **Acceptance Criteria**:
 - Persona list displays all personas correctly
