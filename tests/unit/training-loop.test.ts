@@ -48,12 +48,14 @@ describe('IterativeTrainingLoop', () => {
       const personaId = uuidv4();
 
       // Create persona first
-      db.prepare(`
+      db.prepare(
+        `
         INSERT INTO personas (id, name, description, task_prompt,
           task_model_id, judge_model_id, prompt_engineer_model_id,
           status, created_at, updated_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(
+      `
+      ).run(
         personaId,
         'Test Persona',
         'Test description',
@@ -81,12 +83,14 @@ describe('IterativeTrainingLoop', () => {
       const personaId = uuidv4();
 
       // Create persona first
-      db.prepare(`
+      db.prepare(
+        `
         INSERT INTO personas (id, name, description, task_prompt,
           task_model_id, judge_model_id, prompt_engineer_model_id,
           status, created_at, updated_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(
+      `
+      ).run(
         personaId,
         'Test Persona',
         'Test description',
@@ -107,7 +111,9 @@ describe('IterativeTrainingLoop', () => {
       // Wait a bit for async execution
       await new Promise((resolve) => setTimeout(resolve, 100));
 
-      const state = db.prepare('SELECT * FROM training_loop_state WHERE session_id = ?').get(sessionId);
+      const state = db
+        .prepare('SELECT * FROM training_loop_state WHERE session_id = ?')
+        .get(sessionId);
       expect(state).toBeDefined();
     });
   });
@@ -118,12 +124,14 @@ describe('IterativeTrainingLoop', () => {
       const personaId = uuidv4();
 
       // Create persona and loop state
-      db.prepare(`
+      db.prepare(
+        `
         INSERT INTO personas (id, name, description, task_prompt,
           task_model_id, judge_model_id, prompt_engineer_model_id,
           status, created_at, updated_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(
+      `
+      ).run(
         personaId,
         'Test Persona',
         'Test description',
@@ -136,13 +144,15 @@ describe('IterativeTrainingLoop', () => {
         new Date().toISOString()
       );
 
-      db.prepare(`
+      db.prepare(
+        `
         INSERT INTO training_loop_state
         (session_id, persona_id, current_iteration, total_iterations,
          status, task_model_id, judge_model_id, prompt_engineer_model_id,
          created_at, updated_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(
+      `
+      ).run(
         sessionId,
         personaId,
         1,
@@ -159,7 +169,9 @@ describe('IterativeTrainingLoop', () => {
 
       await loop.pause('User requested pause');
 
-      const state = db.prepare('SELECT * FROM training_loop_state WHERE session_id = ?').get(sessionId) as any;
+      const state = db
+        .prepare('SELECT * FROM training_loop_state WHERE session_id = ?')
+        .get(sessionId) as any;
       expect(state.status).toBe('paused');
       expect(state.pause_reason).toBe('User requested pause');
     });

@@ -1,9 +1,9 @@
-import type { Meta, StoryObj } from "@storybook/html";
+import type { Meta, StoryObj } from '@storybook/html';
 
 const meta = {
-  title: "UI/Drawer",
+  title: 'UI/Drawer',
   parameters: {
-    layout: "fullscreen",
+    layout: 'fullscreen',
   },
 } satisfies Meta;
 

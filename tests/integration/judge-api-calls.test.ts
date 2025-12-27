@@ -19,28 +19,36 @@ describe('Judge API Integration', () => {
     cleanTestDatabase();
 
     // Create model configuration
-    db.prepare(`
+    db.prepare(
+      `
       INSERT INTO ModelConfiguration (id, provider, model_name, api_key_encrypted, created_at)
       VALUES (?, ?, ?, ?, ?)
-    `).run('judge-model', 'anthropic', 'claude-3', 'test-key', new Date().toISOString());
+    `
+    ).run('judge-model', 'anthropic', 'claude-3', 'test-key', new Date().toISOString());
 
     // Create persona
-    db.prepare(`
+    db.prepare(
+      `
       INSERT INTO ModelConfiguration (id, provider, model_name, api_key_encrypted, created_at)
       VALUES (?, ?, ?, ?, ?)
-    `).run('task-model', 'openai', 'gpt-4', 'test-key', new Date().toISOString());
+    `
+    ).run('task-model', 'openai', 'gpt-4', 'test-key', new Date().toISOString());
 
-    db.prepare(`
+    db.prepare(
+      `
       INSERT INTO ModelConfiguration (id, provider, model_name, api_key_encrypted, created_at)
       VALUES (?, ?, ?, ?, ?)
-    `).run('engineer-model', 'google', 'gemini-pro', 'test-key', new Date().toISOString());
+    `
+    ).run('engineer-model', 'google', 'gemini-pro', 'test-key', new Date().toISOString());
 
-    db.prepare(`
+    db.prepare(
+      `
       INSERT INTO personas (id, name, description, task_prompt,
         task_model_id, judge_model_id, prompt_engineer_model_id,
         status, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
+    `
+    ).run(
       'persona-1',
       'Test Persona',
       'Test description',
@@ -54,12 +62,14 @@ describe('Judge API Integration', () => {
     );
 
     // Create training iteration
-    db.prepare(`
+    db.prepare(
+      `
       INSERT INTO training_iterations
       (id, persona_id, iteration_number, judge_model_id, judge_prompt_text,
        status, started_at)
       VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).run(
+    `
+    ).run(
       'iteration-1',
       'persona-1',
       1,
@@ -70,16 +80,12 @@ describe('Judge API Integration', () => {
     );
 
     // Create training pair
-    db.prepare(`
+    db.prepare(
+      `
       INSERT INTO training_pairs (id, persona_id, input, expected_output, created_at)
       VALUES (?, ?, ?, ?, ?)
-    `).run(
-      'pair-1',
-      'persona-1',
-      'What is 2+2?',
-      '4',
-      new Date().toISOString()
-    );
+    `
+    ).run('pair-1', 'persona-1', 'What is 2+2?', '4', new Date().toISOString());
   });
 
   describe('evaluateOutput', () => {
@@ -112,17 +118,11 @@ describe('Judge API Integration', () => {
 
   describe('storeJudgeDecision', () => {
     it('should store judge decision to database', () => {
-      const decisionId = storeJudgeDecision(
-        db,
-        'iteration-1',
-        'pair-1',
-        '4',
-        {
-          decision: 'agree',
-          confidence: 0.95,
-          reasoning: 'The answer is correct',
-        }
-      );
+      const decisionId = storeJudgeDecision(db, 'iteration-1', 'pair-1', '4', {
+        decision: 'agree',
+        confidence: 0.95,
+        reasoning: 'The answer is correct',
+      });
 
       expect(decisionId).toBeTruthy();
 
@@ -140,16 +140,10 @@ describe('Judge API Integration', () => {
     });
 
     it('should handle missing confidence value', () => {
-      const decisionId = storeJudgeDecision(
-        db,
-        'iteration-1',
-        'pair-1',
-        'Incorrect answer',
-        {
-          decision: 'disagree',
-          reasoning: 'The answer is wrong',
-        }
-      );
+      const decisionId = storeJudgeDecision(db, 'iteration-1', 'pair-1', 'Incorrect answer', {
+        decision: 'disagree',
+        reasoning: 'The answer is wrong',
+      });
 
       const stored = db
         .prepare('SELECT * FROM judge_decisions WHERE id = ?')
@@ -194,13 +188,7 @@ describe('Judge API Integration', () => {
       );
 
       // Store
-      const decisionId = storeJudgeDecision(
-        db,
-        'iteration-1',
-        'pair-1',
-        '4',
-        result
-      );
+      const decisionId = storeJudgeDecision(db, 'iteration-1', 'pair-1', '4', result);
 
       // Verify
       const stored = db

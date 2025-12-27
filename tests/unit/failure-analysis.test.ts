@@ -22,29 +22,37 @@ describe('Failure Analysis', () => {
     const modelJudgeId = 'model-judge-1';
     const modelEngineerId = 'model-engineer-1';
 
-    db.prepare(`
+    db.prepare(
+      `
       INSERT OR IGNORE INTO ModelConfiguration (id, provider, model_name, api_key_encrypted, is_active)
       VALUES (?, ?, ?, ?, ?)
-    `).run(modelTaskId, 'openai', 'gpt-4', 'fake-key', 1);
+    `
+    ).run(modelTaskId, 'openai', 'gpt-4', 'fake-key', 1);
 
-    db.prepare(`
+    db.prepare(
+      `
       INSERT OR IGNORE INTO ModelConfiguration (id, provider, model_name, api_key_encrypted, is_active)
       VALUES (?, ?, ?, ?, ?)
-    `).run(modelJudgeId, 'anthropic', 'claude-3', 'fake-key', 1);
+    `
+    ).run(modelJudgeId, 'anthropic', 'claude-3', 'fake-key', 1);
 
-    db.prepare(`
+    db.prepare(
+      `
       INSERT OR IGNORE INTO ModelConfiguration (id, provider, model_name, api_key_encrypted, is_active)
       VALUES (?, ?, ?, ?, ?)
-    `).run(modelEngineerId, 'google', 'gemini-pro', 'fake-key', 1);
+    `
+    ).run(modelEngineerId, 'google', 'gemini-pro', 'fake-key', 1);
 
     // Create test persona
     personaId = uuidv4();
-    db.prepare(`
+    db.prepare(
+      `
       INSERT INTO personas
       (id, name, description, task_prompt, task_model_id, judge_model_id,
        prompt_engineer_model_id, status, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
+    `
+    ).run(
       personaId,
       'Test Persona',
       'Test description',
@@ -59,12 +67,14 @@ describe('Failure Analysis', () => {
 
     // Create test iteration
     iterationId = uuidv4();
-    db.prepare(`
+    db.prepare(
+      `
       INSERT INTO training_iterations
       (id, persona_id, iteration_number, judge_model_id, judge_prompt_text,
        status, total_pairs_evaluated, pairs_reviewed_by_human, started_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
+    `
+    ).run(
       iterationId,
       personaId,
       1,
@@ -79,31 +89,47 @@ describe('Failure Analysis', () => {
 
   afterEach(() => {
     // Clean up test data in reverse dependency order
-    db.prepare('DELETE FROM human_reviews WHERE judge_decision_id IN (SELECT id FROM judge_decisions WHERE iteration_id = ?)').run(iterationId);
+    db.prepare(
+      'DELETE FROM human_reviews WHERE judge_decision_id IN (SELECT id FROM judge_decisions WHERE iteration_id = ?)'
+    ).run(iterationId);
     db.prepare('DELETE FROM judge_decisions WHERE iteration_id = ?').run(iterationId);
     db.prepare('DELETE FROM iteration_metrics WHERE iteration_id = ?').run(iterationId);
     db.prepare('DELETE FROM training_iterations WHERE id = ?').run(iterationId);
     db.prepare('DELETE FROM training_pairs WHERE persona_id = ?').run(personaId);
     db.prepare('DELETE FROM personas WHERE id = ?').run(personaId);
-    db.prepare('DELETE FROM ModelConfiguration WHERE id IN (?, ?, ?)').run('model-task-1', 'model-judge-1', 'model-engineer-1');
+    db.prepare('DELETE FROM ModelConfiguration WHERE id IN (?, ?, ?)').run(
+      'model-task-1',
+      'model-judge-1',
+      'model-engineer-1'
+    );
   });
 
   it('should extract false positives (judge agreed, human disagreed)', async () => {
     // Create training pair
     const pairId = uuidv4();
-    db.prepare(`
+    db.prepare(
+      `
       INSERT INTO training_pairs (id, persona_id, input, expected_output, created_at)
       VALUES (?, ?, ?, ?, ?)
-    `).run(pairId, personaId, 'How do I reset my password?', 'Click "Forgot Password" link', new Date().toISOString());
+    `
+    ).run(
+      pairId,
+      personaId,
+      'How do I reset my password?',
+      'Click "Forgot Password" link',
+      new Date().toISOString()
+    );
 
     // Create judge decision (judge says "agree")
     const decisionId = uuidv4();
-    db.prepare(`
+    db.prepare(
+      `
       INSERT INTO judge_decisions
       (id, iteration_id, training_pair_id, generated_output, judge_decision,
        judge_confidence, judge_reasoning, created_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
+    `
+    ).run(
       decisionId,
       iterationId,
       pairId,
@@ -116,11 +142,13 @@ describe('Failure Analysis', () => {
 
     // Create human review (human says "disagree" - this is a false positive)
     const reviewId = uuidv4();
-    db.prepare(`
+    db.prepare(
+      `
       INSERT INTO human_reviews
       (id, judge_decision_id, human_decision, human_confidence, human_notes, created_at)
       VALUES (?, ?, ?, ?, ?, ?)
-    `).run(
+    `
+    ).run(
       reviewId,
       decisionId,
       'disagree',
@@ -140,19 +168,29 @@ describe('Failure Analysis', () => {
   it('should extract false negatives (judge disagreed, human agreed)', async () => {
     // Create training pair
     const pairId = uuidv4();
-    db.prepare(`
+    db.prepare(
+      `
       INSERT INTO training_pairs (id, persona_id, input, expected_output, created_at)
       VALUES (?, ?, ?, ?, ?)
-    `).run(pairId, personaId, 'What is your return policy?', '30-day money-back guarantee', new Date().toISOString());
+    `
+    ).run(
+      pairId,
+      personaId,
+      'What is your return policy?',
+      '30-day money-back guarantee',
+      new Date().toISOString()
+    );
 
     // Create judge decision (judge says "disagree")
     const decisionId = uuidv4();
-    db.prepare(`
+    db.prepare(
+      `
       INSERT INTO judge_decisions
       (id, iteration_id, training_pair_id, generated_output, judge_decision,
        judge_confidence, judge_reasoning, created_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
+    `
+    ).run(
       decisionId,
       iterationId,
       pairId,
@@ -165,11 +203,13 @@ describe('Failure Analysis', () => {
 
     // Create human review (human says "agree" - this is a false negative)
     const reviewId = uuidv4();
-    db.prepare(`
+    db.prepare(
+      `
       INSERT INTO human_reviews
       (id, judge_decision_id, human_decision, human_confidence, human_notes, created_at)
       VALUES (?, ?, ?, ?, ?, ?)
-    `).run(
+    `
+    ).run(
       reviewId,
       decisionId,
       'agree',
@@ -189,19 +229,29 @@ describe('Failure Analysis', () => {
   it('should extract correct examples (judge and human agree)', async () => {
     // Create training pair
     const pairId = uuidv4();
-    db.prepare(`
+    db.prepare(
+      `
       INSERT INTO training_pairs (id, persona_id, input, expected_output, created_at)
       VALUES (?, ?, ?, ?, ?)
-    `).run(pairId, personaId, 'Is shipping free?', 'Yes, free shipping on orders over $50', new Date().toISOString());
+    `
+    ).run(
+      pairId,
+      personaId,
+      'Is shipping free?',
+      'Yes, free shipping on orders over $50',
+      new Date().toISOString()
+    );
 
     // Create judge decision (judge says "agree")
     const decisionId = uuidv4();
-    db.prepare(`
+    db.prepare(
+      `
       INSERT INTO judge_decisions
       (id, iteration_id, training_pair_id, generated_output, judge_decision,
        judge_confidence, judge_reasoning, created_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
+    `
+    ).run(
       decisionId,
       iterationId,
       pairId,
@@ -214,11 +264,13 @@ describe('Failure Analysis', () => {
 
     // Create human review (human also says "agree" - correct classification)
     const reviewId = uuidv4();
-    db.prepare(`
+    db.prepare(
+      `
       INSERT INTO human_reviews
       (id, judge_decision_id, human_decision, human_confidence, human_notes, created_at)
       VALUES (?, ?, ?, ?, ?, ?)
-    `).run(
+    `
+    ).run(
       reviewId,
       decisionId,
       'agree',
@@ -231,7 +283,9 @@ describe('Failure Analysis', () => {
 
     expect(result.correct_examples).toHaveLength(1);
     expect(result.correct_examples[0].model_output).toBe('Free shipping for orders above $50');
-    expect(result.correct_examples[0].expected_output).toBe('Yes, free shipping on orders over $50');
+    expect(result.correct_examples[0].expected_output).toBe(
+      'Yes, free shipping on orders over $50'
+    );
     expect(result.correct_examples[0].decision).toBe('agree');
     expect(result.correct_examples[0].reasoning).toBe('Response correctly conveys the information');
   });
@@ -240,18 +294,22 @@ describe('Failure Analysis', () => {
     // Create 10 false positive examples
     for (let i = 0; i < 10; i++) {
       const pairId = uuidv4();
-      db.prepare(`
+      db.prepare(
+        `
         INSERT INTO training_pairs (id, persona_id, input, expected_output, created_at)
         VALUES (?, ?, ?, ?, ?)
-      `).run(pairId, personaId, `Question ${i}`, `Answer ${i}`, new Date().toISOString());
+      `
+      ).run(pairId, personaId, `Question ${i}`, `Answer ${i}`, new Date().toISOString());
 
       const decisionId = uuidv4();
-      db.prepare(`
+      db.prepare(
+        `
         INSERT INTO judge_decisions
         (id, iteration_id, training_pair_id, generated_output, judge_decision,
          judge_confidence, judge_reasoning, created_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(
+      `
+      ).run(
         decisionId,
         iterationId,
         pairId,
@@ -263,11 +321,13 @@ describe('Failure Analysis', () => {
       );
 
       const reviewId = uuidv4();
-      db.prepare(`
+      db.prepare(
+        `
         INSERT INTO human_reviews
         (id, judge_decision_id, human_decision, human_confidence, human_notes, created_at)
         VALUES (?, ?, ?, ?, ?, ?)
-      `).run(reviewId, decisionId, 'disagree', 0.9, 'Not good enough', new Date().toISOString());
+      `
+      ).run(reviewId, decisionId, 'disagree', 0.9, 'Not good enough', new Date().toISOString());
     }
 
     const result = await analyzeIterationFailures(iterationId, db);
@@ -278,12 +338,14 @@ describe('Failure Analysis', () => {
   it('should include current metrics and task description', async () => {
     // Create metrics for iteration
     const metricsId = uuidv4();
-    db.prepare(`
+    db.prepare(
+      `
       INSERT INTO iteration_metrics
       (id, iteration_id, true_positives, true_negatives, false_positives, false_negatives,
        precision, recall, f1_score, cohens_kappa, accuracy, calculated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
+    `
+    ).run(
       metricsId,
       iterationId,
       10,
@@ -292,8 +354,8 @@ describe('Failure Analysis', () => {
       2,
       0.77,
       0.83,
-      0.80,
-      0.70,
+      0.8,
+      0.7,
       0.75,
       new Date().toISOString()
     );
@@ -301,8 +363,8 @@ describe('Failure Analysis', () => {
     const result = await analyzeIterationFailures(iterationId, db);
 
     expect(result.current_metrics).toBeDefined();
-    expect(result.current_metrics.f1_score).toBe(0.80);
-    expect(result.current_metrics.cohens_kappa).toBe(0.70);
+    expect(result.current_metrics.f1_score).toBe(0.8);
+    expect(result.current_metrics.cohens_kappa).toBe(0.7);
     expect(result.iteration_number).toBe(1);
     expect(result.task_description).toBe('Test description');
     expect(result.current_prompt).toBe('Evaluate if the response is helpful and polite');
@@ -319,8 +381,8 @@ describe('Failure Analysis', () => {
   it('should throw error if iteration not found', async () => {
     const invalidIterationId = uuidv4();
 
-    await expect(
-      analyzeIterationFailures(invalidIterationId, db)
-    ).rejects.toThrow('Iteration not found');
+    await expect(analyzeIterationFailures(invalidIterationId, db)).rejects.toThrow(
+      'Iteration not found'
+    );
   });
 });

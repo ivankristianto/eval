@@ -29,12 +29,14 @@ describe('Training Iteration API', () => {
     modelStmt.run('engineer-model', 'google', 'gemini-pro', 'test-key', new Date().toISOString());
 
     // Create persona
-    db.prepare(`
+    db.prepare(
+      `
       INSERT INTO personas (id, name, description, task_prompt,
         task_model_id, judge_model_id, prompt_engineer_model_id,
         status, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
+    `
+    ).run(
       'persona-1',
       'Test Persona',
       'Test description',
@@ -69,12 +71,14 @@ describe('Training Iteration API', () => {
       const iterationId = uuidv4();
 
       // Simulate API creating iteration
-      db.prepare(`
+      db.prepare(
+        `
         INSERT INTO training_iterations
         (id, persona_id, iteration_number, judge_model_id, judge_prompt_text,
          status, started_at)
         VALUES (?, ?, ?, ?, ?, ?, ?)
-      `).run(
+      `
+      ).run(
         iterationId,
         'persona-1',
         1,
@@ -99,13 +103,15 @@ describe('Training Iteration API', () => {
       const sessionId = uuidv4();
 
       // Simulate API creating training loop state
-      db.prepare(`
+      db.prepare(
+        `
         INSERT INTO training_loop_state
         (session_id, persona_id, current_iteration, total_iterations,
          status, task_model_id, judge_model_id, prompt_engineer_model_id,
          created_at, updated_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(
+      `
+      ).run(
         sessionId,
         'persona-1',
         1,
@@ -129,12 +135,14 @@ describe('Training Iteration API', () => {
 
     it('should increment iteration number for subsequent iterations', () => {
       // Create first iteration
-      db.prepare(`
+      db.prepare(
+        `
         INSERT INTO training_iterations
         (id, persona_id, iteration_number, judge_model_id, judge_prompt_text,
          status, started_at, completed_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(
+      `
+      ).run(
         uuidv4(),
         'persona-1',
         1,
@@ -147,12 +155,14 @@ describe('Training Iteration API', () => {
 
       // Create second iteration
       const iteration2Id = uuidv4();
-      db.prepare(`
+      db.prepare(
+        `
         INSERT INTO training_iterations
         (id, persona_id, iteration_number, judge_model_id, judge_prompt_text,
          status, started_at)
         VALUES (?, ?, ?, ?, ?, ?, ?)
-      `).run(
+      `
+      ).run(
         iteration2Id,
         'persona-1',
         2,
@@ -171,12 +181,14 @@ describe('Training Iteration API', () => {
 
     it('should return 400 if persona has no training pairs', () => {
       // Create persona without training pairs
-      db.prepare(`
+      db.prepare(
+        `
         INSERT INTO personas (id, name, description, task_prompt,
           task_model_id, judge_model_id, prompt_engineer_model_id,
           status, created_at, updated_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(
+      `
+      ).run(
         'persona-2',
         'Empty Persona',
         'No training data',
@@ -202,13 +214,15 @@ describe('Training Iteration API', () => {
     it('should return latest iteration with metrics', () => {
       // Create completed iteration
       const iterationId = uuidv4();
-      db.prepare(`
+      db.prepare(
+        `
         INSERT INTO training_iterations
         (id, persona_id, iteration_number, judge_model_id, judge_prompt_text,
          status, total_pairs_evaluated, pairs_reviewed_by_human,
          started_at, completed_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(
+      `
+      ).run(
         iterationId,
         'persona-1',
         1,
@@ -222,29 +236,19 @@ describe('Training Iteration API', () => {
       );
 
       // Create metrics
-      db.prepare(`
+      db.prepare(
+        `
         INSERT INTO iteration_metrics
         (id, iteration_id, true_positives, true_negatives, false_positives, false_negatives,
          precision, recall, f1_score, cohens_kappa, accuracy, calculated_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(
-        uuidv4(),
-        iterationId,
-        8,
-        1,
-        1,
-        0,
-        0.89,
-        1.0,
-        0.94,
-        0.8,
-        0.9,
-        new Date().toISOString()
-      );
+      `
+      ).run(uuidv4(), iterationId, 8, 1, 1, 0, 0.89, 1.0, 0.94, 0.8, 0.9, new Date().toISOString());
 
       // Query for status
       const status = db
-        .prepare(`
+        .prepare(
+          `
           SELECT
             ti.*,
             im.f1_score,
@@ -256,7 +260,8 @@ describe('Training Iteration API', () => {
           WHERE ti.persona_id = ?
           ORDER BY ti.iteration_number DESC
           LIMIT 1
-        `)
+        `
+        )
         .get('persona-1') as any;
 
       expect(status).toBeDefined();
@@ -268,12 +273,14 @@ describe('Training Iteration API', () => {
 
     it('should return in_progress status for ongoing iteration', () => {
       const iterationId = uuidv4();
-      db.prepare(`
+      db.prepare(
+        `
         INSERT INTO training_iterations
         (id, persona_id, iteration_number, judge_model_id, judge_prompt_text,
          status, total_pairs_evaluated, pairs_reviewed_by_human, started_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(
+      `
+      ).run(
         iterationId,
         'persona-1',
         1,

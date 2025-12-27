@@ -5,7 +5,13 @@
  */
 interface Props {
   personaId: string;
-  activeTab: 'overview' | 'training-data' | 'training-progress' | 'metrics' | 'judge-prompts' | 'settings';
+  activeTab:
+    | 'overview'
+    | 'training-data'
+    | 'training-progress'
+    | 'metrics'
+    | 'judge-prompts'
+    | 'settings';
 }
 
 const { personaId, activeTab } = Astro.props;

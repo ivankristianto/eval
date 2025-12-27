@@ -182,14 +182,14 @@ ${Array.from({ length: 12 }, (_, i) => `"Question ${i}","Answer ${i}"`).join('\n
     // Ensure we have some pairs
     const count = await page.locator('.pair-row').count();
     if (count === 0) {
-       // Upload some
-       const validCSV = `input,expected_output
+      // Upload some
+      const validCSV = `input,expected_output
 ${Array.from({ length: 10 }, (_, i) => `"Input ${i}","Output ${i}"`).join('\n')}`;
-       const csvPath = join(TEST_CSV_DIR, 'display-test.csv');
-       writeFileSync(csvPath, validCSV);
-       await page.locator('#file-input').setInputFiles(csvPath);
-       await page.locator('#upload-btn').click();
-       await page.waitForNavigation({ timeout: 15000 }).catch(() => {});
+      const csvPath = join(TEST_CSV_DIR, 'display-test.csv');
+      writeFileSync(csvPath, validCSV);
+      await page.locator('#file-input').setInputFiles(csvPath);
+      await page.locator('#upload-btn').click();
+      await page.waitForNavigation({ timeout: 15000 }).catch(() => {});
     }
 
     // Verify table headers

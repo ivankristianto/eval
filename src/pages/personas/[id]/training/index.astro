@@ -24,9 +24,7 @@ if (!persona) {
 }
 
 // Fetch training pairs
-const pairsResponse = await fetch(
-  `${Astro.url.origin}/api/personas/${id}/training/pairs`
-);
+const pairsResponse = await fetch(`${Astro.url.origin}/api/personas/${id}/training/pairs`);
 const pairsData = await pairsResponse.json();
 const trainingPairs = pairsData.pairs || [];
 const pairCount = pairsData.count || 0;
@@ -172,12 +170,11 @@ function getStatusVariant(status: string): 'warning' | 'info' | 'success' | 'err
                 </tbody>
               </table>
 
-              <!-- Pagination info -->
+              {/* Pagination info */}
               <div class="flex justify-between items-center mt-4">
                 <div class="text-sm text-base-content/60">
-                  Showing <span id="visible-count">{pairCount}</span> of <span
-                    id="total-count">{pairCount}</span
-                  > pairs
+                  Showing <span id="visible-count">{pairCount}</span> of{' '}
+                  <span id="total-count">{pairCount}</span> pairs
                 </div>
               </div>
             </div>
@@ -309,7 +306,9 @@ function getStatusVariant(status: string): 'warning' | 'info' | 'success' | 'err
         window.location.href = `/personas/${personaId}/metrics`;
       } catch (error) {
         console.error('Failed to start training:', error);
-        alert(`Failed to start training: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        alert(
+          `Failed to start training: ${error instanceof Error ? error.message : 'Unknown error'}`
+        );
         button.disabled = false;
         button.classList.remove('loading');
       }

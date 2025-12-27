@@ -74,7 +74,9 @@ export const GET: APIRoute = async ({ params }) => {
 
     // Get training loop state if active
     const loopState = db
-      .prepare('SELECT * FROM training_loop_state WHERE persona_id = ? ORDER BY updated_at DESC LIMIT 1')
+      .prepare(
+        'SELECT * FROM training_loop_state WHERE persona_id = ? ORDER BY updated_at DESC LIMIT 1'
+      )
       .get(id) as any;
 
     // Build response

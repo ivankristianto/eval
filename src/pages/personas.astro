@@ -210,7 +210,10 @@ const personaIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 te
         window.location.href = `/personas/${personaId}/metrics`;
       } catch (error) {
         console.error('Failed to start training:', error);
-        addToast(`Failed to start training: ${error instanceof Error ? error.message : 'Unknown error'}`, 'error');
+        addToast(
+          `Failed to start training: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          'error'
+        );
         button.disabled = false;
         button.classList.remove('loading');
       }

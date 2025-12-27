@@ -75,7 +75,7 @@ describe('Persona Database Access Layer', () => {
         name: 'Test Persona',
         description: 'A test persona',
         task_prompt: 'Evaluate responses',
-      initial_judge_prompt: 'Evaluate and judge the output',
+        initial_judge_prompt: 'Evaluate and judge the output',
         task_model_id: taskModelId,
         judge_model_id: judgeModelId,
         prompt_engineer_model_id: promptEngineerModelId,

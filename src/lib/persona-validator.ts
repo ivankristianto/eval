@@ -97,7 +97,9 @@ export function validatePersonaCreation(
   }
 
   if (input.initial_judge_prompt && input.initial_judge_prompt.trim().length < 10) {
-    warnings.push('Initial judge prompt is very short. Consider providing more evaluation criteria.');
+    warnings.push(
+      'Initial judge prompt is very short. Consider providing more evaluation criteria.'
+    );
   }
 
   if (!input.description || input.description.trim() === '') {

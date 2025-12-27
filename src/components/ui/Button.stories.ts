@@ -1,57 +1,57 @@
-import type { Meta, StoryObj } from "@storybook/html";
+import type { Meta, StoryObj } from '@storybook/html';
 
 type ButtonArgs = {
   label: string;
   variant:
-    | "primary"
-    | "secondary"
-    | "accent"
-    | "ghost"
-    | "link"
-    | "info"
-    | "success"
-    | "warning"
-    | "error"
-    | "neutral";
-  size: "lg" | "md" | "sm" | "xs";
+    | 'primary'
+    | 'secondary'
+    | 'accent'
+    | 'ghost'
+    | 'link'
+    | 'info'
+    | 'success'
+    | 'warning'
+    | 'error'
+    | 'neutral';
+  size: 'lg' | 'md' | 'sm' | 'xs';
   outline: boolean;
   href?: string;
   disabled: boolean;
 };
 
 const meta = {
-  title: "UI/Button",
+  title: 'UI/Button',
   argTypes: {
     variant: {
-      control: "select",
+      control: 'select',
       options: [
-        "primary",
-        "secondary",
-        "accent",
-        "ghost",
-        "link",
-        "info",
-        "success",
-        "warning",
-        "error",
-        "neutral",
+        'primary',
+        'secondary',
+        'accent',
+        'ghost',
+        'link',
+        'info',
+        'success',
+        'warning',
+        'error',
+        'neutral',
       ],
     },
     size: {
-      control: "select",
-      options: ["lg", "md", "sm", "xs"],
+      control: 'select',
+      options: ['lg', 'md', 'sm', 'xs'],
     },
     outline: {
-      control: "boolean",
+      control: 'boolean',
     },
     disabled: {
-      control: "boolean",
+      control: 'boolean',
     },
   },
   args: {
-    label: "Run evaluation",
-    variant: "primary",
-    size: "md",
+    label: 'Run evaluation',
+    variant: 'primary',
+    size: 'md',
     outline: false,
     disabled: false,
   },
@@ -63,19 +63,19 @@ type Story = StoryObj<typeof meta>;
 export const Primary: Story = {
   render: (args) => {
     const classes = [
-      "btn",
-      args.variant === "primary" ? "btn-luxe btn-luxe-primary" : `btn-${args.variant}`,
+      'btn',
+      args.variant === 'primary' ? 'btn-luxe btn-luxe-primary' : `btn-${args.variant}`,
       `btn-${args.size}`,
-      args.outline ? "btn-outline" : "",
-      args.disabled ? "btn-disabled" : "",
+      args.outline ? 'btn-outline' : '',
+      args.disabled ? 'btn-disabled' : '',
     ]
       .filter(Boolean)
-      .join(" ");
+      .join(' ');
 
     if (args.href) {
       return `<a class="${classes}" href="${args.href}">${args.label}</a>`;
     }
 
-    return `<button class="${classes}" type="button" ${args.disabled ? "disabled" : ""}>${args.label}</button>`;
+    return `<button class="${classes}" type="button" ${args.disabled ? 'disabled' : ''}>${args.label}</button>`;
   },
 };

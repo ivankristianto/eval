@@ -98,8 +98,7 @@ const targetReached = hasMetrics && persona.best_f1_score >= persona.target_f1_s
       <progress
         class="progress progress-primary w-full"
         value={persona.current_iteration}
-        max={persona.max_iterations}
-      ></progress>
+        max={persona.max_iterations}></progress>
       <div class="text-xs text-base-content/60 text-right mt-1">{progressPercentage}% complete</div>
     </div>
 
@@ -119,7 +118,7 @@ const targetReached = hasMetrics && persona.best_f1_score >= persona.target_f1_s
             class="progress progress-success w-full"
             value={persona.best_f1_score}
             max={persona.target_f1_score}
-          ></progress>
+          />
           <div class="flex items-center justify-between text-xs mt-1">
             <span class="text-base-content/60">
               Target: {(persona.target_f1_score * 100).toFixed(0)}%
@@ -139,7 +138,9 @@ const targetReached = hasMetrics && persona.best_f1_score >= persona.target_f1_s
       currentIteration && (
         <div class="mb-6 p-4 bg-base-300 rounded-lg">
           <div class="flex items-center justify-between mb-3">
-            <span class="text-sm font-semibold">Current Iteration #{currentIteration.iteration_number}</span>
+            <span class="text-sm font-semibold">
+              Current Iteration #{currentIteration.iteration_number}
+            </span>
             <Badge variant={getIterationStatusVariant(currentIteration.status)} size="sm">
               {currentIteration.status}
             </Badge>
@@ -156,9 +157,7 @@ const targetReached = hasMetrics && persona.best_f1_score >= persona.target_f1_s
               <div class="text-xs text-base-content/60 uppercase tracking-wide mb-1">
                 Human Reviews
               </div>
-              <div class="font-mono font-semibold">
-                {currentIteration.pairs_reviewed_by_human}
-              </div>
+              <div class="font-mono font-semibold">{currentIteration.pairs_reviewed_by_human}</div>
             </div>
           </div>
 
@@ -168,7 +167,7 @@ const targetReached = hasMetrics && persona.best_f1_score >= persona.target_f1_s
                 class="progress progress-warning w-full"
                 value={currentIteration.pairs_reviewed_by_human}
                 max={currentIteration.total_pairs_evaluated}
-              ></progress>
+              />
               <div class="text-xs text-base-content/60 text-center mt-1">
                 {currentIteration.total_pairs_evaluated - currentIteration.pairs_reviewed_by_human}{' '}
                 reviews pending
@@ -186,8 +185,12 @@ const targetReached = hasMetrics && persona.best_f1_score >= persona.target_f1_s
           <div class="text-sm">
             <div class="text-xs text-base-content/60 uppercase tracking-wide mb-1">Target</div>
             <div>
-              Reach <span class="font-mono font-bold text-primary">{(persona.target_f1_score * 100).toFixed(0)}%</span>{' '}
-              F1 score within <span class="font-mono font-bold">{persona.max_iterations}</span> iterations
+              Reach{' '}
+              <span class="font-mono font-bold text-primary">
+                {(persona.target_f1_score * 100).toFixed(0)}%
+              </span>{' '}
+              F1 score within <span class="font-mono font-bold">{persona.max_iterations}</span>{' '}
+              iterations
             </div>
           </div>
         </div>

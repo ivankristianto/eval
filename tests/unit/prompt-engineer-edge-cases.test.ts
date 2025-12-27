@@ -20,7 +20,7 @@ describe('Prompt Engineer Edge Cases', () => {
       precision: 0.8,
       recall: 0.75,
       f1_score: 0.77,
-      cohens_kappa: 0.70,
+      cohens_kappa: 0.7,
       accuracy: 0.78,
       confusion_matrix: {
         true_positives: 20,

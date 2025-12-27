@@ -185,9 +185,7 @@ describe('Training Data Display', () => {
       }
 
       const pairs = db
-        .prepare(
-          'SELECT input FROM training_pairs WHERE persona_id = ? ORDER BY created_at ASC'
-        )
+        .prepare('SELECT input FROM training_pairs WHERE persona_id = ? ORDER BY created_at ASC')
         .all(personaId);
 
       expect((pairs[0] as any).input).toBe('Q1');
@@ -236,9 +234,7 @@ describe('Training Data Display', () => {
         .all(personaId, `%${searchTerm}%`);
 
       expect(pairs.length).toBeGreaterThanOrEqual(2); // "What is TypeScript?" and "Define TypeScript generics"
-      expect(
-        pairs.every((p: any) => p.input.toLowerCase().includes(searchTerm))
-      ).toBe(true);
+      expect(pairs.every((p: any) => p.input.toLowerCase().includes(searchTerm))).toBe(true);
     });
 
     it('should return all pairs when search is empty', () => {

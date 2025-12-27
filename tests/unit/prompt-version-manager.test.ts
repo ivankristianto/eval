@@ -21,29 +21,37 @@ describe('Prompt Version Manager', () => {
     db = getDatabase();
 
     // Create test model configurations
-    db.prepare(`
+    db.prepare(
+      `
       INSERT OR IGNORE INTO ModelConfiguration (id, provider, model_name, api_key_encrypted, is_active)
       VALUES (?, ?, ?, ?, ?)
-    `).run('model-task-1', 'openai', 'gpt-4', 'fake-key', 1);
+    `
+    ).run('model-task-1', 'openai', 'gpt-4', 'fake-key', 1);
 
-    db.prepare(`
+    db.prepare(
+      `
       INSERT OR IGNORE INTO ModelConfiguration (id, provider, model_name, api_key_encrypted, is_active)
       VALUES (?, ?, ?, ?, ?)
-    `).run('model-judge-1', 'anthropic', 'claude-3', 'fake-key', 1);
+    `
+    ).run('model-judge-1', 'anthropic', 'claude-3', 'fake-key', 1);
 
-    db.prepare(`
+    db.prepare(
+      `
       INSERT OR IGNORE INTO ModelConfiguration (id, provider, model_name, api_key_encrypted, is_active)
       VALUES (?, ?, ?, ?, ?)
-    `).run('model-engineer-1', 'google', 'gemini-pro', 'fake-key', 1);
+    `
+    ).run('model-engineer-1', 'google', 'gemini-pro', 'fake-key', 1);
 
     // Create test persona
     personaId = uuidv4();
-    db.prepare(`
+    db.prepare(
+      `
       INSERT INTO personas
       (id, name, description, task_prompt, task_model_id, judge_model_id,
        prompt_engineer_model_id, status, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
+    `
+    ).run(
       personaId,
       'Test Persona',
       'Test description',
@@ -72,14 +80,7 @@ describe('Prompt Version Manager', () => {
     const promptText = 'Evaluate if the response is accurate and helpful';
     const rationale = 'Initial prompt';
 
-    const versionId = await storePromptVersion(
-      personaId,
-      1,
-      promptText,
-      rationale,
-      'human',
-      db
-    );
+    const versionId = await storePromptVersion(personaId, 1, promptText, rationale, 'human', db);
 
     expect(versionId).toBeDefined();
 
@@ -159,12 +160,14 @@ describe('Prompt Version Manager', () => {
   it('should return empty array for persona with no prompt versions', async () => {
     const newPersonaId = uuidv4();
 
-    db.prepare(`
+    db.prepare(
+      `
       INSERT INTO personas
       (id, name, description, task_prompt, task_model_id, judge_model_id,
        prompt_engineer_model_id, status, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
+    `
+    ).run(
       newPersonaId,
       'New Persona',
       'Test',
@@ -186,14 +189,7 @@ describe('Prompt Version Manager', () => {
   });
 
   it('should generate diff between two versions', async () => {
-    const _id1 = await storePromptVersion(
-      personaId,
-      1,
-      'Evaluate accuracy',
-      'First',
-      'human',
-      db
-    );
+    const _id1 = await storePromptVersion(personaId, 1, 'Evaluate accuracy', 'First', 'human', db);
     const _id2 = await storePromptVersion(
       personaId,
       2,
@@ -214,21 +210,16 @@ describe('Prompt Version Manager', () => {
     const promptText = 'Evaluate accuracy';
 
     const _id1 = await storePromptVersion(personaId, 1, promptText, 'First', 'human', db);
-    const _id2 = await storePromptVersion(
-      personaId,
-      3,
-      'Different prompt',
-      'Third',
-      'ai',
-      db
-    );
+    const _id2 = await storePromptVersion(personaId, 3, 'Different prompt', 'Third', 'ai', db);
 
     // Get history and manually create a second version with same text
-    db.prepare(`
+    db.prepare(
+      `
       INSERT INTO judge_prompt_versions
       (id, persona_id, iteration_number, prompt_text, improvement_rationale, created_by, created_at)
       VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).run(
+    `
+    ).run(
       uuidv4(),
       personaId,
       2,

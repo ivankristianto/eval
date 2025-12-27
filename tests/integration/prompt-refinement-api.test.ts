@@ -24,29 +24,37 @@ describe('Prompt Refinement API Integration', () => {
     db = getDatabase();
 
     // Create test model configurations
-    db.prepare(`
+    db.prepare(
+      `
       INSERT OR IGNORE INTO ModelConfiguration (id, provider, model_name, api_key_encrypted, is_active)
       VALUES (?, ?, ?, ?, ?)
-    `).run('model-task-1', 'openai', 'gpt-4', 'fake-key', 1);
+    `
+    ).run('model-task-1', 'openai', 'gpt-4', 'fake-key', 1);
 
-    db.prepare(`
+    db.prepare(
+      `
       INSERT OR IGNORE INTO ModelConfiguration (id, provider, model_name, api_key_encrypted, is_active)
       VALUES (?, ?, ?, ?, ?)
-    `).run('model-judge-1', 'anthropic', 'claude-3', 'fake-key', 1);
+    `
+    ).run('model-judge-1', 'anthropic', 'claude-3', 'fake-key', 1);
 
-    db.prepare(`
+    db.prepare(
+      `
       INSERT OR IGNORE INTO ModelConfiguration (id, provider, model_name, api_key_encrypted, is_active)
       VALUES (?, ?, ?, ?, ?)
-    `).run('model-engineer-1', 'google', 'gemini-pro', 'fake-key', 1);
+    `
+    ).run('model-engineer-1', 'google', 'gemini-pro', 'fake-key', 1);
 
     // Create test persona
     personaId = uuidv4();
-    db.prepare(`
+    db.prepare(
+      `
       INSERT INTO personas
       (id, name, description, task_prompt, task_model_id, judge_model_id,
        prompt_engineer_model_id, status, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
+    `
+    ).run(
       personaId,
       'Test Persona',
       'Customer support evaluation',
@@ -61,12 +69,14 @@ describe('Prompt Refinement API Integration', () => {
 
     // Create test iteration
     iterationId = uuidv4();
-    db.prepare(`
+    db.prepare(
+      `
       INSERT INTO training_iterations
       (id, persona_id, iteration_number, judge_model_id, judge_prompt_text,
        status, total_pairs_evaluated, pairs_reviewed_by_human, started_at, completed_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
+    `
+    ).run(
       iterationId,
       personaId,
       2,
@@ -81,27 +91,33 @@ describe('Prompt Refinement API Integration', () => {
 
     // Create metrics for iteration
     const metricsId = uuidv4();
-    db.prepare(`
+    db.prepare(
+      `
       INSERT INTO iteration_metrics
       (id, iteration_id, true_positives, true_negatives, false_positives, false_negatives,
        precision, recall, f1_score, cohens_kappa, accuracy, calculated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(metricsId, iterationId, 6, 3, 2, 1, 0.75, 0.86, 0.80, 0.70, 0.75, new Date().toISOString());
+    `
+    ).run(metricsId, iterationId, 6, 3, 2, 1, 0.75, 0.86, 0.8, 0.7, 0.75, new Date().toISOString());
 
     // Create some judge decisions with human reviews (for failure analysis)
     const pairId = uuidv4();
-    db.prepare(`
+    db.prepare(
+      `
       INSERT INTO training_pairs (id, persona_id, input, expected_output, created_at)
       VALUES (?, ?, ?, ?, ?)
-    `).run(pairId, personaId, 'Test question', 'Test answer', new Date().toISOString());
+    `
+    ).run(pairId, personaId, 'Test question', 'Test answer', new Date().toISOString());
 
     const decisionId = uuidv4();
-    db.prepare(`
+    db.prepare(
+      `
       INSERT INTO judge_decisions
       (id, iteration_id, training_pair_id, generated_output, judge_decision,
        judge_confidence, judge_reasoning, created_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
+    `
+    ).run(
       decisionId,
       iterationId,
       pairId,
@@ -113,18 +129,22 @@ describe('Prompt Refinement API Integration', () => {
     );
 
     const reviewId = uuidv4();
-    db.prepare(`
+    db.prepare(
+      `
       INSERT INTO human_reviews
       (id, judge_decision_id, human_decision, human_confidence, human_notes, created_at)
       VALUES (?, ?, ?, ?, ?, ?)
-    `).run(reviewId, decisionId, 'disagree', 0.8, 'Too lenient', new Date().toISOString());
+    `
+    ).run(reviewId, decisionId, 'disagree', 0.8, 'Too lenient', new Date().toISOString());
   });
 
   afterEach(() => {
     vi.clearAllMocks();
 
     // Clean up in reverse dependency order
-    db.prepare('DELETE FROM human_reviews WHERE judge_decision_id IN (SELECT id FROM judge_decisions WHERE iteration_id = ?)').run(iterationId);
+    db.prepare(
+      'DELETE FROM human_reviews WHERE judge_decision_id IN (SELECT id FROM judge_decisions WHERE iteration_id = ?)'
+    ).run(iterationId);
     db.prepare('DELETE FROM judge_decisions WHERE iteration_id = ?').run(iterationId);
     db.prepare('DELETE FROM iteration_metrics WHERE iteration_id = ?').run(iterationId);
     db.prepare('DELETE FROM training_iterations WHERE id = ?').run(iterationId);
@@ -148,7 +168,8 @@ describe('Prompt Refinement API Integration', () => {
     vi.mocked(callModel).mockResolvedValue(JSON.stringify(mockLLMResponse));
 
     // Import the API handler (we'll create this)
-    const { POST } = await import('../../src/pages/api/personas/[id]/iterations/[num]/refine-prompt.ts');
+    const { POST } =
+      await import('../../src/pages/api/personas/[id]/iterations/[num]/refine-prompt.ts');
 
     const request = new Request('http://localhost/api/personas/test/iterations/2/refine-prompt', {
       method: 'POST',
@@ -170,7 +191,8 @@ describe('Prompt Refinement API Integration', () => {
   it('should handle LLM failure gracefully', async () => {
     vi.mocked(callModel).mockRejectedValue(new Error('API rate limit'));
 
-    const { POST } = await import('../../src/pages/api/personas/[id]/iterations/[num]/refine-prompt.ts');
+    const { POST } =
+      await import('../../src/pages/api/personas/[id]/iterations/[num]/refine-prompt.ts');
 
     const request = new Request('http://localhost/api/personas/test/iterations/2/refine-prompt', {
       method: 'POST',
@@ -189,7 +211,8 @@ describe('Prompt Refinement API Integration', () => {
   });
 
   it('should accept and store refined prompt', async () => {
-    const { POST } = await import('../../src/pages/api/personas/[id]/iterations/[num]/accept-prompt.ts');
+    const { POST } =
+      await import('../../src/pages/api/personas/[id]/iterations/[num]/accept-prompt.ts');
 
     const requestBody = {
       prompt_text: 'New improved prompt',
@@ -221,7 +244,8 @@ describe('Prompt Refinement API Integration', () => {
   });
 
   it('should validate iteration exists before refining', async () => {
-    const { POST } = await import('../../src/pages/api/personas/[id]/iterations/[num]/refine-prompt.ts');
+    const { POST } =
+      await import('../../src/pages/api/personas/[id]/iterations/[num]/refine-prompt.ts');
 
     const request = new Request('http://localhost/api/personas/test/iterations/999/refine-prompt', {
       method: 'POST',
@@ -241,7 +265,8 @@ describe('Prompt Refinement API Integration', () => {
   it('should validate persona exists before accepting prompt', async () => {
     const fakePersonaId = uuidv4();
 
-    const { POST } = await import('../../src/pages/api/personas/[id]/iterations/[num]/accept-prompt.ts');
+    const { POST } =
+      await import('../../src/pages/api/personas/[id]/iterations/[num]/accept-prompt.ts');
 
     const requestBody = {
       prompt_text: 'Test prompt',
@@ -266,7 +291,8 @@ describe('Prompt Refinement API Integration', () => {
   });
 
   it('should require prompt_text when accepting', async () => {
-    const { POST } = await import('../../src/pages/api/personas/[id]/iterations/[num]/accept-prompt.ts');
+    const { POST } =
+      await import('../../src/pages/api/personas/[id]/iterations/[num]/accept-prompt.ts');
 
     const requestBody = {
       reason: 'ai-generated',
@@ -291,7 +317,8 @@ describe('Prompt Refinement API Integration', () => {
   });
 
   it('should validate reason is either ai-generated or manual-edit', async () => {
-    const { POST } = await import('../../src/pages/api/personas/[id]/iterations/[num]/accept-prompt.ts');
+    const { POST } =
+      await import('../../src/pages/api/personas/[id]/iterations/[num]/accept-prompt.ts');
 
     const requestBody = {
       prompt_text: 'Test prompt',

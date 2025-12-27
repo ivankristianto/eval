@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from "@storybook/html";
+import type { Meta, StoryObj } from '@storybook/html';
 
 type EmptyStateArgs = {
   title: string;
@@ -8,12 +8,12 @@ type EmptyStateArgs = {
 };
 
 const meta = {
-  title: "UI/EmptyState",
+  title: 'UI/EmptyState',
   args: {
-    title: "No evaluations yet",
-    description: "Create your first evaluation to compare model performance.",
-    actionLabel: "Create evaluation",
-    actionHref: "/evaluations/new",
+    title: 'No evaluations yet',
+    description: 'Create your first evaluation to compare model performance.',
+    actionLabel: 'Create evaluation',
+    actionHref: '/evaluations/new',
   },
 } satisfies Meta<EmptyStateArgs>;
 
@@ -23,8 +23,8 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {
   render: (args) => {
     const actionMarkup = args.actionLabel
-      ? `<a class="btn btn-luxe btn-luxe-primary" href="${args.actionHref ?? "#"}">${args.actionLabel}</a>`
-      : "";
+      ? `<a class="btn btn-luxe btn-luxe-primary" href="${args.actionHref ?? '#'}">${args.actionLabel}</a>`
+      : '';
     return `
       <div class="hero bg-base-200 rounded-box p-8 md:p-12 text-center">
         <div class="hero-content flex-col">

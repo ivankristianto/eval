@@ -79,12 +79,14 @@ export const POST: APIRoute = async ({ params }) => {
 
     // Create training iteration record
     const iterationId = uuidv4();
-    db.prepare(`
+    db.prepare(
+      `
       INSERT INTO training_iterations
       (id, persona_id, iteration_number, judge_model_id, judge_prompt_text,
        status, total_pairs_evaluated, pairs_reviewed_by_human, started_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
+    `
+    ).run(
       iterationId,
       id,
       nextIterationNumber,
@@ -97,12 +99,9 @@ export const POST: APIRoute = async ({ params }) => {
     );
 
     // Update persona status and current iteration
-    db.prepare('UPDATE personas SET status = ?, current_iteration = ?, updated_at = ? WHERE id = ?').run(
-      'training',
-      nextIterationNumber,
-      new Date().toISOString(),
-      id
-    );
+    db.prepare(
+      'UPDATE personas SET status = ?, current_iteration = ?, updated_at = ? WHERE id = ?'
+    ).run('training', nextIterationNumber, new Date().toISOString(), id);
 
     // Create session and start training loop
     const sessionId = uuidv4();

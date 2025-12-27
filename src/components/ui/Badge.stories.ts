@@ -1,52 +1,52 @@
-import type { Meta, StoryObj } from "@storybook/html";
+import type { Meta, StoryObj } from '@storybook/html';
 
 type BadgeArgs = {
   label: string;
   variant:
-    | "primary"
-    | "secondary"
-    | "accent"
-    | "ghost"
-    | "soft"
-    | "info"
-    | "success"
-    | "warning"
-    | "error"
-    | "neutral";
-  size: "lg" | "md" | "sm" | "xs";
+    | 'primary'
+    | 'secondary'
+    | 'accent'
+    | 'ghost'
+    | 'soft'
+    | 'info'
+    | 'success'
+    | 'warning'
+    | 'error'
+    | 'neutral';
+  size: 'lg' | 'md' | 'sm' | 'xs';
   outline: boolean;
 };
 
 const meta = {
-  title: "UI/Badge",
+  title: 'UI/Badge',
   argTypes: {
     variant: {
-      control: "select",
+      control: 'select',
       options: [
-        "primary",
-        "secondary",
-        "accent",
-        "ghost",
-        "soft",
-        "info",
-        "success",
-        "warning",
-        "error",
-        "neutral",
+        'primary',
+        'secondary',
+        'accent',
+        'ghost',
+        'soft',
+        'info',
+        'success',
+        'warning',
+        'error',
+        'neutral',
       ],
     },
     size: {
-      control: "select",
-      options: ["lg", "md", "sm", "xs"],
+      control: 'select',
+      options: ['lg', 'md', 'sm', 'xs'],
     },
     outline: {
-      control: "boolean",
+      control: 'boolean',
     },
   },
   args: {
-    label: "Completed",
-    variant: "success",
-    size: "sm",
+    label: 'Completed',
+    variant: 'success',
+    size: 'sm',
     outline: false,
   },
 } satisfies Meta<BadgeArgs>;
@@ -56,17 +56,17 @@ type Story = StoryObj<typeof meta>;
 
 export const Status: Story = {
   render: (args) => {
-    const statusVariants = ["success", "warning", "error", "info"];
+    const statusVariants = ['success', 'warning', 'error', 'info'];
     const isStatus = statusVariants.includes(args.variant);
     const classes = [
-      "badge",
+      'badge',
       `badge-${args.variant}`,
       `badge-${args.size}`,
-      args.outline ? "badge-outline" : "",
-      isStatus ? "font-mono font-semibold uppercase tracking-wide" : "",
+      args.outline ? 'badge-outline' : '',
+      isStatus ? 'font-mono font-semibold uppercase tracking-wide' : '',
     ]
       .filter(Boolean)
-      .join(" ");
+      .join(' ');
 
     return `<span class="${classes}">${args.label}</span>`;
   },

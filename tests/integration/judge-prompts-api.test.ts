@@ -48,7 +48,9 @@ describe('Judge Prompts API Integration', () => {
 
       // Fetch prompts
       const prompts = db
-        .prepare('SELECT * FROM judge_prompt_versions WHERE persona_id = ? ORDER BY iteration_number DESC')
+        .prepare(
+          'SELECT * FROM judge_prompt_versions WHERE persona_id = ? ORDER BY iteration_number DESC'
+        )
         .all(persona.id) as any[];
 
       expect(prompts).toHaveLength(1);
@@ -67,10 +69,12 @@ describe('Judge Prompts API Integration', () => {
       // Add additional prompt versions
       const now = new Date().toISOString();
 
-      db.prepare(`
+      db.prepare(
+        `
         INSERT INTO judge_prompt_versions (id, persona_id, iteration_number, prompt_text, improvement_rationale, created_by, created_at)
         VALUES (?, ?, ?, ?, ?, ?, ?)
-      `).run(
+      `
+      ).run(
         uuidv4(),
         persona.id,
         1,
@@ -80,10 +84,12 @@ describe('Judge Prompts API Integration', () => {
         now
       );
 
-      db.prepare(`
+      db.prepare(
+        `
         INSERT INTO judge_prompt_versions (id, persona_id, iteration_number, prompt_text, improvement_rationale, created_by, created_at)
         VALUES (?, ?, ?, ?, ?, ?, ?)
-      `).run(
+      `
+      ).run(
         uuidv4(),
         persona.id,
         2,
@@ -95,7 +101,9 @@ describe('Judge Prompts API Integration', () => {
 
       // Fetch prompts
       const prompts = db
-        .prepare('SELECT * FROM judge_prompt_versions WHERE persona_id = ? ORDER BY iteration_number DESC')
+        .prepare(
+          'SELECT * FROM judge_prompt_versions WHERE persona_id = ? ORDER BY iteration_number DESC'
+        )
         .all(persona.id) as any[];
 
       expect(prompts).toHaveLength(3);
@@ -114,9 +122,7 @@ describe('Judge Prompts API Integration', () => {
     it('should return 404 for non-existent persona', () => {
       const db = getTestDatabase();
 
-      const persona = db
-        .prepare('SELECT id FROM personas WHERE id = ?')
-        .get('non-existent-id');
+      const persona = db.prepare('SELECT id FROM personas WHERE id = ?').get('non-existent-id');
 
       expect(persona).toBeUndefined();
     });
@@ -128,21 +134,17 @@ describe('Judge Prompts API Integration', () => {
       const now = new Date().toISOString();
       const rationale = 'Improved specificity to reduce false positives';
 
-      db.prepare(`
+      db.prepare(
+        `
         INSERT INTO judge_prompt_versions (id, persona_id, iteration_number, prompt_text, improvement_rationale, created_by, created_at)
         VALUES (?, ?, ?, ?, ?, ?, ?)
-      `).run(
-        uuidv4(),
-        persona.id,
-        1,
-        'Refined prompt with improvements',
-        rationale,
-        'ai',
-        now
-      );
+      `
+      ).run(uuidv4(), persona.id, 1, 'Refined prompt with improvements', rationale, 'ai', now);
 
       const prompts = db
-        .prepare('SELECT * FROM judge_prompt_versions WHERE persona_id = ? AND iteration_number = 1')
+        .prepare(
+          'SELECT * FROM judge_prompt_versions WHERE persona_id = ? AND iteration_number = 1'
+        )
         .all(persona.id) as any[];
 
       expect(prompts).toHaveLength(1);
@@ -154,7 +156,9 @@ describe('Judge Prompts API Integration', () => {
       const persona = createTestPersona(db);
 
       const prompts = db
-        .prepare('SELECT * FROM judge_prompt_versions WHERE persona_id = ? AND iteration_number = 0')
+        .prepare(
+          'SELECT * FROM judge_prompt_versions WHERE persona_id = ? AND iteration_number = 0'
+        )
         .all(persona.id) as any[];
 
       expect(prompts).toHaveLength(1);

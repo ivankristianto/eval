@@ -45,9 +45,7 @@ const { decision, personaId, iterationNumber } = Astro.props;
  * @param judgeDecision - The decision made by the judge
  * @returns 'success' for agreement, 'error' for disagreement
  */
-function getDecisionVariant(
-  judgeDecision: JudgeDecisionType
-): 'success' | 'error' {
+function getDecisionVariant(judgeDecision: JudgeDecisionType): 'success' | 'error' {
   return judgeDecision === 'agree' ? 'success' : 'error';
 }
 
@@ -58,16 +56,11 @@ const humanNotes = decision.human_review?.notes;
 const humanConfidence = decision.human_review?.confidence;
 ---
 
-<div
-  class="card bg-base-200 shadow-lg"
-  data-decision-id={decision.decision_id}
->
+<div class="card bg-base-200 shadow-lg" data-decision-id={decision.decision_id}>
   <div class="card-body">
     <!-- Training Pair Info -->
     <div class="mb-4">
-      <h4 class="text-sm font-semibold text-base-content/60 uppercase tracking-wide mb-2">
-        Input
-      </h4>
+      <h4 class="text-sm font-semibold text-base-content/60 uppercase tracking-wide mb-2">Input</h4>
       <div class="bg-base-300 rounded-lg p-3">
         <p class="text-sm whitespace-pre-wrap">{decision.training_pair.input}</p>
       </div>
@@ -102,9 +95,7 @@ const humanConfidence = decision.human_review?.confidence;
     <!-- Judge Decision -->
     <div class="flex items-center gap-4 mb-4 pb-4 border-b border-base-content/10">
       <div>
-        <div class="text-xs text-base-content/60 uppercase tracking-wide mb-1">
-          Judge Decision
-        </div>
+        <div class="text-xs text-base-content/60 uppercase tracking-wide mb-1">Judge Decision</div>
         <Badge variant={getDecisionVariant(decision.judge.decision)} size="lg">
           {decision.judge.decision}
         </Badge>
@@ -113,9 +104,7 @@ const humanConfidence = decision.human_review?.confidence;
       {
         decision.judge.confidence !== null && (
           <div>
-            <div class="text-xs text-base-content/60 uppercase tracking-wide mb-1">
-              Confidence
-            </div>
+            <div class="text-xs text-base-content/60 uppercase tracking-wide mb-1">Confidence</div>
             <div class="font-mono text-lg font-semibold">
               {(decision.judge.confidence * 100).toFixed(0)}%
             </div>
@@ -135,7 +124,8 @@ const humanConfidence = decision.human_review?.confidence;
             <p class="text-sm whitespace-pre-wrap">{decision.judge.reasoning}</p>
           </div>
           <div class="text-xs text-base-content/50 mt-1">
-            Why the judge {decision.judge.decision === 'agree' ? 'agrees' : 'disagrees'} that the task output matches the expected output
+            Why the judge {decision.judge.decision === 'agree' ? 'agrees' : 'disagrees'} that the
+            task output matches the expected output
           </div>
         </div>
       )
@@ -201,7 +191,7 @@ const humanConfidence = decision.human_review?.confidence;
                 rows="3"
                 placeholder="Add any notes about your decision..."
                 name="notes"
-              ></textarea>
+              />
             </div>
 
             <div class="card-actions justify-end">
@@ -228,10 +218,7 @@ const humanConfidence = decision.human_review?.confidence;
             <h4 class="text-sm font-semibold text-base-content/60 uppercase tracking-wide">
               Your Review
             </h4>
-            <Badge
-              variant={humanDecision === 'agree' ? 'success' : 'error'}
-              size="md"
-            >
+            <Badge variant={humanDecision === 'agree' ? 'success' : 'error'} size="md">
               {humanDecision}
             </Badge>
           </div>
@@ -249,9 +236,7 @@ const humanConfidence = decision.human_review?.confidence;
             )}
 
             <div>
-              <div class="text-xs text-base-content/60 uppercase tracking-wide mb-1">
-                Reviewed
-              </div>
+              <div class="text-xs text-base-content/60 uppercase tracking-wide mb-1">Reviewed</div>
               <div class="text-sm">
                 {new Date(decision.human_review!.created_at).toLocaleString()}
               </div>
@@ -328,7 +313,9 @@ const humanConfidence = decision.human_review?.confidence;
         window.location.reload();
       } catch (error) {
         console.error('Failed to submit review:', error);
-        alert(`Failed to submit review: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        alert(
+          `Failed to submit review: ${error instanceof Error ? error.message : 'Unknown error'}`
+        );
         submitBtn.disabled = false;
         submitBtn.classList.remove('loading');
       }

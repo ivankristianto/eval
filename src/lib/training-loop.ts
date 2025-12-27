@@ -153,10 +153,10 @@ export class IterativeTrainingLoop {
         // 30% - Completely wrong output (realistic wrong answers)
         const wrongAnswers = [
           "I don't have enough information to answer this question.",
-          "Unable to process this request at this time.",
-          "This appears to be outside my area of expertise.",
-          "I cannot provide a response to this query.",
-          "The information provided is insufficient for an accurate answer.",
+          'Unable to process this request at this time.',
+          'This appears to be outside my area of expertise.',
+          'I cannot provide a response to this query.',
+          'The information provided is insufficient for an accurate answer.',
           "I'm not sure how to respond to this.",
         ];
         taskModelOutput = wrongAnswers[Math.floor(Math.random() * wrongAnswers.length)];

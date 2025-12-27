@@ -1,16 +1,16 @@
-import type { Meta, StoryObj } from "@storybook/html";
+import type { Meta, StoryObj } from '@storybook/html';
 
 type BreadcrumbArgs = {
   items: Array<{ label: string; href?: string }>;
 };
 
 const meta = {
-  title: "UI/Breadcrumbs",
+  title: 'UI/Breadcrumbs',
   args: {
     items: [
-      { label: "Home", href: "/" },
-      { label: "Evaluations", href: "/evaluations" },
-      { label: "Results" },
+      { label: 'Home', href: '/' },
+      { label: 'Evaluations', href: '/evaluations' },
+      { label: 'Results' },
     ],
   },
 } satisfies Meta<BreadcrumbArgs>;
@@ -28,7 +28,7 @@ export const Trail: Story = {
         }
         return `<li><span class="font-medium text-base-content">${item.label}</span></li>`;
       })
-      .join("");
+      .join('');
 
     return `<div class="text-sm breadcrumbs mb-4 text-base-content/70"><ul>${items}</ul></div>`;
   },

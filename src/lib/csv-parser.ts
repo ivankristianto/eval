@@ -49,7 +49,7 @@ export function parseCSV(fileContent: string): CSVParseResult {
   }
 
   // Extract and normalize headers
-  const headers = lines[0].map(h => h.trim().toLowerCase());
+  const headers = lines[0].map((h) => h.trim().toLowerCase());
 
   // Map column names to standard format
   const columnMap = normalizeColumnNames(headers);
@@ -69,7 +69,7 @@ export function parseCSV(fileContent: string): CSVParseResult {
     const rowData = lines[i];
 
     // Skip empty rows
-    if (rowData.length === 0 || rowData.every(cell => !cell.trim())) {
+    if (rowData.length === 0 || rowData.every((cell) => !cell.trim())) {
       continue;
     }
 
@@ -91,7 +91,9 @@ export function parseCSV(fileContent: string): CSVParseResult {
     // Check for duplicates
     const pairKey = `${inputValue}|||${expectedOutputValue}`;
     if (seen.has(pairKey)) {
-      errors.push(`Duplicate pair detected at row ${i}: "${inputValue}" → "${expectedOutputValue}"`);
+      errors.push(
+        `Duplicate pair detected at row ${i}: "${inputValue}" → "${expectedOutputValue}"`
+      );
       continue;
     }
     seen.add(pairKey);

@@ -17,13 +17,11 @@ import { MetricsCalculationError } from './training-errors';
  * @returns Calculated metrics
  * @throws MetricsCalculationError if incomplete human feedback
  */
-export function calculateIterationMetrics(
-  iterationId: string,
-  db: Database
-): MetricsResult {
+export function calculateIterationMetrics(iterationId: string, db: Database): MetricsResult {
   // Fetch all judge decisions for this iteration
   const judgeDecisions = db
-    .prepare(`
+    .prepare(
+      `
       SELECT
         jd.id,
         jd.judge_decision,
@@ -31,17 +29,16 @@ export function calculateIterationMetrics(
       FROM judge_decisions jd
       LEFT JOIN human_reviews hr ON hr.judge_decision_id = jd.id
       WHERE jd.iteration_id = ?
-    `)
+    `
+    )
     .all(iterationId) as Array<{
-      id: string;
-      judge_decision: 'agree' | 'disagree';
-      human_decision: 'agree' | 'disagree' | null;
-    }>;
+    id: string;
+    judge_decision: 'agree' | 'disagree';
+    human_decision: 'agree' | 'disagree' | null;
+  }>;
 
   if (judgeDecisions.length === 0) {
-    throw new MetricsCalculationError(
-      `No judge decisions found for iteration: ${iterationId}`
-    );
+    throw new MetricsCalculationError(`No judge decisions found for iteration: ${iterationId}`);
   }
 
   // Verify all decisions have human reviews
@@ -82,19 +79,17 @@ export function calculateIterationMetrics(
  * @param metrics - Calculated metrics result
  * @param db - Database connection
  */
-function storeIterationMetrics(
-  iterationId: string,
-  metrics: MetricsResult,
-  db: Database
-): void {
+function storeIterationMetrics(iterationId: string, metrics: MetricsResult, db: Database): void {
   const id = crypto.randomUUID();
 
-  db.prepare(`
+  db.prepare(
+    `
     INSERT INTO iteration_metrics
     (id, iteration_id, true_positives, true_negatives, false_positives, false_negatives,
      precision, recall, f1_score, cohens_kappa, accuracy, calculated_at)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(
+  `
+  ).run(
     id,
     iterationId,
     metrics.confusion_matrix.true_positives,
@@ -116,11 +111,7 @@ function storeIterationMetrics(
  * @param f1Score - Calculated F1 score
  * @param db - Database connection
  */
-function updatePersonaBestScore(
-  iterationId: string,
-  f1Score: number,
-  db: Database
-): void {
+function updatePersonaBestScore(iterationId: string, f1Score: number, db: Database): void {
   // Get persona and current iteration number
   const iteration = db
     .prepare('SELECT persona_id, iteration_number FROM training_iterations WHERE id = ?')
@@ -140,11 +131,13 @@ function updatePersonaBestScore(
 
   // Update if this is the first score or if it's better than current best
   if (persona.best_f1_score === null || f1Score > persona.best_f1_score) {
-    db.prepare(`
+    db.prepare(
+      `
       UPDATE personas
       SET best_f1_score = ?, best_f1_iteration = ?, updated_at = ?
       WHERE id = ?
-    `).run(f1Score, iteration.iteration_number, new Date().toISOString(), iteration.persona_id);
+    `
+    ).run(f1Score, iteration.iteration_number, new Date().toISOString(), iteration.persona_id);
   }
 }
 
@@ -154,10 +147,7 @@ function updatePersonaBestScore(
  * @param db - Database connection
  * @returns MetricsResult or null if not found
  */
-export function getIterationMetrics(
-  iterationId: string,
-  db: Database
-): MetricsResult | null {
+export function getIterationMetrics(iterationId: string, db: Database): MetricsResult | null {
   const metrics = db
     .prepare('SELECT * FROM iteration_metrics WHERE iteration_id = ?')
     .get(iterationId) as any;
@@ -196,7 +186,8 @@ export function getPersonaMetricsHistory(
   calculated_at: string;
 }> {
   const results = db
-    .prepare(`
+    .prepare(
+      `
       SELECT
         ti.iteration_number,
         im.*
@@ -204,7 +195,8 @@ export function getPersonaMetricsHistory(
       JOIN training_iterations ti ON ti.id = im.iteration_id
       WHERE ti.persona_id = ?
       ORDER BY ti.iteration_number ASC
-    `)
+    `
+    )
     .all(personaId) as any[];
 
   return results.map((row) => ({

@@ -145,12 +145,10 @@ const breadcrumbItems = [
               return (
                 <div class="card bg-base-200 shadow">
                   <div class="card-body">
-                    <!-- Version Header -->
+                    {/* Version Header */}
                     <div class="flex items-center justify-between mb-3">
                       <div class="flex items-center gap-3">
-                        <h3 class="font-semibold text-lg">
-                          Iteration {version.iteration_number}
-                        </h3>
+                        <h3 class="font-semibold text-lg">Iteration {version.iteration_number}</h3>
                         {isLatest && (
                           <Badge variant="primary" size="sm">
                             Current
@@ -168,7 +166,7 @@ const breadcrumbItems = [
                       </div>
                     </div>
 
-                    <!-- Improvement Rationale -->
+                    {/* Improvement Rationale */}
                     {version.improvement_rationale && (
                       <div class="mb-3">
                         <div class="text-xs font-semibold text-base-content/60 uppercase tracking-wide mb-1">
@@ -178,7 +176,7 @@ const breadcrumbItems = [
                       </div>
                     )}
 
-                    <!-- Prompt Text -->
+                    {/* Prompt Text */}
                     <div class="mb-3">
                       <div class="text-xs font-semibold text-base-content/60 uppercase tracking-wide mb-1">
                         Prompt Text
@@ -188,7 +186,7 @@ const breadcrumbItems = [
                       </div>
                     </div>
 
-                    <!-- Compare with Previous -->
+                    {/* Compare with Previous */}
                     {previousVersion && (
                       <div class="card-actions justify-end">
                         <button

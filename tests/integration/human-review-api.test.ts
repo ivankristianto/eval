@@ -33,12 +33,14 @@ describe('Human Review API', () => {
 
     // Create persona
     personaId = uuidv4();
-    db.prepare(`
+    db.prepare(
+      `
       INSERT INTO personas (id, name, description, task_prompt,
         task_model_id, judge_model_id, prompt_engineer_model_id,
         status, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
+    `
+    ).run(
       personaId,
       'Test Persona',
       'Test description',
@@ -53,12 +55,14 @@ describe('Human Review API', () => {
 
     // Create training iteration
     iterationId = uuidv4();
-    db.prepare(`
+    db.prepare(
+      `
       INSERT INTO training_iterations
       (id, persona_id, iteration_number, judge_model_id, judge_prompt_text,
        status, started_at)
       VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).run(
+    `
+    ).run(
       iterationId,
       personaId,
       1,
@@ -70,19 +74,23 @@ describe('Human Review API', () => {
 
     // Create training pair
     const pairId = uuidv4();
-    db.prepare(`
+    db.prepare(
+      `
       INSERT INTO training_pairs (id, persona_id, input, expected_output, created_at)
       VALUES (?, ?, ?, ?, ?)
-    `).run(pairId, personaId, 'What is 2+2?', '4', new Date().toISOString());
+    `
+    ).run(pairId, personaId, 'What is 2+2?', '4', new Date().toISOString());
 
     // Create judge decision
     decisionId = uuidv4();
-    db.prepare(`
+    db.prepare(
+      `
       INSERT INTO judge_decisions
       (id, iteration_id, training_pair_id, generated_output, judge_decision,
        judge_confidence, judge_reasoning, created_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
+    `
+    ).run(
       decisionId,
       iterationId,
       pairId,
@@ -123,10 +131,12 @@ describe('Human Review API', () => {
     it('should include human review status for each decision', () => {
       // Add human review
       const reviewId = uuidv4();
-      db.prepare(`
+      db.prepare(
+        `
         INSERT INTO human_reviews (id, judge_decision_id, human_decision, created_at)
         VALUES (?, ?, ?, ?)
-      `).run(reviewId, decisionId, 'agree', new Date().toISOString());
+      `
+      ).run(reviewId, decisionId, 'agree', new Date().toISOString());
 
       const decisions = db
         .prepare(
@@ -169,11 +179,13 @@ describe('Human Review API', () => {
       const reviewId = uuidv4();
 
       // Simulate API creating review
-      db.prepare(`
+      db.prepare(
+        `
         INSERT INTO human_reviews
         (id, judge_decision_id, human_decision, human_confidence, human_notes, created_at)
         VALUES (?, ?, ?, ?, ?, ?)
-      `).run(reviewId, decisionId, 'agree', 0.9, 'Looks good', new Date().toISOString());
+      `
+      ).run(reviewId, decisionId, 'agree', 0.9, 'Looks good', new Date().toISOString());
 
       const review = db.prepare('SELECT * FROM human_reviews WHERE id = ?').get(reviewId) as any;
 
@@ -186,10 +198,12 @@ describe('Human Review API', () => {
 
     it('should update iteration pairs_reviewed_by_human count', () => {
       // Create review
-      db.prepare(`
+      db.prepare(
+        `
         INSERT INTO human_reviews (id, judge_decision_id, human_decision, created_at)
         VALUES (?, ?, ?, ?)
-      `).run(uuidv4(), decisionId, 'agree', new Date().toISOString());
+      `
+      ).run(uuidv4(), decisionId, 'agree', new Date().toISOString());
 
       // Update iteration count
       db.prepare(
@@ -204,7 +218,9 @@ describe('Human Review API', () => {
       `
       ).run(iterationId, iterationId);
 
-      const iteration = db.prepare('SELECT * FROM training_iterations WHERE id = ?').get(iterationId) as any;
+      const iteration = db
+        .prepare('SELECT * FROM training_iterations WHERE id = ?')
+        .get(iterationId) as any;
 
       expect(iteration.pairs_reviewed_by_human).toBe(1);
     });
@@ -213,10 +229,12 @@ describe('Human Review API', () => {
       const reviewId = uuidv4();
 
       // Create initial review
-      db.prepare(`
+      db.prepare(
+        `
         INSERT INTO human_reviews (id, judge_decision_id, human_decision, created_at)
         VALUES (?, ?, ?, ?)
-      `).run(reviewId, decisionId, 'agree', new Date().toISOString());
+      `
+      ).run(reviewId, decisionId, 'agree', new Date().toISOString());
 
       // Update review
       db.prepare(

@@ -16,10 +16,7 @@ const { matrix, showLabels = true } = Astro.props;
 
 // Calculate total and percentages
 const total =
-  matrix.true_positives +
-  matrix.true_negatives +
-  matrix.false_positives +
-  matrix.false_negatives;
+  matrix.true_positives + matrix.true_negatives + matrix.false_positives + matrix.false_negatives;
 
 /**
  * Calculates percentage of a value relative to the total count.
@@ -185,22 +182,19 @@ function getCellColor(value: number, isCorrect: boolean): string {
             <div class="flex items-start gap-2">
               <div class="w-4 h-4 rounded bg-success mt-0.5"></div>
               <div>
-                <span class="font-semibold">True Negative (TN):</span> Judge disagreed, Human
-                disagreed
+                <span class="font-semibold">True Negative (TN):</span> Judge disagreed, Human disagreed
               </div>
             </div>
             <div class="flex items-start gap-2">
               <div class="w-4 h-4 rounded bg-error mt-0.5"></div>
               <div>
-                <span class="font-semibold">False Positive (FP):</span> Judge agreed, Human
-                disagreed
+                <span class="font-semibold">False Positive (FP):</span> Judge agreed, Human disagreed
               </div>
             </div>
             <div class="flex items-start gap-2">
               <div class="w-4 h-4 rounded bg-error mt-0.5"></div>
               <div>
-                <span class="font-semibold">False Negative (FN):</span> Judge disagreed, Human
-                agreed
+                <span class="font-semibold">False Negative (FN):</span> Judge disagreed, Human agreed
               </div>
             </div>
           </div>

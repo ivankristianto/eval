@@ -30,12 +30,14 @@ describe('Metrics Calculation Integration', () => {
     modelStmt.run('engineer-model', 'google', 'gemini-pro', 'test-key', new Date().toISOString());
 
     // Create persona
-    db.prepare(`
+    db.prepare(
+      `
       INSERT INTO personas (id, name, description, task_prompt,
         task_model_id, judge_model_id, prompt_engineer_model_id,
         status, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
+    `
+    ).run(
       'persona-1',
       'Test Persona',
       'Test description',
@@ -49,12 +51,14 @@ describe('Metrics Calculation Integration', () => {
     );
 
     // Create training iteration
-    db.prepare(`
+    db.prepare(
+      `
       INSERT INTO training_iterations
       (id, persona_id, iteration_number, judge_model_id, judge_prompt_text,
        status, started_at)
       VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).run(
+    `
+    ).run(
       'iteration-1',
       'persona-1',
       1,
@@ -100,10 +104,46 @@ describe('Metrics Calculation Integration', () => {
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `);
 
-      decisionStmt.run(decision1, 'iteration-1', pair1, 'Output 1', 'agree', 0.9, 'Good', new Date().toISOString());
-      decisionStmt.run(decision2, 'iteration-1', pair2, 'Output 2', 'agree', 0.8, 'Good', new Date().toISOString());
-      decisionStmt.run(decision3, 'iteration-1', pair3, 'Bad output', 'disagree', 0.7, 'Bad', new Date().toISOString());
-      decisionStmt.run(decision4, 'iteration-1', pair4, 'Bad output', 'disagree', 0.6, 'Bad', new Date().toISOString());
+      decisionStmt.run(
+        decision1,
+        'iteration-1',
+        pair1,
+        'Output 1',
+        'agree',
+        0.9,
+        'Good',
+        new Date().toISOString()
+      );
+      decisionStmt.run(
+        decision2,
+        'iteration-1',
+        pair2,
+        'Output 2',
+        'agree',
+        0.8,
+        'Good',
+        new Date().toISOString()
+      );
+      decisionStmt.run(
+        decision3,
+        'iteration-1',
+        pair3,
+        'Bad output',
+        'disagree',
+        0.7,
+        'Bad',
+        new Date().toISOString()
+      );
+      decisionStmt.run(
+        decision4,
+        'iteration-1',
+        pair4,
+        'Bad output',
+        'disagree',
+        0.6,
+        'Bad',
+        new Date().toISOString()
+      );
 
       // Create human reviews
       const reviewStmt = db.prepare(`
@@ -141,44 +181,56 @@ describe('Metrics Calculation Integration', () => {
     it('should throw error if not all decisions have human reviews', () => {
       // Create training pair
       const pair1 = uuidv4();
-      db.prepare(`
+      db.prepare(
+        `
         INSERT INTO training_pairs (id, persona_id, input, expected_output, created_at)
         VALUES (?, ?, ?, ?, ?)
-      `).run(pair1, 'persona-1', 'Input 1', 'Output 1', new Date().toISOString());
+      `
+      ).run(pair1, 'persona-1', 'Input 1', 'Output 1', new Date().toISOString());
 
       // Create judge decision without human review
       const decision1 = uuidv4();
-      db.prepare(`
+      db.prepare(
+        `
         INSERT INTO judge_decisions
         (id, iteration_id, training_pair_id, generated_output, judge_decision,
          judge_reasoning, created_at)
         VALUES (?, ?, ?, ?, ?, ?, ?)
-      `).run(decision1, 'iteration-1', pair1, 'Output 1', 'agree', 'Good', new Date().toISOString());
+      `
+      ).run(decision1, 'iteration-1', pair1, 'Output 1', 'agree', 'Good', new Date().toISOString());
 
       // Should throw error
-      expect(() => calculateIterationMetrics('iteration-1', db)).toThrow('incomplete human feedback');
+      expect(() => calculateIterationMetrics('iteration-1', db)).toThrow(
+        'incomplete human feedback'
+      );
     });
 
     it('should store metrics to iteration_metrics table', () => {
       // Create simple test case
       const pair1 = uuidv4();
-      db.prepare(`
+      db.prepare(
+        `
         INSERT INTO training_pairs (id, persona_id, input, expected_output, created_at)
         VALUES (?, ?, ?, ?, ?)
-      `).run(pair1, 'persona-1', 'Input 1', 'Output 1', new Date().toISOString());
+      `
+      ).run(pair1, 'persona-1', 'Input 1', 'Output 1', new Date().toISOString());
 
       const decision1 = uuidv4();
-      db.prepare(`
+      db.prepare(
+        `
         INSERT INTO judge_decisions
         (id, iteration_id, training_pair_id, generated_output, judge_decision,
          judge_reasoning, created_at)
         VALUES (?, ?, ?, ?, ?, ?, ?)
-      `).run(decision1, 'iteration-1', pair1, 'Output 1', 'agree', 'Good', new Date().toISOString());
+      `
+      ).run(decision1, 'iteration-1', pair1, 'Output 1', 'agree', 'Good', new Date().toISOString());
 
-      db.prepare(`
+      db.prepare(
+        `
         INSERT INTO human_reviews (id, judge_decision_id, human_decision, created_at)
         VALUES (?, ?, ?, ?)
-      `).run(uuidv4(), decision1, 'agree', new Date().toISOString());
+      `
+      ).run(uuidv4(), decision1, 'agree', new Date().toISOString());
 
       // Calculate metrics
       calculateIterationMetrics('iteration-1', db);
@@ -199,31 +251,35 @@ describe('Metrics Calculation Integration', () => {
     it('should update persona best_f1_score if improved', () => {
       // Create simple perfect case (F1 = 1.0)
       const pair1 = uuidv4();
-      db.prepare(`
+      db.prepare(
+        `
         INSERT INTO training_pairs (id, persona_id, input, expected_output, created_at)
         VALUES (?, ?, ?, ?, ?)
-      `).run(pair1, 'persona-1', 'Input 1', 'Output 1', new Date().toISOString());
+      `
+      ).run(pair1, 'persona-1', 'Input 1', 'Output 1', new Date().toISOString());
 
       const decision1 = uuidv4();
-      db.prepare(`
+      db.prepare(
+        `
         INSERT INTO judge_decisions
         (id, iteration_id, training_pair_id, generated_output, judge_decision,
          judge_reasoning, created_at)
         VALUES (?, ?, ?, ?, ?, ?, ?)
-      `).run(decision1, 'iteration-1', pair1, 'Output 1', 'agree', 'Good', new Date().toISOString());
+      `
+      ).run(decision1, 'iteration-1', pair1, 'Output 1', 'agree', 'Good', new Date().toISOString());
 
-      db.prepare(`
+      db.prepare(
+        `
         INSERT INTO human_reviews (id, judge_decision_id, human_decision, created_at)
         VALUES (?, ?, ?, ?)
-      `).run(uuidv4(), decision1, 'agree', new Date().toISOString());
+      `
+      ).run(uuidv4(), decision1, 'agree', new Date().toISOString());
 
       // Calculate metrics
       calculateIterationMetrics('iteration-1', db);
 
       // Verify persona updated
-      const persona = db
-        .prepare('SELECT * FROM personas WHERE id = ?')
-        .get('persona-1') as any;
+      const persona = db.prepare('SELECT * FROM personas WHERE id = ?').get('persona-1') as any;
 
       expect(persona.best_f1_score).toBeDefined();
       expect(persona.best_f1_iteration).toBe(1);

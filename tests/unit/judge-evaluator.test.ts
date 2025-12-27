@@ -73,7 +73,9 @@ describe('Judge Evaluator', () => {
         reasoning: 'Missing decision field',
       });
 
-      expect(() => parseJudgeResponse(response)).toThrow('Invalid judge response: missing decision');
+      expect(() => parseJudgeResponse(response)).toThrow(
+        'Invalid judge response: missing decision'
+      );
     });
 
     it('should throw error on invalid decision value', () => {

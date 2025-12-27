@@ -18,7 +18,7 @@ describe('Prompt Refinement Integration', () => {
   const mockFailureContext: FailureAnalysisContext = {
     current_metrics: {
       precision: 0.75,
-      recall: 0.70,
+      recall: 0.7,
       f1_score: 0.72,
       cohens_kappa: 0.65,
       accuracy: 0.73,

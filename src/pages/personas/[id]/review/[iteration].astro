@@ -184,7 +184,6 @@ const breadcrumbItems = [
           </Badge>
         </div>
 
-
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
             <div class="text-xs text-base-content/60 uppercase tracking-wide mb-1">
@@ -194,27 +193,21 @@ const breadcrumbItems = [
           </div>
 
           <div>
-            <div class="text-xs text-base-content/60 uppercase tracking-wide mb-1">
-              Reviewed
-            </div>
+            <div class="text-xs text-base-content/60 uppercase tracking-wide mb-1">Reviewed</div>
             <div class="text-2xl font-bold font-mono text-success">
               {reviewedDecisions}
             </div>
           </div>
 
           <div>
-            <div class="text-xs text-base-content/60 uppercase tracking-wide mb-1">
-              Pending
-            </div>
+            <div class="text-xs text-base-content/60 uppercase tracking-wide mb-1">Pending</div>
             <div class="text-2xl font-bold font-mono text-warning">
               {pendingDecisions}
             </div>
           </div>
 
           <div>
-            <div class="text-xs text-base-content/60 uppercase tracking-wide mb-1">
-              Progress
-            </div>
+            <div class="text-xs text-base-content/60 uppercase tracking-wide mb-1">Progress</div>
             <div class="text-2xl font-bold font-mono">{progressPercentage}%</div>
           </div>
         </div>
@@ -224,8 +217,7 @@ const breadcrumbItems = [
           <progress
             class="progress progress-success w-full"
             value={reviewedDecisions}
-            max={totalDecisions}
-          ></progress>
+            max={totalDecisions}></progress>
         </div>
 
         {
