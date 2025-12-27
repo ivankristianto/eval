@@ -4,11 +4,12 @@
  */
 
 /**
- * Modal utilities for consistent modal control across components
+ * Modal utilities for consistent modal control across components.
  */
 export const ModalUtils = {
   /**
-   * Open a modal dialog by ID
+   * Open a modal dialog by ID.
+   * @param id - Modal element ID
    */
   open(id: string): void {
     const modal = document.getElementById(id) as HTMLDialogElement;
@@ -16,7 +17,8 @@ export const ModalUtils = {
   },
 
   /**
-   * Close a modal dialog by ID
+   * Close a modal dialog by ID.
+   * @param id - Modal element ID
    */
   close(id: string): void {
     const modal = document.getElementById(id) as HTMLDialogElement;
@@ -24,7 +26,8 @@ export const ModalUtils = {
   },
 
   /**
-   * Setup auto-close when clicking backdrop
+   * Setup auto-close when clicking backdrop.
+   * @param id - Modal element ID
    */
   setupBackdropClose(id: string): void {
     const modal = document.getElementById(id) as HTMLDialogElement;
@@ -39,11 +42,13 @@ export const ModalUtils = {
 };
 
 /**
- * Form utilities for validation and submission
+ * Form utilities for validation and submission.
  */
 export const FormUtils = {
   /**
-   * Validate form and return FormData or null if invalid
+   * Validate form and return FormData or null if invalid.
+   * @param formId - Form element ID
+   * @returns FormData object if valid, null otherwise
    */
   validateAndGetData(formId: string): FormData | null {
     const form = document.getElementById(formId) as HTMLFormElement;
@@ -55,7 +60,8 @@ export const FormUtils = {
   },
 
   /**
-   * Reset form and hide error messages
+   * Reset form and hide error messages.
+   * @param formId - Form element ID
    */
   reset(formId: string): void {
     const form = document.getElementById(formId) as HTMLFormElement;
@@ -63,7 +69,9 @@ export const FormUtils = {
   },
 
   /**
-   * Show error message in a container
+   * Show error message in a container.
+   * @param containerId - ID of the container element
+   * @param message - Error message text
    */
   showError(containerId: string, message: string): void {
     const container = document.getElementById(containerId);
@@ -75,7 +83,8 @@ export const FormUtils = {
   },
 
   /**
-   * Hide error message container
+   * Hide error message container.
+   * @param containerId - ID of the container element
    */
   hideError(containerId: string): void {
     const container = document.getElementById(containerId);

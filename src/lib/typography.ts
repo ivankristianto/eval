@@ -1,5 +1,7 @@
-// Typography scale constants for consistent styling across the application
-
+/**
+ * Typography scale constants for consistent styling across the application.
+ * Follows the project's design system for headings, body text, and UI elements.
+ */
 export const TYPOGRAPHY = {
   // Headings
   h1: 'text-4xl font-bold tracking-tight mb-6',

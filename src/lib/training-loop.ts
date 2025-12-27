@@ -8,13 +8,17 @@ import type { MetricsResult } from '../types/training';
 import { calculateMetrics, buildConfusionMatrix } from './metrics';
 import { TrainingStateError } from './training-errors';
 
+/**
+ * Represents a single evaluation result from a judge model.
+ */
 export interface JudgeResult {
   judge_decision: 'agree' | 'disagree';
   human_decision?: 'agree' | 'disagree';
 }
 
 /**
- * Orchestrates the iterative training loop for judge prompt refinement
+ * Orchestrates the iterative training loop for judge prompt refinement.
+ * Handles the flow from generating model outputs to judge evaluation and metrics calculation.
  */
 export class IterativeTrainingLoop {
   public readonly sessionId: string;
@@ -22,6 +26,12 @@ export class IterativeTrainingLoop {
   private db: Database;
   private isPaused: boolean = false;
 
+  /**
+   * Initializes a new training loop instance.
+   * @param sessionId - Unique session ID for tracking progress
+   * @param personaId - ID of the persona being trained
+   * @param db - Database connection
+   */
   constructor(sessionId: string, personaId: string, db: Database) {
     this.sessionId = sessionId;
     this.personaId = personaId;
@@ -29,8 +39,10 @@ export class IterativeTrainingLoop {
   }
 
   /**
-   * Execute training iteration (fire-and-forget)
-   * Persists state to database for crash recovery
+   * Execute training iteration (fire-and-forget).
+   * Persists state to database for crash recovery.
+   * @param _taskResultIds - Array of task result IDs to process
+   * @returns Promise that resolves when the iteration is started
    */
   async execute(_taskResultIds: string[]): Promise<void> {
     try {
@@ -95,8 +107,9 @@ export class IterativeTrainingLoop {
   }
 
   /**
-   * Generate judge decisions for all training pairs
-   * Creates mock evaluations for MVP - will integrate with actual LLM judge in production
+   * Generate judge decisions for all training pairs.
+   * Creates mock evaluations for MVP - will integrate with actual LLM judge in production.
+   * @returns Promise that resolves when all decisions are generated and stored
    */
   private async generateJudgeDecisions(): Promise<void> {
     // Get current iteration
@@ -202,8 +215,10 @@ export class IterativeTrainingLoop {
   }
 
   /**
-   * Evaluate task outputs with the judge model
-   * Stores judge decisions to database
+   * Evaluate task outputs with the judge model.
+   * Stores judge decisions to database.
+   * @param _taskResultIds - Array of IDs to evaluate
+   * @returns Promise resolving when evaluation is complete
    */
   async evaluateWithJudge(_taskResultIds: string[]): Promise<void> {
     // Implementation would:
@@ -220,8 +235,10 @@ export class IterativeTrainingLoop {
   }
 
   /**
-   * Calculate metrics from judge results and human feedback
-   * Can optionally use worker thread for CPU-intensive calculations
+   * Calculate metrics from judge results and human feedback.
+   * Can optionally use worker thread for CPU-intensive calculations.
+   * @param judgeResults - Array of judge evaluation results
+   * @returns Comprehensive metrics result
    */
   async calculateMetricsInWorker(judgeResults: JudgeResult[]): Promise<MetricsResult> {
     // Extract judge and human decisions
@@ -246,8 +263,9 @@ export class IterativeTrainingLoop {
   }
 
   /**
-   * Pause the training loop
-   * Saves checkpoint and updates status
+   * Pause the training loop.
+   * Saves checkpoint and updates status.
+   * @param reason - Optional explanation for pausing
    */
   async pause(reason?: string): Promise<void> {
     const state = this.db
@@ -269,8 +287,9 @@ export class IterativeTrainingLoop {
   }
 
   /**
-   * Resume a paused training loop
-   * Loads checkpoint and continues from where it left off
+   * Resume a paused training loop.
+   * Loads checkpoint and continues from where it left off.
+   * @returns Promise resolving when resumed execution starts
    */
   async resume(): Promise<void> {
     const state = this.db

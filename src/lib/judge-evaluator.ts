@@ -5,12 +5,18 @@
 
 import type { Database } from 'better-sqlite3';
 
+/**
+ * Result of a judge decision evaluation.
+ */
 export interface JudgeDecisionResult {
   decision: 'agree' | 'disagree';
   confidence?: number;
   reasoning: string;
 }
 
+/**
+ * Structure of the parsed judge model response.
+ */
 export interface JudgeResponseParsed {
   decision: 'agree' | 'disagree';
   confidence?: number;
@@ -18,8 +24,11 @@ export interface JudgeResponseParsed {
 }
 
 /**
- * Parse judge model response from JSON
+ * Parse judge model response from JSON.
  * Expected format: {decision: "agree"|"disagree", confidence: 0.0-1.0, reasoning: string}
+ * @param response - Raw string response from the judge model
+ * @returns Parsed judge response object
+ * @throws Error if response is invalid JSON or missing required fields
  */
 export function parseJudgeResponse(response: string): JudgeResponseParsed {
   try {
@@ -54,7 +63,7 @@ export function parseJudgeResponse(response: string): JudgeResponseParsed {
 }
 
 /**
- * Evaluate a suggested output against the expected output using a judge model
+ * Evaluate a suggested output against the expected output using a judge model.
  *
  * @param input - The input/prompt that was given to the task model
  * @param expectedOutput - The ground truth/expected correct output
@@ -91,8 +100,13 @@ export async function evaluateOutput(
 }
 
 /**
- * Format the judge prompt with context
- * Includes input, expected output, and suggested output for evaluation
+ * Format the judge prompt with context.
+ * Includes input, expected output, and suggested output for evaluation.
+ * @param input - The original task input
+ * @param expectedOutput - Ground truth output
+ * @param suggestedOutput - Model generated output
+ * @param judgePrompt - Base judge instructions
+ * @returns Full formatted prompt for the judge model
  */
 export function formatJudgePrompt(
   input: string,
@@ -127,7 +141,14 @@ Evaluate whether the Suggested Output meets the quality and correctness criteria
 }
 
 /**
- * Store a judge decision to the database
+ * Store a judge decision to the database.
+ * @param db - Database instance
+ * @param iterationId - Iteration ID
+ * @param trainingPairId - Training pair ID
+ * @param generatedOutput - The output that was judged
+ * @param decision - The judge's decision result
+ * @param resultId - Optional evaluation result ID
+ * @returns Unique ID of the stored decision record
  */
 export function storeJudgeDecision(
   db: Database,

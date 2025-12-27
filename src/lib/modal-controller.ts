@@ -1,43 +1,35 @@
 /**
- * Universal modal controller for managing modal dialogs
- * Provides a consistent interface for modal state management
+ * Universal modal controller for managing modal dialogs.
+ * Provides a consistent interface for modal state management.
  */
-
 export interface ModalController {
   /**
-   * Open the modal
+   * Opens the modal dialog.
    */
   open(): void;
 
   /**
-   * Close the modal
+   * Closes the modal dialog.
    */
   close(): void;
 
   /**
-   * Reset the modal form (if it has one)
+   * Resets the modal form and hides error messages.
    */
   reset(): void;
 
   /**
-   * Check if the modal is currently open
+   * Checks if the modal is currently open.
+   * @returns True if open
    */
   isOpen(): boolean;
 }
 
 /**
- * Create a modal controller for a specific modal element
+ * Create a modal controller for a specific modal element.
  *
  * @param modalId - The ID of the modal dialog element
  * @returns ModalController instance with methods to control the modal
- *
- * @example
- * ```typescript
- * const controller = createModalController('my-modal');
- * controller.open();
- * controller.close();
- * controller.reset();
- * ```
  */
 export function createModalController(modalId: string): ModalController {
   const modal = document.getElementById(modalId) as HTMLDialogElement;

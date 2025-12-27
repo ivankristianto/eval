@@ -77,7 +77,10 @@ export function calculateIterationMetrics(
 }
 
 /**
- * Store calculated metrics to iteration_metrics table
+ * Store calculated metrics to iteration_metrics table.
+ * @param iterationId - The iteration to store metrics for
+ * @param metrics - Calculated metrics result
+ * @param db - Database connection
  */
 function storeIterationMetrics(
   iterationId: string,
@@ -108,7 +111,10 @@ function storeIterationMetrics(
 }
 
 /**
- * Update persona's best F1 score if the new score is higher
+ * Update persona's best F1 score if the new score is higher.
+ * @param iterationId - Current iteration ID
+ * @param f1Score - Calculated F1 score
+ * @param db - Database connection
  */
 function updatePersonaBestScore(
   iterationId: string,
@@ -143,7 +149,10 @@ function updatePersonaBestScore(
 }
 
 /**
- * Get iteration metrics by iteration ID
+ * Get iteration metrics by iteration ID.
+ * @param iterationId - The iteration ID to fetch metrics for
+ * @param db - Database connection
+ * @returns MetricsResult or null if not found
  */
 export function getIterationMetrics(
   iterationId: string,
@@ -173,7 +182,10 @@ export function getIterationMetrics(
 }
 
 /**
- * Get all metrics for a persona across all iterations
+ * Get all metrics for a persona across all iterations.
+ * @param personaId - Persona ID
+ * @param db - Database connection
+ * @returns Array of iteration metrics with iteration numbers
  */
 export function getPersonaMetricsHistory(
   personaId: string,

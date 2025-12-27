@@ -55,10 +55,19 @@ export interface EvaluationOptions {
   temperature?: number;
 }
 
+/**
+ * Orchestrates the execution of an evaluation across multiple models.
+ * Handles timeouts, parallel execution, and state updates.
+ */
 export class EvaluationExecutor {
   private aborted = false;
   private timeoutHandle: ReturnType<typeof setTimeout> | null = null;
 
+  /**
+   * Executes the evaluation process for the given options.
+   * @param options - Evaluation configuration and models to run
+   * @returns Promise that resolves when execution is complete or aborted
+   */
   async execute(options: EvaluationOptions): Promise<void> {
     const {
       evaluationId,
@@ -130,6 +139,18 @@ export class EvaluationExecutor {
     }
   }
 
+  /**
+   * Executes a single model's part of the evaluation.
+   * @param evaluationId - Parent evaluation ID
+   * @param modelId - Model configuration ID
+   * @param instruction - User instruction
+   * @param rubricType - Scoring rubric
+   * @param expectedOutput - Ground truth
+   * @param partialCreditConcepts - Optional concepts for scoring
+   * @param systemPrompt - Optional system prompt
+   * @param temperature - Optional temperature
+   * @returns Promise that resolves when the model run is complete
+   */
   private async executeModel(
     evaluationId: string,
     modelId: string,
@@ -211,6 +232,10 @@ export class EvaluationExecutor {
     }
   }
 
+  /**
+   * Handles total evaluation timeout.
+   * @param evaluationId - Evaluation ID
+   */
   private handleTimeout(evaluationId: string): void {
     console.error(`Evaluation ${evaluationId} timed out`);
     updateEvaluationStatus(evaluationId, 'failed', 'Evaluation timed out after 5 minutes');
@@ -227,11 +252,17 @@ export class EvaluationExecutor {
     }
   }
 
+  /**
+   * Aborts current execution and prevents further updates.
+   */
   abort(): void {
     this.aborted = true;
     this.clearTimeout();
   }
 
+  /**
+   * Clears the active timeout handle.
+   */
   private clearTimeout(): void {
     if (this.timeoutHandle) {
       clearTimeout(this.timeoutHandle);
@@ -243,6 +274,10 @@ export class EvaluationExecutor {
 // Singleton for tracking active evaluations
 const activeEvaluations = new Map<string, EvaluationExecutor>();
 
+/**
+ * Starts a new evaluation process in the background.
+ * @param options - Evaluation parameters
+ */
 export function startEvaluation(options: EvaluationOptions): void {
   const executor = new EvaluationExecutor();
   activeEvaluations.set(options.evaluationId, executor);
@@ -253,6 +288,11 @@ export function startEvaluation(options: EvaluationOptions): void {
   });
 }
 
+/**
+ * Cancels a running evaluation by ID.
+ * @param evaluationId - Evaluation to cancel
+ * @returns True if evaluation was found and cancelled
+ */
 export function cancelEvaluation(evaluationId: string): boolean {
   const executor = activeEvaluations.get(evaluationId);
   if (executor) {
@@ -269,6 +309,11 @@ export function cancelEvaluation(evaluationId: string): boolean {
   return false;
 }
 
+/**
+ * Checks if an evaluation is currently running.
+ * @param evaluationId - Evaluation ID to check
+ * @returns True if running
+ */
 export function isEvaluationRunning(evaluationId: string): boolean {
   return activeEvaluations.has(evaluationId);
 }

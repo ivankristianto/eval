@@ -6,6 +6,12 @@ import { getSemanticSimilarityScore } from './semanticSimilarity';
 
 // ===== Exact Match Rubric =====
 
+/**
+ * Evaluates accuracy using exact string matching (case-insensitive and whitespace normalized).
+ * @param response - The model generated response
+ * @param expectedOutput - The ground truth output
+ * @returns Score (0 or 100) and reasoning
+ */
 export function exactMatch(response: string, expectedOutput: string): AccuracyResult {
   // Normalize both strings for comparison
   const normalizedResponse = normalizeText(response);
@@ -34,6 +40,13 @@ export function exactMatch(response: string, expectedOutput: string): AccuracyRe
 
 // ===== Partial Credit Rubric =====
 
+/**
+ * Evaluates accuracy based on the presence of key concepts in the response.
+ * @param response - The model generated response
+ * @param expectedOutput - The ground truth output
+ * @param concepts - List of key concepts that must be present
+ * @returns Score (0-100) proportional to found concepts and reasoning
+ */
 export function partialCredit(
   response: string,
   expectedOutput: string,
@@ -87,6 +100,12 @@ export function partialCredit(
 
 // ===== Semantic Similarity Rubric =====
 
+/**
+ * Evaluates accuracy using LLM-based semantic similarity scoring.
+ * @param response - The model generated response
+ * @param expectedOutput - The ground truth output
+ * @returns Score (0-100) and detailed reasoning from the evaluator LLM
+ */
 export async function semanticSimilarity(
   response: string,
   expectedOutput: string
@@ -108,6 +127,14 @@ export async function semanticSimilarity(
 
 // ===== Main Accuracy Calculator =====
 
+/**
+ * Orchestrates accuracy calculation based on the chosen rubric.
+ * @param rubricType - The type of rubric to use
+ * @param response - The model generated response
+ * @param expectedOutput - The ground truth output
+ * @param partialCreditConcepts - Optional concepts for partial credit rubric
+ * @returns Accuracy result with score and reasoning
+ */
 export async function calculateAccuracy(
   rubricType: RubricType,
   response: string,
@@ -134,6 +161,11 @@ export async function calculateAccuracy(
 
 // ===== Helper Functions =====
 
+/**
+ * Normalizes text by trimming, collapsing whitespace, and normalizing quotes.
+ * @param text - The text to normalize
+ * @returns Normalized text
+ */
 function normalizeText(text: string): string {
   return text
     .trim()
@@ -142,6 +174,12 @@ function normalizeText(text: string): string {
     .replace(/['']/g, "'"); // Normalize apostrophes
 }
 
+/**
+ * Truncates text to a maximum length with ellipsis.
+ * @param text - The text to truncate
+ * @param maxLength - Maximum length including ellipsis
+ * @returns Truncated text
+ */
 function truncate(text: string, maxLength: number): string {
   if (text.length <= maxLength) return text;
   return text.substring(0, maxLength - 3) + '...';

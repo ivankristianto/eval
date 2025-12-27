@@ -21,6 +21,10 @@ import type { CheckpointData } from '../types/training';
 export class TrainingStateManager {
   private db: Database.Database;
 
+  /**
+   * Initializes a new training state manager.
+   * @param db - Optional database instance
+   */
   constructor(db?: Database.Database) {
     this.db = db || getDatabase();
   }

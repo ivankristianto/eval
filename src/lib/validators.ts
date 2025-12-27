@@ -14,6 +14,11 @@ export interface ValidationResult {
   error?: ApiError;
 }
 
+/**
+ * Validates that an instruction is a non-empty string within length limits.
+ * @param instruction - The instruction text to validate
+ * @returns Validation result
+ */
 export function validateInstruction(instruction: unknown): ValidationResult {
   if (typeof instruction !== 'string' || instruction.trim().length === 0) {
     return {
@@ -40,6 +45,11 @@ export function validateInstruction(instruction: unknown): ValidationResult {
   return { valid: true };
 }
 
+/**
+ * Validates that a rubric type is one of the supported values.
+ * @param rubricType - The rubric type string to validate
+ * @returns Validation result
+ */
 export function validateRubricType(rubricType: unknown): ValidationResult {
   if (!VALID_RUBRIC_TYPES.includes(rubricType as RubricType)) {
     return {
@@ -55,6 +65,11 @@ export function validateRubricType(rubricType: unknown): ValidationResult {
   return { valid: true };
 }
 
+/**
+ * Validates that at least one model ID is provided and all are valid UUIDs.
+ * @param modelIds - Array of model IDs to validate
+ * @returns Validation result
+ */
 export function validateModelIds(modelIds: unknown): ValidationResult {
   if (!Array.isArray(modelIds) || modelIds.length === 0) {
     return {
@@ -83,6 +98,11 @@ export function validateModelIds(modelIds: unknown): ValidationResult {
   return { valid: true };
 }
 
+/**
+ * Validates that a provider is one of the supported AI providers.
+ * @param provider - The provider name to validate
+ * @returns Validation result
+ */
 export function validateProvider(provider: unknown): ValidationResult {
   if (!VALID_PROVIDERS.includes(provider as Provider)) {
     return {
@@ -98,6 +118,12 @@ export function validateProvider(provider: unknown): ValidationResult {
   return { valid: true };
 }
 
+/**
+ * Validates the format of an API key based on its provider.
+ * @param apiKey - The API key to validate
+ * @param provider - The provider the key belongs to
+ * @returns Validation result
+ */
 export function validateApiKeyFormat(apiKey: unknown, provider: Provider): ValidationResult {
   if (typeof apiKey !== 'string' || apiKey.trim().length === 0) {
     return {
@@ -157,6 +183,11 @@ export function validateApiKeyFormat(apiKey: unknown, provider: Provider): Valid
   return { valid: true };
 }
 
+/**
+ * Validates that a model name is a non-empty string within length limits.
+ * @param modelName - The model name to validate
+ * @returns Validation result
+ */
 export function validateModelName(modelName: unknown): ValidationResult {
   if (typeof modelName !== 'string' || modelName.trim().length === 0) {
     return {
@@ -183,6 +214,11 @@ export function validateModelName(modelName: unknown): ValidationResult {
   return { valid: true };
 }
 
+/**
+ * Validates that a template name is a non-empty string within length limits.
+ * @param name - The template name to validate
+ * @returns Validation result
+ */
 export function validateTemplateName(name: unknown): ValidationResult {
   if (typeof name !== 'string' || name.trim().length === 0) {
     return {
@@ -209,6 +245,11 @@ export function validateTemplateName(name: unknown): ValidationResult {
   return { valid: true };
 }
 
+/**
+ * Validates that a description is within length limits.
+ * @param description - The description text to validate
+ * @returns Validation result
+ */
 export function validateDescription(description: unknown): ValidationResult {
   if (description === undefined || description === null) {
     return { valid: true }; // Optional field
@@ -239,6 +280,12 @@ export function validateDescription(description: unknown): ValidationResult {
   return { valid: true };
 }
 
+/**
+ * Validates that key concepts are provided when using partial credit rubric.
+ * @param concepts - Array of concept strings
+ * @param rubricType - The selected rubric type
+ * @returns Validation result
+ */
 export function validatePartialCreditConcepts(
   concepts: unknown,
   rubricType: RubricType
@@ -274,6 +321,12 @@ export function validatePartialCreditConcepts(
   return { valid: true };
 }
 
+/**
+ * Validates that expected output is provided.
+ * @param expectedOutput - The ground truth output text
+ * @param _rubricType - Rubric type (currently unused but reserved for future specificity)
+ * @returns Validation result
+ */
 export function validateExpectedOutput(
   expectedOutput: unknown,
   _rubricType: RubricType
@@ -293,6 +346,11 @@ export function validateExpectedOutput(
   return { valid: true };
 }
 
+/**
+ * Validates a string as a valid UUID.
+ * @param id - String to validate
+ * @returns Validation result
+ */
 export function validateUuid(id: unknown): ValidationResult {
   if (typeof id !== 'string' || !isValidUuid(id)) {
     return {
@@ -314,7 +372,11 @@ function isValidUuid(str: string): boolean {
   return uuidRegex.test(str);
 }
 
-// Composite validation for evaluation creation
+/**
+ * Composite validation for evaluation creation requests.
+ * @param data - Raw request body
+ * @returns Combined validation result
+ */
 export function validateCreateEvaluation(data: unknown): ValidationResult {
   if (!data || typeof data !== 'object') {
     return {
@@ -352,7 +414,11 @@ export function validateCreateEvaluation(data: unknown): ValidationResult {
   return { valid: true };
 }
 
-// Composite validation for model creation
+/**
+ * Composite validation for model creation requests.
+ * @param data - Raw request body
+ * @returns Combined validation result
+ */
 export function validateCreateModel(data: unknown): ValidationResult {
   if (!data || typeof data !== 'object') {
     return {
@@ -378,7 +444,11 @@ export function validateCreateModel(data: unknown): ValidationResult {
   return { valid: true };
 }
 
-// Validation for partial updates to a model configuration
+/**
+ * Validation for partial updates to a model configuration.
+ * @param data - Raw request body
+ * @returns Combined validation result
+ */
 export function validateUpdateModel(data: unknown): ValidationResult {
   if (!data || typeof data !== 'object') {
     return {
@@ -430,7 +500,11 @@ export function validateUpdateModel(data: unknown): ValidationResult {
   return { valid: true };
 }
 
-// Composite validation for template creation
+/**
+ * Composite validation for template creation requests.
+ * @param data - Raw request body
+ * @returns Combined validation result
+ */
 export function validateCreateTemplate(data: unknown): ValidationResult {
   if (!data || typeof data !== 'object') {
     return {

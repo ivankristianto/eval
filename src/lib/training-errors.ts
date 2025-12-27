@@ -106,7 +106,9 @@ export class ValidationError extends TrainingError {
 }
 
 /**
- * Convert error to API error response format
+ * Convert error to API error response format.
+ * @param error - The caught error object
+ * @returns Standardized error response object
  */
 export function toErrorResponse(error: Error): {
   error: string;
@@ -129,40 +131,82 @@ export function toErrorResponse(error: Error): {
 }
 
 /**
- * Check if error is a specific training error type
+ * Check if error is a specific training error type.
+ * @param error - Unknown error object
+ * @returns True if it is a TrainingError
  */
 export function isTrainingError(error: unknown): error is TrainingError {
   return error instanceof TrainingError;
 }
 
+/**
+ * Check if error is a ModelSeparationError.
+ * @param error - Unknown error object
+ * @returns True if it is a ModelSeparationError
+ */
 export function isModelSeparationError(error: unknown): error is ModelSeparationError {
   return error instanceof ModelSeparationError;
 }
 
+/**
+ * Check if error is a CSVValidationError.
+ * @param error - Unknown error object
+ * @returns True if it is a CSVValidationError
+ */
 export function isCSVValidationError(error: unknown): error is CSVValidationError {
   return error instanceof CSVValidationError;
 }
 
+/**
+ * Check if error is a TrainingStateError.
+ * @param error - Unknown error object
+ * @returns True if it is a TrainingStateError
+ */
 export function isTrainingStateError(error: unknown): error is TrainingStateError {
   return error instanceof TrainingStateError;
 }
 
+/**
+ * Check if error is a MetricsCalculationError.
+ * @param error - Unknown error object
+ * @returns True if it is a MetricsCalculationError
+ */
 export function isMetricsCalculationError(error: unknown): error is MetricsCalculationError {
   return error instanceof MetricsCalculationError;
 }
 
+/**
+ * Check if error is a LLMAPIError.
+ * @param error - Unknown error object
+ * @returns True if it is a LLMAPIError
+ */
 export function isLLMAPIError(error: unknown): error is LLMAPIError {
   return error instanceof LLMAPIError;
 }
 
+/**
+ * Check if error is a PromptRefinementError.
+ * @param error - Unknown error object
+ * @returns True if it is a PromptRefinementError
+ */
 export function isPromptRefinementError(error: unknown): error is PromptRefinementError {
   return error instanceof PromptRefinementError;
 }
 
+/**
+ * Check if error is a DatabaseError.
+ * @param error - Unknown error object
+ * @returns True if it is a DatabaseError
+ */
 export function isDatabaseError(error: unknown): error is DatabaseError {
   return error instanceof DatabaseError;
 }
 
+/**
+ * Check if error is a ValidationError.
+ * @param error - Unknown error object
+ * @returns True if it is a ValidationError
+ */
 export function isValidationError(error: unknown): error is ValidationError {
   return error instanceof ValidationError;
 }

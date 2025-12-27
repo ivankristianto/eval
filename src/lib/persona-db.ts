@@ -28,887 +28,2083 @@ import type {
 } from '../types/training';
 
 /**
- * Get database connection with training tables initialized
+
+ * Get database connection with training tables initialized.
+
+ * @returns Database instance
+
  */
+
 export function getTrainingDatabase(): Database.Database {
+
   return getDatabase();
+
 }
 
+
+
 /**
- * Execute a function within a database transaction
- * Ensures atomicity: all-or-nothing persistence
+
+ * Execute a function within a database transaction.
+
+ * Ensures atomicity: all-or-nothing persistence.
+
+ * @param fn - Function to execute within the transaction
+
+ * @param db - Optional database instance
+
+ * @returns Result of the function
+
  */
+
 export function withTransaction<T>(fn: (db: Database.Database) => T, db?: Database.Database): T {
+
   const database = db || getTrainingDatabase();
+
   const transaction = database.transaction(fn);
+
   return transaction(database);
+
 }
+
+
 
 // ===== Persona CRUD Operations =====
 
+
+
 /**
- * Create a new persona (with individual parameters)
+
+ * Create a new persona (with individual parameters).
+
+ * @param name - Persona name
+
+ * @param description - Optional description
+
+ * @param task_prompt - The task prompt to evaluate
+
+ * @param initial_judge_prompt - The starting judge prompt
+
+ * @param task_model_id - ID of the task model
+
+ * @param judge_model_id - ID of the judge model
+
+ * @param prompt_engineer_model_id - ID of the prompt engineer model
+
+ * @param db - Optional database instance
+
+ * @returns Created persona object
+
  */
+
 export function createPersona(
+
   name: string,
+
   description: string | null | undefined,
+
   task_prompt: string,
+
   initial_judge_prompt: string,
+
   task_model_id: string,
+
   judge_model_id: string,
+
   prompt_engineer_model_id: string,
+
   db?: Database.Database
+
 ): Persona;
 
+
+
 /**
- * Create a new persona (with input object)
+
+ * Create a new persona (with input object).
+
+ * @param input - Persona creation input object
+
+ * @param db - Optional database instance
+
+ * @returns Created persona object
+
  */
+
 export function createPersona(input: CreatePersonaInput, db?: Database.Database): Persona;
 
+
+
 /**
- * Create a new persona - implementation
+
+ * Create a new persona - implementation.
+
+ * @param nameOrInput - Persona name or creation input object
+
+ * @param descriptionOrDb - Description string or database instance
+
+ * @param task_prompt - Task prompt
+
+ * @param initial_judge_prompt - Initial judge prompt
+
+ * @param task_model_id - Task model ID
+
+ * @param judge_model_id - Judge model ID
+
+ * @param prompt_engineer_model_id - Prompt engineer model ID
+
+ * @param db - Database instance
+
+ * @returns Created persona object
+
  */
+
 export function createPersona(
+
   nameOrInput: string | CreatePersonaInput,
+
   descriptionOrDb?: string | null | Database.Database,
+
   task_prompt?: string,
+
   initial_judge_prompt?: string,
+
   task_model_id?: string,
+
   judge_model_id?: string,
+
   prompt_engineer_model_id?: string,
+
   db?: Database.Database
+
 ): Persona {
+
   // Normalize to CreatePersonaInput object
+
   let input: CreatePersonaInput;
+
   let database: Database.Database | undefined;
 
+
+
   if (typeof nameOrInput === 'string') {
+
     // Called with individual parameters
+
     input = {
+
       name: nameOrInput,
+
       description:
+
         typeof descriptionOrDb === 'string' || descriptionOrDb === null
+
           ? descriptionOrDb
+
           : undefined,
+
       task_prompt: task_prompt!,
+
       initial_judge_prompt: initial_judge_prompt!,
+
       task_model_id: task_model_id!,
+
       judge_model_id: judge_model_id!,
+
       prompt_engineer_model_id: prompt_engineer_model_id!,
+
     };
+
     database = db;
+
   } else {
+
     // Called with input object
+
     input = nameOrInput;
+
     database = descriptionOrDb as Database.Database | undefined;
+
   }
+
+
 
   const dbInstance = database || getTrainingDatabase();
 
+
+
   // Validate input
+
   const validation = validatePersonaCreation(input, dbInstance);
+
   if (!validation.isValid) {
+
     throw new Error(`Persona validation failed: ${validation.errors.join(', ')}`);
+
   }
+
+
 
   // Create persona
+
   return withTransaction((transactionDb) => {
+
     const id = uuidv4();
+
     const now = new Date().toISOString();
 
+
+
     const stmt = transactionDb.prepare(`
+
       INSERT INTO personas (
+
         id, name, description, task_prompt,
+
         task_model_id, judge_model_id, prompt_engineer_model_id,
+
         status, target_f1_score, max_iterations, current_iteration,
+
         created_at, updated_at, created_by
+
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+
     `);
+
+
 
     stmt.run(
+
       id,
+
       input.name,
+
       input.description || null,
+
       input.task_prompt,
+
       input.task_model_id,
+
       input.judge_model_id,
+
       input.prompt_engineer_model_id,
+
       'draft' as PersonaStatus,
+
       input.target_f1_score || 0.8,
+
       input.max_iterations || 5,
+
       0,
+
       now,
+
       now,
+
       input.created_by || null
+
     );
+
+
 
     // Save initial judge prompt as iteration 0
+
     const promptVersionStmt = transactionDb.prepare(`
+
       INSERT INTO judge_prompt_versions (
+
         id, persona_id, iteration_number, prompt_text,
+
         improvement_rationale, created_by, created_at
+
       ) VALUES (?, ?, ?, ?, ?, ?, ?)
+
     `);
 
+
+
     promptVersionStmt.run(
+
       uuidv4(),
+
       id,
+
       0, // iteration 0 is the initial prompt
+
       input.initial_judge_prompt,
+
       'Initial judge prompt provided during persona creation',
+
       'human',
+
       now
+
     );
 
+
+
     return getPersona(id, transactionDb)!;
+
   }, dbInstance);
+
 }
 
+
+
 /**
- * Get persona by ID
+
+ * Get persona by ID.
+
+ * @param id - Persona ID
+
+ * @param db - Optional database instance
+
+ * @returns Persona object or null if not found
+
  */
+
 export function getPersona(id: string, db?: Database.Database): Persona | null {
+
   const database = db || getTrainingDatabase();
+
   const stmt = database.prepare('SELECT * FROM personas WHERE id = ?');
+
   const result = stmt.get(id);
+
   return result ? (result as Persona) : null;
+
 }
 
+
+
 /**
- * List all personas with optional status filter
+
+ * List all personas with optional status filter.
+
+ * @param status - Optional status filter
+
+ * @param db - Optional database instance
+
+ * @returns Array of personas
+
  */
+
 export function listPersonas(status?: PersonaStatus, db?: Database.Database): Persona[] {
+
   const database = db || getTrainingDatabase();
+
   let query = 'SELECT * FROM personas';
+
   const params: unknown[] = [];
 
+
+
   if (status) {
+
     query += ' WHERE status = ?';
+
     params.push(status);
+
   }
+
+
 
   query += ' ORDER BY created_at DESC';
 
+
+
   const stmt = database.prepare(query);
+
   return stmt.all(...params) as Persona[];
+
 }
 
+
+
 /**
- * Update persona fields
+
+ * Update persona fields.
+
+ * @param id - Persona ID
+
+ * @param updates - Fields to update
+
+ * @param db - Optional database instance
+
+ * @returns Updated persona object
+
  */
+
 export function updatePersona(
+
   id: string,
+
   updates: Partial<
+
     Pick<
+
       Persona,
+
       | 'name'
+
       | 'description'
+
       | 'task_prompt'
+
       | 'status'
+
       | 'current_iteration'
+
       | 'best_f1_score'
+
       | 'best_f1_iteration'
+
     >
+
   >,
+
   db?: Database.Database
+
 ): Persona {
+
   const dbInstance = db || getTrainingDatabase();
 
+
+
   return withTransaction((database) => {
+
     // Check if persona exists
+
     const existing = getPersona(id, database);
+
     if (!existing) {
+
       throw new Error(`Persona not found: ${id}`);
+
     }
+
+
 
     // Check for name uniqueness if name is being updated
+
     if (updates.name !== undefined && updates.name !== existing.name) {
+
       const duplicate = database
+
         .prepare('SELECT id FROM personas WHERE name = ? AND id != ?')
+
         .get(updates.name, id);
+
       if (duplicate) {
+
         throw new Error(`Persona name already exists: ${updates.name}`);
+
       }
+
     }
+
+
 
     const fields: string[] = [];
+
     const values: unknown[] = [];
 
+
+
     if (updates.name !== undefined) {
+
       fields.push('name = ?');
+
       values.push(updates.name);
+
     }
+
     if (updates.description !== undefined) {
+
       fields.push('description = ?');
+
       values.push(updates.description);
+
     }
+
     if (updates.task_prompt !== undefined) {
+
       fields.push('task_prompt = ?');
+
       values.push(updates.task_prompt);
+
     }
+
     if (updates.status !== undefined) {
+
       fields.push('status = ?');
+
       values.push(updates.status);
+
     }
+
     if (updates.current_iteration !== undefined) {
+
       fields.push('current_iteration = ?');
+
       values.push(updates.current_iteration);
+
     }
+
     if (updates.best_f1_score !== undefined) {
+
       fields.push('best_f1_score = ?');
+
       values.push(updates.best_f1_score);
+
     }
+
     if (updates.best_f1_iteration !== undefined) {
+
       fields.push('best_f1_iteration = ?');
+
       values.push(updates.best_f1_iteration);
+
     }
+
+
 
     if (fields.length === 0) {
+
       throw new Error('No fields to update');
+
     }
 
+
+
     fields.push('updated_at = ?');
+
     values.push(new Date().toISOString());
+
     values.push(id);
 
+
+
     const stmt = database.prepare(`UPDATE personas SET ${fields.join(', ')} WHERE id = ?`);
+
     stmt.run(...values);
 
+
+
     return getPersona(id, database)!;
+
   }, dbInstance);
+
 }
+
+
 
 /**
- * Delete persona (cascades to all training data)
+
+ * Delete persona (cascades to all training data).
+
+ * @param id - Persona ID
+
+ * @param db - Optional database instance
+
  */
+
 export function deletePersona(id: string, db?: Database.Database): void {
+
   const database = db || getTrainingDatabase();
 
+
+
   // Check if persona exists
+
   const existing = getPersona(id, database);
+
   if (!existing) {
+
     throw new Error(`Persona not found: ${id}`);
+
   }
 
+
+
   const stmt = database.prepare('DELETE FROM personas WHERE id = ?');
+
   stmt.run(id);
+
 }
+
+
 
 // ===== TrainingPair CRUD Operations =====
 
+
+
 /**
- * Create multiple training pairs for a persona
+
+ * Create multiple training pairs for a persona.
+
+ * @param personaId - Persona ID
+
+ * @param pairs - Array of training pairs to create
+
+ * @param db - Optional database instance
+
+ * @returns Array of created training pairs
+
  */
+
 export function createTrainingPairs(
+
   personaId: string,
+
   pairs: CreateTrainingPairInput[],
+
   db?: Database.Database
+
 ): TrainingPair[] {
+
   return withTransaction((database) => {
+
     const stmt = database.prepare(`
+
       INSERT INTO training_pairs (id, persona_id, input, expected_output, created_at)
+
       VALUES (?, ?, ?, ?, ?)
+
     `);
 
+
+
     const now = new Date().toISOString();
+
     const ids: string[] = [];
 
+
+
     for (const pair of pairs) {
+
       const id = uuidv4();
+
       stmt.run(id, personaId, pair.input, pair.expected_output, now);
+
       ids.push(id);
+
     }
 
+
+
     return getTrainingPairs(personaId, database);
+
   }, db);
+
 }
 
+
+
 /**
- * Get all training pairs for a persona
+
+ * Get all training pairs for a persona.
+
+ * @param personaId - Persona ID
+
+ * @param db - Optional database instance
+
+ * @returns Array of training pairs
+
  */
+
 export function getTrainingPairs(personaId: string, db?: Database.Database): TrainingPair[] {
+
   const database = db || getTrainingDatabase();
+
   const stmt = database.prepare(
+
     'SELECT * FROM training_pairs WHERE persona_id = ? ORDER BY created_at'
+
   );
+
   return stmt.all(personaId) as TrainingPair[];
+
 }
 
+
+
 /**
- * Get a single training pair by ID
+
+ * Get a single training pair by ID.
+
+ * @param id - Training pair ID
+
+ * @param db - Optional database instance
+
+ * @returns Training pair or null if not found
+
  */
+
 export function getTrainingPair(id: string, db?: Database.Database): TrainingPair | null {
+
   const database = db || getTrainingDatabase();
+
   const stmt = database.prepare('SELECT * FROM training_pairs WHERE id = ?');
+
   return stmt.get(id) as TrainingPair | null;
+
 }
 
+
+
 /**
- * Delete all training pairs for a persona
+
+ * Delete all training pairs for a persona.
+
+ * @param personaId - Persona ID
+
+ * @param db - Optional database instance
+
  */
+
 export function deleteTrainingPairs(personaId: string, db?: Database.Database): void {
+
   const database = db || getTrainingDatabase();
+
   const stmt = database.prepare('DELETE FROM training_pairs WHERE persona_id = ?');
+
   stmt.run(personaId);
+
 }
+
+
 
 // ===== TrainingIteration CRUD Operations =====
 
+
+
 /**
- * Create a new training iteration
+
+ * Create a new training iteration.
+
+ * @param personaId - Persona ID
+
+ * @param iterationNumber - Iteration number
+
+ * @param judgeModelId - ID of judge model
+
+ * @param judgePromptText - Judge prompt text used
+
+ * @param db - Optional database instance
+
+ * @returns Created training iteration
+
  */
+
 export function createTrainingIteration(
+
   personaId: string,
+
   iterationNumber: number,
+
   judgeModelId: string,
+
   judgePromptText: string,
+
   db?: Database.Database
+
 ): TrainingIteration {
+
   return withTransaction((database) => {
+
     const id = uuidv4();
+
     const now = new Date().toISOString();
 
+
+
     const stmt = database.prepare(`
+
       INSERT INTO training_iterations (
+
         id, persona_id, iteration_number, judge_model_id, judge_prompt_text,
+
         status, started_at
+
       ) VALUES (?, ?, ?, ?, ?, ?, ?)
+
     `);
+
+
 
     stmt.run(id, personaId, iterationNumber, judgeModelId, judgePromptText, 'in_progress', now);
 
+
+
     return getTrainingIteration(id, database)!;
+
   }, db);
+
 }
 
+
+
 /**
- * Get training iteration by ID
+
+ * Get training iteration by ID.
+
+ * @param id - Iteration ID
+
+ * @param db - Optional database instance
+
+ * @returns Training iteration or null
+
  */
+
 export function getTrainingIteration(id: string, db?: Database.Database): TrainingIteration | null {
+
   const database = db || getTrainingDatabase();
+
   const stmt = database.prepare('SELECT * FROM training_iterations WHERE id = ?');
+
   return stmt.get(id) as TrainingIteration | null;
+
 }
 
+
+
 /**
- * Get latest training iteration for a persona
+
+ * Get latest training iteration for a persona.
+
+ * @param personaId - Persona ID
+
+ * @param db - Optional database instance
+
+ * @returns Latest iteration or null
+
  */
+
 export function getLatestIteration(
+
   personaId: string,
+
   db?: Database.Database
+
 ): TrainingIteration | null {
+
   const database = db || getTrainingDatabase();
+
   const stmt = database.prepare(`
+
     SELECT * FROM training_iterations
+
     WHERE persona_id = ?
+
     ORDER BY iteration_number DESC
+
     LIMIT 1
+
   `);
+
   return stmt.get(personaId) as TrainingIteration | null;
+
 }
 
+
+
 /**
- * List all iterations for a persona
+
+ * List all iterations for a persona.
+
+ * @param personaId - Persona ID
+
+ * @param db - Optional database instance
+
+ * @returns Array of training iterations
+
  */
+
 export function listIterations(personaId: string, db?: Database.Database): TrainingIteration[] {
+
   const database = db || getTrainingDatabase();
+
   const stmt = database.prepare(`
+
     SELECT * FROM training_iterations
+
     WHERE persona_id = ?
+
     ORDER BY iteration_number DESC
+
   `);
+
   return stmt.all(personaId) as TrainingIteration[];
+
 }
 
+
+
 /**
- * Update training iteration status
+
+ * Update training iteration status.
+
+ * @param id - Iteration ID
+
+ * @param status - New status
+
+ * @param errorMessage - Optional error message
+
+ * @param db - Optional database instance
+
+ * @returns Updated training iteration
+
  */
+
 export function updateIterationStatus(
+
   id: string,
+
   status: IterationStatus,
+
   errorMessage?: string,
+
   db?: Database.Database
+
 ): TrainingIteration {
+
   return withTransaction((database) => {
+
     const now = new Date().toISOString();
+
     let query = 'UPDATE training_iterations SET status = ?';
+
     const params: unknown[] = [status];
 
+
+
     if (status === 'completed') {
+
       query += ', completed_at = ?';
+
       params.push(now);
+
     }
+
+
 
     if (errorMessage) {
+
       query += ', error_message = ?';
+
       params.push(errorMessage);
+
     }
 
+
+
     query += ' WHERE id = ?';
+
     params.push(id);
 
+
+
     const stmt = database.prepare(query);
+
     stmt.run(...params);
 
+
+
     return getTrainingIteration(id, database)!;
+
   }, db);
+
 }
 
+
+
 /**
- * Update iteration pair counts
+
+ * Update iteration pair counts.
+
+ * @param id - Iteration ID
+
+ * @param totalEvaluated - Total pairs evaluated by judge
+
+ * @param humanReviewed - Total pairs reviewed by human
+
+ * @param db - Optional database instance
+
  */
+
 export function updateIterationCounts(
+
   id: string,
+
   totalEvaluated: number,
+
   humanReviewed: number,
+
   db?: Database.Database
+
 ): void {
+
   const database = db || getTrainingDatabase();
+
   const stmt = database.prepare(`
+
     UPDATE training_iterations
+
     SET total_pairs_evaluated = ?, pairs_reviewed_by_human = ?
+
     WHERE id = ?
+
   `);
+
   stmt.run(totalEvaluated, humanReviewed, id);
+
 }
+
+
 
 // ===== JudgeDecision CRUD Operations =====
 
+
+
 /**
- * Create a judge decision
+
+ * Create a judge decision.
+
+ * @param iterationId - Iteration ID
+
+ * @param trainingPairId - Training pair ID
+
+ * @param generatedOutput - Model output that was judged
+
+ * @param decision - Judge's decision (agree/disagree)
+
+ * @param confidence - Judge's confidence level
+
+ * @param reasoning - Judge's reasoning
+
+ * @param resultId - Optional evaluation result reference
+
+ * @param db - Optional database instance
+
+ * @returns Created judge decision
+
  */
+
 export function createJudgeDecision(
+
   iterationId: string,
+
   trainingPairId: string,
+
   generatedOutput: string,
+
   decision: JudgeDecisionType,
+
   confidence: number | null,
+
   reasoning: string | null,
+
   resultId?: string,
+
   db?: Database.Database
+
 ): JudgeDecision {
+
   const database = db || getTrainingDatabase();
+
   const id = uuidv4();
+
   const now = new Date().toISOString();
 
+
+
   const stmt = database.prepare(`
+
     INSERT INTO judge_decisions (
+
       id, iteration_id, training_pair_id, result_id, generated_output,
+
       judge_decision, judge_confidence, judge_reasoning, created_at
+
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+
   `);
 
+
+
   stmt.run(
+
     id,
+
     iterationId,
+
     trainingPairId,
+
     resultId || null,
+
     generatedOutput,
+
     decision,
+
     confidence,
+
     reasoning,
+
     now
+
   );
 
+
+
   return getJudgeDecision(id, database)!;
+
 }
 
+
+
 /**
- * Get judge decision by ID
+
+ * Get judge decision by ID.
+
+ * @param id - Decision ID
+
+ * @param db - Optional database instance
+
+ * @returns Judge decision or null
+
  */
+
 export function getJudgeDecision(id: string, db?: Database.Database): JudgeDecision | null {
+
   const database = db || getTrainingDatabase();
+
   const stmt = database.prepare('SELECT * FROM judge_decisions WHERE id = ?');
+
   const result = stmt.get(id);
+
   return result ? (result as JudgeDecision) : null;
+
 }
 
+
+
 /**
- * Get all judge decisions for an iteration
+
+ * Get all judge decisions for an iteration.
+
+ * @param iterationId - Iteration ID
+
+ * @param db - Optional database instance
+
+ * @returns Array of judge decisions
+
  */
+
 export function getIterationDecisions(
+
   iterationId: string,
+
   db?: Database.Database
+
 ): JudgeDecision[] {
+
   const database = db || getTrainingDatabase();
+
   const stmt = database.prepare('SELECT * FROM judge_decisions WHERE iteration_id = ?');
+
   return stmt.all(iterationId) as JudgeDecision[];
+
 }
+
+
 
 // ===== HumanReview CRUD Operations =====
 
+
+
 /**
- * Create a human review for a judge decision
+
+ * Create a human review for a judge decision.
+
+ * @param input - Human review input data
+
+ * @param db - Optional database instance
+
+ * @returns Created human review
+
  */
+
 export function createHumanReview(
+
   input: CreateHumanReviewInput,
+
   db?: Database.Database
+
 ): HumanReview {
+
   const database = db || getTrainingDatabase();
+
   const id = uuidv4();
+
   const now = new Date().toISOString();
 
+
+
   const stmt = database.prepare(`
+
     INSERT INTO human_reviews (
+
       id, judge_decision_id, human_decision, human_confidence, human_notes, reviewer_id, created_at
+
     ) VALUES (?, ?, ?, ?, ?, ?, ?)
+
   `);
+
+
 
   stmt.run(
+
     id,
+
     input.judge_decision_id,
+
     input.human_decision,
+
     input.human_confidence || null,
+
     input.human_notes || null,
+
     input.reviewer_id || null,
+
     now
+
   );
 
+
+
   return getHumanReview(id, database)!;
+
 }
 
+
+
 /**
- * Get human review by ID
+
+ * Get human review by ID.
+
+ * @param id - Review ID
+
+ * @param db - Optional database instance
+
+ * @returns Human review or null
+
  */
+
 export function getHumanReview(id: string, db?: Database.Database): HumanReview | null {
+
   const database = db || getTrainingDatabase();
+
   const stmt = database.prepare('SELECT * FROM human_reviews WHERE id = ?');
+
   const result = stmt.get(id);
+
   return result ? (result as HumanReview) : null;
+
 }
 
+
+
 /**
- * Get human review by judge decision ID
+
+ * Get human review by judge decision ID.
+
+ * @param judgeDecisionId - Judge decision ID
+
+ * @param db - Optional database instance
+
+ * @returns Human review or null
+
  */
+
 export function getHumanReviewByDecision(
+
   judgeDecisionId: string,
+
   db?: Database.Database
+
 ): HumanReview | null {
+
   const database = db || getTrainingDatabase();
+
   const stmt = database.prepare('SELECT * FROM human_reviews WHERE judge_decision_id = ?');
+
   return stmt.get(judgeDecisionId) as HumanReview | null;
+
 }
 
+
+
 /**
- * Get all human reviews for an iteration
+
+ * Get all human reviews for an iteration.
+
+ * @param iterationId - Iteration ID
+
+ * @param db - Optional database instance
+
+ * @returns Array of human reviews
+
  */
+
 export function getIterationReviews(iterationId: string, db?: Database.Database): HumanReview[] {
+
   const database = db || getTrainingDatabase();
+
   const stmt = database.prepare(`
+
     SELECT hr.* FROM human_reviews hr
+
     JOIN judge_decisions jd ON hr.judge_decision_id = jd.id
+
     WHERE jd.iteration_id = ?
+
   `);
+
   return stmt.all(iterationId) as HumanReview[];
+
 }
+
+
 
 // ===== IterationMetrics CRUD Operations =====
 
+
+
 /**
- * Create iteration metrics
+
+ * Create iteration metrics.
+
+ * @param iterationId - Iteration ID
+
+ * @param metrics - Calculated metrics values
+
+ * @param db - Optional database instance
+
+ * @returns Created iteration metrics
+
  */
+
 export function createIterationMetrics(
+
   iterationId: string,
+
   metrics: {
+
     tp: number;
+
     tn: number;
+
     fp: number;
+
     fn: number;
+
     precision: number;
+
     recall: number;
+
     f1_score: number;
+
     cohens_kappa: number;
+
     accuracy: number;
+
   },
+
   db?: Database.Database
+
 ): IterationMetrics {
+
   const database = db || getTrainingDatabase();
+
   const id = uuidv4();
+
   const now = new Date().toISOString();
 
+
+
   const stmt = database.prepare(`
+
     INSERT INTO iteration_metrics (
+
       id, iteration_id, true_positives, true_negatives, false_positives, false_negatives,
+
       precision, recall, f1_score, cohens_kappa, accuracy, calculated_at
+
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+
   `);
+
+
 
   stmt.run(
+
     id,
+
     iterationId,
+
     metrics.tp,
+
     metrics.tn,
+
     metrics.fp,
+
     metrics.fn,
+
     metrics.precision,
+
     metrics.recall,
+
     metrics.f1_score,
+
     metrics.cohens_kappa,
+
     metrics.accuracy,
+
     now
+
   );
 
+
+
   return getIterationMetrics(iterationId, database)!;
+
 }
 
+
+
 /**
- * Get iteration metrics by iteration ID
+
+ * Get iteration metrics by iteration ID.
+
+ * @param iterationId - Iteration ID
+
+ * @param db - Optional database instance
+
+ * @returns Iteration metrics or null
+
  */
+
 export function getIterationMetrics(
+
   iterationId: string,
+
   db?: Database.Database
+
 ): IterationMetrics | null {
+
   const database = db || getTrainingDatabase();
+
   const stmt = database.prepare('SELECT * FROM iteration_metrics WHERE iteration_id = ?');
+
   const result = stmt.get(iterationId);
+
   return result ? (result as IterationMetrics) : null;
+
 }
 
+
+
 /**
- * Get all metrics for a persona (across all iterations)
+
+ * Get all metrics for a persona (across all iterations).
+
+ * @param personaId - Persona ID
+
+ * @param db - Optional database instance
+
+ * @returns Array of iteration metrics
+
  */
+
 export function getPersonaMetrics(personaId: string, db?: Database.Database): IterationMetrics[] {
+
   const database = db || getTrainingDatabase();
+
   const stmt = database.prepare(`
+
     SELECT m.* FROM iteration_metrics m
+
     JOIN training_iterations i ON m.iteration_id = i.id
+
     WHERE i.persona_id = ?
+
     ORDER BY i.iteration_number
+
   `);
+
   return stmt.all(personaId) as IterationMetrics[];
+
 }
+
+
 
 // ===== JudgePromptVersion CRUD Operations =====
 
+
+
 /**
- * Create a new judge prompt version
+
+ * Create a new judge prompt version.
+
+ * @param personaId - Persona ID
+
+ * @param iterationNumber - Iteration number this prompt belongs to
+
+ * @param promptText - Prompt text content
+
+ * @param rationale - Improvement rationale
+
+ * @param createdBy - Source of the prompt (human/ai)
+
+ * @param db - Optional database instance
+
+ * @returns Created prompt version
+
  */
+
 export function createPromptVersion(
+
   personaId: string,
+
   iterationNumber: number,
+
   promptText: string,
+
   rationale: string | null,
+
   createdBy: PromptSource,
+
   db?: Database.Database
+
 ): JudgePromptVersion {
+
   const database = db || getTrainingDatabase();
+
   const id = uuidv4();
+
   const now = new Date().toISOString();
 
+
+
   const stmt = database.prepare(`
+
     INSERT INTO judge_prompt_versions (
+
       id, persona_id, iteration_number, prompt_text, improvement_rationale, created_by, created_at
+
     ) VALUES (?, ?, ?, ?, ?, ?, ?)
+
   `);
+
+
 
   stmt.run(id, personaId, iterationNumber, promptText, rationale, createdBy, now);
 
+
+
   return getPromptVersion(id, database)!;
+
 }
 
+
+
 /**
- * Get prompt version by ID
+
+ * Get prompt version by ID.
+
+ * @param id - Version ID
+
+ * @param db - Optional database instance
+
+ * @returns Prompt version or null
+
  */
+
 export function getPromptVersion(id: string, db?: Database.Database): JudgePromptVersion | null {
+
   const database = db || getTrainingDatabase();
+
   const stmt = database.prepare('SELECT * FROM judge_prompt_versions WHERE id = ?');
+
   return stmt.get(id) as JudgePromptVersion | null;
+
 }
 
+
+
 /**
- * Get prompt version by persona and iteration number
+
+ * Get prompt version by persona and iteration number.
+
+ * @param personaId - Persona ID
+
+ * @param iterationNumber - Iteration number
+
+ * @param db - Optional database instance
+
+ * @returns Prompt version or null
+
  */
+
 export function getPromptVersionByIteration(
+
   personaId: string,
+
   iterationNumber: number,
+
   db?: Database.Database
+
 ): JudgePromptVersion | null {
+
   const database = db || getTrainingDatabase();
+
   const stmt = database.prepare(
+
     'SELECT * FROM judge_prompt_versions WHERE persona_id = ? AND iteration_number = ?'
+
   );
+
   return stmt.get(personaId, iterationNumber) as JudgePromptVersion | null;
+
 }
 
+
+
 /**
- * Get all prompt versions for a persona
+
+ * Get all prompt versions for a persona.
+
+ * @param personaId - Persona ID
+
+ * @param db - Optional database instance
+
+ * @returns Array of prompt versions
+
  */
+
 export function getPromptHistory(personaId: string, db?: Database.Database): JudgePromptVersion[] {
+
   const database = db || getTrainingDatabase();
+
   const stmt = database.prepare(`
+
     SELECT * FROM judge_prompt_versions
+
     WHERE persona_id = ?
+
     ORDER BY iteration_number DESC
+
   `);
+
   return stmt.all(personaId) as JudgePromptVersion[];
+
 }
+
+
 
 // ===== TrainingLoopState CRUD Operations =====
 
+
+
 /**
- * Create training loop state
+
+ * Create training loop state.
+
+ * @param sessionId - Unique session ID
+
+ * @param personaId - Persona ID
+
+ * @param totalIterations - Target iteration count
+
+ * @param judgeModelId - Judge model ID
+
+ * @param promptEngineerModelId - Prompt engineer model ID
+
+ * @param taskModelId - Task model ID
+
+ * @param db - Optional database instance
+
+ * @returns Created training loop state
+
  */
+
 export function createTrainingLoopState(
+
   sessionId: string,
+
   personaId: string,
+
   totalIterations: number,
+
   judgeModelId: string,
+
   promptEngineerModelId: string,
+
   taskModelId: string,
+
   db?: Database.Database
+
 ): TrainingLoopState {
+
   const database = db || getTrainingDatabase();
+
   const now = new Date().toISOString();
 
+
+
   const stmt = database.prepare(`
+
     INSERT INTO training_loop_state (
+
       session_id, persona_id, current_iteration, total_iterations, status,
+
       judge_model_id, prompt_engineer_model_id, task_model_id,
+
       created_at, updated_at
+
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+
   `);
 
+
+
   stmt.run(
+
     sessionId,
+
     personaId,
+
     0,
+
     totalIterations,
+
     'pending',
+
     judgeModelId,
+
     promptEngineerModelId,
+
     taskModelId,
+
     now,
+
     now
+
   );
 
+
+
   return getTrainingLoopState(sessionId, database)!;
+
 }
 
+
+
 /**
- * Get training loop state by session ID
+
+ * Get training loop state by session ID.
+
+ * @param sessionId - Session ID
+
+ * @param db - Optional database instance
+
+ * @returns Training loop state or null
+
  */
+
 export function getTrainingLoopState(
+
   sessionId: string,
+
   db?: Database.Database
+
 ): TrainingLoopState | null {
+
   const database = db || getTrainingDatabase();
+
   const stmt = database.prepare('SELECT * FROM training_loop_state WHERE session_id = ?');
+
   return stmt.get(sessionId) as TrainingLoopState | null;
+
 }
 
+
+
 /**
- * Update training loop state
+
+ * Update training loop state.
+
+ * @param sessionId - Session ID
+
+ * @param updates - State updates
+
+ * @param db - Optional database instance
+
+ * @returns Updated training loop state
+
  */
+
 export function updateTrainingLoopState(
+
   sessionId: string,
+
   updates: {
+
     current_iteration?: number;
+
     status?: SessionStatus;
+
     task_results_evaluated?: number;
+
     error_message?: string;
+
     pause_reason?: string;
+
   },
+
   db?: Database.Database
+
 ): TrainingLoopState {
+
   return withTransaction((database) => {
+
     const fields: string[] = [];
+
     const values: unknown[] = [];
 
+
+
     if (updates.current_iteration !== undefined) {
+
       fields.push('current_iteration = ?');
+
       values.push(updates.current_iteration);
+
     }
+
     if (updates.status !== undefined) {
+
       fields.push('status = ?');
+
       values.push(updates.status);
+
     }
+
     if (updates.task_results_evaluated !== undefined) {
+
       fields.push('task_results_evaluated = ?');
+
       values.push(updates.task_results_evaluated);
+
     }
+
     if (updates.error_message !== undefined) {
+
       fields.push('error_message = ?');
+
       values.push(updates.error_message);
+
     }
+
     if (updates.pause_reason !== undefined) {
+
       fields.push('pause_reason = ?');
+
       values.push(updates.pause_reason);
+
     }
+
+
 
     fields.push('updated_at = ?');
+
     values.push(new Date().toISOString());
+
     values.push(sessionId);
 
+
+
     const stmt = database.prepare(
+
       `UPDATE training_loop_state SET ${fields.join(', ')} WHERE session_id = ?`
+
     );
+
     stmt.run(...values);
 
+
+
     return getTrainingLoopState(sessionId, database)!;
+
   }, db);
+
 }
+
+
 
 // ===== TrainingLoopCheckpoint CRUD Operations =====
 
+
+
 /**
- * Create a checkpoint
+
+ * Create a checkpoint.
+
+ * @param sessionId - Session ID
+
+ * @param iterationNumber - Iteration number
+
+ * @param evaluatedResultCount - Evaluated count
+
+ * @param metricsSnapshot - JSON metrics snapshot
+
+ * @param evaluatedResultIds - JSON array of IDs
+
+ * @param currentPrompt - Active prompt text
+
+ * @param db - Optional database instance
+
+ * @returns Created checkpoint
+
  */
+
 export function createCheckpoint(
+
   sessionId: string,
+
   iterationNumber: number,
+
   evaluatedResultCount: number,
+
   metricsSnapshot: string,
+
   evaluatedResultIds: string,
+
   currentPrompt: string,
+
   db?: Database.Database
+
 ): TrainingLoopCheckpoint {
+
   const database = db || getTrainingDatabase();
+
   const id = uuidv4();
+
   const now = new Date().toISOString();
 
+
+
   const stmt = database.prepare(`
+
     INSERT INTO training_loop_checkpoints (
+
       id, session_id, iteration_number, evaluated_result_count,
+
       metrics_snapshot, evaluated_result_ids, current_prompt, created_at
+
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+
   `);
+
+
 
   stmt.run(
+
     id,
+
     sessionId,
+
     iterationNumber,
+
     evaluatedResultCount,
+
     metricsSnapshot,
+
     evaluatedResultIds,
+
     currentPrompt,
+
     now
+
   );
 
+
+
   return getCheckpoint(id, database)!;
+
 }
 
+
+
 /**
- * Get checkpoint by ID
+
+ * Get checkpoint by ID.
+
+ * @param id - Checkpoint ID
+
+ * @param db - Optional database instance
+
+ * @returns Checkpoint or null
+
  */
+
 export function getCheckpoint(id: string, db?: Database.Database): TrainingLoopCheckpoint | null {
+
   const database = db || getTrainingDatabase();
+
   const stmt = database.prepare('SELECT * FROM training_loop_checkpoints WHERE id = ?');
+
   return stmt.get(id) as TrainingLoopCheckpoint | null;
+
 }
 
+
+
 /**
- * Get latest checkpoint for a session
+
+ * Get latest checkpoint for a session.
+
+ * @param sessionId - Session ID
+
+ * @param db - Optional database instance
+
+ * @returns Latest checkpoint or null
+
  */
+
 export function getLatestCheckpoint(
+
   sessionId: string,
+
   db?: Database.Database
+
 ): TrainingLoopCheckpoint | null {
+
   const database = db || getTrainingDatabase();
+
   const stmt = database.prepare(`
+
     SELECT * FROM training_loop_checkpoints
+
     WHERE session_id = ?
+
     ORDER BY iteration_number DESC
+
     LIMIT 1
+
   `);
+
   return stmt.get(sessionId) as TrainingLoopCheckpoint | null;
+
 }

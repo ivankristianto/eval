@@ -6,18 +6,27 @@
 import type { Database } from 'better-sqlite3';
 import type { MetricsResult } from '../types/training';
 
+/**
+ * Example of a model output that the judge incorrectly agreed with (False Positive).
+ */
 export interface FailureExample {
   model_output: string;
   expected_output: string;
   why_it_should_have_disagreed: string;
 }
 
+/**
+ * Example of a model output that the judge incorrectly disagreed with (False Negative).
+ */
 export interface FalseNegativeExample {
   model_output: string;
   expected_output: string;
   why_it_should_have_agreed: string;
 }
 
+/**
+ * Example of a model output that the judge correctly classified.
+ */
 export interface CorrectExample {
   model_output: string;
   expected_output: string;
@@ -25,6 +34,9 @@ export interface CorrectExample {
   reasoning: string;
 }
 
+/**
+ * Contextual data required for prompt refinement analysis.
+ */
 export interface FailureAnalysisContext {
   current_metrics: MetricsResult;
   iteration_number: number;

@@ -112,8 +112,10 @@ export function parseCSV(fileContent: string): CSVParseResult {
 }
 
 /**
- * Normalize column names to standard format
- * Supports both "input/expected_output" and "Input A/Correct Output"
+ * Normalize column names to standard format.
+ * Supports both "input/expected_output" and "Input A/Correct Output" (case-insensitive).
+ * @param headers - Array of column headers from the CSV
+ * @returns Object with indices for input and expected_output columns
  */
 function normalizeColumnNames(headers: string[]): {
   input: number | null;
@@ -147,11 +149,13 @@ function normalizeColumnNames(headers: string[]): {
 }
 
 /**
- * Parse CSV lines with support for quoted multiline values
+ * Parse CSV lines with support for quoted multiline values.
  * Handles RFC 4180 CSV format:
  * - Fields with commas must be quoted
  * - Fields with quotes must escape quotes with double quotes
  * - Fields with newlines must be quoted
+ * @param content - Raw CSV string content
+ * @returns 2D array of strings representing rows and cells
  */
 function parseCSVLines(content: string): string[][] {
   const lines: string[][] = [];

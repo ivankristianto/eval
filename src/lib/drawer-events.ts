@@ -5,13 +5,20 @@
  * global window function pollution with CustomEvent dispatching.
  */
 
+/**
+ * Custom event names for drawer state control.
+ */
 export const DRAWER_EVENTS = {
   OPEN: 'drawer:open',
   CLOSE: 'drawer:close',
   TOGGLE: 'drawer:toggle',
 } as const;
 
+/**
+ * Detail object for drawer-related custom events.
+ */
 export interface DrawerEventDetail {
+  /** The unique identifier of the target drawer */
   id: string;
 }
 

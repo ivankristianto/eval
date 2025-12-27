@@ -6,6 +6,9 @@
 import type { Database } from 'better-sqlite3';
 import { v4 as uuidv4 } from 'uuid';
 
+/**
+ * Represents a specific version of a judge prompt.
+ */
 export interface JudgePromptVersion {
   id: string;
   persona_id: string;
@@ -16,6 +19,9 @@ export interface JudgePromptVersion {
   created_at: string;
 }
 
+/**
+ * Result of a comparison between two prompt versions.
+ */
 export interface PromptDiff {
   before: string;
   after: string;
@@ -23,7 +29,7 @@ export interface PromptDiff {
 }
 
 /**
- * Store a new prompt version if significantly different from previous
+ * Store a new prompt version if significantly different from previous.
  *
  * Only stores if:
  * - This is the first version for the persona
@@ -87,7 +93,7 @@ export async function storePromptVersion(
 }
 
 /**
- * Retrieve prompt version history for a persona
+ * Retrieve prompt version history for a persona.
  *
  * @param personaId - Persona ID
  * @param db - Database connection
@@ -109,7 +115,7 @@ export async function getPromptHistory(
 }
 
 /**
- * Generate diff between two prompt versions
+ * Generate diff between two prompt versions.
  *
  * @param version1Id - ID of first version
  * @param version2Id - ID of second version
@@ -148,8 +154,11 @@ export async function getPromptDiff(
 }
 
 /**
- * Generate simple textual diff description
+ * Generate simple textual diff description.
  * For MVP, just describe what changed. Could be enhanced with line-by-line diff later.
+ * @param before - Original prompt text
+ * @param after - New prompt text
+ * @returns Text description of changes
  */
 function generateSimpleDiff(before: string, after: string): string {
   const beforeLines = before.split('\n');

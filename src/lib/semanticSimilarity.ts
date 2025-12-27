@@ -2,24 +2,39 @@ import Anthropic from '@anthropic-ai/sdk';
 
 // --- Types ---
 
+/**
+ * Evaluation rating for a specific dimension of similarity.
+ */
 export interface SimilarityDimension {
+  /** Rating value: YES (100%), PARTIAL (50%), or NO (0%) */
   rating: 'YES' | 'PARTIAL' | 'NO';
+  /** Optional explanation for the rating */
   details?: string;
 }
 
+/**
+ * Comprehensive result of a semantic similarity evaluation.
+ */
 export interface SemanticSimilarityResult {
+  /** Calculated weighted score (0-100) */
   score: number;
+  /** Whether the score meets the overall match threshold */
   overallMatch: boolean;
+  /** Individual dimension scores */
   dimensions: {
     correctness: SimilarityDimension;
     completeness: SimilarityDimension;
     noContradictions: SimilarityDimension;
   };
+  /** Detailed reasoning from the evaluator */
   reasoning: string;
 }
 
+/**
+ * Expected JSON response structure from the evaluator LLM.
+ */
 interface LLMEvaluationResponse {
-  reasoning_analysis: string; // Moved reasoning first for Chain of Thought
+  reasoning_analysis: string;
   correctness: 'YES' | 'PARTIAL' | 'NO';
   correctness_details: string;
   completeness: 'YES' | 'PARTIAL' | 'NO';
@@ -30,12 +45,18 @@ interface LLMEvaluationResponse {
 
 // --- Configuration ---
 
+/**
+ * Numerical scores assigned to each rating level.
+ */
 const DIMENSION_SCORES: Record<'YES' | 'PARTIAL' | 'NO', number> = {
   YES: 100,
   PARTIAL: 50,
   NO: 0,
 };
 
+/**
+ * Default importance weights for each similarity dimension.
+ */
 const DEFAULT_WEIGHTS = {
   correctness: 0.5,
   completeness: 0.3,
@@ -44,6 +65,16 @@ const DEFAULT_WEIGHTS = {
 
 // --- Main Function ---
 
+/**
+ * Calculates a semantic similarity score between two strings using an LLM.
+ * Falls back to basic token similarity if no API key is available or on error.
+ *
+ * @param response - The model generated response text
+ * @param expectedOutput - The ground truth output text
+ * @param apiKey - Optional Anthropic API key
+ * @param options - Configuration options for model, threshold and weights
+ * @returns Promise resolving to semantic similarity results
+ */
 export async function getSemanticSimilarityScore(
   response: string,
   expectedOutput: string,
@@ -92,6 +123,12 @@ export async function getSemanticSimilarityScore(
 
 // --- Prompt Engineering ---
 
+/**
+ * Builds the system prompt for the evaluator LLM.
+ * @param response - Actual response text
+ * @param expectedOutput - Ground truth text
+ * @returns Formatted prompt string
+ */
 function buildEvaluationPrompt(response: string, expectedOutput: string): string {
   // Increased limit significantly (20k chars approx 5k tokens), safe for modern models
   const truncResponse = response.substring(0, 20000);
@@ -148,6 +185,13 @@ Example Format:
 
 // --- Parsing Logic ---
 
+/**
+ * Parses the JSON response from the evaluator LLM.
+ * @param text - Raw response text
+ * @param weights - Dimension weights for scoring
+ * @param threshold - Success threshold
+ * @returns Parsed similarity result
+ */
 function parseEvaluationResponse(
   text: string,
   weights: typeof DEFAULT_WEIGHTS,
@@ -212,6 +256,12 @@ function parseEvaluationResponse(
 
 // --- Fallback (Kept mostly same, added threshold support) ---
 
+/**
+ * Fallback similarity calculation using Jaccard index of token overlap.
+ * @param response - Actual response text
+ * @param expectedOutput - Ground truth text
+ * @returns Basic similarity result
+ */
 function fallbackSimilarity(response: string, expectedOutput: string): SemanticSimilarityResult {
   const normalize = (text: string) =>
     new Set(

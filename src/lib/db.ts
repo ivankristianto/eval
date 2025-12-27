@@ -31,6 +31,10 @@ let db: Database.Database | null = null;
 
 // ===== Database Initialization =====
 
+/**
+ * Gets or initializes the SQLite database connection.
+ * @returns Database instance
+ */
 export function getDatabase(): Database.Database {
   if (!db) {
     db = new Database(DB_PATH);
@@ -40,6 +44,9 @@ export function getDatabase(): Database.Database {
   return db;
 }
 
+/**
+ * Initializes the database by applying schema and pending migrations.
+ */
 export function initializeDatabase(): void {
   const database = getDatabase();
 
@@ -61,6 +68,9 @@ export function initializeDatabase(): void {
   }
 }
 
+/**
+ * Closes the database connection.
+ */
 export function closeDatabase(): void {
   if (db) {
     db.close();
@@ -73,6 +83,11 @@ export function closeDatabase(): void {
 const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 16;
 
+/**
+ * Retrieves the encryption key from environment variables.
+ * @throws Error if ENCRYPTION_KEY is not set
+ * @returns Encryption key buffer
+ */
 function getEncryptionKey(): Buffer {
   const key = import.meta.env?.ENCRYPTION_KEY || process.env.ENCRYPTION_KEY;
   if (!key) {
@@ -81,6 +96,11 @@ function getEncryptionKey(): Buffer {
   return Buffer.from(key, 'hex');
 }
 
+/**
+ * Encrypts an API key using AES-256-GCM.
+ * @param apiKey - Plaintext API key
+ * @returns Encrypted data in format iv:authTag:encrypted
+ */
 export function encryptApiKey(apiKey: string): string {
   const key = getEncryptionKey();
   const iv = randomBytes(IV_LENGTH);
@@ -95,6 +115,11 @@ export function encryptApiKey(apiKey: string): string {
   return `${iv.toString('hex')}:${authTag.toString('hex')}:${encrypted}`;
 }
 
+/**
+ * Decrypts an encrypted API key.
+ * @param encryptedData - Encrypted data string
+ * @returns Decrypted plaintext API key
+ */
 export function decryptApiKey(encryptedData: string): string {
   const key = getEncryptionKey();
   const [ivHex, authTagHex, encrypted] = encryptedData.split(':');
@@ -113,6 +138,14 @@ export function decryptApiKey(encryptedData: string): string {
 
 // ===== Model Configuration Queries =====
 
+/**
+ * Inserts a new model configuration into the database.
+ * @param provider - AI provider name
+ * @param modelName - Model identifier
+ * @param apiKey - Plaintext API key (will be encrypted)
+ * @param notes - Optional notes
+ * @returns Created model configuration
+ */
 export function insertModel(
   provider: Provider,
   modelName: string,
@@ -143,6 +176,12 @@ export function insertModel(
   };
 }
 
+/**
+ * Retrieves models from the database with optional filtering.
+ * @param activeOnly - Whether to only return active models
+ * @param provider - Optional provider filter
+ * @returns Array of model configurations
+ */
 export function getModels(activeOnly = false, provider?: Provider): ModelConfiguration[] {
   const database = getDatabase();
 
@@ -177,6 +216,11 @@ export function getModels(activeOnly = false, provider?: Provider): ModelConfigu
   }));
 }
 
+/**
+ * Retrieves a single model configuration by ID.
+ * @param id - Model ID
+ * @returns Model configuration or null if not found
+ */
 export function getModelById(id: string): ModelConfiguration | null {
   const database = getDatabase();
   const row = database.prepare('SELECT * FROM ModelConfiguration WHERE id = ?').get(id) as
@@ -197,6 +241,12 @@ export function getModelById(id: string): ModelConfiguration | null {
   };
 }
 
+/**
+ * Updates an existing model configuration.
+ * @param id - Model ID
+ * @param updates - Fields to update
+ * @returns Updated model configuration or null
+ */
 export function updateModel(
   id: string,
   updates: Partial<{ is_active: boolean; notes: string; api_key: string }>
@@ -231,12 +281,22 @@ export function updateModel(
   return getModelById(id);
 }
 
+/**
+ * Deletes a model configuration by ID.
+ * @param id - Model ID
+ * @returns True if deleted, false otherwise
+ */
 export function deleteModel(id: string): boolean {
   const database = getDatabase();
   const result = database.prepare('DELETE FROM ModelConfiguration WHERE id = ?').run(id);
   return result.changes > 0;
 }
 
+/**
+ * Counts how many evaluation results use a specific model.
+ * @param id - Model ID
+ * @returns Usage count
+ */
 export function getModelUsageCount(id: string): number {
   const database = getDatabase();
   const row = database
@@ -245,6 +305,11 @@ export function getModelUsageCount(id: string): number {
   return row.count;
 }
 
+/**
+ * Checks if a model is currently being used in active evaluations.
+ * @param modelId - Model ID
+ * @returns True if active evaluations exist
+ */
 export function hasActiveEvaluations(modelId: string): boolean {
   const database = getDatabase();
   const row = database
@@ -261,6 +326,17 @@ export function hasActiveEvaluations(modelId: string): boolean {
 
 // ===== Evaluation Queries =====
 
+/**
+ * Inserts a new evaluation record.
+ * @param instructionText - User instruction
+ * @param accuracyRubric - Rubric type
+ * @param expectedOutput - Ground truth output
+ * @param partialCreditConcepts - Optional concepts for scoring
+ * @param templateId - Optional template reference
+ * @param systemPrompt - Optional system prompt
+ * @param temperature - Optional temperature setting
+ * @returns Created evaluation
+ */
 export function insertEvaluation(
   instructionText: string,
   accuracyRubric: RubricType,
@@ -305,6 +381,11 @@ export function insertEvaluation(
   };
 }
 
+/**
+ * Retrieves an evaluation record by ID.
+ * @param id - Evaluation ID
+ * @returns Evaluation or null if not found
+ */
 export function getEvaluation(id: string): Evaluation | null {
   const database = getDatabase();
   const row = database.prepare('SELECT * FROM Evaluation WHERE id = ?').get(id) as
@@ -331,6 +412,12 @@ export function getEvaluation(id: string): Evaluation | null {
   };
 }
 
+/**
+ * Updates the status of an evaluation.
+ * @param id - Evaluation ID
+ * @param status - New status
+ * @param errorMessage - Optional error message
+ */
 export function updateEvaluationStatus(
   id: string,
   status: EvaluationStatus,
@@ -349,6 +436,11 @@ export function updateEvaluationStatus(
     .run(status, completedAt, errorMessage || null, id);
 }
 
+/**
+ * Deletes multiple evaluations by ID.
+ * @param ids - Array of evaluation IDs
+ * @returns Count of deleted records
+ */
 export function deleteEvaluations(ids: string[]): number {
   const database = getDatabase();
   if (ids.length === 0) return 0;
@@ -361,6 +453,13 @@ export function deleteEvaluations(ids: string[]): number {
   return result.changes;
 }
 
+/**
+ * Retrieves evaluations with statistics and filtering.
+ * @param filters - Filter options
+ * @param limit - Max records to return
+ * @param offset - Pagination offset
+ * @returns Array of evaluations with stats
+ */
 export function getEvaluations(
   filters: FilterOptions & { templateId?: string } = {},
   limit = 10,
@@ -436,6 +535,11 @@ export function getEvaluations(
   }));
 }
 
+/**
+ * Counts total evaluations matching filters.
+ * @param filters - Filter options
+ * @returns Total count
+ */
 export function getEvaluationsCount(filters: FilterOptions & { templateId?: string } = {}): number {
   const database = getDatabase();
 
@@ -486,6 +590,12 @@ export function getEvaluationsCount(filters: FilterOptions & { templateId?: stri
 
 // ===== Result Queries =====
 
+/**
+ * Inserts a pending result record for a model in an evaluation.
+ * @param evaluationId - Evaluation ID
+ * @param modelId - Model ID
+ * @returns Created result record
+ */
 export function insertResult(evaluationId: string, modelId: string): Result {
   const database = getDatabase();
   const id = uuidv4();
@@ -507,6 +617,11 @@ export function insertResult(evaluationId: string, modelId: string): Result {
   };
 }
 
+/**
+ * Updates an evaluation result with model output and metrics.
+ * @param id - Result ID
+ * @param updates - Result data updates
+ */
 export function updateResult(
   id: string,
   updates: Partial<{
@@ -538,6 +653,11 @@ export function updateResult(
   database.prepare(`UPDATE Result SET ${setClauses.join(', ')} WHERE id = ?`).run(...params);
 }
 
+/**
+ * Retrieves all results for a specific evaluation.
+ * @param evaluationId - Evaluation ID
+ * @returns Array of results with model info
+ */
 export function getResults(
   evaluationId: string
 ): (Result & { model_name: string; provider: Provider })[] {
@@ -576,6 +696,11 @@ export function getResults(
   }));
 }
 
+/**
+ * Retrieves detailed status of an evaluation and its component results.
+ * @param evaluationId - Evaluation ID
+ * @returns Evaluation status object or null if not found
+ */
 export function getEvaluationStatus(evaluationId: string): {
   overall_status: EvaluationStatus;
   created_at: string;
@@ -619,6 +744,19 @@ export function getEvaluationStatus(evaluationId: string): {
 
 // ===== Template Queries =====
 
+/**
+ * Inserts a new evaluation template.
+ * @param name - Template name
+ * @param instructionText - Instruction text
+ * @param modelIds - IDs of models to use
+ * @param accuracyRubric - Rubric type
+ * @param description - Optional description
+ * @param expectedOutput - Optional ground truth
+ * @param partialCreditConcepts - Optional scoring concepts
+ * @param systemPrompt - Optional system prompt
+ * @param temperature - Optional temperature setting
+ * @returns Created template
+ */
 export function insertTemplate(
   name: string,
   instructionText: string,
@@ -671,6 +809,12 @@ export function insertTemplate(
   };
 }
 
+/**
+ * Retrieves templates from the database.
+ * @param sortBy - Sort criteria
+ * @param order - Sort order
+ * @returns Array of templates
+ */
 export function getTemplates(
   sortBy: 'created' | 'name' | 'run_count' = 'created',
   order: 'asc' | 'desc' = 'desc'
@@ -701,6 +845,11 @@ export function getTemplates(
   }));
 }
 
+/**
+ * Retrieves a single template by ID.
+ * @param id - Template ID
+ * @returns Template or null if not found
+ */
 export function getTemplateById(id: string): EvaluationTemplate | null {
   const database = getDatabase();
   const row = database.prepare('SELECT * FROM EvaluationTemplate WHERE id = ?').get(id) as
@@ -728,6 +877,12 @@ export function getTemplateById(id: string): EvaluationTemplate | null {
   };
 }
 
+/**
+ * Updates an evaluation template.
+ * @param id - Template ID
+ * @param updates - Fields to update
+ * @returns Updated template or null
+ */
 export function updateTemplate(
   id: string,
   updates: Partial<{
@@ -768,12 +923,21 @@ export function updateTemplate(
   return getTemplateById(id);
 }
 
+/**
+ * Deletes a template by ID.
+ * @param id - Template ID
+ * @returns True if deleted, false otherwise
+ */
 export function deleteTemplate(id: string): boolean {
   const database = getDatabase();
   const result = database.prepare('DELETE FROM EvaluationTemplate WHERE id = ?').run(id);
   return result.changes > 0;
 }
 
+/**
+ * Increments the execution counter for a template.
+ * @param id - Template ID
+ */
 export function incrementTemplateRunCount(id: string): void {
   const database = getDatabase();
   database
@@ -781,6 +945,13 @@ export function incrementTemplateRunCount(id: string): void {
     .run(new Date().toISOString(), id);
 }
 
+/**
+ * Retrieves the history of evaluations run using a specific template.
+ * @param templateId - Template ID
+ * @param limit - Max records
+ * @param offset - Pagination offset
+ * @returns Template execution history
+ */
 export function getTemplateHistory(
   templateId: string,
   limit = 10,

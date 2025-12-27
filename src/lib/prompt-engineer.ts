@@ -6,6 +6,9 @@
 import { callModel } from './api-clients';
 import type { FailureAnalysisContext } from './failure-analysis';
 
+/**
+ * Result of a prompt refinement process.
+ */
 export interface PromptRefinementResult {
   improved_prompt: string | null;
   rationale?: string;
@@ -14,7 +17,7 @@ export interface PromptRefinementResult {
 }
 
 /**
- * Refine judge prompt using Prompt Engineer LLM
+ * Refine judge prompt using Prompt Engineer LLM.
  *
  * Builds comprehensive context from failure analysis and asks LLM to:
  * 1. Analyze failure patterns (false positives and false negatives)
@@ -63,8 +66,10 @@ export async function refineJudgePrompt(
 }
 
 /**
- * Build detailed context prompt for LLM prompt engineer
- * Includes metrics, failure examples, correct examples, and chain-of-thought instructions
+ * Build detailed context prompt for LLM prompt engineer.
+ * Includes metrics, failure examples, correct examples, and chain-of-thought instructions.
+ * @param context - Failure analysis context
+ * @returns String containing the full system prompt for the prompt engineer model
  */
 function buildPromptRefinementContext(context: FailureAnalysisContext): string {
   const {

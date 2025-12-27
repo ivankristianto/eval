@@ -55,8 +55,10 @@ export function buildConfusionMatrix(
 }
 
 /**
- * Calculate precision: TP / (TP + FP)
- * Handles division by zero gracefully
+ * Calculate precision: TP / (TP + FP).
+ * Handles division by zero gracefully.
+ * @param cm - Confusion matrix data
+ * @returns Precision score (0.0 to 1.0)
  */
 export function calculatePrecision(cm: ConfusionMatrix): number {
   const denominator = cm.true_positives + cm.false_positives;
@@ -65,8 +67,10 @@ export function calculatePrecision(cm: ConfusionMatrix): number {
 }
 
 /**
- * Calculate recall: TP / (TP + FN)
- * Handles division by zero gracefully
+ * Calculate recall: TP / (TP + FN).
+ * Handles division by zero gracefully.
+ * @param cm - Confusion matrix data
+ * @returns Recall score (0.0 to 1.0)
  */
 export function calculateRecall(cm: ConfusionMatrix): number {
   const denominator = cm.true_positives + cm.false_negatives;
@@ -75,8 +79,11 @@ export function calculateRecall(cm: ConfusionMatrix): number {
 }
 
 /**
- * Calculate F1 score: 2 * (precision * recall) / (precision + recall)
- * Handles division by zero gracefully
+ * Calculate F1 score: 2 * (precision * recall) / (precision + recall).
+ * Handles division by zero gracefully.
+ * @param precision - Precision score
+ * @param recall - Recall score
+ * @returns F1 score (0.0 to 1.0)
  */
 export function calculateF1Score(precision: number, recall: number): number {
   const denominator = precision + recall;
@@ -85,8 +92,10 @@ export function calculateF1Score(precision: number, recall: number): number {
 }
 
 /**
- * Calculate accuracy: (TP + TN) / Total
- * Handles edge case of zero total
+ * Calculate accuracy: (TP + TN) / Total.
+ * Handles edge case of zero total.
+ * @param cm - Confusion matrix data
+ * @returns Accuracy score (0.0 to 1.0)
  */
 export function calculateAccuracy(cm: ConfusionMatrix): number {
   const total = cm.true_positives + cm.true_negatives + cm.false_positives + cm.false_negatives;
@@ -95,7 +104,7 @@ export function calculateAccuracy(cm: ConfusionMatrix): number {
 }
 
 /**
- * Calculate Cohen's Kappa: inter-rater reliability metric
+ * Calculate Cohen's Kappa: inter-rater reliability metric.
  * Formula: (P_o - P_e) / (1 - P_e)
  * where:
  * - P_o = observed agreement (accuracy)
@@ -105,6 +114,8 @@ export function calculateAccuracy(cm: ConfusionMatrix): number {
  * - κ > 0.66: substantial agreement
  * - κ 0.41-0.66: moderate agreement
  * - κ < 0.41: poor agreement
+ * @param cm - Confusion matrix data
+ * @returns Cohen's Kappa score (-1.0 to 1.0)
  */
 export function calculateCohensKappa(cm: ConfusionMatrix): number {
   const total = cm.true_positives + cm.true_negatives + cm.false_positives + cm.false_negatives;
@@ -135,8 +146,10 @@ export function calculateCohensKappa(cm: ConfusionMatrix): number {
 }
 
 /**
- * Calculate all metrics from confusion matrix
- * Returns comprehensive metrics result
+ * Calculate all metrics from confusion matrix.
+ * Returns comprehensive metrics result.
+ * @param cm - Confusion matrix data
+ * @returns Calculated precision, recall, F1, kappa, and accuracy
  */
 export function calculateMetrics(cm: ConfusionMatrix): MetricsResult {
   const precision = calculatePrecision(cm);
@@ -156,8 +169,10 @@ export function calculateMetrics(cm: ConfusionMatrix): MetricsResult {
 }
 
 /**
- * Calculate batch metrics aggregated across multiple iterations
- * Useful for trend analysis and overall performance tracking
+ * Calculate batch metrics aggregated across multiple iterations.
+ * Useful for trend analysis and overall performance tracking.
+ * @param confusionMatrices - Array of confusion matrices to aggregate
+ * @returns Aggregated metrics result
  */
 export function calculateBatchMetrics(confusionMatrices: ConfusionMatrix[]): MetricsResult {
   // Aggregate confusion matrices

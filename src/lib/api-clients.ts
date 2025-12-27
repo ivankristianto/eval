@@ -6,20 +6,42 @@ import Anthropic from '@anthropic-ai/sdk';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import type { Provider, ModelResponse } from './types';
 
+/**
+ * Common interface for all AI model provider clients.
+ */
 export interface ModelClient {
+  /**
+   * Evaluates an instruction using the model.
+   * @param instruction - The user instruction/prompt to evaluate
+   * @param options - Optional configuration
+   * @returns Model response with text, token counts, and execution time
+   */
   evaluate(
     instruction: string,
     options?: { systemPrompt?: string; temperature?: number }
   ): Promise<ModelResponse>;
+
+  /**
+   * Tests the connection to the provider API.
+   * @returns True if connection is successful, false otherwise
+   */
   testConnection(): Promise<boolean>;
 }
 
 // ===== OpenAI Client =====
 
+/**
+ * Client for OpenAI API models.
+ */
 export class OpenAIClient implements ModelClient {
   private client: OpenAI;
   private modelName: string;
 
+  /**
+   * Initializes a new OpenAI client.
+   * @param apiKey - OpenAI API key
+   * @param modelName - Model identifier (e.g., 'gpt-4o')
+   */
   constructor(apiKey: string, modelName: string) {
     this.client = new OpenAI({ apiKey });
     this.modelName = modelName;
@@ -106,6 +128,10 @@ export class OpenAIClient implements ModelClient {
     return result;
   }
 
+  /**
+   * Tests connection by listing models.
+   * @returns True if API is accessible
+   */
   async testConnection(): Promise<boolean> {
     try {
       await this.client.models.list();
@@ -118,10 +144,18 @@ export class OpenAIClient implements ModelClient {
 
 // ===== Anthropic Client =====
 
+/**
+ * Client for Anthropic Claude API models.
+ */
 export class AnthropicClient implements ModelClient {
   private client: Anthropic;
   private modelName: string;
 
+  /**
+   * Initializes a new Anthropic client.
+   * @param apiKey - Anthropic API key
+   * @param modelName - Model identifier (e.g., 'claude-3-opus-20240229')
+   */
   constructor(apiKey: string, modelName: string) {
     this.client = new Anthropic({ apiKey });
     this.modelName = modelName;
@@ -183,6 +217,10 @@ export class AnthropicClient implements ModelClient {
     return result;
   }
 
+  /**
+   * Tests connection by making a minimal request.
+   * @returns True if API is accessible
+   */
   async testConnection(): Promise<boolean> {
     try {
       // Make a minimal API call to verify credentials
@@ -200,10 +238,18 @@ export class AnthropicClient implements ModelClient {
 
 // ===== Google Client =====
 
+/**
+ * Client for Google Generative AI (Gemini) API models.
+ */
 export class GoogleClient implements ModelClient {
   private client: GoogleGenerativeAI;
   private modelName: string;
 
+  /**
+   * Initializes a new Google client.
+   * @param apiKey - Google API key
+   * @param modelName - Model identifier (e.g., 'gemini-1.5-pro')
+   */
   constructor(apiKey: string, modelName: string) {
     this.client = new GoogleGenerativeAI(apiKey);
     this.modelName = modelName;
@@ -281,6 +327,10 @@ export class GoogleClient implements ModelClient {
     return resultObj;
   }
 
+  /**
+   * Tests connection by making a minimal request.
+   * @returns True if API is accessible
+   */
   async testConnection(): Promise<boolean> {
     try {
       const model = this.client.getGenerativeModel({ model: this.modelName });
@@ -294,7 +344,17 @@ export class GoogleClient implements ModelClient {
 
 // ===== Client Factory =====
 
+/**
+ * Factory for creating model clients based on provider.
+ */
 export class ClientFactory {
+  /**
+   * Creates a model client for the specified provider.
+   * @param provider - AI provider name
+   * @param apiKey - Provider API key
+   * @param modelName - Model identifier
+   * @returns Initialized model client
+   */
   static createClient(provider: Provider, apiKey: string, modelName: string): ModelClient {
     switch (provider) {
       case 'openai':
@@ -308,6 +368,13 @@ export class ClientFactory {
     }
   }
 
+  /**
+   * Tests connection for a specific model configuration.
+   * @param provider - AI provider name
+   * @param apiKey - Provider API key
+   * @param modelName - Model identifier
+   * @returns True if connection is successful
+   */
   static async testConnection(
     provider: Provider,
     apiKey: string,
@@ -319,8 +386,12 @@ export class ClientFactory {
 }
 
 /**
- * High-level helper to call an AI model by its configuration ID
- * Used for prompt engineering and judge evaluations
+ * High-level helper to call an AI model by its configuration ID.
+ * Used for prompt engineering and judge evaluations.
+ * @param modelId - Database ID of the model configuration
+ * @param instruction - Instruction to evaluate
+ * @param options - Execution options
+ * @returns Generated response text
  */
 export async function callModel(
   modelId: string,
