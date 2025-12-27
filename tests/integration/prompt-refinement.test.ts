@@ -22,7 +22,12 @@ describe('Prompt Refinement Integration', () => {
       f1_score: 0.72,
       cohens_kappa: 0.65,
       accuracy: 0.73,
-      confusion_matrix: { tp: 15, tn: 10, fp: 5, fn: 6 },
+      confusion_matrix: {
+        true_positives: 15,
+        true_negatives: 10,
+        false_positives: 5,
+        false_negatives: 6,
+      },
     },
     iteration_number: 2,
     false_positives: [

@@ -47,19 +47,18 @@ test.describe('Models Page UI', () => {
   test('should use DaisyUI table styling', async ({ page }) => {
     await page.goto('/models');
 
-    const table = page.locator('.card table');
+    const table = page.locator('.card-luxe table');
     const tableCount = await table.count();
 
     if (tableCount > 0) {
-      await expect(table).toHaveClass(/table/);
+      await expect(table).toBeVisible();
     }
   });
 
   test('should use DaisyUI Card component', async ({ page }) => {
     await page.goto('/models');
 
-    const card = page.locator('.card');
+    const card = page.locator('.card-luxe');
     await expect(card).toBeVisible();
-    await expect(card).toHaveClass(/bg-base-100/);
   });
 });

@@ -213,8 +213,7 @@ test.describe('Persona API Integration', () => {
     expect(response.status()).toBe(200);
 
     const data = await response.json();
-    expect(data).toHaveProperty('personas');
-    expect(Array.isArray(data.personas)).toBe(true);
+    expect(Array.isArray(data)).toBe(true);
   });
 
   test('should handle API errors gracefully', async ({ page }) => {

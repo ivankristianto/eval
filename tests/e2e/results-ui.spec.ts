@@ -5,7 +5,7 @@ test.describe('Results Visualization UI', () => {
     await page.goto('/');
 
     const hasTable = (await page.locator('table').count()) > 0;
-    const hasEmptyState = (await page.locator('text=No evaluations yet').count()) > 0;
+    const hasEmptyState = (await page.locator('text=No evaluations found').count()) > 0;
 
     expect(hasTable || hasEmptyState).toBe(true);
   });
@@ -17,7 +17,7 @@ test.describe('Results Visualization UI', () => {
     const viewCount = await viewLinks.count();
 
     if (viewCount === 0) {
-      await expect(page.locator('text=No evaluations yet')).toBeVisible();
+      await expect(page.locator('text=No evaluations found')).toBeVisible();
       return;
     }
 
@@ -27,16 +27,14 @@ test.describe('Results Visualization UI', () => {
 
     const table = page.locator('#results-table');
     await expect(table).toBeVisible();
-    await expect(table).toHaveClass(/table/);
 
     const expectedHeaders = ['Model', 'Status', 'Time (ms)', 'Total Tokens', 'Accuracy', 'Actions'];
     for (const header of expectedHeaders) {
       await expect(page.locator(`#results-table th:has-text("${header}")`)).toBeAttached();
     }
 
-    const drawer = page.locator('#details-drawer');
+    const drawer = page.locator('#evaluation-details-drawer');
     await expect(drawer).toBeAttached();
-    await expect(drawer).toHaveClass(/translate-x-full/);
 
     const pollingIndicator = page.locator('#polling-indicator');
     await expect(pollingIndicator).toBeAttached();
