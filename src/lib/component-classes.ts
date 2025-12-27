@@ -184,27 +184,35 @@ export const Z_INDEX = {
 } as const;
 
 /**
- * Utility function to join class names, filtering out falsy values
+ * Utility function to join class names, filtering out falsy values.
+ * @param classes - Array of class names or conditional values
+ * @returns Joined class string
  */
 export function joinClasses(...classes: (string | undefined | false | null)[]): string {
   return classes.filter(Boolean).join(' ');
 }
 
 /**
- * Universal class name utility (alias for joinClasses)
- * Recommended for all new component development for consistency
+ * Universal class name utility (alias for joinClasses).
+ * Recommended for all new component development for consistency.
  *
  * @example
  * ```typescript
  * cn('base-class', condition && 'conditional-class', className)
  * ```
+ * @param classes - Array of class names or conditional values
+ * @returns Joined class string
  */
 export function cn(...classes: (string | undefined | false | null)[]): string {
   return classes.filter(Boolean).join(' ');
 }
 
 /**
- * Generate button class names based on variant and size
+ * Generate button class names based on variant and size.
+ * @param variant - Visual style variant
+ * @param size - Button size
+ * @param outline - Whether to use outline style
+ * @returns Generated class string
  */
 export function getButtonClasses(
   variant: keyof typeof BUTTON_STYLES.variants = 'neutral',
@@ -220,7 +228,11 @@ export function getButtonClasses(
 }
 
 /**
- * Generate badge class names based on variant and size
+ * Generate badge class names based on variant and size.
+ * @param variant - Visual style variant
+ * @param size - Badge size
+ * @param outline - Whether to use outline style
+ * @returns Generated class string
  */
 export function getBadgeClasses(
   variant: keyof typeof BADGE_STYLES.variants = 'neutral',
@@ -236,14 +248,20 @@ export function getBadgeClasses(
 }
 
 /**
- * Generate alert class names based on variant
+ * Generate alert class names based on variant.
+ * @param variant - Visual style variant
+ * @returns Generated class string
  */
 export function getAlertClasses(variant: keyof typeof ALERT_STYLES.variants = 'info'): string {
   return joinClasses(ALERT_STYLES.base, ALERT_STYLES.variants[variant], ALERT_STYLES.shadow);
 }
 
 /**
- * Generate input class names based on state and size
+ * Generate input class names based on state and size.
+ * @param hasError - Whether the input is in an error state
+ * @param size - Input size
+ * @param className - Additional custom classes
+ * @returns Generated class string
  */
 export function getInputClasses(
   hasError = false,
@@ -259,7 +277,11 @@ export function getInputClasses(
 }
 
 /**
- * Generate select class names based on state and size
+ * Generate select class names based on state and size.
+ * @param hasError - Whether the select is in an error state
+ * @param size - Select size
+ * @param className - Additional custom classes
+ * @returns Generated class string
  */
 export function getSelectClasses(
   hasError = false,
@@ -275,21 +297,28 @@ export function getSelectClasses(
 }
 
 /**
- * Generate drawer panel class names based on width
+ * Generate drawer panel class names based on width.
+ * @param width - Drawer width variant
+ * @returns Generated class string
  */
 export function getDrawerPanelClasses(width: keyof typeof DRAWER_STYLES.widths = 'md'): string {
   return joinClasses(DRAWER_STYLES.panel, 'w-full', DRAWER_STYLES.widths[width]);
 }
 
 /**
- * Generate card class names
+ * Generate card class names.
+ * @param className - Additional custom classes
+ * @returns Generated class string
  */
 export function getCardClasses(className = ''): string {
   return cn(CARD_STYLES.base, className);
 }
 
 /**
- * Generate table class names with optional variant
+ * Generate table class names with optional variant.
+ * @param variant - Table style variant
+ * @param className - Additional custom classes
+ * @returns Generated class string
  */
 export function getTableClasses(
   variant?: keyof typeof TABLE_STYLES.variants,

@@ -14,6 +14,9 @@ import type { RubricType } from '../../lib/types';
  * POST /api/templates
  * Creates a new evaluation template for reusable configurations.
  * Validates inputs and persists the template to the database.
+ * @param root0
+ * @param root0.request
+ * @returns {Promise<Response>}
  */
 export const POST: APIRoute = async ({ request }) => {
   try {
@@ -105,6 +108,9 @@ export const POST: APIRoute = async ({ request }) => {
  * GET /api/templates
  * Lists all evaluation templates.
  * Supports sorting by creation date, name, or run count.
+ * @param root0
+ * @param root0.url
+ * @returns {Promise<Response>}
  */
 export const GET: APIRoute = async ({ url }) => {
   try {

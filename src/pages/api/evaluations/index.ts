@@ -5,6 +5,9 @@ import type { RubricType } from '../../../lib/types';
 /**
  * GET /api/evaluations
  * Lists evaluations with optional filtering and pagination.
+ * @param root0
+ * @param root0.url
+ * @returns {Promise<Response>}
  */
 export const GET: APIRoute = async ({ url }) => {
   const limit = Number(url.searchParams.get('limit')) || 10;
@@ -46,6 +49,9 @@ export const GET: APIRoute = async ({ url }) => {
 /**
  * DELETE /api/evaluations
  * Bulk deletes multiple evaluations by ID.
+ * @param root0
+ * @param root0.request
+ * @returns {Promise<Response>}
  */
 export const DELETE: APIRoute = async ({ request }) => {
   try {

@@ -11,6 +11,9 @@ import type { Provider } from '../../lib/types';
  * POST /api/models
  * Creates a new model configuration.
  * Verifies API connectivity before persisting to database.
+ * @param root0
+ * @param root0.request
+ * @returns {Promise<Response>}
  */
 export const POST: APIRoute = async ({ request }) => {
   try {
@@ -80,6 +83,9 @@ export const POST: APIRoute = async ({ request }) => {
  * GET /api/models
  * Lists all configured models.
  * Supports filtering by provider and active status.
+ * @param root0
+ * @param root0.url
+ * @returns {Promise<Response>}
  */
 export const GET: APIRoute = async ({ url }) => {
   try {
