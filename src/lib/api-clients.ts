@@ -317,3 +317,26 @@ export class ClientFactory {
     return client.testConnection();
   }
 }
+
+/**
+ * High-level helper to call an AI model by its configuration ID
+ * Used for prompt engineering and judge evaluations
+ */
+export async function callModel(
+  modelId: string,
+  instruction: string,
+  options?: { systemPrompt?: string; temperature?: number }
+): Promise<string> {
+  const { getModelById, decryptApiKey } = await import('./db');
+  const modelConfig = getModelById(modelId);
+
+  if (!modelConfig) {
+    throw new Error(`Model configuration not found: ${modelId}`);
+  }
+
+  const apiKey = decryptApiKey(modelConfig.api_key_encrypted);
+  const client = ClientFactory.createClient(modelConfig.provider, apiKey, modelConfig.model_name);
+
+  const result = await client.evaluate(instruction, options);
+  return result.response;
+}
