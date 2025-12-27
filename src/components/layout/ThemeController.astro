@@ -5,8 +5,12 @@ import MoonIcon from '../icons/MoonIcon.astro';
 
 <div class="dropdown dropdown-end">
   <div tabindex="0" role="button" class="btn btn-ghost btn-circle" id="theme-toggle-btn">
-    <SunIcon class="sun-icon" size="md" />
-    <MoonIcon class="moon-icon" size="md" />
+    <div class="sun-icon">
+      <SunIcon size="md" />
+    </div>
+    <div class="moon-icon">
+      <MoonIcon size="md" />
+    </div>
   </div>
   <ul tabindex="0" class="dropdown-content z-1 p-3 shadow-2xl bg-base-300 rounded-box w-56">
     <!-- Light Themes -->
