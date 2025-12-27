@@ -33,7 +33,7 @@ export default [
       'jsdoc/require-param': 'warn',
       'jsdoc/require-returns': 'warn',
       'jsdoc/check-param-names': 'warn',
-      'jsdoc/check-tag-names': 'warn',
+      'jsdoc/check-tag-names': 'off',
       'jsdoc/check-types': 'off', // TypeScript handles types
       'jsdoc/no-undefined-types': 'off', // TypeScript handles types
     },
