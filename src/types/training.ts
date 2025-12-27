@@ -62,6 +62,7 @@ export interface CreatePersonaInput {
   name: string;
   description?: string | null;
   task_prompt: string;
+  initial_judge_prompt: string;
   task_model_id: string;
   judge_model_id: string;
   prompt_engineer_model_id: string;

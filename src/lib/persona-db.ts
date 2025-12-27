@@ -53,6 +53,7 @@ export function createPersona(
   name: string,
   description: string | null | undefined,
   task_prompt: string,
+  initial_judge_prompt: string,
   task_model_id: string,
   judge_model_id: string,
   prompt_engineer_model_id: string,
@@ -71,6 +72,7 @@ export function createPersona(
   nameOrInput: string | CreatePersonaInput,
   descriptionOrDb?: string | null | Database.Database,
   task_prompt?: string,
+  initial_judge_prompt?: string,
   task_model_id?: string,
   judge_model_id?: string,
   prompt_engineer_model_id?: string,
@@ -89,6 +91,7 @@ export function createPersona(
           ? descriptionOrDb
           : undefined,
       task_prompt: task_prompt!,
+      initial_judge_prompt: initial_judge_prompt!,
       task_model_id: task_model_id!,
       judge_model_id: judge_model_id!,
       prompt_engineer_model_id: prompt_engineer_model_id!,
@@ -137,6 +140,24 @@ export function createPersona(
       now,
       now,
       input.created_by || null
+    );
+
+    // Save initial judge prompt as iteration 0
+    const promptVersionStmt = transactionDb.prepare(`
+      INSERT INTO judge_prompt_versions (
+        id, persona_id, iteration_number, prompt_text,
+        improvement_rationale, created_by, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    promptVersionStmt.run(
+      uuidv4(),
+      id,
+      0, // iteration 0 is the initial prompt
+      input.initial_judge_prompt,
+      'Initial judge prompt provided during persona creation',
+      'human',
+      now
     );
 
     return getPersona(id, transactionDb)!;

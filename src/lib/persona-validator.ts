@@ -36,6 +36,10 @@ export function validatePersonaCreation(
     errors.push('Task prompt is required');
   }
 
+  if (!input.initial_judge_prompt || input.initial_judge_prompt.trim() === '') {
+    errors.push('Initial judge prompt is required');
+  }
+
   if (!input.task_model_id || input.task_model_id.trim() === '') {
     errors.push('Task model ID is required');
   }
@@ -90,6 +94,10 @@ export function validatePersonaCreation(
 
   if (input.task_prompt && input.task_prompt.trim().length < 10) {
     warnings.push('Task prompt is very short. Consider providing more context.');
+  }
+
+  if (input.initial_judge_prompt && input.initial_judge_prompt.trim().length < 10) {
+    warnings.push('Initial judge prompt is very short. Consider providing more evaluation criteria.');
   }
 
   if (!input.description || input.description.trim() === '') {
