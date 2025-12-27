@@ -158,9 +158,9 @@
 
 ### Database Models & Validation
 
-- [ ] T019 [P] Create test file tests/unit/persona-validator.test.ts for persona creation validation
+- [X] T019 [P] Create test file tests/unit/persona-validator.test.ts for persona creation validation
 
-- [ ] T020 Create src/lib/persona-validator.ts implementing:
+- [X] T020 Create src/lib/persona-validator.ts implementing:
   - validatePersonaCreation(input) → ValidationResult
   - Check required fields (name, task_description, initial_judge_prompt, model IDs)
   - Verify persona name is unique

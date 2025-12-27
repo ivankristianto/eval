@@ -2,7 +2,7 @@
 // Database initialization and query functions for AI Model Evaluation Framework
 
 import Database from 'better-sqlite3';
-import { readFileSync } from 'fs';
+import { readFileSync, readdirSync, existsSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { createCipheriv, createDecipheriv, randomBytes } from 'crypto';
@@ -25,6 +25,7 @@ const __dirname = dirname(__filename);
 const envDbPath = import.meta.env?.EVAL_DB_PATH || process.env.EVAL_DB_PATH;
 const DB_PATH = envDbPath || join(__dirname, '../../db/evaluation.db');
 const SCHEMA_PATH = join(__dirname, '../../db/schema.sql');
+const MIGRATIONS_DIR = join(__dirname, '../../db/migrations');
 
 let db: Database.Database | null = null;
 
@@ -41,8 +42,23 @@ export function getDatabase(): Database.Database {
 
 export function initializeDatabase(): void {
   const database = getDatabase();
+
+  // Apply base schema
   const schema = readFileSync(SCHEMA_PATH, 'utf-8');
   database.exec(schema);
+
+  // Apply migrations
+  if (existsSync(MIGRATIONS_DIR)) {
+    const migrationFiles = readdirSync(MIGRATIONS_DIR)
+      .filter((file) => file.endsWith('.sql'))
+      .sort(); // Ensures migrations run in order (001, 002, etc.)
+
+    for (const file of migrationFiles) {
+      const migrationPath = join(MIGRATIONS_DIR, file);
+      const migration = readFileSync(migrationPath, 'utf-8');
+      database.exec(migration);
+    }
+  }
 }
 
 export function closeDatabase(): void {
