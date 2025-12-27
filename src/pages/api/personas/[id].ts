@@ -1,7 +1,7 @@
 // src/pages/api/personas/[id].ts
 // Individual persona endpoints
 
-import type { APIRoute } from 'astro';
+import type { APIRoute, APIContext } from 'astro';
 import { getPersona, updatePersona, deletePersona } from '../../../lib/persona-db';
 import type { Persona } from '../../../types/training';
 
@@ -79,8 +79,8 @@ export const GET: APIRoute = async ({ params }) => {
 };
 
 // PUT /api/personas/:id - Update persona (alias for PATCH)
-export const PUT: APIRoute = async ({ params, request }) => {
-  return PATCH({ params, request, ...({} as any) });
+export const PUT: APIRoute = async (context: APIContext) => {
+  return PATCH(context);
 };
 
 // PATCH /api/personas/:id - Update persona

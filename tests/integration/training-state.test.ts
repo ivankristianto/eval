@@ -12,7 +12,7 @@ import {
   createTestPersona,
 } from '../setup';
 import { TrainingStateManager } from '../../src/lib/training-state';
-import type { CheckpointData } from '../../src/types/training';
+import type { CheckpointData, TrainingLoopState } from '../../src/types/training';
 
 describe('Training State Manager - Integration Tests', () => {
   beforeAll(() => {
@@ -243,7 +243,7 @@ describe('Training State Manager - Integration Tests', () => {
       // Verify state is still paused
       const state = db
         .prepare('SELECT * FROM training_loop_state WHERE session_id = ?')
-        .get(sessionId) as any;
+        .get(sessionId) as TrainingLoopState;
       expect(state.status).toBe('paused');
     });
   });
@@ -284,7 +284,7 @@ describe('Training State Manager - Integration Tests', () => {
       // Verify still paused
       const state = db
         .prepare('SELECT * FROM training_loop_state WHERE session_id = ?')
-        .get(sessionId) as any;
+        .get(sessionId) as TrainingLoopState;
       expect(state.status).toBe('paused');
     });
 
@@ -380,7 +380,7 @@ describe('Training State Manager - Integration Tests', () => {
       // Verify session 2 is still running
       const state2 = db
         .prepare('SELECT * FROM training_loop_state WHERE session_id = ?')
-        .get('session-2') as any;
+        .get('session-2') as TrainingLoopState;
       expect(state2.status).toBe('in_progress');
     });
 

@@ -12,7 +12,7 @@ import {
   createTestPersona,
 } from '../setup';
 import { TrainingStateManager } from '../../src/lib/training-state';
-import type { CheckpointData } from '../../src/types/training';
+import type { CheckpointData, TrainingLoopState } from '../../src/types/training';
 
 describe('Training State Manager', () => {
   beforeAll(() => {
@@ -256,7 +256,7 @@ describe('Training State Manager', () => {
       // Verify state is paused
       const state = db
         .prepare('SELECT * FROM training_loop_state WHERE session_id = ?')
-        .get(sessionId) as any;
+        .get(sessionId) as TrainingLoopState;
       expect(state.status).toBe('paused');
       expect(state.pause_reason).toBe('User requested pause');
     });

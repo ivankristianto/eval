@@ -1,5 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { ModelConfiguration, Provider, Result, ResultStatus } from '../../src/lib/types';
+import type {
+  ModelConfiguration,
+  ModelResponse,
+  Provider,
+  Result,
+  ResultStatus,
+} from '../../src/lib/types';
 import {
   EvaluationExecutor,
   cancelEvaluation,
@@ -205,7 +211,7 @@ describe('EvaluationExecutor', () => {
     const result = addResult(evaluationId, model.id);
 
     mockCreateClient.mockReturnValue({
-      evaluate: vi.fn(() => new Promise(() => undefined)) as any,
+      evaluate: vi.fn(() => new Promise<ModelResponse>(() => {})),
       testConnection: vi.fn().mockResolvedValue(true),
     });
 
@@ -246,7 +252,7 @@ describe('EvaluationExecutor', () => {
     mockCreateClient.mockImplementation((_provider, _apiKey, modelName) => {
       if (modelName === 'slow') {
         return {
-          evaluate: vi.fn(() => new Promise(() => undefined)) as any,
+          evaluate: vi.fn(() => new Promise<ModelResponse>(() => {})),
           testConnection: vi.fn().mockResolvedValue(true),
         };
       }

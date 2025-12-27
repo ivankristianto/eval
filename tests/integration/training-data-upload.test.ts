@@ -158,40 +158,40 @@ describe('Training Data Upload API', () => {
 
       pairs = db.prepare('SELECT * FROM training_pairs WHERE persona_id = ?').all(personaId);
       expect(pairs).toHaveLength(15);
-      expect((pairs[0] as any).input).toContain('New');
+      expect((pairs[0] as { input: string }).input).toContain('New');
     });
 
     it('should enforce 10-200 pair constraint', () => {
       // Test with 9 pairs (below minimum)
-      const csv9 = Array.from({ length: 9 }, (_, i) => `"Q${i}","A${i}"`).join('\n');
-      const content9 = `input,expected_output\n${csv9}`;
+      // const csv9 = Array.from({ length: 9 }, (_, i) => `"Q${i}","A${i}"`).join('\n');
+      // const content9 = `input,expected_output\n${csv9}`;
 
       // Validation should fail (tested in csv-parser.test.ts)
       // API should return 400 Bad Request
 
       // Test with 201 pairs (above maximum)
-      const csv201 = Array.from({ length: 201 }, (_, i) => `"Q${i}","A${i}"`).join('\n');
-      const content201 = `input,expected_output\n${csv201}`;
+      // const csv201 = Array.from({ length: 201 }, (_, i) => `"Q${i}","A${i}"`).join('\n');
+      // const content201 = `input,expected_output\n${csv201}`;
 
       // Validation should fail (tested in csv-parser.test.ts)
       // API should return 400 Bad Request
     });
 
     it('should validate CSV format before insertion', () => {
-      const invalidCSV = `wrong,columns
-"Q1","A1"
-"Q2","A2"`;
+      // const invalidCSV = `wrong,columns
+      // "Q1","A1"
+      // "Q2","A2"`;
 
       // CSV parser should reject this
       // API should return 400 Bad Request with error details
     });
 
     it('should handle CSV with duplicate pairs', () => {
-      const csvWithDuplicates = [
-        ...Array.from({ length: 10 }, (_, i) => `"Question ${i}","Answer ${i}"`),
-        '"Question 1","Answer 1"', // Duplicate
-      ].join('\n');
-      const content = `input,expected_output\n${csvWithDuplicates}`;
+      // const csvWithDuplicates = [
+      //   ...Array.from({ length: 10 }, (_, i) => `"Question ${i}","Answer ${i}"`),
+      //   '"Question 1","Answer 1"', // Duplicate
+      // ].join('\n');
+      // const content = `input,expected_output\n${csvWithDuplicates}`;
 
       // CSV parser should detect duplicate
       // API should return 400 Bad Request with error details

@@ -35,7 +35,12 @@ import {
   getLatestCheckpoint,
   withTransaction,
 } from '../../src/lib/persona-db';
-import type { CreatePersonaInput } from '../../src/types/training';
+import type {
+  CreatePersonaInput,
+  JudgeDecision,
+  TrainingIteration,
+  TrainingPair,
+} from '../../src/types/training';
 
 describe('Persona Database Integration Tests', () => {
   beforeAll(() => {
@@ -683,20 +688,20 @@ describe('Persona Database Integration Tests', () => {
       // Verify all foreign keys point to existing records
       const decisionRow = db
         .prepare('SELECT * FROM judge_decisions WHERE id = ?')
-        .get(decision.id) as any;
+        .get(decision.id) as JudgeDecision;
 
       expect(decisionRow.iteration_id).toBe(iteration.id);
       expect(decisionRow.training_pair_id).toBe(pairs[0].id);
 
       const iterationRow = db
         .prepare('SELECT * FROM training_iterations WHERE id = ?')
-        .get(iteration.id) as any;
+        .get(iteration.id) as TrainingIteration;
 
       expect(iterationRow.persona_id).toBe(persona.id);
 
       const pairRow = db
         .prepare('SELECT * FROM training_pairs WHERE id = ?')
-        .get(pairs[0].id) as any;
+        .get(pairs[0].id) as TrainingPair;
 
       expect(pairRow.persona_id).toBe(persona.id);
     });

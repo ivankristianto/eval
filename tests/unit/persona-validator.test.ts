@@ -57,13 +57,13 @@ describe('Persona Validator', () => {
     it('should fail validation when name is missing', () => {
       const db = getTestDatabase();
 
-      const input: any = {
+      const input = {
         description: 'Test description',
         task_prompt: 'Test prompt',
         task_model_id: 'task-model',
         judge_model_id: 'judge-model',
         prompt_engineer_model_id: 'engineer-model',
-      };
+      } as unknown as PersonaCreationInput;
 
       const result = validatePersonaCreation(input, db);
 
@@ -92,13 +92,13 @@ describe('Persona Validator', () => {
     it('should fail validation when task_prompt is missing', () => {
       const db = getTestDatabase();
 
-      const input: any = {
+      const input = {
         name: 'Test Persona',
         description: 'Test description',
         task_model_id: 'task-model',
         judge_model_id: 'judge-model',
         prompt_engineer_model_id: 'engineer-model',
-      };
+      } as unknown as PersonaCreationInput;
 
       const result = validatePersonaCreation(input, db);
 
@@ -109,13 +109,13 @@ describe('Persona Validator', () => {
     it('should fail validation when task_model_id is missing', () => {
       const db = getTestDatabase();
 
-      const input: any = {
+      const input = {
         name: 'Test Persona',
         description: 'Test description',
         task_prompt: 'Test prompt',
         judge_model_id: 'judge-model',
         prompt_engineer_model_id: 'engineer-model',
-      };
+      } as unknown as PersonaCreationInput;
 
       const result = validatePersonaCreation(input, db);
 
@@ -126,13 +126,13 @@ describe('Persona Validator', () => {
     it('should fail validation when judge_model_id is missing', () => {
       const db = getTestDatabase();
 
-      const input: any = {
+      const input = {
         name: 'Test Persona',
         description: 'Test description',
         task_prompt: 'Test prompt',
         task_model_id: 'task-model',
         prompt_engineer_model_id: 'engineer-model',
-      };
+      } as unknown as PersonaCreationInput;
 
       const result = validatePersonaCreation(input, db);
 
@@ -143,13 +143,13 @@ describe('Persona Validator', () => {
     it('should fail validation when prompt_engineer_model_id is missing', () => {
       const db = getTestDatabase();
 
-      const input: any = {
+      const input = {
         name: 'Test Persona',
         description: 'Test description',
         task_prompt: 'Test prompt',
         task_model_id: 'task-model',
         judge_model_id: 'judge-model',
-      };
+      } as unknown as PersonaCreationInput;
 
       const result = validatePersonaCreation(input, db);
 
@@ -373,10 +373,10 @@ describe('Persona Validator', () => {
     it('should return clear, actionable error messages', () => {
       const db = getTestDatabase();
 
-      const input: any = {
+      const input = {
         name: '',
         task_model_id: '',
-      };
+      } as unknown as PersonaCreationInput;
 
       const result = validatePersonaCreation(input, db);
 
@@ -393,10 +393,10 @@ describe('Persona Validator', () => {
     it('should return multiple errors when multiple validations fail', () => {
       const db = getTestDatabase();
 
-      const input: any = {
+      const input = {
         name: '',
         task_prompt: '',
-      };
+      } as unknown as PersonaCreationInput;
 
       const result = validatePersonaCreation(input, db);
 

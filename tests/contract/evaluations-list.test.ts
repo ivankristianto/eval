@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { APIContext } from 'astro';
 import { GET } from '../../src/pages/api/evaluations/index';
 import * as db from '../../src/lib/db';
 import { createMockDb } from '../helpers/mock-db';
@@ -19,7 +20,7 @@ beforeEach(() => {
   // This means db.getEvaluations DOES NOT EXIST yet.
 
   // To make this test file valid TypeScript, we might need to cast db as any or mock it completely.
-  vi.spyOn(db, 'getEvaluations' as any).mockImplementation(() => []);
+  vi.spyOn(db, 'getEvaluations').mockImplementation(() => []);
 });
 
 afterEach(() => {
@@ -32,11 +33,11 @@ describe('GET /api/evaluations', () => {
 
     // Mock return value
     const mockEvaluations = Array(10).fill({ id: '1' });
-    vi.spyOn(db, 'getEvaluations' as any).mockReturnValue(mockEvaluations);
-    vi.spyOn(db, 'getEvaluationsCount' as any).mockReturnValue(10);
+    vi.spyOn(db, 'getEvaluations').mockReturnValue(mockEvaluations);
+    vi.spyOn(db, 'getEvaluationsCount').mockReturnValue(10);
 
     // We assume the API calls db.getEvaluations
-    const response = await GET({ url } as any);
+    const response = await GET({ url } as unknown as APIContext);
     const body = await readJson(response);
 
     expect(response.status).toBe(200);
@@ -49,10 +50,10 @@ describe('GET /api/evaluations', () => {
   it('filters by date range', async () => {
     const url = new URL('http://localhost/api/evaluations?fromDate=2023-01-01');
 
-    vi.spyOn(db, 'getEvaluations' as any).mockReturnValue([]);
-    vi.spyOn(db, 'getEvaluationsCount' as any).mockReturnValue(0);
+    vi.spyOn(db, 'getEvaluations').mockReturnValue([]);
+    vi.spyOn(db, 'getEvaluationsCount').mockReturnValue(0);
 
-    await GET({ url } as any);
+    await GET({ url } as unknown as APIContext);
 
     expect(db.getEvaluations).toHaveBeenCalledWith(
       expect.objectContaining({ fromDate: '2023-01-01' }),
