@@ -75,6 +75,7 @@ describe('Persona Database Access Layer', () => {
         name: 'Test Persona',
         description: 'A test persona',
         task_prompt: 'Evaluate responses',
+      initial_judge_prompt: 'Evaluate and judge the output',
         task_model_id: taskModelId,
         judge_model_id: judgeModelId,
         prompt_engineer_model_id: promptEngineerModelId,
@@ -723,9 +724,9 @@ describe('Persona Database Access Layer', () => {
 
       const history = getPromptHistory(persona.id, db);
 
-      expect(history).toHaveLength(3);
+      expect(history).toHaveLength(4); // Initial (iteration 0) + iterations 1, 2, 3
       expect(history[0].iteration_number).toBe(3); // Ordered DESC
-      expect(history[2].iteration_number).toBe(1);
+      expect(history[3].iteration_number).toBe(0); // Initial prompt
     });
   });
 

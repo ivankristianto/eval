@@ -69,6 +69,7 @@ describe('Persona Database Integration Tests', () => {
           const input: CreatePersonaInput = {
             name: 'Test Persona',
             task_prompt: 'Test prompt',
+            initial_judge_prompt: 'Evaluate the output',
             task_model_id: taskModelId,
             judge_model_id: judgeModelId,
             prompt_engineer_model_id: promptEngineerModelId,
@@ -377,7 +378,7 @@ describe('Persona Database Integration Tests', () => {
       expect(getIterationDecisions(iteration.id, db)).toHaveLength(2);
       expect(getIterationReviews(iteration.id, db)).toHaveLength(2);
       expect(getIterationMetrics(iteration.id, db)).toBeDefined();
-      expect(getPromptHistory(persona.id, db)).toHaveLength(1);
+      expect(getPromptHistory(persona.id, db)).toHaveLength(2); // Initial (iteration 0) + iteration 1
 
       // Delete persona
       deletePersona(persona.id, db);
@@ -598,7 +599,7 @@ describe('Persona Database Integration Tests', () => {
       expect(allIterations).toHaveLength(2);
 
       const promptHistory = getPromptHistory(persona.id, db);
-      expect(promptHistory).toHaveLength(2);
+      expect(promptHistory).toHaveLength(3); // Initial (iteration 0) + iterations 1 and 2
     });
 
     it('should support training loop state management', () => {

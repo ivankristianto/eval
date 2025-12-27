@@ -116,6 +116,7 @@ export function createTestPersona(
     name: `Test Persona ${id.slice(0, 8)}`,
     description: 'Test persona for automated tests',
     task_prompt: 'Evaluate customer support responses',
+    initial_judge_prompt: 'Judge the quality of the response',
     task_model_id: taskModelId,
     judge_model_id: judgeModelId,
     prompt_engineer_model_id: promptEngineerModelId,
@@ -148,6 +149,24 @@ export function createTestPersona(
     now,
     now,
     input.created_by || null
+  );
+
+  // Create initial judge prompt version (iteration 0)
+  const promptVersionStmt = db.prepare(`
+    INSERT INTO judge_prompt_versions (
+      id, persona_id, iteration_number, prompt_text,
+      improvement_rationale, created_by, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  promptVersionStmt.run(
+    uuidv4(),
+    id,
+    0, // iteration 0 is the initial prompt
+    input.initial_judge_prompt,
+    'Initial judge prompt provided during persona creation',
+    'human',
+    now
   );
 
   const selectStmt = db.prepare('SELECT * FROM personas WHERE id = ?');

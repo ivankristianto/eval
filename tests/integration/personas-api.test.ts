@@ -50,6 +50,7 @@ describe('Personas API Integration', () => {
         name: 'Customer Support Judge',
         description: 'Evaluates customer support responses',
         task_prompt: 'Generate helpful customer support responses',
+      initial_judge_prompt: 'Evaluate and judge the output correctly',
         task_model_id: 'task-model-1',
         judge_model_id: 'judge-model-1',
         prompt_engineer_model_id: 'engineer-model-1',
@@ -59,6 +60,7 @@ describe('Personas API Integration', () => {
         input.name,
         input.description,
         input.task_prompt,
+        input.initial_judge_prompt,
         input.task_model_id,
         input.judge_model_id,
         input.prompt_engineer_model_id,
@@ -91,6 +93,7 @@ describe('Personas API Integration', () => {
         'Duplicate Name',
         'First persona',
         'Prompt',
+        'Initial judge prompt',
         'task-model-2',
         'judge-model-2',
         'engineer-model-2',
@@ -103,6 +106,7 @@ describe('Personas API Integration', () => {
           'Duplicate Name',
           'Second persona',
           'Different prompt',
+          'Initial judge prompt',
           'task-model-2',
           'judge-model-2',
           'engineer-model-2',
@@ -129,6 +133,7 @@ describe('Personas API Integration', () => {
           'Invalid Persona',
           'Test',
           'Prompt',
+          'Initial judge prompt',
           'task-model-3',
           'judge-model-3',
           'engineer-model-3',
@@ -153,6 +158,7 @@ describe('Personas API Integration', () => {
         'Minimal Persona',
         null, // No description
         'Test prompt',
+        'Initial judge prompt',
         'task-model-4',
         'judge-model-4',
         'engineer-model-4',
@@ -432,15 +438,7 @@ describe('Personas API Integration', () => {
       taskModel.run('valid-engineer', 'google', 'Gemini-Pro', 'key3', 1);
 
       // Should succeed - all different providers
-      const persona = createPersona(
-        'Valid Persona',
-        'Test',
-        'Prompt',
-        'valid-task',
-        'valid-judge',
-        'valid-engineer',
-        db
-      );
+      const persona = createPersona('Valid Persona', 'Test', 'Prompt', 'Initial judge prompt for testing', 'valid-task', 'valid-judge', 'valid-engineer', db);
 
       expect(persona).toBeDefined();
     });
@@ -459,15 +457,7 @@ describe('Personas API Integration', () => {
 
       // Should fail - inactive model
       expect(() => {
-        createPersona(
-          'Invalid Persona',
-          'Test',
-          'Prompt',
-          'inactive-task',
-          'active-judge',
-          'active-engineer',
-          db
-        );
+        createPersona('Invalid Persona', 'Test', 'Prompt', 'Initial judge prompt for testing', 'inactive-task', 'active-judge', 'active-engineer', db);
       }).toThrow();
     });
   });

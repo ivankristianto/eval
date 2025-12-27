@@ -43,6 +43,7 @@ describe('Persona Validator', () => {
         name: 'Test Persona',
         description: 'Test description',
         task_prompt: 'Evaluate customer support responses',
+        initial_judge_prompt: 'Evaluate and judge the output',
         task_model_id: 'task-model',
         judge_model_id: 'judge-model',
         prompt_engineer_model_id: 'engineer-model',
@@ -60,6 +61,7 @@ describe('Persona Validator', () => {
       const input = {
         description: 'Test description',
         task_prompt: 'Test prompt',
+        initial_judge_prompt: 'Evaluate and judge the output',
         task_model_id: 'task-model',
         judge_model_id: 'judge-model',
         prompt_engineer_model_id: 'engineer-model',
@@ -78,6 +80,7 @@ describe('Persona Validator', () => {
         name: '',
         description: 'Test description',
         task_prompt: 'Test prompt',
+        initial_judge_prompt: 'Evaluate and judge the output',
         task_model_id: 'task-model',
         judge_model_id: 'judge-model',
         prompt_engineer_model_id: 'engineer-model',
@@ -113,6 +116,7 @@ describe('Persona Validator', () => {
         name: 'Test Persona',
         description: 'Test description',
         task_prompt: 'Test prompt',
+        initial_judge_prompt: 'Evaluate and judge the output',
         judge_model_id: 'judge-model',
         prompt_engineer_model_id: 'engineer-model',
       } as unknown as PersonaCreationInput;
@@ -130,6 +134,7 @@ describe('Persona Validator', () => {
         name: 'Test Persona',
         description: 'Test description',
         task_prompt: 'Test prompt',
+        initial_judge_prompt: 'Evaluate and judge the output',
         task_model_id: 'task-model',
         prompt_engineer_model_id: 'engineer-model',
       } as unknown as PersonaCreationInput;
@@ -147,6 +152,7 @@ describe('Persona Validator', () => {
         name: 'Test Persona',
         description: 'Test description',
         task_prompt: 'Test prompt',
+        initial_judge_prompt: 'Evaluate and judge the output',
         task_model_id: 'task-model',
         judge_model_id: 'judge-model',
       } as unknown as PersonaCreationInput;
@@ -172,6 +178,7 @@ describe('Persona Validator', () => {
       const input: PersonaCreationInput = {
         name: 'Test Persona',
         task_prompt: 'Test prompt',
+        initial_judge_prompt: 'Evaluate and judge the output',
         task_model_id: 'task-model',
         judge_model_id: 'judge-model',
         prompt_engineer_model_id: 'engineer-model',
@@ -215,6 +222,7 @@ describe('Persona Validator', () => {
       const input: PersonaCreationInput = {
         name: 'Existing Persona',
         task_prompt: 'Different prompt',
+        initial_judge_prompt: 'Evaluate and judge the output',
         task_model_id: 'task-model',
         judge_model_id: 'judge-model',
         prompt_engineer_model_id: 'engineer-model',
@@ -257,6 +265,7 @@ describe('Persona Validator', () => {
       const input: PersonaCreationInput = {
         name: 'New Unique Persona',
         task_prompt: 'Different prompt',
+        initial_judge_prompt: 'Evaluate and judge the output',
         task_model_id: 'task-model',
         judge_model_id: 'judge-model',
         prompt_engineer_model_id: 'engineer-model',
@@ -284,6 +293,7 @@ describe('Persona Validator', () => {
       const input: PersonaCreationInput = {
         name: 'Test Persona',
         task_prompt: 'Test prompt',
+        initial_judge_prompt: 'Evaluate and judge the output',
         task_model_id: 'task-model',
         judge_model_id: 'judge-model',
         prompt_engineer_model_id: 'engineer-model',
@@ -310,6 +320,7 @@ describe('Persona Validator', () => {
       const input: PersonaCreationInput = {
         name: 'Test Persona',
         task_prompt: 'Test prompt',
+        initial_judge_prompt: 'Evaluate and judge the output',
         task_model_id: 'task-model',
         judge_model_id: 'judge-model',
         prompt_engineer_model_id: 'engineer-model',
@@ -327,6 +338,7 @@ describe('Persona Validator', () => {
       const input: PersonaCreationInput = {
         name: 'Test Persona',
         task_prompt: 'Test prompt',
+        initial_judge_prompt: 'Evaluate and judge the output',
         task_model_id: 'non-existent-model',
         judge_model_id: 'also-non-existent',
         prompt_engineer_model_id: 'still-non-existent',
@@ -355,6 +367,7 @@ describe('Persona Validator', () => {
       const input: PersonaCreationInput = {
         name: 'Test Persona',
         task_prompt: 'Test prompt',
+        initial_judge_prompt: 'Evaluate and judge the output',
         task_model_id: 'task-model',
         judge_model_id: 'judge-model',
         prompt_engineer_model_id: 'engineer-model',
@@ -396,6 +409,7 @@ describe('Persona Validator', () => {
       const input = {
         name: '',
         task_prompt: '',
+        initial_judge_prompt: 'Evaluate and judge the output',
       } as unknown as PersonaCreationInput;
 
       const result = validatePersonaCreation(input, db);
@@ -421,6 +435,7 @@ describe('Persona Validator', () => {
       const input: PersonaCreationInput = {
         name: 'x', // Very short name
         task_prompt: 'Test prompt',
+        initial_judge_prompt: 'Evaluate and judge the output',
         task_model_id: 'task-model',
         judge_model_id: 'judge-model',
         prompt_engineer_model_id: 'engineer-model',
