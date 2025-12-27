@@ -5,7 +5,8 @@ info:
   description: |
     REST API contract for evaluation and training endpoints in eval-ai-models.
   license:
-    name: UNLICENSED
+    name: MIT
+    url: https://opensource.org/licenses/MIT
 servers:
   - url: http://127.0.0.1:4321
     description: Local dev server

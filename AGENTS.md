@@ -35,6 +35,7 @@ time, and token usage.
 ## Project Structure
 
 ```text
+openapi.yml
 src/
 tests/
 db/
