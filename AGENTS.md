@@ -104,10 +104,16 @@ Latest coverage (vitest `npm test -- --coverage`):
 
 ## Recent Changes
 
+- 003-add-db-seed: Added JavaScript (Node.js >= 22.0.0) for the seed script; TypeScript 5.6+ for the main app. + `better-sqlite3` (existing), `csv-parse` (new dependency for CSV processing), `dotenv` (to load env vars), `uuid` (existing, for generating IDs).
+
 - 001-eval-ai-models: Added TypeScript 5.6+ on Node.js 22+ + Astro 5.x (SSR),
   Tailwind CSS 4.x, better-sqlite3, OpenAI SDK, Anthropic SDK, Google
   Generative AI SDK
 - 001-eval-ai-models: Added JavaScript/TypeScript (Node.js 18+) + TypeScript
   for type safety + Astro, Tailwind CSS, SQLite3, node-sqlite3/better-sqlite3
-- 002-update-ui-style: Added TypeScript 5.6.0+, Node.js >= 22.0.0 + Astro
   5.16.6, Tailwind CSS 4.0.0, daisyui (v5 beta/latest compatible with TW v4)
+
+## Active Technologies
+
+- JavaScript (Node.js >= 22.0.0) for the seed script; TypeScript 5.6+ for the main app. + `better-sqlite3` (existing), `csv-parse` (new dependency for CSV processing), `dotenv` (to load env vars), `uuid` (existing, for generating IDs). (003-add-db-seed)
+- SQLite via `better-sqlite3`. (003-add-db-seed)
