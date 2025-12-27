@@ -33,6 +33,9 @@ export default [
       ],
       '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/triple-slash-reference': 'off',
+      // Disable base rule and use TypeScript-aware version for function overloads
+      'no-redeclare': 'off',
+      '@typescript-eslint/no-redeclare': 'error',
     },
   },
   {
