@@ -1,0 +1,421 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Breadcrumbs from '../../components/ui/Breadcrumbs.astro';
+
+// Fetch available models for the dropdowns
+let models: any[] = [];
+let error: string | null = null;
+
+try {
+  const response = await fetch(
+    new URL('/api/models?active_only=true', Astro.url.origin).toString()
+  );
+  if (response.ok) {
+    const data = await response.json();
+    models = data.models || [];
+  } else {
+    error = 'Failed to load models';
+  }
+} catch (e) {
+  console.error('Error fetching models:', e);
+  error = 'Failed to load models';
+}
+
+// Group models by provider
+const modelsByProvider = models.reduce((acc: Record<string, any[]>, model) => {
+  if (!acc[model.provider]) {
+    acc[model.provider] = [];
+  }
+  acc[model.provider].push(model);
+  return acc;
+}, {});
+
+const providers = Object.keys(modelsByProvider);
+
+// Show error if no models available
+if (models.length === 0) {
+  error = 'No models configured. Please add models in the Models page before creating a persona.';
+}
+
+const breadcrumbItems = [
+  { label: 'Home', href: '/' },
+  { label: 'Personas', href: '/personas' },
+  { label: 'Create New Persona' },
+];
+---
+
+<Layout title="Create Persona - Eval AI">
+  <Breadcrumbs items={breadcrumbItems} />
+
+  <div class="max-w-4xl mx-auto animate-reveal">
+    <div class="accent-line mb-8">
+      <h1
+        class="text-5xl md:text-6xl font-display font-semibold tracking-tight mb-4 text-gradient-gold"
+      >
+        Create New Persona
+      </h1>
+      <p class="mt-3 text-base-content/60 text-lg">
+        Configure a new LLM-as-Judge persona for training evaluations.
+      </p>
+    </div>
+
+    {
+      error ? (
+        <div class="alert alert-error mb-8">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="stroke-current shrink-0 h-6 w-6"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+          <span>{error}</span>
+        </div>
+      ) : null
+    }
+
+    <div class="card bg-base-200 shadow-xl">
+      <div class="card-body">
+        <form
+          id="create-persona-form"
+          class="space-y-6"
+          class:list={{ 'opacity-50 pointer-events-none': error }}
+        >
+          <!-- Basic Information -->
+          <div class="space-y-4">
+            <h2 class="text-2xl font-semibold">Basic Information</h2>
+
+            <div class="form-control">
+              <label class="label">
+                <span class="label-text font-semibold"
+                  >Persona Name <span class="text-error">*</span></span
+                >
+              </label>
+              <input
+                type="text"
+                name="name"
+                placeholder="e.g., Customer Support Judge"
+                class="input input-bordered w-full"
+                required
+              />
+              <label class="label">
+                <span class="label-text-alt">A unique, descriptive name for this judge persona</span
+                >
+              </label>
+            </div>
+
+            <div class="form-control">
+              <label class="label">
+                <span class="label-text font-semibold">Description</span>
+              </label>
+              <textarea
+                name="description"
+                placeholder="What does this judge evaluate?"
+                class="textarea textarea-bordered h-24"
+                rows="3"></textarea>
+              <label class="label">
+                <span class="label-text-alt"
+                  >Optional description of what this persona evaluates</span
+                >
+              </label>
+            </div>
+
+            <div class="form-control">
+              <label class="label">
+                <span class="label-text font-semibold"
+                  >Task Prompt <span class="text-error">*</span></span
+                >
+              </label>
+              <textarea
+                name="task_prompt"
+                placeholder="e.g., You are a helpful customer support agent. Respond to the customer's inquiry professionally and accurately."
+                class="textarea textarea-bordered h-32"
+                rows="5"
+                required></textarea>
+              <label class="label">
+                <span class="label-text-alt"
+                  >The prompt used to generate outputs that the judge will evaluate</span
+                >
+              </label>
+            </div>
+          </div>
+
+          <!-- Model Configuration -->
+          <div class="divider"></div>
+
+          <div class="space-y-4">
+            <h2 class="text-2xl font-semibold">Model Configuration</h2>
+            <div class="alert alert-info">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                class="stroke-current shrink-0 w-6 h-6"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+              <span
+                >All three models must be from <strong>different providers</strong> to prevent bias.</span
+              >
+            </div>
+
+            <div class="form-control">
+              <label class="label">
+                <span class="label-text font-semibold"
+                  >Task Model <span class="text-error">*</span></span
+                >
+              </label>
+              <select
+                name="task_model_id"
+                class="select select-bordered w-full"
+                required
+                id="task-model-select"
+              >
+                <option value="" disabled selected>Select a model to generate outputs</option>
+                {
+                  providers.map((provider) => (
+                    <optgroup label={provider.toUpperCase()}>
+                      {modelsByProvider[provider].map((model: any) => (
+                        <option value={model.id} data-provider={model.provider}>
+                          {model.model_name}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))
+                }
+              </select>
+              <label class="label">
+                <span class="label-text-alt">Model that generates the outputs to be evaluated</span>
+              </label>
+            </div>
+
+            <div class="form-control">
+              <label class="label">
+                <span class="label-text font-semibold"
+                  >Judge Model <span class="text-error">*</span></span
+                >
+              </label>
+              <select
+                name="judge_model_id"
+                class="select select-bordered w-full"
+                required
+                id="judge-model-select"
+              >
+                <option value="" disabled selected>Select a model to judge outputs</option>
+                {
+                  providers.map((provider) => (
+                    <optgroup label={provider.toUpperCase()}>
+                      {modelsByProvider[provider].map((model: any) => (
+                        <option value={model.id} data-provider={model.provider}>
+                          {model.model_name}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))
+                }
+              </select>
+              <label class="label">
+                <span class="label-text-alt">Model that evaluates the generated outputs</span>
+              </label>
+            </div>
+
+            <div class="form-control">
+              <label class="label">
+                <span class="label-text font-semibold"
+                  >Prompt Engineer Model <span class="text-error">*</span></span
+                >
+              </label>
+              <select
+                name="prompt_engineer_model_id"
+                class="select select-bordered w-full"
+                required
+                id="prompt-engineer-select"
+              >
+                <option value="" disabled selected>Select a model to refine judge prompts</option>
+                {
+                  providers.map((provider) => (
+                    <optgroup label={provider.toUpperCase()}>
+                      {modelsByProvider[provider].map((model: any) => (
+                        <option value={model.id} data-provider={model.provider}>
+                          {model.model_name}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))
+                }
+              </select>
+              <label class="label">
+                <span class="label-text-alt">Model that suggests improvements to judge prompts</span
+                >
+              </label>
+            </div>
+
+            <div id="validation-error" class="alert alert-error hidden">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="stroke-current shrink-0 h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+              <span id="validation-error-message"></span>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="divider"></div>
+
+          <div class="flex justify-end gap-4">
+            <a href="/personas" class="btn btn-ghost">Cancel</a>
+            <button type="submit" class="btn btn-primary" id="submit-btn">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M5 13l4 4L19 7"></path>
+              </svg>
+              Create Persona
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  import { addToast } from '../../lib/toastStore';
+
+  const form = document.getElementById('create-persona-form') as HTMLFormElement;
+  const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
+  const validationError = document.getElementById('validation-error') as HTMLDivElement;
+  const validationErrorMessage = document.getElementById(
+    'validation-error-message'
+  ) as HTMLSpanElement;
+
+  const taskModelSelect = document.getElementById('task-model-select') as HTMLSelectElement;
+  const judgeModelSelect = document.getElementById('judge-model-select') as HTMLSelectElement;
+  const promptEngineerSelect = document.getElementById(
+    'prompt-engineer-select'
+  ) as HTMLSelectElement;
+
+  // Validate model separation on change
+  function validateModelSeparation() {
+    const taskModelOption = taskModelSelect.selectedOptions[0];
+    const judgeModelOption = judgeModelSelect.selectedOptions[0];
+    const promptEngineerOption = promptEngineerSelect.selectedOptions[0];
+
+    if (!taskModelOption || !judgeModelOption || !promptEngineerOption) {
+      validationError.classList.add('hidden');
+      return true;
+    }
+
+    const taskProvider = taskModelOption.dataset.provider;
+    const judgeProvider = judgeModelOption.dataset.provider;
+    const promptEngineerProvider = promptEngineerOption.dataset.provider;
+
+    const errors: string[] = [];
+
+    if (taskProvider === judgeProvider) {
+      errors.push('Task model and Judge model must be from different providers');
+    }
+    if (taskProvider === promptEngineerProvider) {
+      errors.push('Task model and Prompt Engineer model must be from different providers');
+    }
+    if (judgeProvider === promptEngineerProvider) {
+      errors.push('Judge model and Prompt Engineer model must be from different providers');
+    }
+
+    if (errors.length > 0) {
+      validationErrorMessage.textContent = errors.join('. ');
+      validationError.classList.remove('hidden');
+      return false;
+    } else {
+      validationError.classList.add('hidden');
+      return true;
+    }
+  }
+
+  taskModelSelect.addEventListener('change', validateModelSeparation);
+  judgeModelSelect.addEventListener('change', validateModelSeparation);
+  promptEngineerSelect.addEventListener('change', validateModelSeparation);
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    if (!validateModelSeparation()) {
+      addToast('Please fix model separation errors', 'error');
+      return;
+    }
+
+    const formData = new FormData(form);
+    const data = {
+      name: formData.get('name') as string,
+      description: (formData.get('description') as string) || null,
+      task_prompt: formData.get('task_prompt') as string,
+      task_model_id: formData.get('task_model_id') as string,
+      judge_model_id: formData.get('judge_model_id') as string,
+      prompt_engineer_model_id: formData.get('prompt_engineer_model_id') as string,
+    };
+
+    // Disable submit button
+    submitBtn.disabled = true;
+    submitBtn.classList.add('loading');
+
+    try {
+      const response = await fetch('/api/personas', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        addToast('Persona created successfully!', 'success');
+        // Redirect to the new persona's detail page
+        window.location.href = `/personas/${result.id}`;
+      } else {
+        // Handle validation errors
+        if (result.details && Array.isArray(result.details)) {
+          validationErrorMessage.textContent = result.details.join('. ');
+          validationError.classList.remove('hidden');
+          addToast('Validation failed', 'error');
+        } else {
+          addToast(result.error || 'Failed to create persona', 'error');
+        }
+        submitBtn.disabled = false;
+        submitBtn.classList.remove('loading');
+      }
+    } catch (error) {
+      console.error('Create persona error:', error);
+      addToast('Failed to create persona', 'error');
+      submitBtn.disabled = false;
+      submitBtn.classList.remove('loading');
+    }
+  });
+</script>
