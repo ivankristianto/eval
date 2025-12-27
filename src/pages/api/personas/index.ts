@@ -39,6 +39,7 @@ export const POST: APIRoute = async ({ request }) => {
       body.name,
       body.description,
       body.task_prompt,
+      body.initial_judge_prompt,
       body.task_model_id,
       body.judge_model_id,
       body.prompt_engineer_model_id
