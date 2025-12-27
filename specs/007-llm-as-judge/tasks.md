@@ -270,9 +270,9 @@
 
 ### CSV Parsing & Validation
 
-- [ ] T030 [P] Create test file tests/unit/csv-parser.test.ts for CSV validation and parsing
+- [X] T030 [P] Create test file tests/unit/csv-parser.test.ts for CSV validation and parsing
 
-- [ ] T031 Create src/lib/csv-parser.ts implementing:
+- [X] T031 Create src/lib/csv-parser.ts implementing:
   - parseCSV(fileContent) → {rows: Array<{input, expected_output}>, errors: string[]}
   - Validate columns (accept both "input"/"expected_output" AND "Input A"/"Correct Output" for user flexibility per A-016)
   - Normalize all column names to "input"/"expected_output" internally
@@ -280,7 +280,7 @@
   - Trim whitespace; validate non-empty input and output
   - Detect duplicates and report
 
-- [ ] T032 [P] Create test file tests/unit/csv-parser-edge-cases.test.ts covering:
+- [X] T032 [P] Create test file tests/unit/csv-parser-edge-cases.test.ts covering:
   - Missing columns
   - Wrong column names (case sensitivity)
   - Flexible column names: test both "input"/"expected_output" AND "Input A"/"Correct Output" normalize correctly
@@ -300,9 +300,9 @@
 
 ### API Endpoints
 
-- [ ] T033 [P] Create test file tests/integration/training-data-upload.test.ts for upload endpoint
+- [X] T033 [P] Create test file tests/integration/training-data-upload.test.ts for upload endpoint
 
-- [ ] T034 Create src/pages/api/personas/[id]/training/upload.ts implementing:
+- [X] T034 Create src/pages/api/personas/[id]/training/upload.ts implementing:
   - POST /api/personas/[id]/training/upload: Upload CSV file
   - Accept multipart/form-data with file
   - Parse CSV via csv-parser
@@ -310,7 +310,7 @@
   - Insert training pairs to database
   - Return 201 with count of pairs inserted or 400 with error details
 
-- [ ] T035 Create src/pages/api/personas/[id]/training/pairs.ts implementing:
+- [X] T035 Create src/pages/api/personas/[id]/training/pairs.ts implementing:
   - GET /api/personas/[id]/training/pairs: List all training pairs for a persona
   - Return paginated list with input/output preview
 
