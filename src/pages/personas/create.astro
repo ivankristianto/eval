@@ -1,28 +1,22 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import Breadcrumbs from '../../components/ui/Breadcrumbs.astro';
+import { getModels } from '../../lib/db';
+import type { ModelConfiguration } from '../../lib/types';
 
-// Fetch available models for the dropdowns
-let models: any[] = [];
+// Fetch available models directly from DB
+let models: ModelConfiguration[] = [];
 let error: string | null = null;
 
 try {
-  const response = await fetch(
-    new URL('/api/models?active_only=true', Astro.url.origin).toString()
-  );
-  if (response.ok) {
-    const data = await response.json();
-    models = data.models || [];
-  } else {
-    error = 'Failed to load models';
-  }
+  models = getModels(true); // activeOnly = true
 } catch (e) {
   console.error('Error fetching models:', e);
   error = 'Failed to load models';
 }
 
 // Group models by provider
-const modelsByProvider = models.reduce((acc: Record<string, any[]>, model) => {
+const modelsByProvider = models.reduce((acc: Record<string, ModelConfiguration[]>, model) => {
   if (!acc[model.provider]) {
     acc[model.provider] = [];
   }
@@ -33,7 +27,7 @@ const modelsByProvider = models.reduce((acc: Record<string, any[]>, model) => {
 const providers = Object.keys(modelsByProvider);
 
 // Show error if no models available
-if (models.length === 0) {
+if (models.length === 0 && !error) {
   error = 'No models configured. Please add models in the Models page before creating a persona.';
 }
 
@@ -117,7 +111,7 @@ const breadcrumbItems = [
               <textarea
                 name="description"
                 placeholder="What does this judge evaluate?"
-                class="textarea textarea-bordered h-24"
+                class="textarea textarea-bordered w-full h-24"
                 rows="3"></textarea>
               <label class="label">
                 <span class="label-text-alt"
@@ -135,7 +129,7 @@ const breadcrumbItems = [
               <textarea
                 name="task_prompt"
                 placeholder="e.g., You are a helpful customer support agent. Respond to the customer's inquiry professionally and accurately."
-                class="textarea textarea-bordered h-32"
+                class="textarea textarea-bordered w-full h-32"
                 rows="5"
                 required></textarea>
               <label class="label">
@@ -175,25 +169,45 @@ const breadcrumbItems = [
                   >Task Model <span class="text-error">*</span></span
                 >
               </label>
-              <select
-                name="task_model_id"
-                class="select select-bordered w-full"
-                required
-                id="task-model-select"
-              >
-                <option value="" disabled selected>Select a model to generate outputs</option>
-                {
-                  providers.map((provider) => (
-                    <optgroup label={provider.toUpperCase()}>
-                      {modelsByProvider[provider].map((model: any) => (
-                        <option value={model.id} data-provider={model.provider}>
-                          {model.model_name}
-                        </option>
-                      ))}
-                    </optgroup>
-                  ))
-                }
-              </select>
+              <div class="flex gap-2 items-center">
+                <select
+                  name="task_model_id"
+                  class="select select-bordered w-full"
+                  required
+                  id="task-model-select"
+                >
+                  <option value="" selected>Select a model to generate outputs</option>
+                  {
+                    providers.map((provider) => (
+                      <optgroup label={provider.toUpperCase()}>
+                        {modelsByProvider[provider].map((model: any) => (
+                          <option value={model.id} data-provider={model.provider}>
+                            {model.model_name}
+                          </option>
+                        ))}
+                      </optgroup>
+                    ))
+                  }
+                </select>
+                <button
+                  type="button"
+                  class="btn btn-square btn-outline border-base-300 text-base-content/50 hover:text-error hover:border-error clear-selection-btn"
+                  data-target="task-model-select"
+                  aria-label="Clear selection"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="h-5 w-5"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fill-rule="evenodd"
+                      d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                      clip-rule="evenodd"></path>
+                  </svg>
+                </button>
+              </div>
               <label class="label">
                 <span class="label-text-alt">Model that generates the outputs to be evaluated</span>
               </label>
@@ -205,25 +219,45 @@ const breadcrumbItems = [
                   >Judge Model <span class="text-error">*</span></span
                 >
               </label>
-              <select
-                name="judge_model_id"
-                class="select select-bordered w-full"
-                required
-                id="judge-model-select"
-              >
-                <option value="" disabled selected>Select a model to judge outputs</option>
-                {
-                  providers.map((provider) => (
-                    <optgroup label={provider.toUpperCase()}>
-                      {modelsByProvider[provider].map((model: any) => (
-                        <option value={model.id} data-provider={model.provider}>
-                          {model.model_name}
-                        </option>
-                      ))}
-                    </optgroup>
-                  ))
-                }
-              </select>
+              <div class="flex gap-2 items-center">
+                <select
+                  name="judge_model_id"
+                  class="select select-bordered w-full"
+                  required
+                  id="judge-model-select"
+                >
+                  <option value="" selected>Select a model to judge outputs</option>
+                  {
+                    providers.map((provider) => (
+                      <optgroup label={provider.toUpperCase()}>
+                        {modelsByProvider[provider].map((model: any) => (
+                          <option value={model.id} data-provider={model.provider}>
+                            {model.model_name}
+                          </option>
+                        ))}
+                      </optgroup>
+                    ))
+                  }
+                </select>
+                <button
+                  type="button"
+                  class="btn btn-square btn-outline border-base-300 text-base-content/50 hover:text-error hover:border-error clear-selection-btn"
+                  data-target="judge-model-select"
+                  aria-label="Clear selection"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="h-5 w-5"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fill-rule="evenodd"
+                      d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                      clip-rule="evenodd"></path>
+                  </svg>
+                </button>
+              </div>
               <label class="label">
                 <span class="label-text-alt">Model that evaluates the generated outputs</span>
               </label>
@@ -235,25 +269,45 @@ const breadcrumbItems = [
                   >Prompt Engineer Model <span class="text-error">*</span></span
                 >
               </label>
-              <select
-                name="prompt_engineer_model_id"
-                class="select select-bordered w-full"
-                required
-                id="prompt-engineer-select"
-              >
-                <option value="" disabled selected>Select a model to refine judge prompts</option>
-                {
-                  providers.map((provider) => (
-                    <optgroup label={provider.toUpperCase()}>
-                      {modelsByProvider[provider].map((model: any) => (
-                        <option value={model.id} data-provider={model.provider}>
-                          {model.model_name}
-                        </option>
-                      ))}
-                    </optgroup>
-                  ))
-                }
-              </select>
+              <div class="flex gap-2 items-center">
+                <select
+                  name="prompt_engineer_model_id"
+                  class="select select-bordered w-full"
+                  required
+                  id="prompt-engineer-select"
+                >
+                  <option value="" selected>Select a model to refine judge prompts</option>
+                  {
+                    providers.map((provider) => (
+                      <optgroup label={provider.toUpperCase()}>
+                        {modelsByProvider[provider].map((model: any) => (
+                          <option value={model.id} data-provider={model.provider}>
+                            {model.model_name}
+                          </option>
+                        ))}
+                      </optgroup>
+                    ))
+                  }
+                </select>
+                <button
+                  type="button"
+                  class="btn btn-square btn-outline border-base-300 text-base-content/50 hover:text-error hover:border-error clear-selection-btn"
+                  data-target="prompt-engineer-select"
+                  aria-label="Clear selection"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="h-5 w-5"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fill-rule="evenodd"
+                      d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                      clip-rule="evenodd"></path>
+                  </svg>
+                </button>
+              </div>
               <label class="label">
                 <span class="label-text-alt">Model that suggests improvements to judge prompts</span
                 >
@@ -321,6 +375,64 @@ const breadcrumbItems = [
     'prompt-engineer-select'
   ) as HTMLSelectElement;
 
+  // Store original text for all options
+  const allSelects = [taskModelSelect, judgeModelSelect, promptEngineerSelect];
+  allSelects.forEach((select) => {
+    select.querySelectorAll('option').forEach((option) => {
+      if (option.value && !option.disabled) {
+        option.dataset.originalText = option.text;
+      }
+    });
+  });
+
+  // Disable options based on selected providers
+  function updateAvailableOptions() {
+    const selectedProviders: Record<string, string> = {};
+
+    // Get currently selected providers
+    allSelects.forEach((select) => {
+      const option = select.selectedOptions[0];
+      if (option && option.value && !option.disabled) {
+        selectedProviders[select.id] = option.dataset.provider || '';
+      }
+    });
+
+    // Update each select
+    allSelects.forEach((currentSelect) => {
+      const options = currentSelect.querySelectorAll('option');
+
+      options.forEach((option) => {
+        // Skip placeholders
+        if (!option.value) return;
+
+        const provider = option.dataset.provider;
+        if (!provider) return;
+
+        // Check if this provider is selected in any OTHER select
+        let isProviderTaken = false;
+        for (const [selectId, selectedProvider] of Object.entries(selectedProviders)) {
+          if (selectId !== currentSelect.id && selectedProvider === provider) {
+            isProviderTaken = true;
+            break;
+          }
+        }
+
+        // Disable/enable option
+        if (isProviderTaken) {
+          option.disabled = true;
+          option.text = `${option.dataset.originalText} (Provider selected)`;
+        } else {
+          option.disabled = false;
+          if (option.dataset.originalText) {
+            option.text = option.dataset.originalText;
+          }
+        }
+      });
+    });
+
+    validateModelSeparation();
+  }
+
   // Validate model separation on change
   function validateModelSeparation() {
     const taskModelOption = taskModelSelect.selectedOptions[0];
@@ -338,14 +450,17 @@ const breadcrumbItems = [
 
     const errors: string[] = [];
 
-    if (taskProvider === judgeProvider) {
-      errors.push('Task model and Judge model must be from different providers');
-    }
-    if (taskProvider === promptEngineerProvider) {
-      errors.push('Task model and Prompt Engineer model must be from different providers');
-    }
-    if (judgeProvider === promptEngineerProvider) {
-      errors.push('Judge model and Prompt Engineer model must be from different providers');
+    // Only validate if all fields have a valid selection (not disabled placeholder)
+    if (taskModelSelect.value && judgeModelSelect.value && promptEngineerSelect.value) {
+      if (taskProvider === judgeProvider) {
+        errors.push('Task model and Judge model must be from different providers');
+      }
+      if (taskProvider === promptEngineerProvider) {
+        errors.push('Task model and Prompt Engineer model must be from different providers');
+      }
+      if (judgeProvider === promptEngineerProvider) {
+        errors.push('Judge model and Prompt Engineer model must be from different providers');
+      }
     }
 
     if (errors.length > 0) {
@@ -358,9 +473,27 @@ const breadcrumbItems = [
     }
   }
 
-  taskModelSelect.addEventListener('change', validateModelSeparation);
-  judgeModelSelect.addEventListener('change', validateModelSeparation);
-  promptEngineerSelect.addEventListener('change', validateModelSeparation);
+  taskModelSelect.addEventListener('change', updateAvailableOptions);
+  judgeModelSelect.addEventListener('change', updateAvailableOptions);
+  promptEngineerSelect.addEventListener('change', updateAvailableOptions);
+
+  // Initialize options state
+  updateAvailableOptions();
+
+  // Clear selection buttons
+  document.querySelectorAll('.clear-selection-btn').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      const targetId = (e.currentTarget as HTMLButtonElement).dataset.target;
+      if (!targetId) return;
+
+      const select = document.getElementById(targetId) as HTMLSelectElement;
+      if (select) {
+        select.value = '';
+        select.dispatchEvent(new Event('change'));
+        updateAvailableOptions();
+      }
+    });
+  });
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();

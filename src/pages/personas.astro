@@ -3,28 +3,19 @@ import Layout from '../layouts/Layout.astro';
 import Breadcrumbs from '../components/ui/Breadcrumbs.astro';
 import EmptyState from '../components/ui/EmptyState.astro';
 import PersonaCard from '../components/PersonaCard.astro';
-import type { PersonaStatus } from '../types/training';
+import { listPersonas } from '../lib/persona-db';
+import type { Persona, PersonaStatus } from '../types/training';
 
-// Fetch personas from API
+// Fetch personas directly from DB
 const url = Astro.url;
 const statusFilter = url.searchParams.get('status') as PersonaStatus | null;
 
-let personas: any[] = [];
+let personas: Persona[] = [];
 let error: string | null = null;
 
 try {
-  const apiUrl = new URL('/api/personas', Astro.url.origin);
-  if (statusFilter) {
-    apiUrl.searchParams.set('status', statusFilter);
-  }
-
-  const response = await fetch(apiUrl.toString());
-
-  if (response.ok) {
-    personas = await response.json();
-  } else {
-    error = 'Failed to load personas';
-  }
+  // Use undefined if statusFilter is null, to match listPersonas signature
+  personas = listPersonas(statusFilter || undefined);
 } catch (e) {
   console.error('Error fetching personas:', e);
   error = 'Failed to load personas';

@@ -2,6 +2,9 @@
 import Layout from '../../../layouts/Layout.astro';
 import Breadcrumbs from '../../../components/ui/Breadcrumbs.astro';
 import Badge from '../../../components/ui/Badge.astro';
+import { getPersona } from '../../../lib/persona-db';
+import { getModels } from '../../../lib/db';
+import type { Persona } from '../../../types/training';
 
 const { id } = Astro.params;
 
@@ -9,19 +12,25 @@ if (!id) {
   return Astro.redirect('/personas');
 }
 
-// Fetch persona details
-let persona: any = null;
+// Fetch persona details directly from DB
+let persona: Persona | null = null;
 let error: string | null = null;
+let modelMap: Record<string, { name: string; provider: string }> = {};
 
 try {
-  const response = await fetch(new URL(`/api/personas/${id}`, Astro.url.origin).toString());
+  persona = getPersona(id);
 
-  if (response.ok) {
-    persona = await response.json();
-  } else if (response.status === 404) {
+  if (!persona) {
     error = 'Persona not found';
   } else {
-    error = 'Failed to load persona';
+    // Fetch all models to map IDs to names
+    const models = getModels();
+    models.forEach((model) => {
+      modelMap[model.id] = {
+        name: model.model_name,
+        provider: model.provider,
+      };
+    });
   }
 } catch (e) {
   console.error('Error fetching persona:', e);
@@ -30,6 +39,15 @@ try {
 
 if (error || !persona) {
   return Astro.redirect('/personas');
+}
+
+// Helper to format model display
+function getModelName(modelId: string) {
+  const model = modelMap[modelId];
+  if (model) {
+    return `${model.name} (${model.provider})`;
+  }
+  return modelId; // Fallback to ID if model not found
 }
 
 const breadcrumbItems = [
@@ -235,21 +253,21 @@ const currentTab = Astro.url.searchParams.get('tab') || 'overview';
                 <div class="text-base-content/60 text-sm uppercase tracking-wide mb-2">
                   Task Model
                 </div>
-                <div class="font-mono text-lg">{persona.task_model_id}</div>
+                <div class="font-mono text-lg">{getModelName(persona.task_model_id)}</div>
               </div>
 
               <div>
                 <div class="text-base-content/60 text-sm uppercase tracking-wide mb-2">
                   Judge Model
                 </div>
-                <div class="font-mono text-lg">{persona.judge_model_id}</div>
+                <div class="font-mono text-lg">{getModelName(persona.judge_model_id)}</div>
               </div>
 
               <div>
                 <div class="text-base-content/60 text-sm uppercase tracking-wide mb-2">
                   Prompt Engineer Model
                 </div>
-                <div class="font-mono text-lg">{persona.prompt_engineer_model_id}</div>
+                <div class="font-mono text-lg">{getModelName(persona.prompt_engineer_model_id)}</div>
               </div>
             </div>
           </div>
@@ -318,8 +336,7 @@ const currentTab = Astro.url.searchParams.get('tab') || 'overview';
                 <textarea
                   name="description"
                   class="textarea textarea-bordered w-full h-24"
-                  value={persona.description || ''}
-                />
+                >{persona.description || ''}</textarea>
               </div>
 
               <div class="form-control">
@@ -330,8 +347,7 @@ const currentTab = Astro.url.searchParams.get('tab') || 'overview';
                   name="task_prompt"
                   class="textarea textarea-bordered w-full h-32"
                   required
-                  value={persona.task_prompt}
-                />
+                >{persona.task_prompt}</textarea>
                 <label class="label">
                   <span class="label-text-alt text-base-content/60">
                     The prompt used to generate outputs that will be judged
