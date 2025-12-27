@@ -3,12 +3,41 @@ import tseslint from '@typescript-eslint/eslint-plugin';
 import tsparser from '@typescript-eslint/parser';
 import astro from 'eslint-plugin-astro';
 import prettier from 'eslint-config-prettier';
+import jsdoc from 'eslint-plugin-jsdoc';
 import globals from 'globals';
 
 export default [
   eslint.configs.recommended,
   ...astro.configs.recommended,
   prettier,
+  {
+    files: ['**/*.ts', '**/*.tsx', '**/*.astro'],
+    plugins: {
+      jsdoc,
+    },
+    rules: {
+      'jsdoc/require-jsdoc': [
+        'warn',
+        {
+          require: {
+            FunctionDeclaration: true,
+            MethodDefinition: true,
+            ClassDeclaration: true,
+            ArrowFunctionExpression: true,
+            FunctionExpression: true,
+          },
+          publicOnly: true,
+        },
+      ],
+      'jsdoc/require-description': 'warn',
+      'jsdoc/require-param': 'warn',
+      'jsdoc/require-returns': 'warn',
+      'jsdoc/check-param-names': 'warn',
+      'jsdoc/check-tag-names': 'warn',
+      'jsdoc/check-types': 'off', // TypeScript handles types
+      'jsdoc/no-undefined-types': 'off', // TypeScript handles types
+    },
+  },
   {
     files: ['**/*.ts', '**/*.tsx'],
     languageOptions: {
