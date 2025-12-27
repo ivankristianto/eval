@@ -63,7 +63,7 @@ describe('Model Separation Validator Integration', () => {
       expect(result.isValid).toBe(false);
       expect(result.errors.length).toBeGreaterThan(0);
       expect(result.errors.some((e) => e.includes('Task model and Prompt Engineer model'))).toBe(
-        true,
+        true
       );
     });
 
@@ -79,7 +79,7 @@ describe('Model Separation Validator Integration', () => {
       expect(result.isValid).toBe(false);
       expect(result.errors.length).toBeGreaterThan(0);
       expect(result.errors.some((e) => e.includes('Judge model and Prompt Engineer model'))).toBe(
-        true,
+        true
       );
     });
 
@@ -141,7 +141,9 @@ describe('Model Separation Validator Integration', () => {
       const promptEngineerModelId = createTestModelConfig(db, 'google');
 
       // Verify models exist in database
-      const taskModel = db.prepare('SELECT * FROM ModelConfiguration WHERE id = ?').get(taskModelId);
+      const taskModel = db
+        .prepare('SELECT * FROM ModelConfiguration WHERE id = ?')
+        .get(taskModelId);
       const judgeModel = db
         .prepare('SELECT * FROM ModelConfiguration WHERE id = ?')
         .get(judgeModelId);
@@ -177,7 +179,7 @@ describe('Model Separation Validator Integration', () => {
       const result = validateModelSeparation(
         'nonexistent-task',
         'nonexistent-judge',
-        'nonexistent-engineer',
+        'nonexistent-engineer'
       );
 
       expect(result.isValid).toBe(false);

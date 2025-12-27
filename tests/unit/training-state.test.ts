@@ -68,7 +68,13 @@ describe('Training State Manager', () => {
       const checkpoint: CheckpointData = {
         iterationNumber: 1,
         evaluatedResultCount: 5,
-        metricsSnapshot: { f1_score: 0.7, precision: 0.75, recall: 0.65, accuracy: 0.7, cohens_kappa: 0.5 },
+        metricsSnapshot: {
+          f1_score: 0.7,
+          precision: 0.75,
+          recall: 0.65,
+          accuracy: 0.7,
+          cohens_kappa: 0.5,
+        },
         evaluatedResultIds: ['id1', 'id2'],
         currentPrompt: 'Test prompt',
       };
@@ -76,7 +82,9 @@ describe('Training State Manager', () => {
       manager.saveCheckpoint(sessionId, persona.id, checkpoint);
 
       // Verify training loop state was created
-      const state = db.prepare('SELECT * FROM training_loop_state WHERE session_id = ?').get(sessionId);
+      const state = db
+        .prepare('SELECT * FROM training_loop_state WHERE session_id = ?')
+        .get(sessionId);
       expect(state).toBeDefined();
     });
 
@@ -91,7 +99,13 @@ describe('Training State Manager', () => {
       manager.saveCheckpoint(sessionId, persona.id, {
         iterationNumber: 1,
         evaluatedResultCount: 5,
-        metricsSnapshot: { f1_score: 0.7, precision: 0.75, recall: 0.65, accuracy: 0.7, cohens_kappa: 0.5 },
+        metricsSnapshot: {
+          f1_score: 0.7,
+          precision: 0.75,
+          recall: 0.65,
+          accuracy: 0.7,
+          cohens_kappa: 0.5,
+        },
         evaluatedResultIds: ['id1', 'id2'],
         currentPrompt: 'Initial',
       });
@@ -100,7 +114,13 @@ describe('Training State Manager', () => {
       manager.saveCheckpoint(sessionId, persona.id, {
         iterationNumber: 1,
         evaluatedResultCount: 10,
-        metricsSnapshot: { f1_score: 0.75, precision: 0.8, recall: 0.7, accuracy: 0.75, cohens_kappa: 0.6 },
+        metricsSnapshot: {
+          f1_score: 0.75,
+          precision: 0.8,
+          recall: 0.7,
+          accuracy: 0.75,
+          cohens_kappa: 0.6,
+        },
         evaluatedResultIds: ['id1', 'id2', 'id3', 'id4'],
         currentPrompt: 'Initial',
       });
@@ -121,7 +141,13 @@ describe('Training State Manager', () => {
       manager.saveCheckpoint(sessionId, persona.id, {
         iterationNumber: 1,
         evaluatedResultCount: 10,
-        metricsSnapshot: { f1_score: 0.7, precision: 0.75, recall: 0.65, accuracy: 0.7, cohens_kappa: 0.5 },
+        metricsSnapshot: {
+          f1_score: 0.7,
+          precision: 0.75,
+          recall: 0.65,
+          accuracy: 0.7,
+          cohens_kappa: 0.5,
+        },
         evaluatedResultIds: ['id1'],
         currentPrompt: 'Prompt v1',
       });
@@ -130,7 +156,13 @@ describe('Training State Manager', () => {
       manager.saveCheckpoint(sessionId, persona.id, {
         iterationNumber: 2,
         evaluatedResultCount: 10,
-        metricsSnapshot: { f1_score: 0.75, precision: 0.8, recall: 0.7, accuracy: 0.75, cohens_kappa: 0.6 },
+        metricsSnapshot: {
+          f1_score: 0.75,
+          precision: 0.8,
+          recall: 0.7,
+          accuracy: 0.75,
+          cohens_kappa: 0.6,
+        },
         evaluatedResultIds: ['id2'],
         currentPrompt: 'Prompt v2',
       });
@@ -139,7 +171,13 @@ describe('Training State Manager', () => {
       manager.saveCheckpoint(sessionId, persona.id, {
         iterationNumber: 3,
         evaluatedResultCount: 10,
-        metricsSnapshot: { f1_score: 0.8, precision: 0.85, recall: 0.75, accuracy: 0.8, cohens_kappa: 0.7 },
+        metricsSnapshot: {
+          f1_score: 0.8,
+          precision: 0.85,
+          recall: 0.75,
+          accuracy: 0.8,
+          cohens_kappa: 0.7,
+        },
         evaluatedResultIds: ['id3'],
         currentPrompt: 'Prompt v3',
       });
@@ -159,20 +197,30 @@ describe('Training State Manager', () => {
       const checkpoint: CheckpointData = {
         iterationNumber: 1,
         evaluatedResultCount: 10,
-        metricsSnapshot: { f1_score: 0.75, precision: 0.8, recall: 0.7, accuracy: 0.75, cohens_kappa: 0.6 },
+        metricsSnapshot: {
+          f1_score: 0.75,
+          precision: 0.8,
+          recall: 0.7,
+          accuracy: 0.75,
+          cohens_kappa: 0.6,
+        },
         evaluatedResultIds: ['id1', 'id2'],
         currentPrompt: 'Test',
       };
 
       // Count checkpoints before
-      const beforeCount = db.prepare('SELECT COUNT(*) as count FROM training_loop_checkpoints').get() as {
+      const beforeCount = db
+        .prepare('SELECT COUNT(*) as count FROM training_loop_checkpoints')
+        .get() as {
         count: number;
       };
 
       manager.saveCheckpoint(sessionId, persona.id, checkpoint);
 
       // Count checkpoints after
-      const afterCount = db.prepare('SELECT COUNT(*) as count FROM training_loop_checkpoints').get() as {
+      const afterCount = db
+        .prepare('SELECT COUNT(*) as count FROM training_loop_checkpoints')
+        .get() as {
         count: number;
       };
 
@@ -192,7 +240,13 @@ describe('Training State Manager', () => {
       manager.saveCheckpoint(sessionId, persona.id, {
         iterationNumber: 2,
         evaluatedResultCount: 15,
-        metricsSnapshot: { f1_score: 0.75, precision: 0.8, recall: 0.7, accuracy: 0.75, cohens_kappa: 0.6 },
+        metricsSnapshot: {
+          f1_score: 0.75,
+          precision: 0.8,
+          recall: 0.7,
+          accuracy: 0.75,
+          cohens_kappa: 0.6,
+        },
         evaluatedResultIds: ['id1'],
         currentPrompt: 'Prompt',
       });
@@ -200,7 +254,9 @@ describe('Training State Manager', () => {
       manager.pause(sessionId, 'User requested pause');
 
       // Verify state is paused
-      const state = db.prepare('SELECT * FROM training_loop_state WHERE session_id = ?').get(sessionId) as any;
+      const state = db
+        .prepare('SELECT * FROM training_loop_state WHERE session_id = ?')
+        .get(sessionId) as any;
       expect(state.status).toBe('paused');
       expect(state.pause_reason).toBe('User requested pause');
     });
@@ -214,7 +270,13 @@ describe('Training State Manager', () => {
       const checkpoint: CheckpointData = {
         iterationNumber: 2,
         evaluatedResultCount: 20,
-        metricsSnapshot: { f1_score: 0.8, precision: 0.85, recall: 0.75, accuracy: 0.8, cohens_kappa: 0.7 },
+        metricsSnapshot: {
+          f1_score: 0.8,
+          precision: 0.85,
+          recall: 0.75,
+          accuracy: 0.8,
+          cohens_kappa: 0.7,
+        },
         evaluatedResultIds: ['id1', 'id2', 'id3'],
         currentPrompt: 'Resume test prompt',
       };
@@ -250,7 +312,13 @@ describe('Training State Manager', () => {
       manager.saveCheckpoint(sessionId, persona.id, {
         iterationNumber: 1,
         evaluatedResultCount: 10,
-        metricsSnapshot: { f1_score: 0.75, precision: 0.8, recall: 0.7, accuracy: 0.75, cohens_kappa: 0.6 },
+        metricsSnapshot: {
+          f1_score: 0.75,
+          precision: 0.8,
+          recall: 0.7,
+          accuracy: 0.75,
+          cohens_kappa: 0.6,
+        },
         evaluatedResultIds: ['id1'],
         currentPrompt: 'Prompt',
       });
@@ -272,7 +340,13 @@ describe('Training State Manager', () => {
       manager.saveCheckpoint(sessionId, persona.id, {
         iterationNumber: 1,
         evaluatedResultCount: 10,
-        metricsSnapshot: { f1_score: 0.75, precision: 0.8, recall: 0.7, accuracy: 0.75, cohens_kappa: 0.6 },
+        metricsSnapshot: {
+          f1_score: 0.75,
+          precision: 0.8,
+          recall: 0.7,
+          accuracy: 0.75,
+          cohens_kappa: 0.6,
+        },
         evaluatedResultIds: ['id1', 'id2'],
         currentPrompt: 'Test',
       });
@@ -299,14 +373,20 @@ describe('Training State Manager', () => {
       manager.saveCheckpoint(sessionId, persona.id, {
         iterationNumber: 1,
         evaluatedResultCount: 10,
-        metricsSnapshot: { f1_score: 0.75, precision: 0.8, recall: 0.7, accuracy: 0.75, cohens_kappa: 0.6 },
+        metricsSnapshot: {
+          f1_score: 0.75,
+          precision: 0.8,
+          recall: 0.7,
+          accuracy: 0.75,
+          cohens_kappa: 0.6,
+        },
         evaluatedResultIds: ['id1'],
         currentPrompt: 'Test',
       });
 
       // Corrupt the checkpoint by updating metrics_snapshot to invalid JSON
       db.prepare(
-        'UPDATE training_loop_checkpoints SET metrics_snapshot = ? WHERE session_id = ?',
+        'UPDATE training_loop_checkpoints SET metrics_snapshot = ? WHERE session_id = ?'
       ).run('INVALID JSON', sessionId);
 
       const isValid = manager.verifyCheckpointIntegrity(sessionId);
@@ -323,7 +403,13 @@ describe('Training State Manager', () => {
       manager.saveCheckpoint(sessionId, persona.id, {
         iterationNumber: 1,
         evaluatedResultCount: 10,
-        metricsSnapshot: { f1_score: 0.75, precision: 0.8, recall: 0.7, accuracy: 0.75, cohens_kappa: 0.6 },
+        metricsSnapshot: {
+          f1_score: 0.75,
+          precision: 0.8,
+          recall: 0.7,
+          accuracy: 0.75,
+          cohens_kappa: 0.6,
+        },
         evaluatedResultIds: ['id1'],
         currentPrompt: 'Test',
       });
@@ -331,7 +417,7 @@ describe('Training State Manager', () => {
       // Corrupt metrics_snapshot by removing required f1_score field
       const corruptedMetrics = JSON.stringify({ precision: 0.8, recall: 0.7 });
       db.prepare(
-        'UPDATE training_loop_checkpoints SET metrics_snapshot = ? WHERE session_id = ?',
+        'UPDATE training_loop_checkpoints SET metrics_snapshot = ? WHERE session_id = ?'
       ).run(corruptedMetrics, sessionId);
 
       const isValid = manager.verifyCheckpointIntegrity(sessionId);
@@ -348,7 +434,13 @@ describe('Training State Manager', () => {
         manager.saveCheckpoint('session-error', 'non-existent-persona', {
           iterationNumber: 1,
           evaluatedResultCount: 10,
-          metricsSnapshot: { f1_score: 0.75, precision: 0.8, recall: 0.7, accuracy: 0.75, cohens_kappa: 0.6 },
+          metricsSnapshot: {
+            f1_score: 0.75,
+            precision: 0.8,
+            recall: 0.7,
+            accuracy: 0.75,
+            cohens_kappa: 0.6,
+          },
           evaluatedResultIds: ['id1'],
           currentPrompt: 'Test',
         });
@@ -375,7 +467,13 @@ describe('Training State Manager', () => {
       manager.saveCheckpoint(sessionId, persona.id, {
         iterationNumber: 1,
         evaluatedResultCount: 5,
-        metricsSnapshot: { f1_score: 0.7, precision: 0.75, recall: 0.65, accuracy: 0.7, cohens_kappa: 0.5 },
+        metricsSnapshot: {
+          f1_score: 0.7,
+          precision: 0.75,
+          recall: 0.65,
+          accuracy: 0.7,
+          cohens_kappa: 0.5,
+        },
         evaluatedResultIds: ['id1'],
         currentPrompt: 'First',
       });
@@ -383,7 +481,13 @@ describe('Training State Manager', () => {
       manager.saveCheckpoint(sessionId, persona.id, {
         iterationNumber: 1,
         evaluatedResultCount: 10,
-        metricsSnapshot: { f1_score: 0.75, precision: 0.8, recall: 0.7, accuracy: 0.75, cohens_kappa: 0.6 },
+        metricsSnapshot: {
+          f1_score: 0.75,
+          precision: 0.8,
+          recall: 0.7,
+          accuracy: 0.75,
+          cohens_kappa: 0.6,
+        },
         evaluatedResultIds: ['id1', 'id2'],
         currentPrompt: 'Second',
       });

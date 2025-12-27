@@ -40,13 +40,15 @@ describe('Training State Manager - Integration Tests', () => {
       try {
         db.transaction(() => {
           // Start saving checkpoint
-          db.prepare(`
+          db.prepare(
+            `
             INSERT INTO training_loop_state (
               session_id, persona_id, current_iteration, total_iterations, status,
               judge_model_id, prompt_engineer_model_id, task_model_id,
               created_at, updated_at
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-          `).run(
+          `
+          ).run(
             sessionId,
             persona.id,
             1,
@@ -56,7 +58,7 @@ describe('Training State Manager - Integration Tests', () => {
             persona.prompt_engineer_model_id,
             persona.task_model_id,
             new Date().toISOString(),
-            new Date().toISOString(),
+            new Date().toISOString()
           );
 
           // Simulate crash before checkpoint is saved
@@ -67,14 +69,22 @@ describe('Training State Manager - Integration Tests', () => {
       }
 
       // Verify nothing was saved (transaction rolled back)
-      const state = db.prepare('SELECT * FROM training_loop_state WHERE session_id = ?').get(sessionId);
+      const state = db
+        .prepare('SELECT * FROM training_loop_state WHERE session_id = ?')
+        .get(sessionId);
       expect(state).toBeUndefined();
 
       // Now save checkpoint properly
       manager.saveCheckpoint(sessionId, persona.id, {
         iterationNumber: 1,
         evaluatedResultCount: 10,
-        metricsSnapshot: { f1_score: 0.75, precision: 0.8, recall: 0.7, accuracy: 0.75, cohens_kappa: 0.6 },
+        metricsSnapshot: {
+          f1_score: 0.75,
+          precision: 0.8,
+          recall: 0.7,
+          accuracy: 0.75,
+          cohens_kappa: 0.6,
+        },
         evaluatedResultIds: ['id1', 'id2'],
         currentPrompt: 'Test',
       });
@@ -96,7 +106,13 @@ describe('Training State Manager - Integration Tests', () => {
       manager.saveCheckpoint(sessionId, persona.id, {
         iterationNumber: 2,
         evaluatedResultCount: 15,
-        metricsSnapshot: { f1_score: 0.8, precision: 0.85, recall: 0.75, accuracy: 0.8, cohens_kappa: 0.7 },
+        metricsSnapshot: {
+          f1_score: 0.8,
+          precision: 0.85,
+          recall: 0.75,
+          accuracy: 0.8,
+          cohens_kappa: 0.7,
+        },
         evaluatedResultIds: ['id1', 'id2', 'id3'],
         currentPrompt: 'Checkpoint before crash',
       });
@@ -124,7 +140,13 @@ describe('Training State Manager - Integration Tests', () => {
       manager.saveCheckpoint(sessionId, persona.id, {
         iterationNumber: 1,
         evaluatedResultCount: 10,
-        metricsSnapshot: { f1_score: 0.7, precision: 0.75, recall: 0.65, accuracy: 0.7, cohens_kappa: 0.5 },
+        metricsSnapshot: {
+          f1_score: 0.7,
+          precision: 0.75,
+          recall: 0.65,
+          accuracy: 0.7,
+          cohens_kappa: 0.5,
+        },
         evaluatedResultIds: ['iter1-id1'],
         currentPrompt: 'Iteration 1',
       });
@@ -132,7 +154,13 @@ describe('Training State Manager - Integration Tests', () => {
       manager.saveCheckpoint(sessionId, persona.id, {
         iterationNumber: 2,
         evaluatedResultCount: 10,
-        metricsSnapshot: { f1_score: 0.75, precision: 0.8, recall: 0.7, accuracy: 0.75, cohens_kappa: 0.6 },
+        metricsSnapshot: {
+          f1_score: 0.75,
+          precision: 0.8,
+          recall: 0.7,
+          accuracy: 0.75,
+          cohens_kappa: 0.6,
+        },
         evaluatedResultIds: ['iter2-id1'],
         currentPrompt: 'Iteration 2',
       });
@@ -140,7 +168,13 @@ describe('Training State Manager - Integration Tests', () => {
       manager.saveCheckpoint(sessionId, persona.id, {
         iterationNumber: 3,
         evaluatedResultCount: 10,
-        metricsSnapshot: { f1_score: 0.8, precision: 0.85, recall: 0.75, accuracy: 0.8, cohens_kappa: 0.7 },
+        metricsSnapshot: {
+          f1_score: 0.8,
+          precision: 0.85,
+          recall: 0.75,
+          accuracy: 0.8,
+          cohens_kappa: 0.7,
+        },
         evaluatedResultIds: ['iter3-id1'],
         currentPrompt: 'Iteration 3',
       });
@@ -158,7 +192,13 @@ describe('Training State Manager - Integration Tests', () => {
       managerAfterCrash.saveCheckpoint(sessionId, persona.id, {
         iterationNumber: 4,
         evaluatedResultCount: 10,
-        metricsSnapshot: { f1_score: 0.82, precision: 0.87, recall: 0.77, accuracy: 0.82, cohens_kappa: 0.72 },
+        metricsSnapshot: {
+          f1_score: 0.82,
+          precision: 0.87,
+          recall: 0.77,
+          accuracy: 0.82,
+          cohens_kappa: 0.72,
+        },
         evaluatedResultIds: ['iter4-id1'],
         currentPrompt: 'Iteration 4',
       });
@@ -178,7 +218,13 @@ describe('Training State Manager - Integration Tests', () => {
       manager.saveCheckpoint(sessionId, persona.id, {
         iterationNumber: 2,
         evaluatedResultCount: 20,
-        metricsSnapshot: { f1_score: 0.75, precision: 0.8, recall: 0.7, accuracy: 0.75, cohens_kappa: 0.6 },
+        metricsSnapshot: {
+          f1_score: 0.75,
+          precision: 0.8,
+          recall: 0.7,
+          accuracy: 0.75,
+          cohens_kappa: 0.6,
+        },
         evaluatedResultIds: ['id1'],
         currentPrompt: 'Before pause',
       });
@@ -195,7 +241,9 @@ describe('Training State Manager - Integration Tests', () => {
       expect(resumed?.currentPrompt).toBe('Before pause');
 
       // Verify state is still paused
-      const state = db.prepare('SELECT * FROM training_loop_state WHERE session_id = ?').get(sessionId) as any;
+      const state = db
+        .prepare('SELECT * FROM training_loop_state WHERE session_id = ?')
+        .get(sessionId) as any;
       expect(state.status).toBe('paused');
     });
   });
@@ -209,7 +257,13 @@ describe('Training State Manager - Integration Tests', () => {
       const checkpoint: CheckpointData = {
         iterationNumber: 1,
         evaluatedResultCount: 25,
-        metricsSnapshot: { f1_score: 0.85, precision: 0.9, recall: 0.8, accuracy: 0.85, cohens_kappa: 0.75 },
+        metricsSnapshot: {
+          f1_score: 0.85,
+          precision: 0.9,
+          recall: 0.8,
+          accuracy: 0.85,
+          cohens_kappa: 0.75,
+        },
         evaluatedResultIds: ['id1', 'id2', 'id3'],
         currentPrompt: 'Persistent prompt',
       };
@@ -228,7 +282,9 @@ describe('Training State Manager - Integration Tests', () => {
       manager3.pause(sessionId, 'Testing persistence');
 
       // Verify still paused
-      const state = db.prepare('SELECT * FROM training_loop_state WHERE session_id = ?').get(sessionId) as any;
+      const state = db
+        .prepare('SELECT * FROM training_loop_state WHERE session_id = ?')
+        .get(sessionId) as any;
       expect(state.status).toBe('paused');
     });
 
@@ -283,7 +339,13 @@ describe('Training State Manager - Integration Tests', () => {
       manager.saveCheckpoint('session-1', persona1.id, {
         iterationNumber: 1,
         evaluatedResultCount: 10,
-        metricsSnapshot: { f1_score: 0.7, precision: 0.75, recall: 0.65, accuracy: 0.7, cohens_kappa: 0.5 },
+        metricsSnapshot: {
+          f1_score: 0.7,
+          precision: 0.75,
+          recall: 0.65,
+          accuracy: 0.7,
+          cohens_kappa: 0.5,
+        },
         evaluatedResultIds: ['s1-id1'],
         currentPrompt: 'Session 1 prompt',
       });
@@ -291,7 +353,13 @@ describe('Training State Manager - Integration Tests', () => {
       manager.saveCheckpoint('session-2', persona2.id, {
         iterationNumber: 2,
         evaluatedResultCount: 20,
-        metricsSnapshot: { f1_score: 0.8, precision: 0.85, recall: 0.75, accuracy: 0.8, cohens_kappa: 0.7 },
+        metricsSnapshot: {
+          f1_score: 0.8,
+          precision: 0.85,
+          recall: 0.75,
+          accuracy: 0.8,
+          cohens_kappa: 0.7,
+        },
         evaluatedResultIds: ['s2-id1'],
         currentPrompt: 'Session 2 prompt',
       });
@@ -310,7 +378,9 @@ describe('Training State Manager - Integration Tests', () => {
       manager.pause('session-1', 'Pausing session 1');
 
       // Verify session 2 is still running
-      const state2 = db.prepare('SELECT * FROM training_loop_state WHERE session_id = ?').get('session-2') as any;
+      const state2 = db
+        .prepare('SELECT * FROM training_loop_state WHERE session_id = ?')
+        .get('session-2') as any;
       expect(state2.status).toBe('in_progress');
     });
 
@@ -325,7 +395,13 @@ describe('Training State Manager - Integration Tests', () => {
         manager.saveCheckpoint('session-isolated-1', persona1.id, {
           iterationNumber: i,
           evaluatedResultCount: i * 10,
-          metricsSnapshot: { f1_score: 0.7 + i * 0.05, precision: 0.75, recall: 0.65, accuracy: 0.7, cohens_kappa: 0.5 },
+          metricsSnapshot: {
+            f1_score: 0.7 + i * 0.05,
+            precision: 0.75,
+            recall: 0.65,
+            accuracy: 0.7,
+            cohens_kappa: 0.5,
+          },
           evaluatedResultIds: [`s1-iter${i}`],
           currentPrompt: `Session 1 Iteration ${i}`,
         });
@@ -336,7 +412,13 @@ describe('Training State Manager - Integration Tests', () => {
         manager.saveCheckpoint('session-isolated-2', persona2.id, {
           iterationNumber: i,
           evaluatedResultCount: i * 5,
-          metricsSnapshot: { f1_score: 0.8 + i * 0.02, precision: 0.85, recall: 0.75, accuracy: 0.8, cohens_kappa: 0.7 },
+          metricsSnapshot: {
+            f1_score: 0.8 + i * 0.02,
+            precision: 0.85,
+            recall: 0.75,
+            accuracy: 0.8,
+            cohens_kappa: 0.7,
+          },
           evaluatedResultIds: [`s2-iter${i}`],
           currentPrompt: `Session 2 Iteration ${i}`,
         });
@@ -376,7 +458,13 @@ describe('Training State Manager - Integration Tests', () => {
         manager.saveCheckpoint(sessionId, persona.id, {
           iterationNumber: 1,
           evaluatedResultCount: i * 5,
-          metricsSnapshot: { f1_score: 0.7, precision: 0.75, recall: 0.65, accuracy: 0.7, cohens_kappa: 0.5 },
+          metricsSnapshot: {
+            f1_score: 0.7,
+            precision: 0.75,
+            recall: 0.65,
+            accuracy: 0.7,
+            cohens_kappa: 0.5,
+          },
           evaluatedResultIds: Array.from({ length: i }, (_, idx) => `id-${idx}`),
           currentPrompt: `Progress: ${i * 10}%`,
         });
@@ -405,16 +493,21 @@ describe('Training State Manager - Integration Tests', () => {
       manager.saveCheckpoint(sessionId, persona.id, {
         iterationNumber: 1,
         evaluatedResultCount: 10,
-        metricsSnapshot: { f1_score: 0.75, precision: 0.8, recall: 0.7, accuracy: 0.75, cohens_kappa: 0.6 },
+        metricsSnapshot: {
+          f1_score: 0.75,
+          precision: 0.8,
+          recall: 0.7,
+          accuracy: 0.75,
+          cohens_kappa: 0.6,
+        },
         evaluatedResultIds: ['id1'],
         currentPrompt: 'Valid',
       });
 
       // Corrupt the checkpoint data (simulate disk corruption)
-      db.prepare('UPDATE training_loop_checkpoints SET metrics_snapshot = ? WHERE session_id = ?').run(
-        'CORRUPTED DATA NOT JSON',
-        sessionId,
-      );
+      db.prepare(
+        'UPDATE training_loop_checkpoints SET metrics_snapshot = ? WHERE session_id = ?'
+      ).run('CORRUPTED DATA NOT JSON', sessionId);
 
       // Integrity check should detect corruption
       expect(manager.verifyCheckpointIntegrity(sessionId)).toBe(false);

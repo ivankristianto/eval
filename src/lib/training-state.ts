@@ -41,7 +41,9 @@ export class TrainingStateManager {
       if (!state) {
         // Get persona to get model IDs
         const persona = this.db
-          .prepare('SELECT task_model_id, judge_model_id, prompt_engineer_model_id, max_iterations FROM personas WHERE id = ?')
+          .prepare(
+            'SELECT task_model_id, judge_model_id, prompt_engineer_model_id, max_iterations FROM personas WHERE id = ?'
+          )
           .get(personaId) as
           | {
               task_model_id: string;
@@ -63,7 +65,7 @@ export class TrainingStateManager {
           persona.judge_model_id,
           persona.prompt_engineer_model_id,
           persona.task_model_id,
-          this.db,
+          this.db
         );
       }
 
@@ -75,35 +77,37 @@ export class TrainingStateManager {
           status: 'in_progress',
           task_results_evaluated: checkpoint.evaluatedResultCount,
         },
-        this.db,
+        this.db
       );
 
       // Save or update checkpoint (UPSERT)
       // Check if checkpoint already exists for this session and iteration
       const existingCheckpoint = this.db
         .prepare(
-          'SELECT id FROM training_loop_checkpoints WHERE session_id = ? AND iteration_number = ?',
+          'SELECT id FROM training_loop_checkpoints WHERE session_id = ? AND iteration_number = ?'
         )
         .get(sessionId, checkpoint.iterationNumber) as { id: string } | undefined;
 
       if (existingCheckpoint) {
         // Update existing checkpoint
         this.db
-          .prepare(`
+          .prepare(
+            `
           UPDATE training_loop_checkpoints
           SET evaluated_result_count = ?,
               metrics_snapshot = ?,
               evaluated_result_ids = ?,
               current_prompt = ?
           WHERE session_id = ? AND iteration_number = ?
-        `)
+        `
+          )
           .run(
             checkpoint.evaluatedResultCount,
             JSON.stringify(checkpoint.metricsSnapshot),
             JSON.stringify(checkpoint.evaluatedResultIds),
             checkpoint.currentPrompt,
             sessionId,
-            checkpoint.iterationNumber,
+            checkpoint.iterationNumber
           );
       } else {
         // Create new checkpoint
@@ -114,10 +118,9 @@ export class TrainingStateManager {
           JSON.stringify(checkpoint.metricsSnapshot),
           JSON.stringify(checkpoint.evaluatedResultIds),
           checkpoint.currentPrompt,
-          this.db,
+          this.db
         );
       }
-
     });
 
     transaction();
@@ -142,7 +145,7 @@ export class TrainingStateManager {
         status: 'paused',
         pause_reason: reason,
       },
-      this.db,
+      this.db
     );
   }
 

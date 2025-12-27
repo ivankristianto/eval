@@ -170,10 +170,7 @@ function getStatusBadgeVariant(status: string) {
           <div>
             <h3 class="font-semibold text-sm text-base-content/70 mb-1">System Prompt</h3>
             <div class="bg-base-200 p-4 rounded-lg font-mono text-sm">
-              <div
-                id="system-prompt-text"
-                class="whitespace-pre-wrap line-clamp-5 overflow-hidden"
-              >
+              <div id="system-prompt-text" class="whitespace-pre-wrap line-clamp-5 overflow-hidden">
                 {evaluationData.system_prompt}
               </div>
               <button
@@ -292,15 +289,16 @@ function getStatusBadgeVariant(status: string) {
     saveTemplateBtn.addEventListener('click', () => {
       const evalData = window.__EVALUATION_DATA__;
       if (evalData && window.openTemplateModal) {
-                  window.openTemplateModal({
-                    instruction_text: evalData.instruction_text,
-                    model_ids: evalData.results.map((r) => r.model_id),
-                    accuracy_rubric: evalData.accuracy_rubric,
-                    expected_output: evalData.expected_output || '',
-                    partial_credit_concepts: evalData.partial_credit_concepts,
-                    system_prompt: evalData.system_prompt,
-                    temperature: evalData.temperature,
-                  });      }
+        window.openTemplateModal({
+          instruction_text: evalData.instruction_text,
+          model_ids: evalData.results.map((r) => r.model_id),
+          accuracy_rubric: evalData.accuracy_rubric,
+          expected_output: evalData.expected_output || '',
+          partial_credit_concepts: evalData.partial_credit_concepts,
+          system_prompt: evalData.system_prompt,
+          temperature: evalData.temperature,
+        });
+      }
     });
   }
 
@@ -375,25 +373,29 @@ function getStatusBadgeVariant(status: string) {
         const tbody = document.getElementById('results-body');
         if (tbody) {
           tbody.innerHTML = results
-            .map((r: {
-              status: string;
-              accuracy_score?: number;
-              model_name: string;
-              provider: string;
-              execution_time_ms?: number;
-              total_tokens?: number;
-            }, index: number) => {
-              // Reconstruct badge variant logic
-              let badgeClass = 'badge-warning';
-              if (r.status === 'completed') badgeClass = 'badge-success';
-              if (r.status === 'failed') badgeClass = 'badge-error';
-              if (r.status === 'running') badgeClass = 'badge-info';
+            .map(
+              (
+                r: {
+                  status: string;
+                  accuracy_score?: number;
+                  model_name: string;
+                  provider: string;
+                  execution_time_ms?: number;
+                  total_tokens?: number;
+                },
+                index: number
+              ) => {
+                // Reconstruct badge variant logic
+                let badgeClass = 'badge-warning';
+                if (r.status === 'completed') badgeClass = 'badge-success';
+                if (r.status === 'failed') badgeClass = 'badge-error';
+                if (r.status === 'running') badgeClass = 'badge-info';
 
-              let scoreClass = '';
-              if (r.accuracy_score === 100) scoreClass = 'text-success';
-              if (r.accuracy_score === 0) scoreClass = 'text-error';
+                let scoreClass = '';
+                if (r.accuracy_score === 100) scoreClass = 'text-success';
+                if (r.accuracy_score === 0) scoreClass = 'text-error';
 
-              return `
+                return `
               <tr class="cursor-pointer hover:bg-base-200 transition-colors" data-result-index="${index}">
                 <td>
                   <div class="font-medium">${r.model_name}</div>
@@ -414,7 +416,8 @@ function getStatusBadgeVariant(status: string) {
                 </td>
               </tr>
              `;
-            })
+              }
+            )
             .join('');
 
           setupRowClickHandlers();

@@ -65,7 +65,9 @@ const currentTab = Astro.url.searchParams.get('tab') || 'overview';
   <div class="flex items-start justify-between mb-8 animate-reveal">
     <div class="flex-1">
       <div class="flex items-center gap-4 mb-4">
-        <h1 class="text-4xl md:text-5xl font-display font-semibold tracking-tight text-gradient-gold">
+        <h1
+          class="text-4xl md:text-5xl font-display font-semibold tracking-tight text-gradient-gold"
+        >
           {persona.name}
         </h1>
         <Badge variant={getStatusVariant(persona.status)} size="lg">
@@ -166,7 +168,7 @@ const currentTab = Astro.url.searchParams.get('tab') || 'overview';
   {
     currentTab === 'overview' && (
       <div class="space-y-8 animate-reveal delay-200">
-        <!-- Persona Info Card -->
+        {/* Persona Info Card */}
         <div class="card bg-base-200 shadow-xl">
           <div class="card-body">
             <h2 class="card-title text-2xl mb-6">Persona Information</h2>
@@ -223,7 +225,7 @@ const currentTab = Astro.url.searchParams.get('tab') || 'overview';
           </div>
         </div>
 
-        <!-- Model Configuration Card -->
+        {/* Model Configuration Card */}
         <div class="card bg-base-200 shadow-xl">
           <div class="card-body">
             <h2 class="card-title text-2xl mb-6">Model Configuration</h2>
@@ -253,7 +255,7 @@ const currentTab = Astro.url.searchParams.get('tab') || 'overview';
           </div>
         </div>
 
-        <!-- Metadata Card -->
+        {/* Metadata Card */}
         <div class="card bg-base-200 shadow-xl">
           <div class="card-body">
             <h2 class="card-title text-2xl mb-6">Metadata</h2>
@@ -341,7 +343,9 @@ const currentTab = Astro.url.searchParams.get('tab') || 'overview';
                 <button type="button" class="btn btn-ghost" onclick="history.back()">
                   Cancel
                 </button>
-                <button type="submit" class="btn btn-primary">Save Changes</button>
+                <button type="submit" class="btn btn-primary">
+                  Save Changes
+                </button>
               </div>
             </form>
           </div>

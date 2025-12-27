@@ -74,7 +74,9 @@ const inputClasses = getInputClasses(!!error, size, className);
   {
     error && (
       <label class="label">
-        <span id={`${name}-error`} class="label-text-alt text-error">{error}</span>
+        <span id={`${name}-error`} class="label-text-alt text-error">
+          {error}
+        </span>
       </label>
     )
   }

@@ -86,10 +86,7 @@ export function closeTestDatabase(): void {
 /**
  * Create a test model configuration
  */
-export function createTestModelConfig(
-  db: Database.Database,
-  provider: string = 'openai',
-): string {
+export function createTestModelConfig(db: Database.Database, provider: string = 'openai'): string {
   const id = uuidv4();
   const modelName = `${provider}-test-model-${id.slice(0, 8)}`;
   const stmt = db.prepare(`
@@ -105,7 +102,7 @@ export function createTestModelConfig(
  */
 export function createTestPersona(
   db: Database.Database,
-  overrides?: Partial<CreatePersonaInput>,
+  overrides?: Partial<CreatePersonaInput>
 ): Persona {
   // Create three model configs from different providers
   const taskModelId = createTestModelConfig(db, 'openai');
@@ -150,7 +147,7 @@ export function createTestPersona(
     0,
     now,
     now,
-    input.created_by || null,
+    input.created_by || null
   );
 
   const selectStmt = db.prepare('SELECT * FROM personas WHERE id = ?');
@@ -163,7 +160,7 @@ export function createTestPersona(
 export function createTestTrainingPairs(
   db: Database.Database,
   personaId: string,
-  count: number = 10,
+  count: number = 10
 ): TrainingPair[] {
   const stmt = db.prepare(`
     INSERT INTO training_pairs (id, persona_id, input, expected_output, created_at)
@@ -175,13 +172,7 @@ export function createTestTrainingPairs(
 
   for (let i = 0; i < count; i++) {
     const id = uuidv4();
-    stmt.run(
-      id,
-      personaId,
-      `Test input ${i + 1}`,
-      `Expected output ${i + 1}`,
-      now,
-    );
+    stmt.run(id, personaId, `Test input ${i + 1}`, `Expected output ${i + 1}`, now);
 
     const selectStmt = db.prepare('SELECT * FROM training_pairs WHERE id = ?');
     pairs.push(selectStmt.get(id) as TrainingPair);
@@ -197,7 +188,7 @@ export function createTestIteration(
   db: Database.Database,
   personaId: string,
   iterationNumber: number = 1,
-  judgePromptText: string = 'Test judge prompt',
+  judgePromptText: string = 'Test judge prompt'
 ): TrainingIteration {
   // Get persona to get judge model ID
   const persona = db.prepare('SELECT * FROM personas WHERE id = ?').get(personaId) as Persona;
@@ -212,7 +203,15 @@ export function createTestIteration(
     ) VALUES (?, ?, ?, ?, ?, ?, ?)
   `);
 
-  stmt.run(id, personaId, iterationNumber, persona.judge_model_id, judgePromptText, 'in_progress', now);
+  stmt.run(
+    id,
+    personaId,
+    iterationNumber,
+    persona.judge_model_id,
+    judgePromptText,
+    'in_progress',
+    now
+  );
 
   const selectStmt = db.prepare('SELECT * FROM training_iterations WHERE id = ?');
   return selectStmt.get(id) as TrainingIteration;
@@ -257,15 +256,15 @@ export interface SampleDecisionData {
 }
 
 export const SAMPLE_DECISIONS: SampleDecisionData[] = [
-  { judgeAgrees: true, humanAgrees: true },   // TP
-  { judgeAgrees: true, humanAgrees: true },   // TP
-  { judgeAgrees: true, humanAgrees: true },   // TP
-  { judgeAgrees: true, humanAgrees: false },  // FP
-  { judgeAgrees: false, humanAgrees: true },  // FN
+  { judgeAgrees: true, humanAgrees: true }, // TP
+  { judgeAgrees: true, humanAgrees: true }, // TP
+  { judgeAgrees: true, humanAgrees: true }, // TP
+  { judgeAgrees: true, humanAgrees: false }, // FP
+  { judgeAgrees: false, humanAgrees: true }, // FN
   { judgeAgrees: false, humanAgrees: false }, // TN
   { judgeAgrees: false, humanAgrees: false }, // TN
-  { judgeAgrees: true, humanAgrees: true },   // TP
-  { judgeAgrees: true, humanAgrees: true },   // TP
+  { judgeAgrees: true, humanAgrees: true }, // TP
+  { judgeAgrees: true, humanAgrees: true }, // TP
   { judgeAgrees: false, humanAgrees: false }, // TN
 ];
 

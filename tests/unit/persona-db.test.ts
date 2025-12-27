@@ -4,7 +4,14 @@
  */
 
 import { describe, it, expect, beforeAll, beforeEach, afterAll } from 'vitest';
-import { getTestDatabase, initializeTestDatabase, cleanTestDatabase, closeTestDatabase, createTestModelConfig, createTestPersona } from '../setup';
+import {
+  getTestDatabase,
+  initializeTestDatabase,
+  cleanTestDatabase,
+  closeTestDatabase,
+  createTestModelConfig,
+  createTestPersona,
+} from '../setup';
 import {
   createPersona,
   getPersona,
@@ -38,7 +45,11 @@ import {
   createCheckpoint,
   getLatestCheckpoint,
 } from '../../src/lib/persona-db';
-import type { CreatePersonaInput, CreateTrainingPairInput, CreateHumanReviewInput } from '../../src/types/training';
+import type {
+  CreatePersonaInput,
+  CreateTrainingPairInput,
+  CreateHumanReviewInput,
+} from '../../src/types/training';
 
 describe('Persona Database Access Layer', () => {
   beforeAll(() => {
@@ -105,7 +116,7 @@ describe('Persona Database Access Layer', () => {
       const personas = listPersonas(undefined, db);
 
       expect(personas).toHaveLength(3);
-      expect(personas.map(p => p.name)).toContain('Persona 1');
+      expect(personas.map((p) => p.name)).toContain('Persona 1');
     });
 
     it('should filter personas by status', () => {
@@ -128,11 +139,15 @@ describe('Persona Database Access Layer', () => {
       const db = getTestDatabase();
       const persona = createTestPersona(db);
 
-      const updated = updatePersona(persona.id, {
-        name: 'Updated Name',
-        description: 'Updated description',
-        status: 'training',
-      }, db);
+      const updated = updatePersona(
+        persona.id,
+        {
+          name: 'Updated Name',
+          description: 'Updated description',
+          status: 'training',
+        },
+        db
+      );
 
       expect(updated.name).toBe('Updated Name');
       expect(updated.description).toBe('Updated description');
@@ -143,10 +158,14 @@ describe('Persona Database Access Layer', () => {
       const db = getTestDatabase();
       const persona = createTestPersona(db);
 
-      const updated = updatePersona(persona.id, {
-        best_f1_score: 0.85,
-        best_f1_iteration: 3,
-      }, db);
+      const updated = updatePersona(
+        persona.id,
+        {
+          best_f1_score: 0.85,
+          best_f1_iteration: 3,
+        },
+        db
+      );
 
       expect(updated.best_f1_score).toBe(0.85);
       expect(updated.best_f1_iteration).toBe(3);
@@ -198,7 +217,11 @@ describe('Persona Database Access Layer', () => {
     it('should get single training pair by ID', () => {
       const db = getTestDatabase();
       const persona = createTestPersona(db);
-      const pairs = createTrainingPairs(persona.id, [{ input: 'Test', expected_output: 'Output' }], db);
+      const pairs = createTrainingPairs(
+        persona.id,
+        [{ input: 'Test', expected_output: 'Output' }],
+        db
+      );
 
       const pair = getTrainingPair(pairs[0].id, db);
 
@@ -210,10 +233,14 @@ describe('Persona Database Access Layer', () => {
       const db = getTestDatabase();
       const persona = createTestPersona(db);
 
-      createTrainingPairs(persona.id, [
-        { input: 'Input 1', expected_output: 'Output 1' },
-        { input: 'Input 2', expected_output: 'Output 2' },
-      ], db);
+      createTrainingPairs(
+        persona.id,
+        [
+          { input: 'Input 1', expected_output: 'Output 1' },
+          { input: 'Input 2', expected_output: 'Output 2' },
+        ],
+        db
+      );
 
       deleteTrainingPairs(persona.id, db);
 
@@ -232,7 +259,7 @@ describe('Persona Database Access Layer', () => {
         1,
         persona.judge_model_id,
         'Initial judge prompt',
-        db,
+        db
       );
 
       expect(iteration).toBeDefined();
@@ -244,7 +271,13 @@ describe('Persona Database Access Layer', () => {
     it('should get iteration by ID', () => {
       const db = getTestDatabase();
       const persona = createTestPersona(db);
-      const iteration = createTrainingIteration(persona.id, 1, persona.judge_model_id, 'Prompt', db);
+      const iteration = createTrainingIteration(
+        persona.id,
+        1,
+        persona.judge_model_id,
+        'Prompt',
+        db
+      );
 
       const retrieved = getTrainingIteration(iteration.id, db);
 
@@ -258,7 +291,13 @@ describe('Persona Database Access Layer', () => {
 
       createTrainingIteration(persona.id, 1, persona.judge_model_id, 'Prompt 1', db);
       createTrainingIteration(persona.id, 2, persona.judge_model_id, 'Prompt 2', db);
-      const iteration3 = createTrainingIteration(persona.id, 3, persona.judge_model_id, 'Prompt 3', db);
+      const iteration3 = createTrainingIteration(
+        persona.id,
+        3,
+        persona.judge_model_id,
+        'Prompt 3',
+        db
+      );
 
       const latest = getLatestIteration(persona.id, db);
 
@@ -285,7 +324,13 @@ describe('Persona Database Access Layer', () => {
     it('should update iteration status', () => {
       const db = getTestDatabase();
       const persona = createTestPersona(db);
-      const iteration = createTrainingIteration(persona.id, 1, persona.judge_model_id, 'Prompt', db);
+      const iteration = createTrainingIteration(
+        persona.id,
+        1,
+        persona.judge_model_id,
+        'Prompt',
+        db
+      );
 
       const updated = updateIterationStatus(iteration.id, 'completed', undefined, db);
 
@@ -296,7 +341,13 @@ describe('Persona Database Access Layer', () => {
     it('should update iteration counts', () => {
       const db = getTestDatabase();
       const persona = createTestPersona(db);
-      const iteration = createTrainingIteration(persona.id, 1, persona.judge_model_id, 'Prompt', db);
+      const iteration = createTrainingIteration(
+        persona.id,
+        1,
+        persona.judge_model_id,
+        'Prompt',
+        db
+      );
 
       updateIterationCounts(iteration.id, 10, 8, db);
 
@@ -310,8 +361,18 @@ describe('Persona Database Access Layer', () => {
     it('should create judge decision', () => {
       const db = getTestDatabase();
       const persona = createTestPersona(db);
-      const pairs = createTrainingPairs(persona.id, [{ input: 'Test', expected_output: 'Output' }], db);
-      const iteration = createTrainingIteration(persona.id, 1, persona.judge_model_id, 'Prompt', db);
+      const pairs = createTrainingPairs(
+        persona.id,
+        [{ input: 'Test', expected_output: 'Output' }],
+        db
+      );
+      const iteration = createTrainingIteration(
+        persona.id,
+        1,
+        persona.judge_model_id,
+        'Prompt',
+        db
+      );
 
       const decision = createJudgeDecision(
         iteration.id,
@@ -321,7 +382,7 @@ describe('Persona Database Access Layer', () => {
         0.95,
         'Reasoning here',
         undefined,
-        db,
+        db
       );
 
       expect(decision).toBeDefined();
@@ -332,14 +393,42 @@ describe('Persona Database Access Layer', () => {
     it('should get all decisions for an iteration', () => {
       const db = getTestDatabase();
       const persona = createTestPersona(db);
-      const pairs = createTrainingPairs(persona.id, [
-        { input: 'Input 1', expected_output: 'Output 1' },
-        { input: 'Input 2', expected_output: 'Output 2' },
-      ], db);
-      const iteration = createTrainingIteration(persona.id, 1, persona.judge_model_id, 'Prompt', db);
+      const pairs = createTrainingPairs(
+        persona.id,
+        [
+          { input: 'Input 1', expected_output: 'Output 1' },
+          { input: 'Input 2', expected_output: 'Output 2' },
+        ],
+        db
+      );
+      const iteration = createTrainingIteration(
+        persona.id,
+        1,
+        persona.judge_model_id,
+        'Prompt',
+        db
+      );
 
-      createJudgeDecision(iteration.id, pairs[0].id, 'Generated 1', 'agree', 0.9, 'Reason 1', undefined, db);
-      createJudgeDecision(iteration.id, pairs[1].id, 'Generated 2', 'disagree', 0.8, 'Reason 2', undefined, db);
+      createJudgeDecision(
+        iteration.id,
+        pairs[0].id,
+        'Generated 1',
+        'agree',
+        0.9,
+        'Reason 1',
+        undefined,
+        db
+      );
+      createJudgeDecision(
+        iteration.id,
+        pairs[1].id,
+        'Generated 2',
+        'disagree',
+        0.8,
+        'Reason 2',
+        undefined,
+        db
+      );
 
       const decisions = getIterationDecisions(iteration.id, db);
 
@@ -351,9 +440,28 @@ describe('Persona Database Access Layer', () => {
     it('should create human review', () => {
       const db = getTestDatabase();
       const persona = createTestPersona(db);
-      const pairs = createTrainingPairs(persona.id, [{ input: 'Test', expected_output: 'Output' }], db);
-      const iteration = createTrainingIteration(persona.id, 1, persona.judge_model_id, 'Prompt', db);
-      const decision = createJudgeDecision(iteration.id, pairs[0].id, 'Generated', 'agree', 0.9, 'Reason', undefined, db);
+      const pairs = createTrainingPairs(
+        persona.id,
+        [{ input: 'Test', expected_output: 'Output' }],
+        db
+      );
+      const iteration = createTrainingIteration(
+        persona.id,
+        1,
+        persona.judge_model_id,
+        'Prompt',
+        db
+      );
+      const decision = createJudgeDecision(
+        iteration.id,
+        pairs[0].id,
+        'Generated',
+        'agree',
+        0.9,
+        'Reason',
+        undefined,
+        db
+      );
 
       const input: CreateHumanReviewInput = {
         judge_decision_id: decision.id,
@@ -372,14 +480,36 @@ describe('Persona Database Access Layer', () => {
     it('should get human review by decision ID', () => {
       const db = getTestDatabase();
       const persona = createTestPersona(db);
-      const pairs = createTrainingPairs(persona.id, [{ input: 'Test', expected_output: 'Output' }], db);
-      const iteration = createTrainingIteration(persona.id, 1, persona.judge_model_id, 'Prompt', db);
-      const decision = createJudgeDecision(iteration.id, pairs[0].id, 'Generated', 'agree', 0.9, 'Reason', undefined, db);
+      const pairs = createTrainingPairs(
+        persona.id,
+        [{ input: 'Test', expected_output: 'Output' }],
+        db
+      );
+      const iteration = createTrainingIteration(
+        persona.id,
+        1,
+        persona.judge_model_id,
+        'Prompt',
+        db
+      );
+      const decision = createJudgeDecision(
+        iteration.id,
+        pairs[0].id,
+        'Generated',
+        'agree',
+        0.9,
+        'Reason',
+        undefined,
+        db
+      );
 
-      const review = createHumanReview({
-        judge_decision_id: decision.id,
-        human_decision: 'disagree',
-      }, db);
+      const review = createHumanReview(
+        {
+          judge_decision_id: decision.id,
+          human_decision: 'disagree',
+        },
+        db
+      );
 
       const retrieved = getHumanReviewByDecision(decision.id, db);
 
@@ -391,14 +521,42 @@ describe('Persona Database Access Layer', () => {
     it('should get all reviews for an iteration', () => {
       const db = getTestDatabase();
       const persona = createTestPersona(db);
-      const pairs = createTrainingPairs(persona.id, [
-        { input: 'Input 1', expected_output: 'Output 1' },
-        { input: 'Input 2', expected_output: 'Output 2' },
-      ], db);
-      const iteration = createTrainingIteration(persona.id, 1, persona.judge_model_id, 'Prompt', db);
+      const pairs = createTrainingPairs(
+        persona.id,
+        [
+          { input: 'Input 1', expected_output: 'Output 1' },
+          { input: 'Input 2', expected_output: 'Output 2' },
+        ],
+        db
+      );
+      const iteration = createTrainingIteration(
+        persona.id,
+        1,
+        persona.judge_model_id,
+        'Prompt',
+        db
+      );
 
-      const decision1 = createJudgeDecision(iteration.id, pairs[0].id, 'Gen 1', 'agree', 0.9, 'R1', undefined, db);
-      const decision2 = createJudgeDecision(iteration.id, pairs[1].id, 'Gen 2', 'disagree', 0.8, 'R2', undefined, db);
+      const decision1 = createJudgeDecision(
+        iteration.id,
+        pairs[0].id,
+        'Gen 1',
+        'agree',
+        0.9,
+        'R1',
+        undefined,
+        db
+      );
+      const decision2 = createJudgeDecision(
+        iteration.id,
+        pairs[1].id,
+        'Gen 2',
+        'disagree',
+        0.8,
+        'R2',
+        undefined,
+        db
+      );
 
       createHumanReview({ judge_decision_id: decision1.id, human_decision: 'agree' }, db);
       createHumanReview({ judge_decision_id: decision2.id, human_decision: 'disagree' }, db);
@@ -413,19 +571,29 @@ describe('Persona Database Access Layer', () => {
     it('should create iteration metrics', () => {
       const db = getTestDatabase();
       const persona = createTestPersona(db);
-      const iteration = createTrainingIteration(persona.id, 1, persona.judge_model_id, 'Prompt', db);
+      const iteration = createTrainingIteration(
+        persona.id,
+        1,
+        persona.judge_model_id,
+        'Prompt',
+        db
+      );
 
-      const metrics = createIterationMetrics(iteration.id, {
-        tp: 5,
-        tn: 3,
-        fp: 1,
-        fn: 1,
-        precision: 0.833,
-        recall: 0.833,
-        f1_score: 0.833,
-        cohens_kappa: 0.6,
-        accuracy: 0.8,
-      }, db);
+      const metrics = createIterationMetrics(
+        iteration.id,
+        {
+          tp: 5,
+          tn: 3,
+          fp: 1,
+          fn: 1,
+          precision: 0.833,
+          recall: 0.833,
+          f1_score: 0.833,
+          cohens_kappa: 0.6,
+          accuracy: 0.8,
+        },
+        db
+      );
 
       expect(metrics).toBeDefined();
       expect(metrics.f1_score).toBe(0.833);
@@ -435,19 +603,29 @@ describe('Persona Database Access Layer', () => {
     it('should get metrics by iteration ID', () => {
       const db = getTestDatabase();
       const persona = createTestPersona(db);
-      const iteration = createTrainingIteration(persona.id, 1, persona.judge_model_id, 'Prompt', db);
+      const iteration = createTrainingIteration(
+        persona.id,
+        1,
+        persona.judge_model_id,
+        'Prompt',
+        db
+      );
 
-      createIterationMetrics(iteration.id, {
-        tp: 5,
-        tn: 3,
-        fp: 1,
-        fn: 1,
-        precision: 0.833,
-        recall: 0.833,
-        f1_score: 0.833,
-        cohens_kappa: 0.6,
-        accuracy: 0.8,
-      }, db);
+      createIterationMetrics(
+        iteration.id,
+        {
+          tp: 5,
+          tn: 3,
+          fp: 1,
+          fn: 1,
+          precision: 0.833,
+          recall: 0.833,
+          f1_score: 0.833,
+          cohens_kappa: 0.6,
+          accuracy: 0.8,
+        },
+        db
+      );
 
       const metrics = getIterationMetrics(iteration.id, db);
 
@@ -462,15 +640,37 @@ describe('Persona Database Access Layer', () => {
       const iter1 = createTrainingIteration(persona.id, 1, persona.judge_model_id, 'Prompt 1', db);
       const iter2 = createTrainingIteration(persona.id, 2, persona.judge_model_id, 'Prompt 2', db);
 
-      createIterationMetrics(iter1.id, {
-        tp: 5, tn: 3, fp: 1, fn: 1,
-        precision: 0.833, recall: 0.833, f1_score: 0.833, cohens_kappa: 0.6, accuracy: 0.8,
-      }, db);
+      createIterationMetrics(
+        iter1.id,
+        {
+          tp: 5,
+          tn: 3,
+          fp: 1,
+          fn: 1,
+          precision: 0.833,
+          recall: 0.833,
+          f1_score: 0.833,
+          cohens_kappa: 0.6,
+          accuracy: 0.8,
+        },
+        db
+      );
 
-      createIterationMetrics(iter2.id, {
-        tp: 6, tn: 3, fp: 0, fn: 1,
-        precision: 1.0, recall: 0.857, f1_score: 0.923, cohens_kappa: 0.7, accuracy: 0.9,
-      }, db);
+      createIterationMetrics(
+        iter2.id,
+        {
+          tp: 6,
+          tn: 3,
+          fp: 0,
+          fn: 1,
+          precision: 1.0,
+          recall: 0.857,
+          f1_score: 0.923,
+          cohens_kappa: 0.7,
+          accuracy: 0.9,
+        },
+        db
+      );
 
       const allMetrics = getPersonaMetrics(persona.id, db);
 
@@ -491,7 +691,7 @@ describe('Persona Database Access Layer', () => {
         'Initial judge prompt',
         'First version',
         'human',
-        db,
+        db
       );
 
       expect(version).toBeDefined();
@@ -541,7 +741,7 @@ describe('Persona Database Access Layer', () => {
         persona.judge_model_id,
         persona.prompt_engineer_model_id,
         persona.task_model_id,
-        db,
+        db
       );
 
       expect(state).toBeDefined();
@@ -561,7 +761,7 @@ describe('Persona Database Access Layer', () => {
         persona.judge_model_id,
         persona.prompt_engineer_model_id,
         persona.task_model_id,
-        db,
+        db
       );
 
       const state = getTrainingLoopState('session-123', db);
@@ -581,14 +781,18 @@ describe('Persona Database Access Layer', () => {
         persona.judge_model_id,
         persona.prompt_engineer_model_id,
         persona.task_model_id,
-        db,
+        db
       );
 
-      const updated = updateTrainingLoopState('session-123', {
-        current_iteration: 2,
-        status: 'in_progress',
-        task_results_evaluated: 20,
-      }, db);
+      const updated = updateTrainingLoopState(
+        'session-123',
+        {
+          current_iteration: 2,
+          status: 'in_progress',
+          task_results_evaluated: 20,
+        },
+        db
+      );
 
       expect(updated.current_iteration).toBe(2);
       expect(updated.status).toBe('in_progress');
@@ -608,7 +812,7 @@ describe('Persona Database Access Layer', () => {
         persona.judge_model_id,
         persona.prompt_engineer_model_id,
         persona.task_model_id,
-        db,
+        db
       );
 
       const checkpoint = createCheckpoint(
@@ -618,7 +822,7 @@ describe('Persona Database Access Layer', () => {
         JSON.stringify({ f1_score: 0.8 }),
         JSON.stringify(['id1', 'id2']),
         'Current prompt',
-        db,
+        db
       );
 
       expect(checkpoint).toBeDefined();
@@ -637,7 +841,7 @@ describe('Persona Database Access Layer', () => {
         persona.judge_model_id,
         persona.prompt_engineer_model_id,
         persona.task_model_id,
-        db,
+        db
       );
 
       createCheckpoint('session-123', 1, 10, '{}', '[]', 'Prompt 1', db);

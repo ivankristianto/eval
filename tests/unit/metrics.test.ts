@@ -66,7 +66,7 @@ describe('Metrics Calculation', () => {
       const humanAgreements = [true];
 
       expect(() => buildConfusionMatrix(judgeAgreements, humanAgreements)).toThrow(
-        'Judge and human agreement arrays must have the same length',
+        'Judge and human agreement arrays must have the same length'
       );
     });
   });
@@ -177,7 +177,7 @@ describe('Metrics Calculation', () => {
   });
 
   describe('calculateCohensKappa', () => {
-    it('should calculate Cohen\'s Kappa correctly', () => {
+    it("should calculate Cohen's Kappa correctly", () => {
       const cm: ConfusionMatrix = {
         true_positives: 50,
         true_negatives: 30,

@@ -21,7 +21,7 @@ import type { PersonaCreationInput, ValidationResult } from '../types/training';
  */
 export function validatePersonaCreation(
   input: PersonaCreationInput,
-  db?: Database.Database,
+  db?: Database.Database
 ): ValidationResult {
   const database = db || getDatabase();
   const errors: string[] = [];
@@ -71,7 +71,7 @@ export function validatePersonaCreation(
     input.task_model_id,
     input.judge_model_id,
     input.prompt_engineer_model_id,
-    database,
+    database
   );
 
   if (!modelSeparationResult.isValid) {
@@ -117,7 +117,7 @@ export function validatePersonaCreation(
 export function validatePersonaUpdate(
   personaId: string,
   updates: Partial<PersonaCreationInput>,
-  db?: Database.Database,
+  db?: Database.Database
 ): ValidationResult {
   const database = db || getDatabase();
   const errors: string[] = [];
@@ -168,7 +168,7 @@ export function validatePersonaUpdate(
     // Get current persona to merge with updates
     const current = database
       .prepare(
-        'SELECT task_model_id, judge_model_id, prompt_engineer_model_id FROM personas WHERE id = ?',
+        'SELECT task_model_id, judge_model_id, prompt_engineer_model_id FROM personas WHERE id = ?'
       )
       .get(personaId) as {
       task_model_id: string;
@@ -185,7 +185,7 @@ export function validatePersonaUpdate(
       taskModelId,
       judgeModelId,
       promptEngineerModelId,
-      database,
+      database
     );
 
     if (!modelSeparationResult.isValid) {

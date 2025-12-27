@@ -4,7 +4,12 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { getTestDatabase, initializeTestDatabase, cleanTestDatabase, createTestModelConfig } from '../setup';
+import {
+  getTestDatabase,
+  initializeTestDatabase,
+  cleanTestDatabase,
+  createTestModelConfig,
+} from '../setup';
 import { validateModelSeparation } from '../../src/lib/model-separation-validator';
 
 describe('Model Separation Validator', () => {
@@ -39,7 +44,11 @@ describe('Model Separation Validator', () => {
       const result = validateModelSeparation(taskModelId, judgeModelId, promptEngineerModelId, db);
 
       expect(result.isValid).toBe(false);
-      expect(result.errors.some(e => e.includes('Task model and Judge model must be from different providers'))).toBe(true);
+      expect(
+        result.errors.some((e) =>
+          e.includes('Task model and Judge model must be from different providers')
+        )
+      ).toBe(true);
     });
 
     it('should fail validation when task and prompt engineer models are from the same provider', () => {
@@ -51,7 +60,11 @@ describe('Model Separation Validator', () => {
       const result = validateModelSeparation(taskModelId, judgeModelId, promptEngineerModelId, db);
 
       expect(result.isValid).toBe(false);
-      expect(result.errors.some(e => e.includes('Task model and Prompt Engineer model must be from different providers'))).toBe(true);
+      expect(
+        result.errors.some((e) =>
+          e.includes('Task model and Prompt Engineer model must be from different providers')
+        )
+      ).toBe(true);
     });
 
     it('should fail validation when judge and prompt engineer models are from the same provider', () => {
@@ -63,7 +76,11 @@ describe('Model Separation Validator', () => {
       const result = validateModelSeparation(taskModelId, judgeModelId, promptEngineerModelId, db);
 
       expect(result.isValid).toBe(false);
-      expect(result.errors.some(e => e.includes('Judge model and Prompt Engineer model must be from different providers'))).toBe(true);
+      expect(
+        result.errors.some((e) =>
+          e.includes('Judge model and Prompt Engineer model must be from different providers')
+        )
+      ).toBe(true);
     });
 
     it('should fail validation when all three models are from the same provider', () => {
@@ -76,8 +93,16 @@ describe('Model Separation Validator', () => {
 
       expect(result.isValid).toBe(false);
       expect(result.errors.length).toBeGreaterThan(0);
-      expect(result.errors.some(e => e.includes('Task model and Judge model must be from different providers'))).toBe(true);
-      expect(result.errors.some(e => e.includes('Task model and Prompt Engineer model must be from different providers'))).toBe(true);
+      expect(
+        result.errors.some((e) =>
+          e.includes('Task model and Judge model must be from different providers')
+        )
+      ).toBe(true);
+      expect(
+        result.errors.some((e) =>
+          e.includes('Task model and Prompt Engineer model must be from different providers')
+        )
+      ).toBe(true);
     });
 
     it('should fail validation when task model does not exist', () => {
@@ -147,7 +172,9 @@ describe('Model Separation Validator', () => {
 
       expect(result.isValid).toBe(false);
       expect(result.errors).toBeDefined();
-      expect(result.errors[0]).toMatch(/Task model and Judge model must be from different providers/);
+      expect(result.errors[0]).toMatch(
+        /Task model and Judge model must be from different providers/
+      );
     });
 
     it('should handle empty model IDs', () => {

@@ -89,7 +89,7 @@ describe('Persona Database Integration Tests', () => {
             5,
             0,
             new Date().toISOString(),
-            new Date().toISOString(),
+            new Date().toISOString()
           );
 
           // Now cause an error with duplicate ID
@@ -105,7 +105,7 @@ describe('Persona Database Integration Tests', () => {
             5,
             0,
             new Date().toISOString(),
-            new Date().toISOString(),
+            new Date().toISOString()
           );
         }, db);
       }).toThrow();
@@ -137,7 +137,7 @@ describe('Persona Database Integration Tests', () => {
           { input: 'Input 2', expected_output: 'Output 2' },
           { input: 'Input 3', expected_output: 'Output 3' },
         ],
-        db,
+        db
       );
 
       const iteration = createTrainingIteration(
@@ -145,7 +145,7 @@ describe('Persona Database Integration Tests', () => {
         1,
         persona.judge_model_id,
         'Initial prompt',
-        db,
+        db
       );
 
       // Verify all were created
@@ -162,7 +162,7 @@ describe('Persona Database Integration Tests', () => {
           0.9,
           'Reasoning',
           undefined,
-          db,
+          db
         );
       });
 
@@ -184,7 +184,7 @@ describe('Persona Database Integration Tests', () => {
           { input: 'Input 1', expected_output: 'Output 1' },
           { input: 'Input 2', expected_output: 'Output 2' },
         ],
-        db,
+        db
       );
 
       expect(pairs).toHaveLength(2);
@@ -225,9 +225,15 @@ describe('Persona Database Integration Tests', () => {
       const pairs = createTrainingPairs(
         persona.id,
         [{ input: 'Input', expected_output: 'Output' }],
-        db,
+        db
       );
-      const iteration = createTrainingIteration(persona.id, 1, persona.judge_model_id, 'Prompt', db);
+      const iteration = createTrainingIteration(
+        persona.id,
+        1,
+        persona.judge_model_id,
+        'Prompt',
+        db
+      );
 
       // Create judge decision
       const decision = createJudgeDecision(
@@ -238,7 +244,7 @@ describe('Persona Database Integration Tests', () => {
         0.9,
         'Reason',
         undefined,
-        db,
+        db
       );
 
       expect(getJudgeDecision(decision.id, db)).toBeDefined();
@@ -256,9 +262,15 @@ describe('Persona Database Integration Tests', () => {
       const pairs = createTrainingPairs(
         persona.id,
         [{ input: 'Input', expected_output: 'Output' }],
-        db,
+        db
       );
-      const iteration = createTrainingIteration(persona.id, 1, persona.judge_model_id, 'Prompt', db);
+      const iteration = createTrainingIteration(
+        persona.id,
+        1,
+        persona.judge_model_id,
+        'Prompt',
+        db
+      );
 
       const decision = createJudgeDecision(
         iteration.id,
@@ -268,7 +280,7 @@ describe('Persona Database Integration Tests', () => {
         0.9,
         'Reason',
         undefined,
-        db,
+        db
       );
 
       // Create human review
@@ -278,7 +290,7 @@ describe('Persona Database Integration Tests', () => {
           human_decision: 'agree',
           human_confidence: 0.95,
         },
-        db,
+        db
       );
 
       expect(getHumanReview(review.id, db)).toBeDefined();
@@ -301,10 +313,16 @@ describe('Persona Database Integration Tests', () => {
           { input: 'Input 1', expected_output: 'Output 1' },
           { input: 'Input 2', expected_output: 'Output 2' },
         ],
-        db,
+        db
       );
 
-      const iteration = createTrainingIteration(persona.id, 1, persona.judge_model_id, 'Prompt', db);
+      const iteration = createTrainingIteration(
+        persona.id,
+        1,
+        persona.judge_model_id,
+        'Prompt',
+        db
+      );
 
       const decision1 = createJudgeDecision(
         iteration.id,
@@ -314,7 +332,7 @@ describe('Persona Database Integration Tests', () => {
         0.9,
         'R1',
         undefined,
-        db,
+        db
       );
       const decision2 = createJudgeDecision(
         iteration.id,
@@ -324,22 +342,26 @@ describe('Persona Database Integration Tests', () => {
         0.8,
         'R2',
         undefined,
-        db,
+        db
       );
 
-      createHumanReview(
-        { judge_decision_id: decision1.id, human_decision: 'agree' },
-        db,
-      );
-      createHumanReview(
-        { judge_decision_id: decision2.id, human_decision: 'disagree' },
-        db,
-      );
+      createHumanReview({ judge_decision_id: decision1.id, human_decision: 'agree' }, db);
+      createHumanReview({ judge_decision_id: decision2.id, human_decision: 'disagree' }, db);
 
       createIterationMetrics(
         iteration.id,
-        { tp: 1, tn: 1, fp: 0, fn: 0, precision: 1.0, recall: 1.0, f1_score: 1.0, cohens_kappa: 1.0, accuracy: 1.0 },
-        db,
+        {
+          tp: 1,
+          tn: 1,
+          fp: 0,
+          fn: 0,
+          precision: 1.0,
+          recall: 1.0,
+          f1_score: 1.0,
+          cohens_kappa: 1.0,
+          accuracy: 1.0,
+        },
+        db
       );
 
       createPromptVersion(persona.id, 1, 'Prompt v1', 'Initial', 'human', db);
@@ -370,10 +392,12 @@ describe('Persona Database Integration Tests', () => {
       const db = getTestDatabase();
 
       expect(() => {
-        db.prepare(`
+        db.prepare(
+          `
           INSERT INTO training_pairs (id, persona_id, input, expected_output, created_at)
           VALUES (?, ?, ?, ?, ?)
-        `).run('test-id', 'non-existent-persona-id', 'Input', 'Output', new Date().toISOString());
+        `
+        ).run('test-id', 'non-existent-persona-id', 'Input', 'Output', new Date().toISOString());
       }).toThrow(/FOREIGN KEY constraint failed/);
     });
 
@@ -382,19 +406,21 @@ describe('Persona Database Integration Tests', () => {
       const judgeModelId = createTestModelConfig(db, 'anthropic');
 
       expect(() => {
-        db.prepare(`
+        db.prepare(
+          `
           INSERT INTO training_iterations (
             id, persona_id, iteration_number, judge_model_id,
             judge_prompt_text, status, started_at
           ) VALUES (?, ?, ?, ?, ?, ?, ?)
-        `).run(
+        `
+        ).run(
           'test-id',
           'non-existent-persona-id',
           1,
           judgeModelId,
           'Prompt',
           'in_progress',
-          new Date().toISOString(),
+          new Date().toISOString()
         );
       }).toThrow(/FOREIGN KEY constraint failed/);
     });
@@ -405,22 +431,24 @@ describe('Persona Database Integration Tests', () => {
       const pairs = createTrainingPairs(
         persona.id,
         [{ input: 'Input', expected_output: 'Output' }],
-        db,
+        db
       );
 
       expect(() => {
-        db.prepare(`
+        db.prepare(
+          `
           INSERT INTO judge_decisions (
             id, iteration_id, training_pair_id, generated_output,
             judge_decision, created_at
           ) VALUES (?, ?, ?, ?, ?, ?)
-        `).run(
+        `
+        ).run(
           'test-id',
           'non-existent-iteration-id',
           pairs[0].id,
           'Generated',
           'agree',
-          new Date().toISOString(),
+          new Date().toISOString()
         );
       }).toThrow(/FOREIGN KEY constraint failed/);
     });
@@ -429,11 +457,13 @@ describe('Persona Database Integration Tests', () => {
       const db = getTestDatabase();
 
       expect(() => {
-        db.prepare(`
+        db.prepare(
+          `
           INSERT INTO human_reviews (
             id, judge_decision_id, human_decision, created_at
           ) VALUES (?, ?, ?, ?)
-        `).run('test-id', 'non-existent-decision-id', 'agree', new Date().toISOString());
+        `
+        ).run('test-id', 'non-existent-decision-id', 'agree', new Date().toISOString());
       }).toThrow(/FOREIGN KEY constraint failed/);
     });
   });
@@ -456,7 +486,7 @@ describe('Persona Database Integration Tests', () => {
           { input: 'Query 4', expected_output: 'Response 4' },
           { input: 'Query 5', expected_output: 'Response 5' },
         ],
-        db,
+        db
       );
 
       expect(pairs).toHaveLength(5);
@@ -467,7 +497,7 @@ describe('Persona Database Integration Tests', () => {
         1,
         persona.judge_model_id,
         'Initial judge prompt',
-        db,
+        db
       );
 
       expect(iteration1.iteration_number).toBe(1);
@@ -484,7 +514,7 @@ describe('Persona Database Integration Tests', () => {
           0.85 + index * 0.02,
           `Reasoning for decision ${index + 1}`,
           undefined,
-          db,
+          db
         );
       });
 
@@ -501,7 +531,7 @@ describe('Persona Database Integration Tests', () => {
             human_confidence: 0.9,
             human_notes: 'Judge was incorrect',
           },
-          db,
+          db
         );
       });
 
@@ -522,7 +552,7 @@ describe('Persona Database Integration Tests', () => {
           cohens_kappa: 0.5,
           accuracy: 0.6,
         },
-        db,
+        db
       );
 
       expect(metrics.f1_score).toBe(0.75);
@@ -534,7 +564,7 @@ describe('Persona Database Integration Tests', () => {
         'Initial judge prompt',
         'First iteration baseline',
         'human',
-        db,
+        db
       );
 
       // 8. Start second iteration with improved prompt
@@ -543,7 +573,7 @@ describe('Persona Database Integration Tests', () => {
         2,
         persona.judge_model_id,
         'Improved judge prompt based on feedback',
-        db,
+        db
       );
 
       expect(iteration2.iteration_number).toBe(2);
@@ -555,7 +585,7 @@ describe('Persona Database Integration Tests', () => {
         'Improved judge prompt based on feedback',
         'Addressed false negatives from iteration 1',
         'ai',
-        db,
+        db
       );
 
       // Verify full history
@@ -579,7 +609,7 @@ describe('Persona Database Integration Tests', () => {
         persona.judge_model_id,
         persona.prompt_engineer_model_id,
         persona.task_model_id,
-        db,
+        db
       );
 
       const state = getTrainingLoopState(sessionId, db);
@@ -588,9 +618,33 @@ describe('Persona Database Integration Tests', () => {
       expect(state?.current_iteration).toBe(0);
 
       // Create checkpoints for iterations
-      createCheckpoint(sessionId, 1, 10, JSON.stringify({ f1: 0.7 }), JSON.stringify([]), 'Prompt 1', db);
-      createCheckpoint(sessionId, 2, 10, JSON.stringify({ f1: 0.75 }), JSON.stringify([]), 'Prompt 2', db);
-      createCheckpoint(sessionId, 3, 10, JSON.stringify({ f1: 0.8 }), JSON.stringify([]), 'Prompt 3', db);
+      createCheckpoint(
+        sessionId,
+        1,
+        10,
+        JSON.stringify({ f1: 0.7 }),
+        JSON.stringify([]),
+        'Prompt 1',
+        db
+      );
+      createCheckpoint(
+        sessionId,
+        2,
+        10,
+        JSON.stringify({ f1: 0.75 }),
+        JSON.stringify([]),
+        'Prompt 2',
+        db
+      );
+      createCheckpoint(
+        sessionId,
+        3,
+        10,
+        JSON.stringify({ f1: 0.8 }),
+        JSON.stringify([]),
+        'Prompt 3',
+        db
+      );
 
       const latestCheckpoint = getLatestCheckpoint(sessionId, db);
       expect(latestCheckpoint).toBeDefined();
@@ -606,9 +660,15 @@ describe('Persona Database Integration Tests', () => {
       const pairs = createTrainingPairs(
         persona.id,
         [{ input: 'Input', expected_output: 'Output' }],
-        db,
+        db
       );
-      const iteration = createTrainingIteration(persona.id, 1, persona.judge_model_id, 'Prompt', db);
+      const iteration = createTrainingIteration(
+        persona.id,
+        1,
+        persona.judge_model_id,
+        'Prompt',
+        db
+      );
       const decision = createJudgeDecision(
         iteration.id,
         pairs[0].id,
@@ -617,7 +677,7 @@ describe('Persona Database Integration Tests', () => {
         0.9,
         'R',
         undefined,
-        db,
+        db
       );
 
       // Verify all foreign keys point to existing records
@@ -651,13 +711,15 @@ describe('Persona Database Integration Tests', () => {
         const judgeModelId = createTestModelConfig(db, 'anthropic');
         const promptEngineerModelId = createTestModelConfig(db, 'google');
 
-        db.prepare(`
+        db.prepare(
+          `
           INSERT INTO personas (
             id, name, task_prompt, task_model_id, judge_model_id,
             prompt_engineer_model_id, status, target_f1_score,
             max_iterations, current_iteration, created_at, updated_at
           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `).run(
+        `
+        ).run(
           'another-id',
           persona.name, // Same name - should violate UNIQUE constraint
           'Prompt',
@@ -669,7 +731,7 @@ describe('Persona Database Integration Tests', () => {
           5,
           0,
           new Date().toISOString(),
-          new Date().toISOString(),
+          new Date().toISOString()
         );
       }).toThrow(/UNIQUE constraint failed/);
     });

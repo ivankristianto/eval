@@ -32,7 +32,7 @@ export const ICON_SIZES = {
  */
 export function createIconElement(
   name: IconName,
-  size: keyof typeof ICON_SIZES = 'md',
+  size: keyof typeof ICON_SIZES = 'md'
 ): SVGElement {
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   svg.setAttribute('fill', 'none');

@@ -189,9 +189,9 @@ describe('Database Schema - System Prompt and Temperature', () => {
          VALUES (?, 'Test', 'Test instruction', '[]', 'exact_match')`
       ).run(id);
 
-      const row = db.prepare('SELECT temperature FROM EvaluationTemplate WHERE id = ?').get(
-        id
-      ) as { temperature: number };
+      const row = db.prepare('SELECT temperature FROM EvaluationTemplate WHERE id = ?').get(id) as {
+        temperature: number;
+      };
 
       expect(row.temperature).toBe(0.3);
     });

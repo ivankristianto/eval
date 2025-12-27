@@ -43,7 +43,7 @@ describe('Metrics Edge Cases', () => {
       expect(Number.isNaN(f1)).toBe(false);
     });
 
-    it('should return 0 for Cohen\'s Kappa', () => {
+    it("should return 0 for Cohen's Kappa", () => {
       const kappa = calculateCohensKappa(emptyCm);
       expect(kappa).toBe(0);
       expect(Number.isNaN(kappa)).toBe(false);
@@ -88,7 +88,7 @@ describe('Metrics Edge Cases', () => {
       expect(f1).toBe(1);
     });
 
-    it('should return 1 for Cohen\'s Kappa (perfect agreement)', () => {
+    it("should return 1 for Cohen's Kappa (perfect agreement)", () => {
       const kappa = calculateCohensKappa(allTpCm);
       expect(kappa).toBe(1);
     });
@@ -127,7 +127,7 @@ describe('Metrics Edge Cases', () => {
       expect(accuracy).toBe(0);
     });
 
-    it('should return negative or zero Cohen\'s Kappa', () => {
+    it("should return negative or zero Cohen's Kappa", () => {
       const kappa = calculateCohensKappa(allFpCm);
       expect(kappa).toBeLessThanOrEqual(0);
     });
@@ -184,7 +184,7 @@ describe('Metrics Edge Cases', () => {
       const humanAgreements = [true, false]; // Missing one element
 
       expect(() => buildConfusionMatrix(judgeAgreements, humanAgreements)).toThrow(
-        'Judge and human agreement arrays must have the same length',
+        'Judge and human agreement arrays must have the same length'
       );
     });
   });
@@ -284,7 +284,7 @@ describe('Metrics Edge Cases', () => {
       expect(metrics.f1_score).toBeGreaterThan(0.8);
     });
 
-    it('should meet spec target: Cohen\'s Kappa >= 0.66', () => {
+    it("should meet spec target: Cohen's Kappa >= 0.66", () => {
       // Design a confusion matrix that achieves substantial agreement
       const cm: ConfusionMatrix = {
         true_positives: 70,

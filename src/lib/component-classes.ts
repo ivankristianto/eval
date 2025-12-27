@@ -138,8 +138,10 @@ export const CARD_STYLES = {
  * Drawer style constants
  */
 export const DRAWER_STYLES = {
-  backdrop: 'fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] hidden opacity-0 transition-opacity duration-300',
-  panel: 'fixed top-0 right-0 h-full bg-base-100 z-[70] transform translate-x-full transition-transform duration-300 ease-in-out overflow-hidden flex flex-col',
+  backdrop:
+    'fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] hidden opacity-0 transition-opacity duration-300',
+  panel:
+    'fixed top-0 right-0 h-full bg-base-100 z-[70] transform translate-x-full transition-transform duration-300 ease-in-out overflow-hidden flex flex-col',
   header: 'flex items-center justify-between p-6 border-b border-gold-light',
   content: 'flex-1 overflow-y-auto p-6',
   footer: 'p-6 border-t border-gold-light',
@@ -291,7 +293,7 @@ export function getCardClasses(className = ''): string {
  */
 export function getTableClasses(
   variant?: keyof typeof TABLE_STYLES.variants,
-  className = '',
+  className = ''
 ): string {
   return cn(TABLE_STYLES.base, variant && TABLE_STYLES.variants[variant], className);
 }

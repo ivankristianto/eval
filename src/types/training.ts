@@ -154,10 +154,10 @@ export interface CreateHumanReviewInput {
  * ConfusionMatrix - 2x2 matrix for binary classification
  */
 export interface ConfusionMatrix {
-  true_positives: number;   // Judge agreed, human agreed
-  true_negatives: number;   // Judge disagreed, human disagreed
-  false_positives: number;  // Judge agreed, human disagreed
-  false_negatives: number;  // Judge disagreed, human agreed
+  true_positives: number; // Judge agreed, human agreed
+  true_negatives: number; // Judge disagreed, human disagreed
+  false_positives: number; // Judge agreed, human disagreed
+  false_negatives: number; // Judge disagreed, human agreed
 }
 
 /**
@@ -238,8 +238,8 @@ export interface TrainingLoopCheckpoint {
   session_id: string;
   iteration_number: number;
   evaluated_result_count: number;
-  metrics_snapshot: string;  // JSON-serialized CheckpointSnapshot
-  evaluated_result_ids: string;  // JSON array
+  metrics_snapshot: string; // JSON-serialized CheckpointSnapshot
+  evaluated_result_ids: string; // JSON array
   current_prompt: string;
   created_at: string;
 }

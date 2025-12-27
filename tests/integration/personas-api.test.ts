@@ -62,7 +62,7 @@ describe('Personas API Integration', () => {
         input.task_model_id,
         input.judge_model_id,
         input.prompt_engineer_model_id,
-        db,
+        db
       );
 
       expect(persona).toBeDefined();
@@ -94,7 +94,7 @@ describe('Personas API Integration', () => {
         'task-model-2',
         'judge-model-2',
         'engineer-model-2',
-        db,
+        db
       );
 
       // Attempt to create duplicate - should throw
@@ -106,7 +106,7 @@ describe('Personas API Integration', () => {
           'task-model-2',
           'judge-model-2',
           'engineer-model-2',
-          db,
+          db
         );
       }).toThrow();
     });
@@ -132,7 +132,7 @@ describe('Personas API Integration', () => {
           'task-model-3',
           'judge-model-3',
           'engineer-model-3',
-          db,
+          db
         );
       }).toThrow();
     });
@@ -156,7 +156,7 @@ describe('Personas API Integration', () => {
         'task-model-4',
         'judge-model-4',
         'engineer-model-4',
-        db,
+        db
       );
 
       expect(persona.description).toBeNull();
@@ -373,10 +373,12 @@ describe('Personas API Integration', () => {
       const persona = createTestPersona(db);
 
       // Create training pairs
-      db.prepare(`
+      db.prepare(
+        `
         INSERT INTO training_pairs (id, persona_id, input, expected_output, created_at)
         VALUES (?, ?, ?, ?, ?)
-      `).run('pair-1', persona.id, 'Input 1', 'Output 1', new Date().toISOString());
+      `
+      ).run('pair-1', persona.id, 'Input 1', 'Output 1', new Date().toISOString());
 
       deletePersona(persona.id, db);
 
@@ -391,17 +393,19 @@ describe('Personas API Integration', () => {
       const persona = createTestPersona(db);
 
       // Create iteration
-      db.prepare(`
+      db.prepare(
+        `
         INSERT INTO training_iterations (id, persona_id, iteration_number, judge_model_id, judge_prompt_text, status, started_at)
         VALUES (?, ?, ?, ?, ?, ?, ?)
-      `).run(
+      `
+      ).run(
         'iter-1',
         persona.id,
         1,
         persona.judge_model_id,
         'Test prompt',
         'in_progress',
-        new Date().toISOString(),
+        new Date().toISOString()
       );
 
       deletePersona(persona.id, db);
@@ -435,7 +439,7 @@ describe('Personas API Integration', () => {
         'valid-task',
         'valid-judge',
         'valid-engineer',
-        db,
+        db
       );
 
       expect(persona).toBeDefined();
@@ -462,7 +466,7 @@ describe('Personas API Integration', () => {
           'inactive-task',
           'active-judge',
           'active-engineer',
-          db,
+          db
         );
       }).toThrow();
     });

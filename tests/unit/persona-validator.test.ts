@@ -197,10 +197,20 @@ describe('Persona Validator', () => {
       taskModel.run('engineer-model', 'google', 'Gemini-Pro', 'encrypted-key-3', 1);
 
       // Create existing persona
-      db.prepare(`
+      db.prepare(
+        `
         INSERT INTO personas (id, name, task_prompt, task_model_id, judge_model_id, prompt_engineer_model_id, status)
         VALUES (?, ?, ?, ?, ?, ?, ?)
-      `).run('existing-persona', 'Existing Persona', 'Prompt', 'task-model', 'judge-model', 'engineer-model', 'draft');
+      `
+      ).run(
+        'existing-persona',
+        'Existing Persona',
+        'Prompt',
+        'task-model',
+        'judge-model',
+        'engineer-model',
+        'draft'
+      );
 
       const input: PersonaCreationInput = {
         name: 'Existing Persona',
@@ -229,10 +239,20 @@ describe('Persona Validator', () => {
       taskModel.run('engineer-model', 'google', 'Gemini-Pro', 'encrypted-key-3', 1);
 
       // Create existing persona with different name
-      db.prepare(`
+      db.prepare(
+        `
         INSERT INTO personas (id, name, task_prompt, task_model_id, judge_model_id, prompt_engineer_model_id, status)
         VALUES (?, ?, ?, ?, ?, ?, ?)
-      `).run('existing-persona', 'Existing Persona', 'Prompt', 'task-model', 'judge-model', 'engineer-model', 'draft');
+      `
+      ).run(
+        'existing-persona',
+        'Existing Persona',
+        'Prompt',
+        'task-model',
+        'judge-model',
+        'engineer-model',
+        'draft'
+      );
 
       const input: PersonaCreationInput = {
         name: 'New Unique Persona',
@@ -272,7 +292,7 @@ describe('Persona Validator', () => {
       const result = validatePersonaCreation(input, db);
 
       expect(result.isValid).toBe(false);
-      expect(result.errors.some(e => e.includes('different providers'))).toBe(true);
+      expect(result.errors.some((e) => e.includes('different providers'))).toBe(true);
     });
 
     it('should fail validation when task and judge models are from the same provider', () => {
@@ -298,7 +318,7 @@ describe('Persona Validator', () => {
       const result = validatePersonaCreation(input, db);
 
       expect(result.isValid).toBe(false);
-      expect(result.errors.some(e => e.includes('different providers'))).toBe(true);
+      expect(result.errors.some((e) => e.includes('different providers'))).toBe(true);
     });
 
     it('should fail validation when model ID does not exist', () => {
@@ -315,7 +335,9 @@ describe('Persona Validator', () => {
       const result = validatePersonaCreation(input, db);
 
       expect(result.isValid).toBe(false);
-      expect(result.errors.some(e => e.includes('not found') || e.includes('invalid'))).toBe(true);
+      expect(result.errors.some((e) => e.includes('not found') || e.includes('invalid'))).toBe(
+        true
+      );
     });
 
     it('should fail validation when a model is inactive', () => {
@@ -341,7 +363,9 @@ describe('Persona Validator', () => {
       const result = validatePersonaCreation(input, db);
 
       expect(result.isValid).toBe(false);
-      expect(result.errors.some(e => e.includes('inactive') || e.includes('not active'))).toBe(true);
+      expect(result.errors.some((e) => e.includes('inactive') || e.includes('not active'))).toBe(
+        true
+      );
     });
   });
 
@@ -359,7 +383,7 @@ describe('Persona Validator', () => {
       expect(result.isValid).toBe(false);
       expect(result.errors.length).toBeGreaterThan(0);
       // All error messages should be non-empty strings
-      result.errors.forEach(error => {
+      result.errors.forEach((error) => {
         expect(error).toBeTruthy();
         expect(typeof error).toBe('string');
         expect(error.length).toBeGreaterThan(5);

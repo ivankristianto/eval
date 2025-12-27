@@ -10,9 +10,7 @@ test.describe('Persona Creation Workflow', () => {
     await page.goto('/personas');
 
     // Check page title (main title, not empty state title)
-    await expect(
-      page.locator('h1.text-5xl.text-gradient-gold:has-text("Personas")')
-    ).toBeVisible();
+    await expect(page.locator('h1.text-5xl.text-gradient-gold:has-text("Personas")')).toBeVisible();
     await expect(page.locator('.breadcrumbs')).toBeVisible();
     await expect(page.locator('.breadcrumbs a:has-text("Home")')).toBeVisible();
 
@@ -180,9 +178,7 @@ test.describe('Persona Creation Workflow', () => {
 
       // HTML5 validation should prevent submission
       const nameInput = page.locator('input[name="name"]');
-      const isInvalid = await nameInput.evaluate(
-        (el: HTMLInputElement) => !el.validity.valid
-      );
+      const isInvalid = await nameInput.evaluate((el: HTMLInputElement) => !el.validity.valid);
       expect(isInvalid).toBe(true);
     }
   });
@@ -226,8 +222,6 @@ test.describe('Persona API Integration', () => {
     await page.goto('/personas');
 
     // Page should load even if API has issues (check main title)
-    await expect(
-      page.locator('h1.text-5xl.text-gradient-gold:has-text("Personas")')
-    ).toBeVisible();
+    await expect(page.locator('h1.text-5xl.text-gradient-gold:has-text("Personas")')).toBeVisible();
   });
 });

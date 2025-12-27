@@ -30,7 +30,7 @@ export const POST: APIRoute = async ({ request }) => {
         {
           status: 400,
           headers: { 'Content-Type': 'application/json' },
-        },
+        }
       );
     }
 
@@ -41,7 +41,7 @@ export const POST: APIRoute = async ({ request }) => {
       body.task_prompt,
       body.task_model_id,
       body.judge_model_id,
-      body.prompt_engineer_model_id,
+      body.prompt_engineer_model_id
     );
 
     return new Response(JSON.stringify(persona), {
@@ -62,7 +62,7 @@ export const POST: APIRoute = async ({ request }) => {
           {
             status: 400,
             headers: { 'Content-Type': 'application/json' },
-          },
+          }
         );
       }
 
@@ -75,7 +75,7 @@ export const POST: APIRoute = async ({ request }) => {
           {
             status: 400,
             headers: { 'Content-Type': 'application/json' },
-          },
+          }
         );
       }
     }
@@ -89,7 +89,7 @@ export const POST: APIRoute = async ({ request }) => {
       {
         status: 500,
         headers: { 'Content-Type': 'application/json' },
-      },
+      }
     );
   }
 };
@@ -114,7 +114,7 @@ export const GET: APIRoute = async ({ url }) => {
         {
           status: 400,
           headers: { 'Content-Type': 'application/json' },
-        },
+        }
       );
     }
 
@@ -136,7 +136,7 @@ export const GET: APIRoute = async ({ url }) => {
       {
         status: 500,
         headers: { 'Content-Type': 'application/json' },
-      },
+      }
     );
   }
 };

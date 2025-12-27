@@ -10,7 +10,7 @@ export class TrainingError extends Error {
   constructor(
     message: string,
     public code: string,
-    public details?: unknown,
+    public details?: unknown
   ) {
     super(message);
     this.name = 'TrainingError';
