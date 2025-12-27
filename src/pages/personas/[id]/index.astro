@@ -3,9 +3,10 @@ import Layout from '../../../layouts/Layout.astro';
 import Breadcrumbs from '../../../components/ui/Breadcrumbs.astro';
 import Badge from '../../../components/ui/Badge.astro';
 import TrainingProgress from '../../../components/TrainingProgress.astro';
+import PersonaTabs from '../../../components/PersonaTabs.astro';
 import { getPersona } from '../../../lib/persona-db';
 import { getModels, getDatabase } from '../../../lib/db';
-import type { Persona, JudgePromptVersion } from '../../../types/training';
+import type { Persona } from '../../../types/training';
 
 const { id } = Astro.params;
 
@@ -40,22 +41,6 @@ try {
 
 if (error || !persona) {
   return Astro.redirect('/personas');
-}
-
-// Fetch judge prompt versions for prompts tab
-let promptVersions: JudgePromptVersion[] = [];
-if (Astro.url.searchParams.get('tab') === 'prompts') {
-  try {
-    const promptsResponse = await fetch(
-      `${Astro.url.origin}/api/personas/${id}/prompts`
-    );
-    if (promptsResponse.ok) {
-      const data = await promptsResponse.json();
-      promptVersions = data.prompts || [];
-    }
-  } catch (e) {
-    console.error('Error fetching prompt versions:', e);
-  }
 }
 
 // Fetch current iteration for training-progress tab
@@ -105,6 +90,10 @@ function getStatusVariant(status: string): 'warning' | 'info' | 'success' | 'err
 
 // Get current tab from query param (default: overview)
 const currentTab = Astro.url.searchParams.get('tab') || 'overview';
+
+if (currentTab === 'prompts') {
+  return Astro.redirect(`/personas/${id}/judge-prompts`);
+}
 ---
 
 <Layout title={`${persona.name} - Persona Details`}>
@@ -180,44 +169,16 @@ const currentTab = Astro.url.searchParams.get('tab') || 'overview';
   </div>
 
   <!-- Tabs -->
-  <div class="tabs tabs-boxed bg-base-200 mb-8 animate-reveal delay-100">
-    <a
-      href={`/personas/${id}?tab=overview`}
-      class={`tab tab-lg ${currentTab === 'overview' ? 'tab-active' : ''}`}
-    >
-      Overview
-    </a>
-    <a
-      href={`/personas/${id}/training`}
-      class="tab tab-lg"
-    >
-      Training Data
-    </a>
-    <a
-      href={`/personas/${id}?tab=training-progress`}
-      class={`tab tab-lg ${currentTab === 'training-progress' ? 'tab-active' : ''}`}
-    >
-      Training Progress
-    </a>
-    <a
-      href={`/personas/${id}/metrics`}
-      class="tab tab-lg"
-    >
-      Metrics
-    </a>
-    <a
-      href={`/personas/${id}?tab=prompts`}
-      class={`tab tab-lg ${currentTab === 'prompts' ? 'tab-active' : ''}`}
-    >
-      Judge Prompts
-    </a>
-    <a
-      href={`/personas/${id}?tab=settings`}
-      class={`tab tab-lg ${currentTab === 'settings' ? 'tab-active' : ''}`}
-    >
-      Settings
-    </a>
-  </div>
+  <PersonaTabs
+    personaId={id}
+    activeTab={currentTab === 'overview'
+      ? 'overview'
+      : currentTab === 'training-progress'
+        ? 'training-progress'
+        : currentTab === 'settings'
+          ? 'settings'
+          : 'overview'}
+  />
 
   <!-- Tab Content -->
   {
@@ -304,7 +265,9 @@ const currentTab = Astro.url.searchParams.get('tab') || 'overview';
                 <div class="text-base-content/60 text-sm uppercase tracking-wide mb-2">
                   Prompt Engineer Model
                 </div>
-                <div class="font-mono text-lg">{getModelName(persona.prompt_engineer_model_id)}</div>
+                <div class="font-mono text-lg">
+                  {getModelName(persona.prompt_engineer_model_id)}
+                </div>
               </div>
             </div>
           </div>
@@ -370,10 +333,9 @@ const currentTab = Astro.url.searchParams.get('tab') || 'overview';
                 <label class="label">
                   <span class="label-text font-semibold">Description</span>
                 </label>
-                <textarea
-                  name="description"
-                  class="textarea textarea-bordered w-full h-24"
-                >{persona.description || ''}</textarea>
+                <textarea name="description" class="textarea textarea-bordered w-full h-24">
+                  {persona.description || ''}
+                </textarea>
               </div>
 
               <div class="form-control">
@@ -384,7 +346,9 @@ const currentTab = Astro.url.searchParams.get('tab') || 'overview';
                   name="task_prompt"
                   class="textarea textarea-bordered w-full h-32"
                   required
-                >{persona.task_prompt}</textarea>
+                >
+                  {persona.task_prompt}
+                </textarea>
                 <label class="label">
                   <span class="label-text-alt text-base-content/60">
                     The prompt used to generate outputs that will be judged
@@ -401,156 +365,6 @@ const currentTab = Astro.url.searchParams.get('tab') || 'overview';
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  {
-    currentTab === 'prompts' && (
-      <div class="card bg-base-200 shadow-xl animate-reveal delay-200">
-        <div class="card-body">
-          <h2 class="card-title text-2xl mb-6">Judge Prompt History</h2>
-
-          {promptVersions.length === 0 ? (
-            <div class="alert alert-info">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                class="stroke-current shrink-0 w-6 h-6"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-              <div>
-                <p class="font-semibold">No prompt versions found</p>
-                <p class="text-sm">
-                  Prompt versions will appear here as training iterations progress.
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div class="space-y-4">
-              {promptVersions.map((prompt, index) => (
-                <div class="card bg-base-300 border-l-4 border-l-primary">
-                  <div class="card-body">
-                    <div class="flex items-start justify-between mb-4">
-                      <div class="flex items-center gap-3">
-                        <div class="badge badge-lg badge-primary">
-                          Iteration {prompt.iteration_number}
-                        </div>
-                        <div
-                          class={`badge badge-lg ${
-                            prompt.created_by === 'human' ? 'badge-info' : 'badge-secondary'
-                          }`}
-                        >
-                          {prompt.created_by === 'human' ? (
-                            <>
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                class="h-4 w-4 mr-1"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                              >
-                                <path
-                                  stroke-linecap="round"
-                                  stroke-linejoin="round"
-                                  stroke-width="2"
-                                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                                />
-                              </svg>
-                              Human Created
-                            </>
-                          ) : (
-                            <>
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                class="h-4 w-4 mr-1"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                              >
-                                <path
-                                  stroke-linecap="round"
-                                  stroke-linejoin="round"
-                                  stroke-width="2"
-                                  d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                                />
-                              </svg>
-                              AI Generated
-                            </>
-                          )}
-                        </div>
-                        {index === 0 && (
-                          <div class="badge badge-lg badge-success">Current</div>
-                        )}
-                      </div>
-                      <div class="text-sm text-base-content/60">
-                        {new Date(prompt.created_at).toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
-                      </div>
-                    </div>
-
-                    {prompt.improvement_rationale && (
-                      <div class="mb-4">
-                        <div class="text-sm font-semibold text-base-content/70 mb-2">
-                          Improvement Rationale:
-                        </div>
-                        <div class="bg-base-200 p-3 rounded-lg text-sm">
-                          {prompt.improvement_rationale}
-                        </div>
-                      </div>
-                    )}
-
-                    <div>
-                      <div class="text-sm font-semibold text-base-content/70 mb-2">
-                        Prompt Text:
-                      </div>
-                      <div class="bg-base-100 p-4 rounded-lg font-mono text-sm whitespace-pre-wrap">
-                        {prompt.prompt_text}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          <div class="divider"></div>
-
-          <div class="alert alert-warning">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="stroke-current shrink-0 h-6 w-6"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-              />
-            </svg>
-            <div>
-              <p class="font-semibold">Read-Only View</p>
-              <p class="text-sm">
-                Manual prompt editing and AI-assisted refinement will be available in Phase 2.
-                For now, this view shows your prompt evolution through training iterations.
-              </p>
-            </div>
           </div>
         </div>
       </div>
@@ -670,7 +484,10 @@ const currentTab = Astro.url.searchParams.get('tab') || 'overview';
         window.location.href = `/personas/${personaId}/metrics`;
       } catch (error) {
         console.error('Failed to start training:', error);
-        addToast(`Failed to start training: ${error instanceof Error ? error.message : 'Unknown error'}`, 'error');
+        addToast(
+          `Failed to start training: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          'error'
+        );
         button.disabled = false;
         button.classList.remove('loading');
       }

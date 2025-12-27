@@ -7,6 +7,8 @@
 import Layout from '../../../../layouts/Layout.astro';
 import JudgeDecisionReview from '../../../../components/JudgeDecisionReview.astro';
 import Badge from '../../../../components/ui/Badge.astro';
+import Breadcrumbs from '../../../../components/ui/Breadcrumbs.astro';
+import PersonaTabs from '../../../../components/PersonaTabs.astro';
 import { getDatabase } from '../../../../lib/db';
 
 const { id, iteration } = Astro.params;
@@ -99,8 +101,24 @@ const pendingDecisions = totalDecisions - reviewedDecisions;
 const progressPercentage =
   totalDecisions > 0 ? Math.round((reviewedDecisions / totalDecisions) * 100) : 0;
 
-// Get status variant
-function getStatusVariant(status: string): 'warning' | 'info' | 'success' | 'error' {
+// Helper function to get persona status variant
+function getPersonaStatusVariant(status: string): 'warning' | 'info' | 'success' | 'error' {
+  switch (status) {
+    case 'draft':
+      return 'warning';
+    case 'training':
+      return 'info';
+    case 'trained':
+      return 'success';
+    case 'incomplete':
+      return 'error';
+    default:
+      return 'info';
+  }
+}
+
+// Get iteration status variant
+function getIterationStatusVariant(status: string): 'warning' | 'info' | 'success' | 'error' {
   switch (status) {
     case 'in_progress':
       return 'info';
@@ -114,37 +132,46 @@ function getStatusVariant(status: string): 'warning' | 'info' | 'success' | 'err
       return 'info';
   }
 }
+
+const breadcrumbItems = [
+  { label: 'Home', href: '/' },
+  { label: 'Personas', href: '/personas' },
+  { label: persona.name, href: `/personas/${id}` },
+  { label: `Review Iteration ${iterationNumber}` },
+];
 ---
 
 <Layout title={`Review Iteration ${iterationNumber} - ${persona.name}`}>
-  <!-- Header -->
-  <div class="mb-8">
-    <div class="flex items-center gap-2 mb-4">
-      <a
-        href={`/personas/${id}`}
-        class="btn btn-ghost btn-sm"
-        aria-label="Back to persona"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          class="h-5 w-5"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M15 19l-7-7 7-7"></path>
-        </svg>
-        Back to Persona
-      </a>
-    </div>
+  <Breadcrumbs items={breadcrumbItems} />
 
+  <!-- Header -->
+  <div class="flex items-start justify-between mb-8 animate-reveal">
+    <div class="flex-1">
+      <div class="flex items-center gap-4 mb-4">
+        <h1
+          class="text-4xl md:text-5xl font-display font-semibold tracking-tight text-gradient-gold"
+        >
+          {persona.name}
+        </h1>
+        <Badge variant={getPersonaStatusVariant(persona.status)} size="lg">
+          {persona.status}
+        </Badge>
+      </div>
+      {
+        persona.description && (
+          <p class="text-base-content/70 text-lg max-w-3xl">{persona.description}</p>
+        )
+      }
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <PersonaTabs personaId={id} activeTab="training-progress" />
+
+  <div class="mb-8">
     <h1 class="text-3xl font-bold mb-2">Review Iteration {iterationNumber}</h1>
     <p class="text-base-content/70 mb-4">
-      Persona: <span class="font-semibold">{persona.name}</span>
+      Review judge decisions and provide human feedback to calculate metrics.
     </p>
 
     <!-- Progress Summary -->
@@ -152,10 +179,11 @@ function getStatusVariant(status: string): 'warning' | 'info' | 'success' | 'err
       <div class="card-body">
         <div class="flex items-center justify-between mb-4">
           <h2 class="card-title">Review Progress</h2>
-          <Badge variant={getStatusVariant(iterationData.status)} size="md">
+          <Badge variant={getIterationStatusVariant(iterationData.status)} size="md">
             {iterationData.status}
           </Badge>
         </div>
+
 
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>

@@ -8,6 +8,7 @@ import Layout from '../../../../layouts/Layout.astro';
 import Breadcrumbs from '../../../../components/ui/Breadcrumbs.astro';
 import Badge from '../../../../components/ui/Badge.astro';
 import CSVUploader from '../../../../components/CSVUploader.astro';
+import PersonaTabs from '../../../../components/PersonaTabs.astro';
 import { getPersona } from '../../../../lib/persona-db';
 
 const { id } = Astro.params;
@@ -80,15 +81,7 @@ function getStatusVariant(status: string): 'warning' | 'info' | 'success' | 'err
   </div>
 
   <!-- Tabs -->
-  <div class="tabs tabs-boxed bg-base-200 mb-8 animate-reveal delay-100">
-    <a href={`/personas/${id}?tab=overview`} class="tab tab-lg"> Overview </a>
-    <a href={`/personas/${id}/training`} class="tab tab-lg tab-active"> Training Data </a>
-    <a href={`/personas/${id}?tab=training-progress`} class="tab tab-lg">
-      Training Progress
-    </a>
-    <a href={`/personas/${id}?tab=prompts`} class="tab tab-lg"> Judge Prompts </a>
-    <a href={`/personas/${id}?tab=settings`} class="tab tab-lg"> Settings </a>
-  </div>
+  <PersonaTabs personaId={id} activeTab="training-data" />
 
   <div class="container mx-auto">
     <!-- Upload Section -->

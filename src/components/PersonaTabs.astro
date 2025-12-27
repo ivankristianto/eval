@@ -1,0 +1,51 @@
+---
+/**
+ * PersonaTabs Component
+ * Unified navigation tabs for persona detail pages
+ */
+interface Props {
+  personaId: string;
+  activeTab: 'overview' | 'training-data' | 'training-progress' | 'metrics' | 'judge-prompts' | 'settings';
+}
+
+const { personaId, activeTab } = Astro.props;
+---
+
+<div class="tabs tabs-boxed bg-base-200 mb-8 animate-reveal delay-100">
+  <a
+    href={`/personas/${personaId}?tab=overview`}
+    class={`tab tab-lg ${activeTab === 'overview' ? 'tab-active' : ''}`}
+  >
+    Overview
+  </a>
+  <a
+    href={`/personas/${personaId}/training`}
+    class={`tab tab-lg ${activeTab === 'training-data' ? 'tab-active' : ''}`}
+  >
+    Training Data
+  </a>
+  <a
+    href={`/personas/${personaId}?tab=training-progress`}
+    class={`tab tab-lg ${activeTab === 'training-progress' ? 'tab-active' : ''}`}
+  >
+    Training Progress
+  </a>
+  <a
+    href={`/personas/${personaId}/metrics`}
+    class={`tab tab-lg ${activeTab === 'metrics' ? 'tab-active' : ''}`}
+  >
+    Metrics
+  </a>
+  <a
+    href={`/personas/${personaId}/judge-prompts`}
+    class={`tab tab-lg ${activeTab === 'judge-prompts' ? 'tab-active' : ''}`}
+  >
+    Judge Prompts
+  </a>
+  <a
+    href={`/personas/${personaId}?tab=settings`}
+    class={`tab tab-lg ${activeTab === 'settings' ? 'tab-active' : ''}`}
+  >
+    Settings
+  </a>
+</div>

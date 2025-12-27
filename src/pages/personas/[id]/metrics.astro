@@ -8,6 +8,8 @@ import Layout from '../../../layouts/Layout.astro';
 import MetricCard from '../../../components/MetricCard.astro';
 import ConfusionMatrix from '../../../components/ConfusionMatrix.astro';
 import Badge from '../../../components/ui/Badge.astro';
+import Breadcrumbs from '../../../components/ui/Breadcrumbs.astro';
+import PersonaTabs from '../../../components/PersonaTabs.astro';
 import { getDatabase } from '../../../lib/db';
 
 const { id } = Astro.params;
@@ -109,8 +111,24 @@ const accuracyTrend = getTrend(
   previousIteration?.accuracy ?? null
 );
 
-// Get status variant
-function getStatusVariant(status: string): 'warning' | 'info' | 'success' | 'error' {
+// Helper function to get persona status variant
+function getPersonaStatusVariant(status: string): 'warning' | 'info' | 'success' | 'error' {
+  switch (status) {
+    case 'draft':
+      return 'warning';
+    case 'training':
+      return 'info';
+    case 'trained':
+      return 'success';
+    case 'incomplete':
+      return 'error';
+    default:
+      return 'info';
+  }
+}
+
+// Get iteration status variant
+function getIterationStatusVariant(status: string): 'warning' | 'info' | 'success' | 'error' {
   switch (status) {
     case 'in_progress':
       return 'info';
@@ -124,40 +142,46 @@ function getStatusVariant(status: string): 'warning' | 'info' | 'success' | 'err
       return 'info';
   }
 }
+
+const breadcrumbItems = [
+  { label: 'Home', href: '/' },
+  { label: 'Personas', href: '/personas' },
+  { label: persona.name, href: `/personas/${id}` },
+  { label: 'Metrics' },
+];
 ---
 
 <Layout title={`Metrics - ${persona.name}`}>
-  <!-- Header -->
-  <div class="mb-8">
-    <div class="flex items-center gap-2 mb-4">
-      <a href={`/personas/${id}`} class="btn btn-ghost btn-sm" aria-label="Back to persona">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          class="h-5 w-5"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M15 19l-7-7 7-7"></path>
-        </svg>
-        Back to Persona
-      </a>
-    </div>
+  <Breadcrumbs items={breadcrumbItems} />
 
-    <h1 class="text-3xl font-bold mb-2">Training Metrics</h1>
-    <p class="text-base-content/70">
-      Persona: <span class="font-semibold">{persona.name}</span>
-    </p>
+  <!-- Header -->
+  <div class="flex items-start justify-between mb-8 animate-reveal">
+    <div class="flex-1">
+      <div class="flex items-center gap-4 mb-4">
+        <h1
+          class="text-4xl md:text-5xl font-display font-semibold tracking-tight text-gradient-gold"
+        >
+          {persona.name}
+        </h1>
+        <Badge variant={getPersonaStatusVariant(persona.status)} size="lg">
+          {persona.status}
+        </Badge>
+      </div>
+      {
+        persona.description && (
+          <p class="text-base-content/70 text-lg max-w-3xl">{persona.description}</p>
+        )
+      }
+    </div>
   </div>
+
+  <!-- Tabs -->
+  <PersonaTabs personaId={id} activeTab="metrics" />
 
   <!-- Current Metrics Summary -->
   {
     latestMetrics ? (
-      <div class="mb-8">
+      <div class="mb-8 animate-reveal delay-200">
         <h2 class="text-xl font-semibold mb-4">
           Latest Metrics (Iteration {latestIterationWithMetrics.iteration_number})
         </h2>
@@ -231,7 +255,7 @@ function getStatusVariant(status: string): 'warning' | 'info' | 'success' | 'err
         </div>
       </div>
     ) : (
-      <div class="alert alert-info mb-8">
+      <div class="alert alert-info mb-8 animate-reveal delay-200">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           fill="none"
@@ -251,7 +275,7 @@ function getStatusVariant(status: string): 'warning' | 'info' | 'success' | 'err
   }
 
   <!-- Iteration History -->
-  <div>
+  <div class="animate-reveal delay-300">
     <h2 class="text-xl font-semibold mb-4">Iteration History</h2>
 
     {
@@ -293,7 +317,7 @@ function getStatusVariant(status: string): 'warning' | 'info' | 'success' | 'err
                 <tr>
                   <td class="font-mono font-semibold">{iteration.iteration_number}</td>
                   <td>
-                    <Badge variant={getStatusVariant(iteration.status)} size="sm">
+                    <Badge variant={getIterationStatusVariant(iteration.status)} size="sm">
                       {iteration.status}
                     </Badge>
                   </td>
