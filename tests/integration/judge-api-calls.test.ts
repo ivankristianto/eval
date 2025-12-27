@@ -6,7 +6,6 @@
 import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
 import { evaluateOutput, storeJudgeDecision } from '../../src/lib/judge-evaluator';
 import { getTestDatabase, initializeTestDatabase, cleanTestDatabase } from '../setup';
-import { v4 as uuidv4 } from 'uuid';
 
 describe('Judge API Integration', () => {
   let db: ReturnType<typeof getTestDatabase>;

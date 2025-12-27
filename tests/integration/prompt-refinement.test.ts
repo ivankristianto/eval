@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { refineJudgePrompt, type PromptRefinementResult } from '../../src/lib/prompt-engineer';
+import { refineJudgePrompt } from '../../src/lib/prompt-engineer';
 import type { FailureAnalysisContext } from '../../src/lib/failure-analysis';
 
 // Mock the API clients

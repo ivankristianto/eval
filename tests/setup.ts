@@ -24,6 +24,7 @@ let testDb: Database.Database | null = null;
 
 /**
  * Get or create test database
+ * @returns The test database instance
  */
 export function getTestDatabase(): Database.Database {
   if (!testDb) {
@@ -85,6 +86,9 @@ export function closeTestDatabase(): void {
 
 /**
  * Create a test model configuration
+ * @param db
+ * @param provider
+ * @returns The ID of the created model configuration
  */
 export function createTestModelConfig(db: Database.Database, provider: string = 'openai'): string {
   const id = uuidv4();
@@ -99,6 +103,9 @@ export function createTestModelConfig(db: Database.Database, provider: string = 
 
 /**
  * Create test persona fixture
+ * @param db
+ * @param overrides
+ * @returns The created persona object
  */
 export function createTestPersona(
   db: Database.Database,
@@ -175,6 +182,10 @@ export function createTestPersona(
 
 /**
  * Create test training pairs
+ * @param db
+ * @param personaId
+ * @param count
+ * @returns Array of created training pairs
  */
 export function createTestTrainingPairs(
   db: Database.Database,
@@ -202,6 +213,11 @@ export function createTestTrainingPairs(
 
 /**
  * Create test training iteration
+ * @param db
+ * @param personaId
+ * @param iterationNumber
+ * @param judgePromptText
+ * @returns The created training iteration object
  */
 export function createTestIteration(
   db: Database.Database,

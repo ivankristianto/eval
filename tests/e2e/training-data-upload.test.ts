@@ -6,7 +6,7 @@
 import { test, expect } from '@playwright/test';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { writeFileSync, mkdirSync } from 'fs';
+import { writeFileSync } from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);

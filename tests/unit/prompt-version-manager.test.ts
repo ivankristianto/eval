@@ -120,9 +120,9 @@ describe('Prompt Version Manager', () => {
     const prompt2 = 'Evaluate if the response is semantically equivalent to the expected output';
 
     await storePromptVersion(personaId, 1, prompt1, 'First', 'human', db);
-    const id2 = await storePromptVersion(personaId, 2, prompt2, 'Second', 'ai', db);
+    const _id2 = await storePromptVersion(personaId, 2, prompt2, 'Second', 'ai', db);
 
-    expect(id2).toBeDefined();
+    expect(_id2).toBeDefined();
 
     const versions = db
       .prepare('SELECT * FROM judge_prompt_versions WHERE persona_id = ?')
@@ -186,7 +186,7 @@ describe('Prompt Version Manager', () => {
   });
 
   it('should generate diff between two versions', async () => {
-    const id1 = await storePromptVersion(
+    const _id1 = await storePromptVersion(
       personaId,
       1,
       'Evaluate accuracy',
@@ -194,7 +194,7 @@ describe('Prompt Version Manager', () => {
       'human',
       db
     );
-    const id2 = await storePromptVersion(
+    const _id2 = await storePromptVersion(
       personaId,
       2,
       'Evaluate accuracy and completeness',
@@ -203,7 +203,7 @@ describe('Prompt Version Manager', () => {
       db
     );
 
-    const diff = await getPromptDiff(id1!, id2!, db);
+    const diff = await getPromptDiff(_id1!, _id2!, db);
 
     expect(diff.before).toBe('Evaluate accuracy');
     expect(diff.after).toBe('Evaluate accuracy and completeness');
@@ -213,8 +213,8 @@ describe('Prompt Version Manager', () => {
   it('should handle diff with identical versions', async () => {
     const promptText = 'Evaluate accuracy';
 
-    const id1 = await storePromptVersion(personaId, 1, promptText, 'First', 'human', db);
-    const id2 = await storePromptVersion(
+    const _id1 = await storePromptVersion(personaId, 1, promptText, 'First', 'human', db);
+    const _id2 = await storePromptVersion(
       personaId,
       3,
       'Different prompt',
@@ -252,8 +252,8 @@ describe('Prompt Version Manager', () => {
   });
 
   it('should support both human and ai created_by values', async () => {
-    const id1 = await storePromptVersion(personaId, 1, 'Prompt 1', 'Human', 'human', db);
-    const id2 = await storePromptVersion(personaId, 2, 'Prompt 2', 'AI', 'ai', db);
+    const _id1 = await storePromptVersion(personaId, 1, 'Prompt 1', 'Human', 'human', db);
+    const _id2 = await storePromptVersion(personaId, 2, 'Prompt 2', 'AI', 'ai', db);
 
     const history = await getPromptHistory(personaId, db);
 

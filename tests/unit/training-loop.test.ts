@@ -3,7 +3,7 @@
  * Tests the IterativeTrainingLoop class for managing training iterations
  */
 
-import { describe, it, expect, beforeAll, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
 import { IterativeTrainingLoop } from '../../src/lib/training-loop';
 import { getTestDatabase, initializeTestDatabase, cleanTestDatabase } from '../setup';
 import { v4 as uuidv4 } from 'uuid';

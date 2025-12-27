@@ -6,7 +6,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { getDatabase } from '../../src/lib/db';
 import type { Database } from 'better-sqlite3';
-import { analyzeIterationFailures, type FailureAnalysisContext } from '../../src/lib/failure-analysis';
+import { analyzeIterationFailures } from '../../src/lib/failure-analysis';
 import { v4 as uuidv4 } from 'uuid';
 
 describe('Failure Analysis', () => {

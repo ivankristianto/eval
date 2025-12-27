@@ -8,14 +8,14 @@ import { evaluateOutput, parseJudgeResponse } from '../../src/lib/judge-evaluato
 import { getTestDatabase, initializeTestDatabase, cleanTestDatabase } from '../setup';
 
 describe('Judge Evaluator', () => {
-  let db: ReturnType<typeof getTestDatabase>;
+  let _db: ReturnType<typeof getTestDatabase>;
 
   beforeAll(() => {
     initializeTestDatabase();
   });
 
   beforeEach(() => {
-    db = getTestDatabase();
+    _db = getTestDatabase();
     cleanTestDatabase();
   });
 
