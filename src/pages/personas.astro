@@ -175,16 +175,35 @@ const personaIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 te
     });
   });
 
-  // Start training buttons (placeholder for now)
+  // Start training buttons
   document.querySelectorAll('.start-training-btn').forEach((btn) => {
-    btn.addEventListener('click', (e) => {
-      const target = e.target as HTMLButtonElement;
-      const personaId = target.dataset.personaId;
+    btn.addEventListener('click', async (e) => {
+      const button = e.currentTarget as HTMLButtonElement;
+      const personaId = button.dataset.personaId;
 
       if (!personaId) return;
 
-      // Navigate to persona detail page where training can be started
-      window.location.href = `/personas/${personaId}`;
+      button.disabled = true;
+      button.classList.add('loading');
+
+      try {
+        const response = await fetch(`/api/personas/${personaId}/training/start`, {
+          method: 'POST',
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || 'Failed to start training');
+        }
+
+        // Redirect to metrics/training page
+        window.location.href = `/personas/${personaId}/metrics`;
+      } catch (error) {
+        console.error('Failed to start training:', error);
+        addToast(`Failed to start training: ${error instanceof Error ? error.message : 'Unknown error'}`, 'error');
+        button.disabled = false;
+        button.classList.remove('loading');
+      }
     });
   });
 </script>

@@ -138,6 +138,25 @@ const breadcrumbItems = [
                 >
               </label>
             </div>
+
+            <div class="form-control">
+              <label class="label">
+                <span class="label-text font-semibold"
+                  >Initial Judge Prompt <span class="text-error">*</span></span
+                >
+              </label>
+              <textarea
+                name="initial_judge_prompt"
+                placeholder="e.g., Evaluate if the response is professional, accurate, and helpful. Respond with 'agree' if it meets the criteria, or 'disagree' if it does not."
+                class="textarea textarea-bordered w-full h-32"
+                rows="5"
+                required></textarea>
+              <label class="label">
+                <span class="label-text-alt"
+                  >The initial evaluation criteria for the judge. This will be refined during training.</span
+                >
+              </label>
+            </div>
           </div>
 
           <!-- Model Configuration -->
@@ -508,6 +527,7 @@ const breadcrumbItems = [
       name: formData.get('name') as string,
       description: (formData.get('description') as string) || null,
       task_prompt: formData.get('task_prompt') as string,
+      initial_judge_prompt: formData.get('initial_judge_prompt') as string,
       task_model_id: formData.get('task_model_id') as string,
       judge_model_id: formData.get('judge_model_id') as string,
       prompt_engineer_model_id: formData.get('prompt_engineer_model_id') as string,

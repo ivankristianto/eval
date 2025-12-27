@@ -1,0 +1,333 @@
+---
+/**
+ * JudgeDecisionReview component for displaying judge decisions and collecting human feedback
+ *
+ * @param decision - Decision object with training pair, judge output, and review status
+ * @param personaId - Persona ID for API calls
+ * @param iterationNumber - Iteration number for API calls
+ */
+import Badge from './ui/Badge.astro';
+import type { JudgeDecisionType, HumanDecisionType } from '../types/training';
+
+export interface DecisionData {
+  decision_id: string;
+  training_pair: {
+    id: string;
+    input: string;
+    expected_output: string;
+  };
+  judge: {
+    generated_output: string;
+    decision: JudgeDecisionType;
+    confidence: number | null;
+    reasoning: string | null;
+    created_at: string;
+  };
+  human_review: {
+    id: string;
+    decision: HumanDecisionType;
+    confidence: number | null;
+    notes: string | null;
+    created_at: string;
+  } | null;
+}
+
+export interface Props {
+  decision: DecisionData;
+  personaId: string;
+  iterationNumber: number;
+}
+
+const { decision, personaId, iterationNumber } = Astro.props;
+
+// Helper to get badge variant based on decision
+function getDecisionVariant(
+  judgeDecision: JudgeDecisionType
+): 'success' | 'error' {
+  return judgeDecision === 'agree' ? 'success' : 'error';
+}
+
+// Check if human review exists
+const hasReview = decision.human_review !== null;
+const humanDecision = decision.human_review?.decision;
+const humanNotes = decision.human_review?.notes;
+const humanConfidence = decision.human_review?.confidence;
+---
+
+<div
+  class="card bg-base-200 shadow-lg"
+  data-decision-id={decision.decision_id}
+>
+  <div class="card-body">
+    <!-- Training Pair Info -->
+    <div class="mb-4">
+      <h4 class="text-sm font-semibold text-base-content/60 uppercase tracking-wide mb-2">
+        Input
+      </h4>
+      <div class="bg-base-300 rounded-lg p-3">
+        <p class="text-sm whitespace-pre-wrap">{decision.training_pair.input}</p>
+      </div>
+    </div>
+
+    <!-- Expected Output -->
+    <div class="mb-4">
+      <h4 class="text-sm font-semibold text-base-content/60 uppercase tracking-wide mb-2">
+        Expected Output (Ground Truth)
+      </h4>
+      <div class="bg-base-300 rounded-lg p-3">
+        <p class="text-sm whitespace-pre-wrap">{decision.training_pair.expected_output}</p>
+      </div>
+      <div class="text-xs text-base-content/50 mt-1">
+        The correct answer we're comparing against
+      </div>
+    </div>
+
+    <!-- Task Model Output -->
+    <div class="mb-4">
+      <h4 class="text-sm font-semibold text-base-content/60 uppercase tracking-wide mb-2">
+        Task Model Output
+      </h4>
+      <div class="bg-base-300 rounded-lg p-3">
+        <p class="text-sm whitespace-pre-wrap">{decision.judge.generated_output}</p>
+      </div>
+      <div class="text-xs text-base-content/50 mt-1">
+        What the task model generated for the input above
+      </div>
+    </div>
+
+    <!-- Judge Decision -->
+    <div class="flex items-center gap-4 mb-4 pb-4 border-b border-base-content/10">
+      <div>
+        <div class="text-xs text-base-content/60 uppercase tracking-wide mb-1">
+          Judge Decision
+        </div>
+        <Badge variant={getDecisionVariant(decision.judge.decision)} size="lg">
+          {decision.judge.decision}
+        </Badge>
+      </div>
+
+      {
+        decision.judge.confidence !== null && (
+          <div>
+            <div class="text-xs text-base-content/60 uppercase tracking-wide mb-1">
+              Confidence
+            </div>
+            <div class="font-mono text-lg font-semibold">
+              {(decision.judge.confidence * 100).toFixed(0)}%
+            </div>
+          </div>
+        )
+      }
+    </div>
+
+    <!-- Judge Reasoning -->
+    {
+      decision.judge.reasoning && (
+        <div class="mb-4">
+          <h4 class="text-sm font-semibold text-base-content/60 uppercase tracking-wide mb-2">
+            Judge's Reasoning
+          </h4>
+          <div class="bg-base-300 rounded-lg p-3">
+            <p class="text-sm whitespace-pre-wrap">{decision.judge.reasoning}</p>
+          </div>
+          <div class="text-xs text-base-content/50 mt-1">
+            Why the judge {decision.judge.decision === 'agree' ? 'agrees' : 'disagrees'} that the task output matches the expected output
+          </div>
+        </div>
+      )
+    }
+
+    <!-- Human Review Form -->
+    {
+      !hasReview && (
+        <div class="mt-6 pt-6 border-t border-base-content/10">
+          <h4 class="text-sm font-semibold text-base-content/60 uppercase tracking-wide mb-4">
+            Your Review
+          </h4>
+
+          <form class="human-review-form space-y-4">
+            <div class="flex gap-4">
+              <label class="flex-1">
+                <input
+                  type="radio"
+                  name={`decision-${decision.decision_id}`}
+                  value="agree"
+                  class="radio radio-success"
+                  required
+                />
+                <span class="ml-2">Agree with Judge</span>
+              </label>
+              <label class="flex-1">
+                <input
+                  type="radio"
+                  name={`decision-${decision.decision_id}`}
+                  value="disagree"
+                  class="radio radio-error"
+                  required
+                />
+                <span class="ml-2">Disagree with Judge</span>
+              </label>
+            </div>
+
+            <div>
+              <label class="label">
+                <span class="label-text">Confidence (Optional)</span>
+              </label>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value="50"
+                class="range range-sm"
+                name="confidence"
+              />
+              <div class="w-full flex justify-between text-xs px-2 mt-1">
+                <span>0%</span>
+                <span class="confidence-value">50%</span>
+                <span>100%</span>
+              </div>
+            </div>
+
+            <div>
+              <label class="label">
+                <span class="label-text">Notes (Optional)</span>
+              </label>
+              <textarea
+                class="textarea textarea-bordered w-full"
+                rows="3"
+                placeholder="Add any notes about your decision..."
+                name="notes"
+              ></textarea>
+            </div>
+
+            <div class="card-actions justify-end">
+              <button
+                type="submit"
+                class="btn btn-primary"
+                data-persona-id={personaId}
+                data-iteration-number={iterationNumber}
+                data-decision-id={decision.decision_id}
+              >
+                Submit Review
+              </button>
+            </div>
+          </form>
+        </div>
+      )
+    }
+
+    <!-- Existing Human Review -->
+    {
+      hasReview && (
+        <div class="mt-6 pt-6 border-t border-base-content/10">
+          <div class="flex items-center justify-between mb-4">
+            <h4 class="text-sm font-semibold text-base-content/60 uppercase tracking-wide">
+              Your Review
+            </h4>
+            <Badge
+              variant={humanDecision === 'agree' ? 'success' : 'error'}
+              size="md"
+            >
+              {humanDecision}
+            </Badge>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4 mb-4">
+            {humanConfidence !== null && (
+              <div>
+                <div class="text-xs text-base-content/60 uppercase tracking-wide mb-1">
+                  Your Confidence
+                </div>
+                <div class="font-mono text-lg font-semibold">
+                  {(humanConfidence * 100).toFixed(0)}%
+                </div>
+              </div>
+            )}
+
+            <div>
+              <div class="text-xs text-base-content/60 uppercase tracking-wide mb-1">
+                Reviewed
+              </div>
+              <div class="text-sm">
+                {new Date(decision.human_review!.created_at).toLocaleString()}
+              </div>
+            </div>
+          </div>
+
+          {humanNotes && (
+            <div class="bg-base-300 rounded-lg p-3">
+              <p class="text-sm whitespace-pre-wrap">{humanNotes}</p>
+            </div>
+          )}
+        </div>
+      )
+    }
+  </div>
+</div>
+
+<script>
+  // Handle confidence slider value display
+  document.querySelectorAll('.range').forEach((slider) => {
+    const updateValue = () => {
+      const value = (slider as HTMLInputElement).value;
+      const valueDisplay = slider.parentElement?.querySelector('.confidence-value');
+      if (valueDisplay) {
+        valueDisplay.textContent = `${value}%`;
+      }
+    };
+
+    slider.addEventListener('input', updateValue);
+    updateValue();
+  });
+
+  // Handle form submissions
+  document.querySelectorAll('.human-review-form').forEach((form) => {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const submitBtn = form.querySelector('button[type="submit"]') as HTMLButtonElement;
+      const personaId = submitBtn.dataset.personaId;
+      const iterationNumber = submitBtn.dataset.iterationNumber;
+      const decisionId = submitBtn.dataset.decisionId;
+
+      // Get form data
+      const formData = new FormData(form as HTMLFormElement);
+      const humanDecision = formData.get(`decision-${decisionId}`) as string;
+      const confidence = parseFloat(formData.get('confidence') as string) / 100;
+      const notes = formData.get('notes') as string;
+
+      // Disable button during submission
+      submitBtn.disabled = true;
+      submitBtn.classList.add('loading');
+
+      try {
+        const response = await fetch(
+          `/api/personas/${personaId}/iterations/${iterationNumber}/feedback`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              decision_id: decisionId,
+              human_decision: humanDecision,
+              human_confidence: confidence,
+              notes: notes || null,
+            }),
+          }
+        );
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || 'Failed to submit review');
+        }
+
+        // Reload page to show updated review
+        window.location.reload();
+      } catch (error) {
+        console.error('Failed to submit review:', error);
+        alert(`Failed to submit review: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        submitBtn.disabled = false;
+        submitBtn.classList.remove('loading');
+      }
+    });
+  });
+</script>

@@ -1,0 +1,265 @@
+---
+/**
+ * Human Review Page
+ * Displays judge decisions for an iteration and collects human feedback
+ * Route: /personas/:id/review/:iteration
+ */
+import Layout from '../../../../layouts/Layout.astro';
+import JudgeDecisionReview from '../../../../components/JudgeDecisionReview.astro';
+import Badge from '../../../../components/ui/Badge.astro';
+import { getDatabase } from '../../../../lib/db';
+
+const { id, iteration } = Astro.params;
+
+if (!id || !iteration) {
+  return Astro.redirect('/personas');
+}
+
+const iterationNumber = parseInt(iteration, 10);
+if (isNaN(iterationNumber)) {
+  return Astro.redirect(`/personas/${id}`);
+}
+
+const db = getDatabase();
+
+// Fetch persona
+const persona = db.prepare('SELECT * FROM personas WHERE id = ?').get(id) as any;
+
+if (!persona) {
+  return Astro.redirect('/personas');
+}
+
+// Fetch iteration
+const iterationData = db
+  .prepare('SELECT * FROM training_iterations WHERE persona_id = ? AND iteration_number = ?')
+  .get(id, iterationNumber) as any;
+
+if (!iterationData) {
+  return Astro.redirect(`/personas/${id}`);
+}
+
+// Fetch all judge decisions with training pair info and human review status
+const decisions = db
+  .prepare(
+    `
+    SELECT
+      jd.id as decision_id,
+      jd.generated_output,
+      jd.judge_decision,
+      jd.judge_confidence,
+      jd.judge_reasoning,
+      jd.created_at as decision_created_at,
+      tp.id as training_pair_id,
+      tp.input,
+      tp.expected_output,
+      hr.id as review_id,
+      hr.human_decision,
+      hr.human_confidence,
+      hr.human_notes,
+      hr.created_at as review_created_at
+    FROM judge_decisions jd
+    JOIN training_pairs tp ON tp.id = jd.training_pair_id
+    LEFT JOIN human_reviews hr ON hr.judge_decision_id = jd.id
+    WHERE jd.iteration_id = ?
+    ORDER BY tp.created_at ASC
+  `
+  )
+  .all(iterationData.id) as any[];
+
+// Format decisions for component
+const formattedDecisions = decisions.map((d) => ({
+  decision_id: d.decision_id,
+  training_pair: {
+    id: d.training_pair_id,
+    input: d.input,
+    expected_output: d.expected_output,
+  },
+  judge: {
+    generated_output: d.generated_output,
+    decision: d.judge_decision,
+    confidence: d.judge_confidence,
+    reasoning: d.judge_reasoning,
+    created_at: d.decision_created_at,
+  },
+  human_review: d.review_id
+    ? {
+        id: d.review_id,
+        decision: d.human_decision,
+        confidence: d.human_confidence,
+        notes: d.human_notes,
+        created_at: d.review_created_at,
+      }
+    : null,
+}));
+
+// Calculate summary
+const totalDecisions = formattedDecisions.length;
+const reviewedDecisions = formattedDecisions.filter((d) => d.human_review !== null).length;
+const pendingDecisions = totalDecisions - reviewedDecisions;
+const progressPercentage =
+  totalDecisions > 0 ? Math.round((reviewedDecisions / totalDecisions) * 100) : 0;
+
+// Get status variant
+function getStatusVariant(status: string): 'warning' | 'info' | 'success' | 'error' {
+  switch (status) {
+    case 'in_progress':
+      return 'info';
+    case 'completed':
+      return 'success';
+    case 'paused':
+      return 'warning';
+    case 'failed':
+      return 'error';
+    default:
+      return 'info';
+  }
+}
+---
+
+<Layout title={`Review Iteration ${iterationNumber} - ${persona.name}`}>
+  <!-- Header -->
+  <div class="mb-8">
+    <div class="flex items-center gap-2 mb-4">
+      <a
+        href={`/personas/${id}`}
+        class="btn btn-ghost btn-sm"
+        aria-label="Back to persona"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-5 w-5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M15 19l-7-7 7-7"></path>
+        </svg>
+        Back to Persona
+      </a>
+    </div>
+
+    <h1 class="text-3xl font-bold mb-2">Review Iteration {iterationNumber}</h1>
+    <p class="text-base-content/70 mb-4">
+      Persona: <span class="font-semibold">{persona.name}</span>
+    </p>
+
+    <!-- Progress Summary -->
+    <div class="card bg-base-200 shadow-lg mb-6">
+      <div class="card-body">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="card-title">Review Progress</h2>
+          <Badge variant={getStatusVariant(iterationData.status)} size="md">
+            {iterationData.status}
+          </Badge>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div>
+            <div class="text-xs text-base-content/60 uppercase tracking-wide mb-1">
+              Total Decisions
+            </div>
+            <div class="text-2xl font-bold font-mono">{totalDecisions}</div>
+          </div>
+
+          <div>
+            <div class="text-xs text-base-content/60 uppercase tracking-wide mb-1">
+              Reviewed
+            </div>
+            <div class="text-2xl font-bold font-mono text-success">
+              {reviewedDecisions}
+            </div>
+          </div>
+
+          <div>
+            <div class="text-xs text-base-content/60 uppercase tracking-wide mb-1">
+              Pending
+            </div>
+            <div class="text-2xl font-bold font-mono text-warning">
+              {pendingDecisions}
+            </div>
+          </div>
+
+          <div>
+            <div class="text-xs text-base-content/60 uppercase tracking-wide mb-1">
+              Progress
+            </div>
+            <div class="text-2xl font-bold font-mono">{progressPercentage}%</div>
+          </div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="mt-4">
+          <progress
+            class="progress progress-success w-full"
+            value={reviewedDecisions}
+            max={totalDecisions}
+          ></progress>
+        </div>
+
+        {
+          pendingDecisions === 0 && (
+            <div class="alert alert-success mt-4">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="stroke-current shrink-0 h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              <span>
+                All decisions have been reviewed! You can now calculate metrics for this iteration.
+              </span>
+            </div>
+          )
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- Decisions List -->
+  {
+    formattedDecisions.length === 0 ? (
+      <div class="alert alert-info">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          class="stroke-current shrink-0 w-6 h-6"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+        </svg>
+        <span>No decisions found for this iteration.</span>
+      </div>
+    ) : (
+      <div class="space-y-6">
+        {formattedDecisions.map((decision, index) => (
+          <div>
+            <div class="text-sm font-semibold text-base-content/60 mb-2">
+              Decision {index + 1} of {totalDecisions}
+            </div>
+            <JudgeDecisionReview
+              decision={decision}
+              personaId={id}
+              iterationNumber={iterationNumber}
+            />
+          </div>
+        ))}
+      </div>
+    )
+  }
+</Layout>

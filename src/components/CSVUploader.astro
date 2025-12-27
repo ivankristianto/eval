@@ -15,7 +15,7 @@ interface Props {
 const { personaId } = Astro.props;
 ---
 
-<div class="csv-uploader card bg-base-200 shadow-xl">
+<div class="csv-uploader card bg-base-200 shadow-xl" data-persona-id={personaId}>
   <div class="card-body">
     <h3 class="card-title text-2xl mb-4">Upload Training Data</h3>
 
@@ -202,8 +202,13 @@ const { personaId } = Astro.props;
   </div>
 </div>
 
-<script define:vars={{ personaId }}>
+<script>
+  // Import toast functionality
   import { addToast } from '../lib/toastStore';
+
+  // Get personaId from data attribute
+  const uploadContainer = document.querySelector('.csv-uploader');
+  const personaId = uploadContainer?.getAttribute('data-persona-id');
 
   const dropZone = document.getElementById('drop-zone');
   const fileInput = document.getElementById('file-input');

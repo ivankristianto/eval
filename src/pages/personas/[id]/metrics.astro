@@ -1,0 +1,331 @@
+---
+/**
+ * Metrics Dashboard Page
+ * Displays training metrics and iteration history for a persona
+ * Route: /personas/:id/metrics
+ */
+import Layout from '../../../layouts/Layout.astro';
+import MetricCard from '../../../components/MetricCard.astro';
+import ConfusionMatrix from '../../../components/ConfusionMatrix.astro';
+import Badge from '../../../components/ui/Badge.astro';
+import { getDatabase } from '../../../lib/db';
+
+const { id } = Astro.params;
+
+if (!id) {
+  return Astro.redirect('/personas');
+}
+
+const db = getDatabase();
+
+// Fetch persona
+const persona = db.prepare('SELECT * FROM personas WHERE id = ?').get(id) as any;
+
+if (!persona) {
+  return Astro.redirect('/personas');
+}
+
+// Fetch all iterations with metrics
+const iterations = db
+  .prepare(
+    `
+    SELECT
+      ti.id,
+      ti.iteration_number,
+      ti.status,
+      ti.total_pairs_evaluated,
+      ti.pairs_reviewed_by_human,
+      ti.started_at,
+      ti.completed_at,
+      im.f1_score,
+      im.precision,
+      im.recall,
+      im.cohens_kappa,
+      im.accuracy,
+      im.true_positives,
+      im.true_negatives,
+      im.false_positives,
+      im.false_negatives
+    FROM training_iterations ti
+    LEFT JOIN iteration_metrics im ON im.iteration_id = ti.id
+    WHERE ti.persona_id = ?
+    ORDER BY ti.iteration_number ASC
+  `
+  )
+  .all(id) as any[];
+
+// Get latest iteration with metrics
+const latestIterationWithMetrics = iterations
+  .filter((i) => i.f1_score !== null)
+  .sort((a, b) => b.iteration_number - a.iteration_number)[0];
+
+// Calculate trends (compare with previous iteration)
+const getPreviousIteration = (currentNum: number) => {
+  return iterations
+    .filter((i) => i.iteration_number < currentNum && i.f1_score !== null)
+    .sort((a, b) => b.iteration_number - a.iteration_number)[0];
+};
+
+function getTrend(
+  currentValue: number | null,
+  previousValue: number | null
+): 'up' | 'down' | 'stable' | undefined {
+  if (currentValue === null || previousValue === null) return undefined;
+
+  const diff = currentValue - previousValue;
+  if (Math.abs(diff) < 0.01) return 'stable';
+  return diff > 0 ? 'up' : 'down';
+}
+
+const latestMetrics = latestIterationWithMetrics
+  ? {
+      f1_score: latestIterationWithMetrics.f1_score,
+      precision: latestIterationWithMetrics.precision,
+      recall: latestIterationWithMetrics.recall,
+      cohens_kappa: latestIterationWithMetrics.cohens_kappa,
+      accuracy: latestIterationWithMetrics.accuracy,
+      confusion_matrix: {
+        true_positives: latestIterationWithMetrics.true_positives,
+        true_negatives: latestIterationWithMetrics.true_negatives,
+        false_positives: latestIterationWithMetrics.false_positives,
+        false_negatives: latestIterationWithMetrics.false_negatives,
+      },
+    }
+  : null;
+
+const previousIteration = latestIterationWithMetrics
+  ? getPreviousIteration(latestIterationWithMetrics.iteration_number)
+  : null;
+
+// Calculate trends
+const f1Trend = getTrend(latestMetrics?.f1_score ?? null, previousIteration?.f1_score ?? null);
+const precisionTrend = getTrend(
+  latestMetrics?.precision ?? null,
+  previousIteration?.precision ?? null
+);
+const recallTrend = getTrend(latestMetrics?.recall ?? null, previousIteration?.recall ?? null);
+const accuracyTrend = getTrend(
+  latestMetrics?.accuracy ?? null,
+  previousIteration?.accuracy ?? null
+);
+
+// Get status variant
+function getStatusVariant(status: string): 'warning' | 'info' | 'success' | 'error' {
+  switch (status) {
+    case 'in_progress':
+      return 'info';
+    case 'completed':
+      return 'success';
+    case 'paused':
+      return 'warning';
+    case 'failed':
+      return 'error';
+    default:
+      return 'info';
+  }
+}
+---
+
+<Layout title={`Metrics - ${persona.name}`}>
+  <!-- Header -->
+  <div class="mb-8">
+    <div class="flex items-center gap-2 mb-4">
+      <a href={`/personas/${id}`} class="btn btn-ghost btn-sm" aria-label="Back to persona">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-5 w-5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M15 19l-7-7 7-7"></path>
+        </svg>
+        Back to Persona
+      </a>
+    </div>
+
+    <h1 class="text-3xl font-bold mb-2">Training Metrics</h1>
+    <p class="text-base-content/70">
+      Persona: <span class="font-semibold">{persona.name}</span>
+    </p>
+  </div>
+
+  <!-- Current Metrics Summary -->
+  {
+    latestMetrics ? (
+      <div class="mb-8">
+        <h2 class="text-xl font-semibold mb-4">
+          Latest Metrics (Iteration {latestIterationWithMetrics.iteration_number})
+        </h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <MetricCard
+            label="F1 Score"
+            value={latestMetrics.f1_score}
+            format="percentage"
+            variant="success"
+            trend={f1Trend}
+            description="Harmonic mean of precision and recall. Higher is better."
+          />
+          <MetricCard
+            label="Precision"
+            value={latestMetrics.precision}
+            format="percentage"
+            variant="info"
+            trend={precisionTrend}
+            description="Ratio of true positives to all positive predictions. Measures exactness."
+          />
+          <MetricCard
+            label="Recall"
+            value={latestMetrics.recall}
+            format="percentage"
+            variant="info"
+            trend={recallTrend}
+            description="Ratio of true positives to all actual positives. Measures completeness."
+          />
+          <MetricCard
+            label="Accuracy"
+            value={latestMetrics.accuracy}
+            format="percentage"
+            variant="primary"
+            trend={accuracyTrend}
+            description="Overall correctness of predictions."
+          />
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <ConfusionMatrix matrix={latestMetrics.confusion_matrix} />
+
+          <div class="card bg-base-200 shadow-md">
+            <div class="card-body">
+              <h3 class="card-title text-lg mb-4">Cohen's Kappa</h3>
+              <div class="text-center">
+                <div class="text-5xl font-bold font-mono text-primary mb-2">
+                  {latestMetrics.cohens_kappa !== null
+                    ? latestMetrics.cohens_kappa.toFixed(3)
+                    : 'N/A'}
+                </div>
+                <p class="text-sm text-base-content/70">
+                  Measures agreement between judge and human, accounting for chance.
+                </p>
+              </div>
+
+              <div class="mt-4 pt-4 border-t border-base-content/10">
+                <div class="text-xs text-base-content/60 uppercase tracking-wide mb-2">
+                  Interpretation
+                </div>
+                <div class="space-y-1 text-sm">
+                  <div>&lt; 0.20: Poor agreement</div>
+                  <div>0.21-0.40: Fair agreement</div>
+                  <div>0.41-0.60: Moderate agreement</div>
+                  <div>0.61-0.80: Substantial agreement</div>
+                  <div>0.81-1.00: Almost perfect agreement</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    ) : (
+      <div class="alert alert-info mb-8">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          class="stroke-current shrink-0 w-6 h-6"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+        </svg>
+        <span>No metrics available yet. Complete human reviews and calculate metrics to see results.</span>
+      </div>
+    )
+  }
+
+  <!-- Iteration History -->
+  <div>
+    <h2 class="text-xl font-semibold mb-4">Iteration History</h2>
+
+    {
+      iterations.length === 0 ? (
+        <div class="alert alert-info">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            class="stroke-current shrink-0 w-6 h-6"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+          <span>No training iterations found.</span>
+        </div>
+      ) : (
+        <div class="overflow-x-auto">
+          <table class="table table-zebra w-full">
+            <thead>
+              <tr>
+                <th>Iteration</th>
+                <th>Status</th>
+                <th>Pairs Evaluated</th>
+                <th>Human Reviews</th>
+                <th>F1 Score</th>
+                <th>Precision</th>
+                <th>Recall</th>
+                <th>Accuracy</th>
+                <th>Started</th>
+              </tr>
+            </thead>
+            <tbody>
+              {iterations.map((iteration) => (
+                <tr>
+                  <td class="font-mono font-semibold">{iteration.iteration_number}</td>
+                  <td>
+                    <Badge variant={getStatusVariant(iteration.status)} size="sm">
+                      {iteration.status}
+                    </Badge>
+                  </td>
+                  <td class="font-mono">{iteration.total_pairs_evaluated}</td>
+                  <td class="font-mono">{iteration.pairs_reviewed_by_human}</td>
+                  <td class="font-mono">
+                    {iteration.f1_score !== null
+                      ? `${(iteration.f1_score * 100).toFixed(1)}%`
+                      : '—'}
+                  </td>
+                  <td class="font-mono">
+                    {iteration.precision !== null
+                      ? `${(iteration.precision * 100).toFixed(1)}%`
+                      : '—'}
+                  </td>
+                  <td class="font-mono">
+                    {iteration.recall !== null
+                      ? `${(iteration.recall * 100).toFixed(1)}%`
+                      : '—'}
+                  </td>
+                  <td class="font-mono">
+                    {iteration.accuracy !== null
+                      ? `${(iteration.accuracy * 100).toFixed(1)}%`
+                      : '—'}
+                  </td>
+                  <td>{new Date(iteration.started_at).toLocaleDateString()}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )
+    }
+  </div>
+</Layout>
