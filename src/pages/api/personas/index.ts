@@ -12,6 +12,9 @@ import type { CreatePersonaInput, Persona } from '../../../types/training';
 /**
  * POST /api/personas
  * Create a new persona with task description, models, and initial judge prompt
+ * @param root0
+ * @param root0.request
+ * @returns {Promise<Response>}
  */
 export const POST: APIRoute = async ({ request }) => {
   try {
@@ -99,6 +102,9 @@ export const POST: APIRoute = async ({ request }) => {
  * GET /api/personas
  * List all personas with optional status filter
  * Query params: ?status=draft|training|trained|incomplete
+ * @param root0
+ * @param root0.url
+ * @returns {Promise<Response>}
  */
 export const GET: APIRoute = async ({ url }) => {
   try {

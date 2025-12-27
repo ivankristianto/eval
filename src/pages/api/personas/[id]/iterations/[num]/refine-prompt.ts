@@ -12,6 +12,9 @@ import { refineJudgePrompt } from '../../../../../../lib/prompt-engineer';
  * POST /api/personas/[id]/iterations/[num]/refine-prompt
  * Triggers AI-powered prompt refinement based on failure analysis.
  * Requires the iteration to be in 'completed' status.
+ * @param root0
+ * @param root0.params
+ * @returns {Promise<Response>}
  */
 export const POST: APIRoute = async ({ params }) => {
   try {

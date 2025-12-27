@@ -19,6 +19,9 @@ import { getDatabase } from '../../../../../lib/db';
 /**
  * GET /api/personas/:id/training/pairs
  * Retrieves all training pairs associated with a specific persona.
+ * @param root0
+ * @param root0.params
+ * @returns {Promise<Response>}
  */
 export const GET: APIRoute = async ({ params }) => {
   try {

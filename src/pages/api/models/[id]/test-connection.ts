@@ -10,6 +10,10 @@ import { validateApiKeyFormat } from '../../../../lib/validators';
  * POST /api/models/:id/test-connection
  * Tests the API connectivity for a specific model configuration.
  * Can test either the stored API key or a new key provided in the request body.
+ * @param root0
+ * @param root0.params
+ * @param root0.request
+ * @returns {Promise<Response>}
  */
 export const POST: APIRoute = async ({ params, request }) => {
   try {

@@ -10,6 +10,9 @@ import type { JudgePromptVersion } from '../../../../types/training';
  * GET /api/personas/[id]/prompts
  * Retrieves all judge prompt versions for a specific persona.
  * Sorted by iteration number descending.
+ * @param root0
+ * @param root0.params
+ * @returns {Promise<Response>}
  */
 export const GET: APIRoute = async ({ params }) => {
   try {

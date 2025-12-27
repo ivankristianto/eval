@@ -24,6 +24,10 @@ import { randomUUID } from 'crypto';
  * POST /api/personas/:id/training/upload
  * Processes a CSV file upload containing training pairs.
  * Validates the CSV format and pair count before replacing existing pairs in a transaction.
+ * @param root0
+ * @param root0.params
+ * @param root0.request
+ * @returns {Promise<Response>}
  */
 export const POST: APIRoute = async ({ params, request }) => {
   try {

@@ -15,6 +15,9 @@ import { validateApiKeyFormat } from '../../../lib/validators';
 /**
  * GET /api/models/:id
  * Retrieves detailed configuration for a specific model.
+ * @param root0
+ * @param root0.params
+ * @returns {Promise<Response>}
  */
 export const GET: APIRoute = async ({ params }) => {
   try {
@@ -84,6 +87,10 @@ export const GET: APIRoute = async ({ params }) => {
  * PATCH /api/models/:id
  * Updates an existing model configuration.
  * Validates new API keys if provided.
+ * @param root0
+ * @param root0.params
+ * @param root0.request
+ * @returns {Promise<Response>}
  */
 export const PATCH: APIRoute = async ({ params, request }) => {
   try {
@@ -210,6 +217,9 @@ export const PATCH: APIRoute = async ({ params, request }) => {
  * DELETE /api/models/:id
  * Deletes a model configuration.
  * Prevents deletion if the model has associated evaluation results.
+ * @param root0
+ * @param root0.params
+ * @returns {Promise<Response>}
  */
 export const DELETE: APIRoute = async ({ params }) => {
   try {

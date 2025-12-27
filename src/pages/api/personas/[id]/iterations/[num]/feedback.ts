@@ -11,6 +11,10 @@ import { v4 as uuidv4 } from 'uuid';
  * POST /api/personas/[id]/iterations/[num]/feedback
  * Submits human review feedback for a judge decision.
  * Updates an existing review if one exists for the decision ID.
+ * @param root0
+ * @param root0.params
+ * @param root0.request
+ * @returns {Promise<Response>}
  */
 export const POST: APIRoute = async ({ params, request }) => {
   try {

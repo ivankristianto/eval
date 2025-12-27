@@ -12,6 +12,9 @@ import { v4 as uuidv4 } from 'uuid';
  * POST /api/personas/[id]/training/start
  * Initiates a new training iteration for a specific persona.
  * Validates that minimum training data requirements are met.
+ * @param root0
+ * @param root0.params
+ * @returns {Promise<Response>}
  */
 export const POST: APIRoute = async ({ params }) => {
   try {

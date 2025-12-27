@@ -10,6 +10,9 @@ import { getPromptDiff } from '../../../lib/prompt-version-manager';
 /**
  * GET /api/judge-prompts/diff
  * Retrieves textual differences between two versions of a judge prompt.
+ * @param root0
+ * @param root0.url
+ * @returns {Promise<Response>}
  */
 export const GET: APIRoute = async ({ url }) => {
   try {

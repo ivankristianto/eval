@@ -11,6 +11,10 @@ import { storePromptVersion } from '../../../../../../lib/prompt-version-manager
  * POST /api/personas/[id]/iterations/[num]/accept-prompt
  * Accepts a refined prompt (either AI-generated or manually edited).
  * Stores the new version in the database if it differs from the previous one.
+ * @param root0
+ * @param root0.params
+ * @param root0.request
+ * @returns {Promise<Response>}
  */
 export const POST: APIRoute = async ({ params, request }) => {
   try {

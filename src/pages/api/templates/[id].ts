@@ -17,6 +17,9 @@ import type { RubricType } from '../../../lib/types';
 /**
  * GET /api/templates/:id
  * Retrieves detailed configuration for a specific evaluation template.
+ * @param root0
+ * @param root0.params
+ * @returns {Promise<Response>}
  */
 export const GET: APIRoute = async ({ params }) => {
   try {
@@ -107,6 +110,10 @@ export const GET: APIRoute = async ({ params }) => {
  * PATCH /api/templates/:id
  * Updates an existing evaluation template.
  * Validates only the provided fields.
+ * @param root0
+ * @param root0.params
+ * @param root0.request
+ * @returns {Promise<Response>}
  */
 export const PATCH: APIRoute = async ({ params, request }) => {
   try {
@@ -282,6 +289,9 @@ export const PATCH: APIRoute = async ({ params, request }) => {
 /**
  * DELETE /api/templates/:id
  * Deletes an evaluation template.
+ * @param root0
+ * @param root0.params
+ * @returns {Promise<Response>}
  */
 export const DELETE: APIRoute = async ({ params }) => {
   try {

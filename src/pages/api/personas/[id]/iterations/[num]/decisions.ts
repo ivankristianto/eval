@@ -10,6 +10,9 @@ import { getDatabase } from '../../../../../../lib/db';
  * GET /api/personas/[id]/iterations/[num]/decisions
  * Retrieves all judge decisions for a specific iteration.
  * Includes training pair details and existing human reviews.
+ * @param root0
+ * @param root0.params
+ * @returns {Promise<Response>}
  */
 export const GET: APIRoute = async ({ params }) => {
   try {

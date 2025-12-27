@@ -12,6 +12,9 @@ import {
 /**
  * POST /api/training/validate-models
  * Validates that task, judge, and prompt engineer models are from different providers.
+ * @param root0
+ * @param root0.request
+ * @returns {Promise<Response>}
  */
 export const POST: APIRoute = async ({ request }) => {
   try {
@@ -70,6 +73,9 @@ export const POST: APIRoute = async ({ request }) => {
 /**
  * GET /api/training/validate-models
  * Retrieves available providers, models, or suggested model combinations.
+ * @param root0
+ * @param root0.url
+ * @returns {Promise<Response>}
  */
 export const GET: APIRoute = async ({ url }) => {
   try {

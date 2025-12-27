@@ -16,6 +16,10 @@ import { validateModelIds } from '../../../../lib/validators';
  * POST /api/templates/:id/run
  * Executes a new evaluation based on the specified template.
  * Supports overriding the default models configured in the template.
+ * @param root0
+ * @param root0.params
+ * @param root0.request
+ * @returns {Promise<Response>}
  */
 export const POST: APIRoute = async ({ params, request }) => {
   try {

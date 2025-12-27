@@ -4,6 +4,14 @@
 import type { APIRoute } from 'astro';
 import { getTemplateById, getTemplateHistory } from '../../../../lib/db';
 
+/**
+ * GET /api/templates/:id/history
+ * Retrieves evaluation run history for a template.
+ * @param root0
+ * @param root0.params
+ * @param root0.url
+ * @returns {Promise<Response>}
+ */
 export const GET: APIRoute = async ({ params, url }) => {
   try {
     const { id } = params;

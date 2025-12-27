@@ -9,6 +9,9 @@ import { getDatabase } from '../../../../../lib/db';
 /**
  * GET /api/personas/[id]/training/status
  * Retrieves current training status, metrics, and loop state for a persona.
+ * @param root0
+ * @param root0.params
+ * @returns {Promise<Response>}
  */
 export const GET: APIRoute = async ({ params }) => {
   try {
