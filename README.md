@@ -130,6 +130,17 @@ npx playwright install # or
 bunx playwright install
 ```
 
+## Linting & Formatting
+
+```bash
+npm run lint
+npm run lint:fix
+npm run format
+npm run format:check
+```
+
+ESLint enforces JSDoc on public functions/classes in TypeScript and Astro files.
+
 ## License
 
 MIT

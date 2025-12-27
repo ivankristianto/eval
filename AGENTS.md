@@ -1,6 +1,6 @@
 # eval-ai-models Agent Guide
 
-Auto-generated from CLAUDE.md and GEMINI.md. Last updated: 2025-12-22.
+Auto-generated from CLAUDE.md and GEMINI.md. Last updated: 2025-12-27.
 
 ## Project Overview
 
@@ -83,7 +83,7 @@ Latest coverage (vitest `npm test -- --coverage`):
 
 - Linter: ESLint 9 with flat config (`eslint.config.js`)
 - Formatter: Prettier with Astro plugin (`.prettierrc`)
-- Plugins: eslint-plugin-astro, @typescript-eslint
+- Plugins: eslint-plugin-astro, @typescript-eslint, eslint-plugin-jsdoc
 
 ### Style Rules
 
@@ -94,6 +94,7 @@ Latest coverage (vitest `npm test -- --coverage`):
 - Line width: 100 characters
 - Unused variables: warn (prefix with `_` to ignore)
 - Explicit `any`: warn
+- JSDoc: required (warn) for public functions, methods, classes, and arrow functions
 
 ## Styling Conventions
 
@@ -112,3 +113,5 @@ Latest coverage (vitest `npm test -- --coverage`):
   for type safety + Astro, Tailwind CSS, SQLite3, node-sqlite3/better-sqlite3
 - 002-update-ui-style: Added TypeScript 5.6.0+, Node.js >= 22.0.0 + Astro
   5.16.6, Tailwind CSS 4.0.0, daisyui (v5 beta/latest compatible with TW v4)
+- 007-llm-as-judge: Added JSDoc linting requirements for public APIs via
+  eslint-plugin-jsdoc
