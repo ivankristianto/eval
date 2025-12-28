@@ -640,9 +640,9 @@ _System uses TWO approaches: (1) Iteration 1 - human-driven prompt refinement ba
 
 ### Human-Driven Prompt Refinement (Iteration 1 Only)
 
-- [ ] T061 [P] Create test file tests/unit/human-prompt-refiner.test.ts for iteration 1 human-driven prompt refinement
+- [x] T061 [P] Create test file tests/unit/human-prompt-refiner.test.ts for iteration 1 human-driven prompt refinement
 
-- [ ] T062 Create src/lib/human-prompt-refiner.ts implementing:
+- [x] T062 Create src/lib/human-prompt-refiner.ts implementing:
   - analyzeHumanFeedback(iterationId: 1) → HumanFeedbackAnalysis
   - Fetch all HumanReview records for iteration 1 (must be 100% complete)
   - Aggregate patterns: common reasons for "Disagree" votes, missed edge cases, systematic errors
@@ -653,7 +653,7 @@ _System uses TWO approaches: (1) Iteration 1 - human-driven prompt refinement ba
   - Store refined prompt as judge_prompt_version with created_by="human"
   - Return prompt for user acceptance before iteration 2
 
-- [ ] T063 [P] Create test file tests/integration/human-prompt-refiner.test.ts with complete iteration 1 flow
+- [x] T063 [P] Create test file tests/integration/human-prompt-refiner.test.ts with complete iteration 1 flow
 
 **Acceptance Criteria**:
 
