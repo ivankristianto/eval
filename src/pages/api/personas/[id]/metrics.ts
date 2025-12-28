@@ -8,6 +8,9 @@ import type { APIRoute } from 'astro';
 import { getDatabase } from '../../../../lib/db';
 import { getPersonaMetricsHistory } from '../../../../lib/metrics-orchestrator';
 
+/**
+ *
+ */
 export const GET: APIRoute = async ({ params }) => {
   const { id } = params;
 

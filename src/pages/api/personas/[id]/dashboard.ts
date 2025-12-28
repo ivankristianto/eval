@@ -9,6 +9,9 @@ import { getDatabase } from '../../../../lib/db';
 import { getPersonaMetricsHistory } from '../../../../lib/metrics-orchestrator';
 import type { Persona, TrainingIteration } from '../../../../types/training';
 
+/**
+ *
+ */
 export const GET: APIRoute = async ({ params }) => {
   const { id } = params;
 
@@ -23,7 +26,9 @@ export const GET: APIRoute = async ({ params }) => {
     const db = getDatabase();
 
     // Fetch persona
-    const persona = db.prepare('SELECT * FROM personas WHERE id = ?').get(id) as Persona | undefined;
+    const persona = db.prepare('SELECT * FROM personas WHERE id = ?').get(id) as
+      | Persona
+      | undefined;
 
     if (!persona) {
       return new Response(JSON.stringify({ error: 'Persona not found' }), {
