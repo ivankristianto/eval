@@ -30,7 +30,7 @@ const createEvaluation = (rubric = 'exact_match', createdOffset = 0) => {
 
 beforeAll(async () => {
   const dir = mkdtempSync(join(tmpdir(), 'eval-db-filtering-'));
-  dbPath = join(dir, 'evaluation.db');
+  dbPath = join(dir, 'evaluation.e2e-test.db');
   process.env.EVAL_DB_PATH = dbPath;
   process.env.ENCRYPTION_KEY = encryptionKey;
   vi.resetModules();

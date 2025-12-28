@@ -41,19 +41,10 @@ export function getTestDatabase(): Database.Database {
 export function initializeTestDatabase(): void {
   const db = getTestDatabase();
 
-  // Load main schema
+  // Load main schema (includes all training tables)
   const schemaPath = join(__dirname, '../db/schema.sql');
   const schema = readFileSync(schemaPath, 'utf-8');
   db.exec(schema);
-
-  // Load migrations in order
-  const migration001Path = join(process.cwd(), 'db/migrations/001-add-judge-training-tables.sql');
-  const migration001 = readFileSync(migration001Path, 'utf-8');
-  db.exec(migration001);
-
-  const migration002Path = join(process.cwd(), 'db/migrations/002-add-task-prompt-versions.sql');
-  const migration002 = readFileSync(migration002Path, 'utf-8');
-  db.exec(migration002);
 }
 
 /**
