@@ -3,8 +3,7 @@
  * Tests the complete iteration 1 flow with database interactions
  */
 
-import { describe, it, expect, beforeEach, afterEach, beforeAll, vi } from 'vitest';
-import { getDatabase } from '@lib/db';
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest';
 import type { Database } from 'better-sqlite3';
 import { v4 as uuidv4 } from 'uuid';
 import {
@@ -12,6 +11,15 @@ import {
   refineJudgePromptFromHumanFeedback,
   storeHumanRefinedPromptVersion,
 } from '@lib/training/human-prompt-refiner';
+import {
+  getTestDatabase,
+  initializeTestDatabase,
+  cleanTestDatabase,
+  closeTestDatabase,
+  createTestModelConfig,
+  createTestPersona,
+  createTestIteration,
+} from '../setup';
 
 // Mock the API clients
 vi.mock('@lib/utils/api-clients', () => ({
@@ -26,135 +34,60 @@ describe('Human-Driven Prompt Refiner Integration', () => {
   let iterationId: string;
   let modelEngineerId: string;
 
-  // Clean up any leftover test data before running tests
   beforeAll(() => {
-    db = getDatabase();
-    db.prepare(
-      "DELETE FROM human_reviews WHERE judge_decision_id IN (SELECT id FROM judge_decisions WHERE iteration_id IN (SELECT id FROM training_iterations WHERE persona_id IN (SELECT id FROM personas WHERE name LIKE '%Test%')))"
-    ).run();
-    db.prepare(
-      "DELETE FROM judge_decisions WHERE iteration_id IN (SELECT id FROM training_iterations WHERE persona_id IN (SELECT id FROM personas WHERE name LIKE '%Test%'))"
-    ).run();
-    db.prepare(
-      "DELETE FROM iteration_metrics WHERE iteration_id IN (SELECT id FROM training_iterations WHERE persona_id IN (SELECT id FROM personas WHERE name LIKE '%Test%'))"
-    ).run();
-    db.prepare(
-      "DELETE FROM training_iterations WHERE persona_id IN (SELECT id FROM personas WHERE name LIKE '%Test%')"
-    ).run();
-    db.prepare(
-      "DELETE FROM training_pairs WHERE persona_id IN (SELECT id FROM personas WHERE name LIKE '%Test%')"
-    ).run();
-    db.prepare(
-      "DELETE FROM judge_prompt_versions WHERE persona_id IN (SELECT id FROM personas WHERE name LIKE '%Test%')"
-    ).run();
-    db.prepare(
-      "DELETE FROM training_loop_state WHERE persona_id IN (SELECT id FROM personas WHERE name LIKE '%Test%')"
-    ).run();
-    db.prepare("DELETE FROM personas WHERE name LIKE '%Test%'").run();
-    db.prepare("DELETE FROM ModelConfiguration WHERE id LIKE '%-test-%'").run();
+    initializeTestDatabase();
+  });
+
+  afterAll(() => {
+    closeTestDatabase();
   });
 
   beforeEach(async () => {
-    db = getDatabase();
+    db = getTestDatabase();
 
-    // Create test model configurations
-    const modelTaskId = 'model-task-integration';
-    const modelJudgeId = 'model-judge-integration';
-    modelEngineerId = 'model-engineer-integration';
+    // Clean up before each test
+    cleanTestDatabase();
 
-    db.prepare(
-      `
-      INSERT OR REPLACE INTO ModelConfiguration (id, provider, model_name, api_key_encrypted, is_active, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, datetime('now'), datetime('now'))
-    `
-    ).run(modelTaskId, 'openai', 'gpt-4', 'fake-key', 1);
+    // Create test model configurations using fixture
+    const modelTaskId = createTestModelConfig(db, 'openai');
+    const modelJudgeId = createTestModelConfig(db, 'anthropic');
+    modelEngineerId = createTestModelConfig(db, 'google');
 
-    db.prepare(
-      `
-      INSERT OR REPLACE INTO ModelConfiguration (id, provider, model_name, api_key_encrypted, is_active, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, datetime('now'), datetime('now'))
-    `
-    ).run(modelJudgeId, 'anthropic', 'claude-3', 'fake-key', 1);
+    // Create test persona using fixture
+    const persona = createTestPersona(db, {
+      name: 'Integration Test Persona',
+      description: 'Persona for testing human-driven prompt refinement',
+      task_prompt: 'Evaluate customer support responses for accuracy, completeness, and tone',
+      task_model_id: modelTaskId,
+      judge_model_id: modelJudgeId,
+      prompt_engineer_model_id: modelEngineerId,
+    });
+    personaId = persona.id;
 
-    db.prepare(
-      `
-      INSERT OR REPLACE INTO ModelConfiguration (id, provider, model_name, api_key_encrypted, is_active, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, datetime('now'), datetime('now'))
-    `
-    ).run(modelEngineerId, 'google', 'gemini-pro', 'fake-key', 1);
-
-    // Create test persona
-    personaId = uuidv4();
-    db.prepare(
-      `
-      INSERT INTO personas
-      (id, name, description, task_prompt, task_model_id, judge_model_id,
-       prompt_engineer_model_id, status, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `
-    ).run(
-      personaId,
-      'Integration Test Persona',
-      'Persona for testing human-driven prompt refinement',
-      'Evaluate customer support responses for accuracy, completeness, and tone',
-      modelTaskId,
-      modelJudgeId,
-      modelEngineerId,
-      'training',
-      new Date().toISOString(),
-      new Date().toISOString()
-    );
-
-    // Create test iteration (iteration 1)
-    iterationId = uuidv4();
-    db.prepare(
-      `
-      INSERT INTO training_iterations
-      (id, persona_id, iteration_number, judge_model_id, judge_prompt_text,
-       status, total_pairs_evaluated, pairs_reviewed_by_human, started_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `
-    ).run(
-      iterationId,
+    // Create test iteration (iteration 1) using fixture
+    const iteration = createTestIteration(
+      db,
       personaId,
       1,
-      modelJudgeId,
-      'Evaluate if the response is accurate and helpful',
-      'completed',
-      15,
-      15,
-      new Date().toISOString()
+      'Evaluate if the response is accurate and helpful'
     );
+    iterationId = iteration.id;
+
+    // Update iteration to completed status with full evaluation counts
+    db.prepare(
+      `
+      UPDATE training_iterations
+      SET status = 'completed',
+          total_pairs_evaluated = 15,
+          pairs_reviewed_by_human = 15
+      WHERE id = ?
+    `
+    ).run(iterationId);
   });
 
   afterEach(() => {
-    // Clean up all test data by persona name pattern
-    // Clean up in reverse dependency order
-    db.prepare(
-      "DELETE FROM human_reviews WHERE judge_decision_id IN (SELECT id FROM judge_decisions WHERE iteration_id IN (SELECT id FROM training_iterations WHERE persona_id IN (SELECT id FROM personas WHERE name LIKE '%Test%')))"
-    ).run();
-    db.prepare(
-      "DELETE FROM judge_decisions WHERE iteration_id IN (SELECT id FROM training_iterations WHERE persona_id IN (SELECT id FROM personas WHERE name LIKE '%Test%'))"
-    ).run();
-    db.prepare(
-      "DELETE FROM iteration_metrics WHERE iteration_id IN (SELECT id FROM training_iterations WHERE persona_id IN (SELECT id FROM personas WHERE name LIKE '%Test%'))"
-    ).run();
-    db.prepare(
-      "DELETE FROM training_iterations WHERE persona_id IN (SELECT id FROM personas WHERE name LIKE '%Test%')"
-    ).run();
-    db.prepare(
-      "DELETE FROM training_pairs WHERE persona_id IN (SELECT id FROM personas WHERE name LIKE '%Test%')"
-    ).run();
-    db.prepare(
-      "DELETE FROM judge_prompt_versions WHERE persona_id IN (SELECT id FROM personas WHERE name LIKE '%Test%')"
-    ).run();
-    db.prepare(
-      "DELETE FROM training_loop_state WHERE persona_id IN (SELECT id FROM personas WHERE name LIKE '%Test%')"
-    ).run();
-    db.prepare("DELETE FROM personas WHERE name LIKE '%Test%'").run();
-    db.prepare(
-      "DELETE FROM ModelConfiguration WHERE id IN ('model-task-integration', 'model-judge-integration', 'model-engineer-integration')"
-    ).run();
+    // Clean up after each test
+    cleanTestDatabase();
     vi.clearAllMocks();
   });
 
@@ -304,9 +237,7 @@ describe('Human-Driven Prompt Refiner Integration', () => {
       expect(refinementResult.rationale).toContain('too lenient');
       expect(refinementResult.rationale).toContain('too strict');
       expect(refinementResult.expected_impact).toContain('agreement rate');
-      expect(refinementResult.original_prompt).toBe(
-        'Evaluate if the response is accurate and helpful'
-      );
+      expect(refinementResult.original_prompt).toBe('Evaluate if the response is accurate and helpful');
       expect(refinementResult.analysis).toBe(analysis);
 
       // Step 3: Store refined prompt version
@@ -387,10 +318,8 @@ describe('Human-Driven Prompt Refiner Integration', () => {
       const mockLLMResponse = {
         improved_prompt:
           'Evaluate customer support responses for accuracy, completeness, and helpfulness. Maintain the current high standards.',
-        rationale:
-          'With 100% agreement, the current prompt is working well. Minor adjustments for consistency.',
-        expected_impact:
-          'Expect to maintain high agreement rate in iteration 2 with continued human review.',
+        rationale: 'With 100% agreement, the current prompt is working well. Minor adjustments for consistency.',
+        expected_impact: 'Expect to maintain high agreement rate in iteration 2 with continued human review.',
       };
 
       vi.mocked(callModel).mockResolvedValue(JSON.stringify(mockLLMResponse));
@@ -409,6 +338,7 @@ describe('Human-Driven Prompt Refiner Integration', () => {
   describe('Error Handling', () => {
     it('should throw error when trying to refine prompt for iteration 2', () => {
       // Create iteration 2
+      const modelJudgeId = createTestModelConfig(db, 'anthropic');
       const iterationId2 = uuidv4();
       db.prepare(
         `INSERT INTO training_iterations
@@ -418,7 +348,7 @@ describe('Human-Driven Prompt Refiner Integration', () => {
         iterationId2,
         personaId,
         2,
-        'model-judge-integration',
+        modelJudgeId,
         'Evaluate if helpful',
         'completed',
         10,
@@ -528,11 +458,7 @@ describe('Human-Driven Prompt Refiner Integration', () => {
       // Mock LLM failure
       vi.mocked(callModel).mockRejectedValue(new Error('API timeout'));
 
-      const result = await refineJudgePromptFromHumanFeedback(
-        'Original prompt',
-        analysis,
-        modelEngineerId
-      );
+      const result = await refineJudgePromptFromHumanFeedback('Original prompt', analysis, modelEngineerId);
 
       expect(result.refined_prompt).toBeNull();
       expect(result.rationale).toContain('LLM call failed');
@@ -585,11 +511,7 @@ describe('Human-Driven Prompt Refiner Integration', () => {
       };
       vi.mocked(callModel).mockResolvedValue(JSON.stringify(mockResponse));
 
-      const result = await refineJudgePromptFromHumanFeedback(
-        'Original',
-        analysis,
-        modelEngineerId
-      );
+      const result = await refineJudgePromptFromHumanFeedback('Original', analysis, modelEngineerId);
 
       // Store version
       const versionId1 = storeHumanRefinedPromptVersion(
@@ -601,18 +523,17 @@ describe('Human-Driven Prompt Refiner Integration', () => {
         db
       );
 
-      // Verify history
+      // Verify history (includes initial prompt from fixture at iteration 0)
       const history = db
-        .prepare(
-          'SELECT * FROM judge_prompt_versions WHERE persona_id = ? ORDER BY iteration_number ASC'
-        )
+        .prepare('SELECT * FROM judge_prompt_versions WHERE persona_id = ? ORDER BY iteration_number ASC')
         .all(personaId) as any[];
 
-      expect(history).toHaveLength(1);
-      expect(history[0].id).toBe(versionId1);
-      expect(history[0].iteration_number).toBe(1);
-      expect(history[0].created_by).toBe('human');
-      expect(history[0].prompt_text).toBe('Refined prompt v1');
+      expect(history).toHaveLength(2);
+      expect(history[0].iteration_number).toBe(0);
+      expect(history[1].id).toBe(versionId1);
+      expect(history[1].iteration_number).toBe(1);
+      expect(history[1].created_by).toBe('human');
+      expect(history[1].prompt_text).toBe('Refined prompt v1');
     });
   });
 });

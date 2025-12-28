@@ -3,8 +3,7 @@
  * Tests version storage, history retrieval, and diff generation
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { getDatabase } from '@lib/db';
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll } from 'vitest';
 import type { Database } from 'better-sqlite3';
 import {
   storePromptVersion,
@@ -12,71 +11,54 @@ import {
   getPromptDiff,
 } from '@lib/training/prompt-version-manager';
 import { v4 as uuidv4 } from 'uuid';
+import {
+  getTestDatabase,
+  initializeTestDatabase,
+  cleanTestDatabase,
+  closeTestDatabase,
+  createTestModelConfig,
+  createTestPersona,
+} from '../setup';
 
 describe('Prompt Version Manager', () => {
   let db: Database;
   let personaId: string;
-  let testCounter: number;
+
+  beforeAll(() => {
+    initializeTestDatabase();
+  });
+
+  afterAll(() => {
+    closeTestDatabase();
+  });
 
   beforeEach(() => {
-    db = getDatabase();
-    testCounter = 0;
+    db = getTestDatabase();
 
-    // Create test model configurations
-    db.prepare(
-      `
-      INSERT OR IGNORE INTO ModelConfiguration (id, provider, model_name, api_key_encrypted, is_active)
-      VALUES (?, ?, ?, ?, ?)
-    `
-    ).run('model-task-1', 'openai', 'gpt-4', 'fake-key', 1);
+    // Clean up before each test
+    cleanTestDatabase();
 
-    db.prepare(
-      `
-      INSERT OR IGNORE INTO ModelConfiguration (id, provider, model_name, api_key_encrypted, is_active)
-      VALUES (?, ?, ?, ?, ?)
-    `
-    ).run('model-judge-1', 'anthropic', 'claude-3', 'fake-key', 1);
+    // Create test model configurations using fixture
+    createTestModelConfig(db, 'openai');
+    createTestModelConfig(db, 'anthropic');
+    createTestModelConfig(db, 'google');
 
-    db.prepare(
-      `
-      INSERT OR IGNORE INTO ModelConfiguration (id, provider, model_name, api_key_encrypted, is_active)
-      VALUES (?, ?, ?, ?, ?)
-    `
-    ).run('model-engineer-1', 'google', 'gemini-pro', 'fake-key', 1);
+    // Create test persona using fixture
+    const persona = createTestPersona(db, {
+      name: 'Test Persona for Prompt Version Manager',
+      description: 'Test description',
+      task_prompt: 'Evaluate customer support',
+      initial_judge_prompt: 'Initial judge prompt for testing',
+    });
+    personaId = persona.id;
   });
 
   afterEach(() => {
-    // Clean up judge_prompt_versions first (due to FK cascade)
-    db.prepare('DELETE FROM judge_prompt_versions').run();
-    db.prepare('DELETE FROM task_prompt_versions').run();
-    db.prepare('DELETE FROM training_iterations').run();
-    db.prepare('DELETE FROM personas').run();
-    // Don't delete ModelConfiguration as other tests may use them
+    // Clean up after each test
+    cleanTestDatabase();
   });
 
   it('should store a new prompt version', async () => {
-    // Create test persona
-    personaId = uuidv4();
-    db.prepare(
-      `
-      INSERT INTO personas
-      (id, name, description, task_prompt, task_model_id, judge_model_id,
-       prompt_engineer_model_id, status, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `
-    ).run(
-      personaId,
-      `Test Persona ${testCounter++}`,
-      'Test description',
-      'Evaluate customer support',
-      'model-task-1',
-      'model-judge-1',
-      'model-engineer-1',
-      'training',
-      new Date().toISOString(),
-      new Date().toISOString()
-    );
-
     const promptText = 'Evaluate if the response is accurate and helpful';
     const rationale = 'Initial prompt';
 
@@ -85,9 +67,7 @@ describe('Prompt Version Manager', () => {
     expect(versionId).toBeDefined();
 
     // Verify stored
-    const stored = db
-      .prepare('SELECT * FROM judge_prompt_versions WHERE id = ?')
-      .get(versionId) as any;
+    const stored = db.prepare('SELECT * FROM judge_prompt_versions WHERE id = ?').get(versionId) as any;
 
     expect(stored).toBeDefined();
     expect(stored.persona_id).toBe(personaId);
@@ -98,28 +78,6 @@ describe('Prompt Version Manager', () => {
   });
 
   it('should not store duplicate identical prompt', async () => {
-    // Create test persona
-    personaId = uuidv4();
-    db.prepare(
-      `
-      INSERT INTO personas
-      (id, name, description, task_prompt, task_model_id, judge_model_id,
-       prompt_engineer_model_id, status, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `
-    ).run(
-      personaId,
-      `Test Persona ${testCounter++}`,
-      'Test description',
-      'Evaluate customer support',
-      'model-task-1',
-      'model-judge-1',
-      'model-engineer-1',
-      'training',
-      new Date().toISOString(),
-      new Date().toISOString()
-    );
-
     const promptText = 'Evaluate if the response is accurate';
 
     // Store first version
@@ -130,37 +88,14 @@ describe('Prompt Version Manager', () => {
 
     expect(result).toBeNull();
 
-    // Verify only one version exists
-    const versions = db
-      .prepare('SELECT * FROM judge_prompt_versions WHERE persona_id = ?')
-      .all(personaId);
+    // Verify only 2 versions exist: initial (iteration 0) + first stored (iteration 1)
+    // The duplicate at iteration 2 should not be stored
+    const versions = db.prepare('SELECT * FROM judge_prompt_versions WHERE persona_id = ?').all(personaId);
 
-    expect(versions).toHaveLength(1);
+    expect(versions).toHaveLength(2);
   });
 
   it('should store significantly different prompt', async () => {
-    // Create test persona
-    personaId = uuidv4();
-    db.prepare(
-      `
-      INSERT INTO personas
-      (id, name, description, task_prompt, task_model_id, judge_model_id,
-       prompt_engineer_model_id, status, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `
-    ).run(
-      personaId,
-      `Test Persona ${testCounter++}`,
-      'Test description',
-      'Evaluate customer support',
-      'model-task-1',
-      'model-judge-1',
-      'model-engineer-1',
-      'training',
-      new Date().toISOString(),
-      new Date().toISOString()
-    );
-
     const prompt1 = 'Evaluate if the response is accurate';
     const prompt2 = 'Evaluate if the response is semantically equivalent to the expected output';
 
@@ -169,36 +104,13 @@ describe('Prompt Version Manager', () => {
 
     expect(_id2).toBeDefined();
 
-    const versions = db
-      .prepare('SELECT * FROM judge_prompt_versions WHERE persona_id = ?')
-      .all(personaId);
+    // Should have 3 versions: initial (iteration 0) + two stored (iterations 1 and 2)
+    const versions = db.prepare('SELECT * FROM judge_prompt_versions WHERE persona_id = ?').all(personaId);
 
-    expect(versions).toHaveLength(2);
+    expect(versions).toHaveLength(3);
   });
 
   it('should ignore whitespace-only differences', async () => {
-    // Create test persona
-    personaId = uuidv4();
-    db.prepare(
-      `
-      INSERT INTO personas
-      (id, name, description, task_prompt, task_model_id, judge_model_id,
-       prompt_engineer_model_id, status, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `
-    ).run(
-      personaId,
-      `Test Persona ${testCounter++}`,
-      'Test description',
-      'Evaluate customer support',
-      'model-task-1',
-      'model-judge-1',
-      'model-engineer-1',
-      'training',
-      new Date().toISOString(),
-      new Date().toISOString()
-    );
-
     const prompt1 = 'Evaluate accuracy';
     const prompt2 = '  Evaluate accuracy  \n';
 
@@ -209,96 +121,37 @@ describe('Prompt Version Manager', () => {
   });
 
   it('should retrieve prompt history in chronological order', async () => {
-    // Create test persona
-    personaId = uuidv4();
-    db.prepare(
-      `
-      INSERT INTO personas
-      (id, name, description, task_prompt, task_model_id, judge_model_id,
-       prompt_engineer_model_id, status, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `
-    ).run(
-      personaId,
-      `Test Persona ${testCounter++}`,
-      'Test description',
-      'Evaluate customer support',
-      'model-task-1',
-      'model-judge-1',
-      'model-engineer-1',
-      'training',
-      new Date().toISOString(),
-      new Date().toISOString()
-    );
-
+    // Note: createTestPersona creates an initial judge prompt at iteration 0
     await storePromptVersion(personaId, 1, 'Prompt v1', 'First', 'human', db);
     await storePromptVersion(personaId, 2, 'Prompt v2', 'Second', 'ai', db);
     await storePromptVersion(personaId, 3, 'Prompt v3', 'Third', 'ai', db);
 
     const history = await getPromptHistory(personaId, db);
 
-    expect(history).toHaveLength(3);
-    expect(history[0].iteration_number).toBe(1);
-    expect(history[1].iteration_number).toBe(2);
-    expect(history[2].iteration_number).toBe(3);
+    // Should have 4 versions: initial (iteration 0) + 3 stored versions
+    expect(history).toHaveLength(4);
+    expect(history[0].iteration_number).toBe(0);
+    expect(history[1].iteration_number).toBe(1);
+    expect(history[2].iteration_number).toBe(2);
+    expect(history[3].iteration_number).toBe(3);
+    // Initial and first stored are created by human
     expect(history[0].created_by).toBe('human');
-    expect(history[1].created_by).toBe('ai');
+    expect(history[1].created_by).toBe('human');
+    expect(history[2].created_by).toBe('ai');
   });
 
-  it('should return empty array for persona with no prompt versions', async () => {
-    const newPersonaId = uuidv4();
+  it('should return empty array for persona with no prompt versions beyond initial', async () => {
+    // The createTestPersona fixture creates an initial judge prompt at iteration 0
+    // So when we call getPromptHistory for the main personaId, we should see that initial version
+    // Let's delete all versions for the persona to test empty history
+    db.prepare('DELETE FROM judge_prompt_versions WHERE persona_id = ?').run(personaId);
 
-    db.prepare(
-      `
-      INSERT INTO personas
-      (id, name, description, task_prompt, task_model_id, judge_model_id,
-       prompt_engineer_model_id, status, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `
-    ).run(
-      newPersonaId,
-      `Test Persona ${testCounter++}`,
-      'Test',
-      'Test prompt',
-      'model-task-1',
-      'model-judge-1',
-      'model-engineer-1',
-      'draft',
-      new Date().toISOString(),
-      new Date().toISOString()
-    );
-
-    const history = await getPromptHistory(newPersonaId, db);
+    const history = await getPromptHistory(personaId, db);
 
     expect(history).toHaveLength(0);
-
-    // Cleanup
-    db.prepare('DELETE FROM personas WHERE id = ?').run(newPersonaId);
   });
 
   it('should generate diff between two versions', async () => {
-    // Create test persona
-    personaId = uuidv4();
-    db.prepare(
-      `
-      INSERT INTO personas
-      (id, name, description, task_prompt, task_model_id, judge_model_id,
-       prompt_engineer_model_id, status, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `
-    ).run(
-      personaId,
-      `Test Persona ${testCounter++}`,
-      'Test description',
-      'Evaluate customer support',
-      'model-task-1',
-      'model-judge-1',
-      'model-engineer-1',
-      'training',
-      new Date().toISOString(),
-      new Date().toISOString()
-    );
-
     const _id1 = await storePromptVersion(personaId, 1, 'Evaluate accuracy', 'First', 'human', db);
     const _id2 = await storePromptVersion(
       personaId,
@@ -317,28 +170,6 @@ describe('Prompt Version Manager', () => {
   });
 
   it('should handle diff with identical versions', async () => {
-    // Create test persona
-    personaId = uuidv4();
-    db.prepare(
-      `
-      INSERT INTO personas
-      (id, name, description, task_prompt, task_model_id, judge_model_id,
-       prompt_engineer_model_id, status, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `
-    ).run(
-      personaId,
-      `Test Persona ${testCounter++}`,
-      'Test description',
-      'Evaluate customer support',
-      'model-task-1',
-      'model-judge-1',
-      'model-engineer-1',
-      'training',
-      new Date().toISOString(),
-      new Date().toISOString()
-    );
-
     const promptText = 'Evaluate accuracy';
 
     const _id1 = await storePromptVersion(personaId, 1, promptText, 'First', 'human', db);
@@ -362,7 +193,9 @@ describe('Prompt Version Manager', () => {
     );
 
     const allVersions = await getPromptHistory(personaId, db);
-    const diff = await getPromptDiff(allVersions[0].id, allVersions[1].id, db);
+    // Find the two versions with the same text (iterations 1 and 2)
+    const identicalVersions = allVersions.filter((v) => v.prompt_text === promptText);
+    const diff = await getPromptDiff(identicalVersions[0].id, identicalVersions[1].id, db);
 
     expect(diff.before).toBe(diff.after);
     expect(diff.changes).toContain('No changes');
@@ -375,34 +208,20 @@ describe('Prompt Version Manager', () => {
   });
 
   it('should support both human and ai created_by values', async () => {
-    // Create test persona
-    personaId = uuidv4();
-    db.prepare(
-      `
-      INSERT INTO personas
-      (id, name, description, task_prompt, task_model_id, judge_model_id,
-       prompt_engineer_model_id, status, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `
-    ).run(
-      personaId,
-      `Test Persona ${testCounter++}`,
-      'Test description',
-      'Evaluate customer support',
-      'model-task-1',
-      'model-judge-1',
-      'model-engineer-1',
-      'training',
-      new Date().toISOString(),
-      new Date().toISOString()
-    );
-
+    // Note: createTestPersona creates an initial judge prompt at iteration 0 with created_by='human'
     const _id1 = await storePromptVersion(personaId, 1, 'Prompt 1', 'Human', 'human', db);
     const _id2 = await storePromptVersion(personaId, 2, 'Prompt 2', 'AI', 'ai', db);
 
     const history = await getPromptHistory(personaId, db);
 
+    // Initial prompt from fixture is created by 'human'
     expect(history[0].created_by).toBe('human');
-    expect(history[1].created_by).toBe('ai');
+    expect(history[0].iteration_number).toBe(0);
+    // First stored version is also 'human'
+    expect(history[1].created_by).toBe('human');
+    expect(history[1].iteration_number).toBe(1);
+    // Second stored version is 'ai'
+    expect(history[2].created_by).toBe('ai');
+    expect(history[2].iteration_number).toBe(2);
   });
 });

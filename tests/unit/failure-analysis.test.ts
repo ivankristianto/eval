@@ -3,11 +3,19 @@
  * Tests extraction of false positives, false negatives, and correct examples
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { getDatabase } from '@lib/db';
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll } from 'vitest';
+import { v4 as uuidv4 } from 'uuid';
 import type { Database } from 'better-sqlite3';
 import { analyzeIterationFailures } from '@lib/training/failure-analysis';
-import { v4 as uuidv4 } from 'uuid';
+import {
+  getTestDatabase,
+  initializeTestDatabase,
+  cleanTestDatabase,
+  closeTestDatabase,
+  createTestModelConfig,
+  createTestPersona,
+  createTestIteration,
+} from '../setup';
 
 describe('Failure Analysis', () => {
   let db: Database;
@@ -17,91 +25,55 @@ describe('Failure Analysis', () => {
   let modelJudgeId: string;
   let modelEngineerId: string;
 
+  beforeAll(() => {
+    initializeTestDatabase();
+  });
+
+  afterAll(() => {
+    closeTestDatabase();
+  });
+
   beforeEach(async () => {
-    db = getDatabase();
+    db = getTestDatabase();
 
-    // Create test model configurations with unique IDs
-    const testId = uuidv4().substring(0, 8);
-    modelTaskId = `model-task-fa-${testId}`;
-    modelJudgeId = `model-judge-fa-${testId}`;
-    modelEngineerId = `model-engineer-fa-${testId}`;
+    // Clean up before each test
+    cleanTestDatabase();
 
+    // Create test model configurations using fixture
+    modelTaskId = createTestModelConfig(db, 'openai');
+    modelJudgeId = createTestModelConfig(db, 'anthropic');
+    modelEngineerId = createTestModelConfig(db, 'google');
+
+    // Create test persona using fixture
+    const persona = createTestPersona(db, {
+      name: 'Test Persona Failure Analysis',
+      description: 'Test description',
+      task_prompt: 'Evaluate customer support quality',
+      task_model_id: modelTaskId,
+      judge_model_id: modelJudgeId,
+      prompt_engineer_model_id: modelEngineerId,
+    });
+    personaId = persona.id;
+
+    // Create test iteration using fixture
+    const iteration = createTestIteration(db, personaId, 1, 'Evaluate if the response is helpful and polite');
+    iterationId = iteration.id;
+
+    // Update iteration status to completed with full evaluation counts
     db.prepare(
       `
-      INSERT OR REPLACE INTO ModelConfiguration (id, provider, model_name, api_key_encrypted, is_active, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+      UPDATE training_iterations
+      SET status = 'completed',
+          total_pairs_evaluated = 10,
+          pairs_reviewed_by_human = 10
+      WHERE id = ?
     `
-    ).run(modelTaskId, 'openai', 'gpt-4-fa', 'fake-key', 1);
-
-    db.prepare(
-      `
-      INSERT OR REPLACE INTO ModelConfiguration (id, provider, model_name, api_key_encrypted, is_active, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, datetime('now'), datetime('now'))
-    `
-    ).run(modelJudgeId, 'anthropic', 'claude-3-fa', 'fake-key', 1);
-
-    db.prepare(
-      `
-      INSERT OR REPLACE INTO ModelConfiguration (id, provider, model_name, api_key_encrypted, is_active, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, datetime('now'), datetime('now'))
-    `
-    ).run(modelEngineerId, 'google', 'gemini-pro-fa', 'fake-key', 1);
-
-    // Create test persona
-    personaId = uuidv4();
-    db.prepare(
-      `
-      INSERT INTO personas
-      (id, name, description, task_prompt, task_model_id, judge_model_id,
-       prompt_engineer_model_id, status, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `
-    ).run(
-      personaId,
-      'Test Persona FA ' + personaId.substring(0, 8),
-      'Test description',
-      'Evaluate customer support quality',
-      modelTaskId,
-      modelJudgeId,
-      modelEngineerId,
-      'training',
-      new Date().toISOString(),
-      new Date().toISOString()
-    );
-
-    // Create test iteration
-    iterationId = uuidv4();
-    db.prepare(
-      `
-      INSERT INTO training_iterations
-      (id, persona_id, iteration_number, judge_model_id, judge_prompt_text,
-       status, total_pairs_evaluated, pairs_reviewed_by_human, started_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `
-    ).run(
-      iterationId,
-      personaId,
-      1,
-      modelJudgeId,
-      'Evaluate if the response is helpful and polite',
-      'completed',
-      10,
-      10,
-      new Date().toISOString()
-    );
+    ).run(iterationId);
   });
 
   afterEach(() => {
-    // Clean up test data in reverse dependency order
-    db.prepare(
-      'DELETE FROM human_reviews WHERE judge_decision_id IN (SELECT id FROM judge_decisions WHERE iteration_id = ?)'
-    ).run(iterationId);
-    db.prepare('DELETE FROM judge_decisions WHERE iteration_id = ?').run(iterationId);
-    db.prepare('DELETE FROM iteration_metrics WHERE iteration_id = ?').run(iterationId);
-    db.prepare('DELETE FROM training_iterations WHERE id = ?').run(iterationId);
-    db.prepare('DELETE FROM training_pairs WHERE persona_id = ?').run(personaId);
-    db.prepare('DELETE FROM personas WHERE id = ?').run(personaId);
-    // Don't delete ModelConfiguration as they use INSERT OR REPLACE and have ON DELETE RESTRICT
+    // Clean up after each test
+    cleanTestDatabase();
   });
 
   it('should extract false positives (judge agreed, human disagreed)', async () => {
