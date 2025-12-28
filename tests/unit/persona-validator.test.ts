@@ -10,7 +10,7 @@ import {
   cleanTestDatabase,
   closeTestDatabase,
 } from '../setup';
-import { validatePersonaCreation } from '../../src/lib/persona-validator';
+import { validatePersonaCreation } from '@lib/validation/persona-validator';
 import type { PersonaCreationInput } from '../../src/types/training';
 
 describe('Persona Validator', () => {

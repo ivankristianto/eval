@@ -4,8 +4,8 @@
  */
 
 import type { APIRoute } from 'astro';
-import { getDatabase } from '../../../../../lib/db';
-import { TrainingStateManager } from '../../../../../lib/training-state';
+import { getDatabase } from '@lib/db';
+import { TrainingStateManager } from '@lib/training/training-state';
 
 /**
  * Persona database row type
@@ -166,9 +166,7 @@ export const POST: APIRoute = async ({ params, request }) => {
 
     // Get current iteration data for checkpoint
     const iteration = db
-      .prepare(
-        'SELECT * FROM training_iterations WHERE persona_id = ? AND iteration_number = ?'
-      )
+      .prepare('SELECT * FROM training_iterations WHERE persona_id = ? AND iteration_number = ?')
       .get(id, activeSession.current_iteration) as any;
 
     if (iteration) {
@@ -190,9 +188,7 @@ export const POST: APIRoute = async ({ params, request }) => {
         .get(id) as { prompt_text: string } | undefined;
 
       const currentPrompt =
-        judgePrompt?.prompt_text ||
-        (persona as any).task_prompt ||
-        'No prompt available';
+        judgePrompt?.prompt_text || (persona as any).task_prompt || 'No prompt available';
 
       // Build checkpoint data
       const checkpointData = {

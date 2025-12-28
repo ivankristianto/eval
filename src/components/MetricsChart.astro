@@ -16,7 +16,7 @@ export interface Props {
   targetF1?: number;
 }
 
-const { iterations, targetF1 = 0.80 } = Astro.props;
+const { iterations, targetF1 = 0.8 } = Astro.props;
 
 // Chart dimensions
 const width = 800;
@@ -82,17 +82,19 @@ const xTicks = iterations.map((i) => i.iteration_num);
   >
     <!-- Grid lines -->
     <g class="grid opacity-20">
-      {yTicks.map((tick) => (
-        <line
-          x1={padding.left}
-          y1={scaleY(tick)}
-          x2={width - padding.right}
-          y2={scaleY(tick)}
-          stroke="currentColor"
-          stroke-width="1"
-          stroke-dasharray="4 4"
-        />
-      ))}
+      {
+        yTicks.map((tick) => (
+          <line
+            x1={padding.left}
+            y1={scaleY(tick)}
+            x2={width - padding.right}
+            y2={scaleY(tick)}
+            stroke="currentColor"
+            stroke-width="1"
+            stroke-dasharray="4 4"
+          />
+        ))
+      }
     </g>
 
     <!-- Target F1 line -->
@@ -104,8 +106,7 @@ const xTicks = iterations.map((i) => i.iteration_num);
       stroke="#10b981"
       stroke-width="2"
       stroke-dasharray="6 3"
-      opacity="0.6"
-    />
+      opacity="0.6"></line>
     <text
       x={width - padding.right + 5}
       y={targetY + 4}
@@ -116,55 +117,65 @@ const xTicks = iterations.map((i) => i.iteration_num);
     </text>
 
     <!-- F1 Score Line -->
-    {f1Path && (
-      <path
-        d={f1Path}
-        fill="none"
-        stroke="#3b82f6"
-        stroke-width="3"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      />
-    )}
+    {
+      f1Path && (
+        <path
+          d={f1Path}
+          fill="none"
+          stroke="#3b82f6"
+          stroke-width="3"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      )
+    }
 
     <!-- Cohen's Kappa Line -->
-    {kappaPath && (
-      <path
-        d={kappaPath}
-        fill="none"
-        stroke="#8b5cf6"
-        stroke-width="3"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      />
-    )}
+    {
+      kappaPath && (
+        <path
+          d={kappaPath}
+          fill="none"
+          stroke="#8b5cf6"
+          stroke-width="3"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      )
+    }
 
     <!-- Data points -->
-    {iterations.map((iter) => (
-      <>
-        <!-- F1 Score point -->
-        <circle
-          cx={scaleX(iter.iteration_num)}
-          cy={scaleY(iter.f1_score)}
-          r="4"
-          fill="#3b82f6"
-          class="hover:r-6 transition-all cursor-pointer"
-        >
-          <title>Iteration {iter.iteration_num}: F1 = {(iter.f1_score * 100).toFixed(1)}%</title>
-        </circle>
+    {
+      iterations.map((iter) => (
+        <>
+          {/* F1 Score point */}
+          <circle
+            cx={scaleX(iter.iteration_num)}
+            cy={scaleY(iter.f1_score)}
+            r="4"
+            fill="#3b82f6"
+            class="hover:r-6 transition-all cursor-pointer"
+          >
+            <title>
+              Iteration {iter.iteration_num}: F1 = {(iter.f1_score * 100).toFixed(1)}%
+            </title>
+          </circle>
 
-        <!-- Cohen's Kappa point -->
-        <circle
-          cx={scaleX(iter.iteration_num)}
-          cy={scaleY(iter.cohens_kappa)}
-          r="4"
-          fill="#8b5cf6"
-          class="hover:r-6 transition-all cursor-pointer"
-        >
-          <title>Iteration {iter.iteration_num}: Kappa = {(iter.cohens_kappa * 100).toFixed(1)}%</title>
-        </circle>
-      </>
-    ))}
+          {/* Cohen's Kappa point */}
+          <circle
+            cx={scaleX(iter.iteration_num)}
+            cy={scaleY(iter.cohens_kappa)}
+            r="4"
+            fill="#8b5cf6"
+            class="hover:r-6 transition-all cursor-pointer"
+          >
+            <title>
+              Iteration {iter.iteration_num}: Kappa = {(iter.cohens_kappa * 100).toFixed(1)}%
+            </title>
+          </circle>
+        </>
+      ))
+    }
 
     <!-- X-axis -->
     <line
@@ -173,31 +184,32 @@ const xTicks = iterations.map((i) => i.iteration_num);
       x2={width - padding.right}
       y2={height - padding.bottom}
       stroke="currentColor"
-      stroke-width="2"
-    />
+      stroke-width="2"></line>
 
     <!-- X-axis ticks and labels -->
-    {xTicks.map((tick) => (
-      <>
-        <line
-          x1={scaleX(tick)}
-          y1={height - padding.bottom}
-          x2={scaleX(tick)}
-          y2={height - padding.bottom + 6}
-          stroke="currentColor"
-          stroke-width="2"
-        />
-        <text
-          x={scaleX(tick)}
-          y={height - padding.bottom + 20}
-          text-anchor="middle"
-          class="text-xs fill-current"
-          font-family="monospace"
-        >
-          {tick}
-        </text>
-      </>
-    ))}
+    {
+      xTicks.map((tick) => (
+        <>
+          <line
+            x1={scaleX(tick)}
+            y1={height - padding.bottom}
+            x2={scaleX(tick)}
+            y2={height - padding.bottom + 6}
+            stroke="currentColor"
+            stroke-width="2"
+          />
+          <text
+            x={scaleX(tick)}
+            y={height - padding.bottom + 20}
+            text-anchor="middle"
+            class="text-xs fill-current"
+            font-family="monospace"
+          >
+            {tick}
+          </text>
+        </>
+      ))
+    }
 
     <!-- X-axis label -->
     <text
@@ -216,31 +228,32 @@ const xTicks = iterations.map((i) => i.iteration_num);
       x2={padding.left}
       y2={height - padding.bottom}
       stroke="currentColor"
-      stroke-width="2"
-    />
+      stroke-width="2"></line>
 
     <!-- Y-axis ticks and labels -->
-    {yTicks.map((tick) => (
-      <>
-        <line
-          x1={padding.left - 6}
-          y1={scaleY(tick)}
-          x2={padding.left}
-          y2={scaleY(tick)}
-          stroke="currentColor"
-          stroke-width="2"
-        />
-        <text
-          x={padding.left - 10}
-          y={scaleY(tick) + 4}
-          text-anchor="end"
-          class="text-xs fill-current"
-          font-family="monospace"
-        >
-          {(tick * 100).toFixed(0)}%
-        </text>
-      </>
-    ))}
+    {
+      yTicks.map((tick) => (
+        <>
+          <line
+            x1={padding.left - 6}
+            y1={scaleY(tick)}
+            x2={padding.left}
+            y2={scaleY(tick)}
+            stroke="currentColor"
+            stroke-width="2"
+          />
+          <text
+            x={padding.left - 10}
+            y={scaleY(tick) + 4}
+            text-anchor="end"
+            class="text-xs fill-current"
+            font-family="monospace"
+          >
+            {(tick * 100).toFixed(0)}%
+          </text>
+        </>
+      ))
+    }
 
     <!-- Y-axis label -->
     <text
@@ -256,13 +269,13 @@ const xTicks = iterations.map((i) => i.iteration_num);
     <!-- Legend -->
     <g transform={`translate(${width - padding.right + 10}, ${padding.top + 20})`}>
       <!-- F1 Score -->
-      <line x1="0" y1="0" x2="30" y2="0" stroke="#3b82f6" stroke-width="3" />
-      <circle cx="15" cy="0" r="4" fill="#3b82f6" />
+      <line x1="0" y1="0" x2="30" y2="0" stroke="#3b82f6" stroke-width="3"></line>
+      <circle cx="15" cy="0" r="4" fill="#3b82f6"></circle>
       <text x="35" y="4" class="text-xs fill-current">F1 Score</text>
 
       <!-- Cohen's Kappa -->
-      <line x1="0" y1="25" x2="30" y2="25" stroke="#8b5cf6" stroke-width="3" />
-      <circle cx="15" cy="25" r="4" fill="#8b5cf6" />
+      <line x1="0" y1="25" x2="30" y2="25" stroke="#8b5cf6" stroke-width="3"></line>
+      <circle cx="15" cy="25" r="4" fill="#8b5cf6"></circle>
       <text x="35" y="29" class="text-xs fill-current">Cohen's κ</text>
     </g>
   </svg>

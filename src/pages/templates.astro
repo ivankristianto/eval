@@ -3,7 +3,7 @@ import Layout from '../layouts/Layout.astro';
 import Breadcrumbs from '../components/ui/Breadcrumbs.astro';
 import Badge from '../components/ui/Badge.astro';
 import EmptyState from '../components/ui/EmptyState.astro';
-import { getTemplates } from '../lib/db';
+import { getTemplates } from '@lib/db';
 
 // Get templates
 let templates: Array<{
@@ -142,7 +142,7 @@ const templateIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 t
 </Layout>
 
 <script>
-  import { addToast } from '../lib/toastStore';
+  import { addToast } from '@lib/ui/toastStore';
 
   // Run template
   document.querySelectorAll('.run-btn').forEach((btn) => {

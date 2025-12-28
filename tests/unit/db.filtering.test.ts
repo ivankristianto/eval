@@ -2,9 +2,9 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vites
 import { mkdtempSync, rmSync } from 'fs';
 import { tmpdir } from 'os';
 import { dirname, join } from 'path';
-import type { RubricType, EvaluationWithStats } from '../../src/lib/types';
+import type { RubricType, EvaluationWithStats } from '@lib/utils/types';
 
-let dbModule: typeof import('../../src/lib/db');
+let dbModule: typeof import('@lib/db');
 let dbPath = '';
 
 const encryptionKey = 'a'.repeat(64);
@@ -34,7 +34,7 @@ beforeAll(async () => {
   process.env.EVAL_DB_PATH = dbPath;
   process.env.ENCRYPTION_KEY = encryptionKey;
   vi.resetModules();
-  dbModule = await import('../../src/lib/db');
+  dbModule = await import('@lib/db');
   dbModule.initializeDatabase();
 });
 

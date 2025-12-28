@@ -1,7 +1,7 @@
 // src/lib/validators.ts
 // Input validation functions for AI Model Evaluation Framework
 
-import type { Provider, RubricType, ApiError } from './types';
+import type { Provider, RubricType, ApiError } from '@lib/utils/types';
 
 const VALID_PROVIDERS: Provider[] = ['openai', 'anthropic', 'google'];
 const VALID_RUBRIC_TYPES: RubricType[] = ['exact_match', 'partial_credit', 'semantic_similarity'];

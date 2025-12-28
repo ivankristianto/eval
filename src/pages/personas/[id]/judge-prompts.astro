@@ -4,7 +4,7 @@
  * Displays version history of judge prompts with diff viewer
  */
 import Layout from '../../../layouts/Layout.astro';
-import { getDatabase } from '../../../lib/db';
+import { getDatabase } from '@lib/db';
 import Badge from '../../../components/ui/Badge.astro';
 import Breadcrumbs from '../../../components/ui/Breadcrumbs.astro';
 import PersonaTabs from '../../../components/PersonaTabs.astro';
@@ -211,32 +211,34 @@ const breadcrumbItems = [
     </div>
 
     <!-- Modals for each version pair -->
-    {promptVersions.map((version, index) => {
-      const previousVersion = promptVersions[index + 1];
-      if (!previousVersion) return null;
+    {
+      promptVersions.map((version, index) => {
+        const previousVersion = promptVersions[index + 1];
+        if (!previousVersion) return null;
 
-      return (
-        <dialog id={`diff-modal-${version.id}`} class="modal">
-          <div class="modal-box max-w-5xl">
-            <form method="dialog">
-              <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+        return (
+          <dialog id={`diff-modal-${version.id}`} class="modal">
+            <div class="modal-box max-w-5xl">
+              <form method="dialog">
+                <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+              </form>
+              <h3 class="font-bold text-lg mb-4">
+                Comparing Iteration {previousVersion.iteration_number} → {version.iteration_number}
+              </h3>
+              <PromptDiffViewer
+                beforePrompt={previousVersion.prompt_text}
+                afterPrompt={version.prompt_text}
+                beforeLabel={`Iteration ${previousVersion.iteration_number}`}
+                afterLabel={`Iteration ${version.iteration_number}`}
+              />
+            </div>
+            <form method="dialog" class="modal-backdrop">
+              <button>close</button>
             </form>
-            <h3 class="font-bold text-lg mb-4">
-              Comparing Iteration {previousVersion.iteration_number} → {version.iteration_number}
-            </h3>
-            <PromptDiffViewer
-              beforePrompt={previousVersion.prompt_text}
-              afterPrompt={version.prompt_text}
-              beforeLabel={`Iteration ${previousVersion.iteration_number}`}
-              afterLabel={`Iteration ${version.iteration_number}`}
-            />
-          </div>
-          <form method="dialog" class="modal-backdrop">
-            <button>close</button>
-          </form>
-        </dialog>
-      );
-    })}
+          </dialog>
+        );
+      })
+    }
   </div>
 </Layout>
 

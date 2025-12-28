@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
-import { evaluateOutput, storeJudgeDecision } from '../../src/lib/judge-evaluator';
+import { evaluateOutput, storeJudgeDecision } from '@lib/evaluation/judge-evaluator';
 import { getTestDatabase, initializeTestDatabase, cleanTestDatabase } from '../setup';
 
 describe('Judge API Integration', () => {

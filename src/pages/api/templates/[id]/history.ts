@@ -2,7 +2,7 @@
 // Get template evaluation history
 
 import type { APIRoute } from 'astro';
-import { getTemplateById, getTemplateHistory } from '../../../../lib/db';
+import { getTemplateById, getTemplateHistory } from '@lib/db';
 
 /**
  * GET /api/templates/:id/history

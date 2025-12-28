@@ -2,14 +2,14 @@
 // Evaluation submission endpoint
 
 import type { APIRoute } from 'astro';
-import { insertEvaluation, insertResult, getModelById } from '../../lib/db';
-import { startEvaluation } from '../../lib/evaluator';
+import { insertEvaluation, insertResult, getModelById } from '@lib/db';
+import { startEvaluation } from '@lib/evaluation/evaluator';
 import {
   validateCreateEvaluation,
   validateSystemPrompt,
   validateTemperature,
-} from '../../lib/validators';
-import type { RubricType } from '../../lib/types';
+} from '@lib/validation/validators';
+import type { RubricType } from '@lib/utils/types';
 
 /**
  * POST /api/evaluate

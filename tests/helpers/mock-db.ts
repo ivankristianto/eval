@@ -6,7 +6,7 @@ import type {
   Provider,
   Result,
   RubricType,
-} from '../../src/lib/types';
+} from '@lib/utils/types';
 
 type ResultWithModel = Result & { model_name: string; provider: Provider };
 

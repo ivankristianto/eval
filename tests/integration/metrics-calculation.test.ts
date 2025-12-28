@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
-import { calculateIterationMetrics } from '../../src/lib/metrics-orchestrator';
+import { calculateIterationMetrics } from '@lib/evaluation/metrics-orchestrator';
 import { getTestDatabase, initializeTestDatabase, cleanTestDatabase } from '../setup';
 import { v4 as uuidv4 } from 'uuid';
 

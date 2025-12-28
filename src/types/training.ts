@@ -273,6 +273,20 @@ export interface FailureAnalysisContext {
 }
 
 /**
+ * Failure case for automatic prompt refinement
+ * Used when iterating on judge prompts based on ground truth comparison
+ */
+export type FailureCaseType = 'false_positive' | 'false_negative';
+
+export interface FailureCase {
+  type: FailureCaseType;
+  input: string;
+  generated_output: string;
+  expected_output: string;
+  judge_reasoning: string;
+}
+
+/**
  * Prompt refinement result from LLM
  */
 export interface PromptRefinementResult {

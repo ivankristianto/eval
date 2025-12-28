@@ -8,9 +8,9 @@ import {
   insertResult,
   incrementTemplateRunCount,
   getModelById,
-} from '../../../../lib/db';
-import { startEvaluation } from '../../../../lib/evaluator';
-import { validateModelIds } from '../../../../lib/validators';
+} from '@lib/db';
+import { startEvaluation } from '@lib/evaluation/evaluator';
+import { validateModelIds } from '@lib/validation/validators';
 
 /**
  * POST /api/templates/:id/run

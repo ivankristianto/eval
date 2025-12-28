@@ -4,7 +4,7 @@
  */
 
 import type { APIRoute } from 'astro';
-import { getDatabase } from '../../../../../../lib/db';
+import { getDatabase } from '@lib/db';
 import { v4 as uuidv4 } from 'uuid';
 
 /**

@@ -2,9 +2,9 @@
 // Test API key connection endpoint
 
 import type { APIRoute } from 'astro';
-import { getModelById, decryptApiKey } from '../../../../lib/db';
-import { ClientFactory } from '../../../../lib/api-clients';
-import { validateApiKeyFormat } from '../../../../lib/validators';
+import { getModelById, decryptApiKey } from '@lib/db';
+import { ClientFactory } from '@lib/utils/api-clients';
+import { validateApiKeyFormat } from '@lib/validation/validators';
 
 /**
  * POST /api/models/:id/test-connection

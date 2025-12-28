@@ -6,7 +6,7 @@ import {
   validateUpdateModel,
   validateSystemPrompt,
   validateTemperature,
-} from '../../src/lib/validators';
+} from '@lib/validation/validators';
 
 const validUuid = '11111111-1111-4111-8111-111111111111';
 

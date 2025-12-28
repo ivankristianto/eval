@@ -4,9 +4,9 @@
  */
 
 import type Database from 'better-sqlite3';
-import { getDatabase } from './db';
+import { getDatabase } from '@lib/db';
 import { validateModelSeparation } from './model-separation-validator';
-import type { PersonaCreationInput, ValidationResult } from '../types/training';
+import type { PersonaCreationInput, ValidationResult } from '@src-types/training';
 
 /**
  * Validates persona creation input

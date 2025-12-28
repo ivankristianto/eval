@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
-import { getEvaluations, getEvaluationsCount, deleteEvaluations } from '../../../lib/db';
-import type { RubricType } from '../../../lib/types';
+import { getEvaluations, getEvaluationsCount, deleteEvaluations } from '@lib/db';
+import type { RubricType } from '@lib/utils/types';
 
 /**
  * GET /api/evaluations

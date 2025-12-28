@@ -11,7 +11,7 @@ import {
   closeTestDatabase,
   createTestPersona,
 } from '../setup';
-import { TrainingStateManager } from '../../src/lib/training-state';
+import { TrainingStateManager } from '@lib/training/training-state';
 import type { CheckpointData, TrainingLoopState } from '../../src/types/training';
 
 describe('Training State Manager', () => {

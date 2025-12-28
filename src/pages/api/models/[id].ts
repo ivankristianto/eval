@@ -8,9 +8,9 @@ import {
   deleteModel,
   getModelUsageCount,
   hasActiveEvaluations,
-} from '../../../lib/db';
-import { ClientFactory } from '../../../lib/api-clients';
-import { validateApiKeyFormat } from '../../../lib/validators';
+} from '@lib/db';
+import { ClientFactory } from '@lib/utils/api-clients';
+import { validateApiKeyFormat } from '@lib/validation/validators';
 
 /**
  * GET /api/models/:id

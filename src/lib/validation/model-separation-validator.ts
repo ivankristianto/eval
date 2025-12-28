@@ -5,8 +5,8 @@
  */
 
 import Database from 'better-sqlite3';
-import { getDatabase } from './db';
-import type { ValidationResult } from '../types/training';
+import { getDatabase } from '@lib/db';
+import type { ValidationResult } from '@src-types/training';
 
 /**
  * Basic information about a model configuration.

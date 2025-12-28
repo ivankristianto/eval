@@ -34,7 +34,7 @@ import {
   createCheckpoint,
   getLatestCheckpoint,
   withTransaction,
-} from '../../src/lib/persona-db';
+} from '@lib/db/persona-db';
 import type {
   CreatePersonaInput,
   JudgeDecision,

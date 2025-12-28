@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
-import { evaluateOutput, parseJudgeResponse } from '../../src/lib/judge-evaluator';
+import { evaluateOutput, parseJudgeResponse } from '@lib/evaluation/judge-evaluator';
 import { getTestDatabase, initializeTestDatabase, cleanTestDatabase } from '../setup';
 
 describe('Judge Evaluator', () => {

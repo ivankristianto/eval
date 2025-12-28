@@ -15,7 +15,7 @@ import {
   calculateF1Score,
   calculateCohensKappa,
   calculateAccuracy,
-} from '../../src/lib/metrics';
+} from '@lib/evaluation/metrics';
 
 describe('Metrics Calculation', () => {
   describe('buildConfusionMatrix', () => {

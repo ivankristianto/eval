@@ -2,8 +2,8 @@
 // Individual persona endpoints
 
 import type { APIRoute, APIContext } from 'astro';
-import { getPersona, updatePersona, deletePersona } from '../../../lib/persona-db';
-import type { Persona } from '../../../types/training';
+import { getPersona, updatePersona, deletePersona } from '@lib/db/persona-db';
+import type { Persona } from '@src-types/training';
 
 /**
  * GET /api/personas/:id

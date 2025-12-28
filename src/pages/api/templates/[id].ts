@@ -2,7 +2,7 @@
 // Individual template endpoints
 
 import type { APIRoute } from 'astro';
-import { getTemplateById, updateTemplate, deleteTemplate, getModelById } from '../../../lib/db';
+import { getTemplateById, updateTemplate, deleteTemplate, getModelById } from '@lib/db';
 import {
   validateTemplateName,
   validateDescription,
@@ -11,8 +11,8 @@ import {
   validateModelIds,
   validateSystemPrompt,
   validateTemperature,
-} from '../../../lib/validators';
-import type { RubricType } from '../../../lib/types';
+} from '@lib/validation/validators';
+import type { RubricType } from '@lib/utils/types';
 
 /**
  * GET /api/templates/:id

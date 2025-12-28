@@ -10,7 +10,7 @@ import ConfusionMatrix from '../../../components/ConfusionMatrix.astro';
 import Badge from '../../../components/ui/Badge.astro';
 import Breadcrumbs from '../../../components/ui/Breadcrumbs.astro';
 import PersonaTabs from '../../../components/PersonaTabs.astro';
-import { getDatabase } from '../../../lib/db';
+import { getDatabase } from '@lib/db';
 
 const { id } = Astro.params;
 
@@ -228,7 +228,7 @@ const breadcrumbItems = [
                 <th>Recall</th>
                 <th>Accuracy</th>
                 <th>Started</th>
-                <th></th>
+                <th />
               </tr>
             </thead>
             <tbody>

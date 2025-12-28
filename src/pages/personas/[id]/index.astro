@@ -4,9 +4,9 @@ import Breadcrumbs from '../../../components/ui/Breadcrumbs.astro';
 import Badge from '../../../components/ui/Badge.astro';
 import TrainingProgress from '../../../components/TrainingProgress.astro';
 import PersonaTabs from '../../../components/PersonaTabs.astro';
-import { getPersona } from '../../../lib/persona-db';
-import { getModels, getDatabase } from '../../../lib/db';
-import type { Persona } from '../../../types/training';
+import { getPersona } from '@lib/db/persona-db';
+import { getModels, getDatabase } from '@lib/db';
+import type { Persona } from '@src-types/training';
 
 const { id } = Astro.params;
 
@@ -353,9 +353,9 @@ if (currentTab === 'prompts') {
                 <label class="label">
                   <span class="label-text font-semibold">Description</span>
                 </label>
-                <textarea name="description" class="textarea textarea-bordered w-full h-24">{
-                  persona.description || ''
-                }</textarea>
+                <textarea name="description" class="textarea textarea-bordered w-full h-24">
+                  {persona.description || ''}
+                </textarea>
               </div>
 
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -553,7 +553,7 @@ if (currentTab === 'prompts') {
 </Layout>
 
 <script>
-  import { addToast } from '../../../lib/toastStore';
+  import { addToast } from '@lib/ui/toastStore';
 
   const personaId = window.location.pathname.split('/')[2];
 

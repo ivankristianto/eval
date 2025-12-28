@@ -6,8 +6,8 @@
  */
 
 import type { APIRoute } from 'astro';
-import { getPersona } from '../../../../../lib/persona-db';
-import { getDatabase } from '../../../../../lib/db';
+import { getPersona } from '@lib/db/persona-db';
+import { getDatabase } from '@lib/db';
 
 /**
  * GET /api/personas/[id]/training/pairs

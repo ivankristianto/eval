@@ -4,8 +4,8 @@
  */
 
 import type { APIRoute } from 'astro';
-import { getDatabase } from '../../../lib/db';
-import { getPromptDiff } from '../../../lib/prompt-version-manager';
+import { getDatabase } from '@lib/db';
+import { getPromptDiff } from '@lib/training/prompt-version-manager';
 
 /**
  * GET /api/judge-prompts/diff

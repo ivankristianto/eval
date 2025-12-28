@@ -17,7 +17,8 @@
     "baseUrl": ".",
     "paths": {
       "@lib/*": ["src/lib/*"],
-      "@components/*": ["src/components/*"]
+      "@components/*": ["src/components/*"],
+      "@src-types/*": ["src/types/*"]
     },
     "types": ["node", "better-sqlite3"]
   },

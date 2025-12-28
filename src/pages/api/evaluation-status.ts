@@ -2,7 +2,7 @@
 // Evaluation status polling endpoint
 
 import type { APIRoute } from 'astro';
-import { getEvaluationStatus } from '../../lib/db';
+import { getEvaluationStatus } from '@lib/db';
 
 /**
  * GET /api/evaluation-status

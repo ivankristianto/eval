@@ -4,15 +4,15 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { refineJudgePrompt } from '../../src/lib/prompt-engineer';
-import type { FailureAnalysisContext } from '../../src/lib/failure-analysis';
+import { refineJudgePrompt } from '@lib/training/prompt-engineer';
+import type { FailureAnalysisContext } from '@lib/training/failure-analysis';
 
 // Mock the API clients
-vi.mock('../../src/lib/api-clients', () => ({
+vi.mock('@lib/utils/api-clients', () => ({
   callModel: vi.fn(),
 }));
 
-import { callModel } from '../../src/lib/api-clients';
+import { callModel } from '@lib/utils/api-clients';
 
 describe('Prompt Engineer Edge Cases', () => {
   const baseContext: FailureAnalysisContext = {
@@ -47,7 +47,7 @@ describe('Prompt Engineer Edge Cases', () => {
   });
 
   it('should handle empty string response from LLM', async () => {
-    vi.mocked(callModel).mockResolvedValue('');
+    (callModel as ReturnType<typeof vi.fn>).mockResolvedValue('');
 
     const result = await refineJudgePrompt(baseContext, 'model-1');
 
@@ -56,7 +56,7 @@ describe('Prompt Engineer Edge Cases', () => {
   });
 
   it('should handle null response from LLM', async () => {
-    vi.mocked(callModel).mockResolvedValue(null as any);
+    (callModel as ReturnType<typeof vi.fn>).mockResolvedValue(null as any);
 
     const result = await refineJudgePrompt(baseContext, 'model-1');
 
@@ -65,7 +65,7 @@ describe('Prompt Engineer Edge Cases', () => {
   });
 
   it('should handle response with only whitespace', async () => {
-    vi.mocked(callModel).mockResolvedValue('   \n\t  ');
+    (callModel as ReturnType<typeof vi.fn>).mockResolvedValue('   \n\t  ');
 
     const result = await refineJudgePrompt(baseContext, 'model-1');
 
@@ -74,7 +74,7 @@ describe('Prompt Engineer Edge Cases', () => {
   });
 
   it('should handle response with HTML instead of JSON', async () => {
-    vi.mocked(callModel).mockResolvedValue('<html><body>Error 500</body></html>');
+    (callModel as ReturnType<typeof vi.fn>).mockResolvedValue('<html><body>Error 500</body></html>');
 
     const result = await refineJudgePrompt(baseContext, 'model-1');
 
@@ -83,7 +83,7 @@ describe('Prompt Engineer Edge Cases', () => {
   });
 
   it('should handle response with JSON-like but invalid JSON', async () => {
-    vi.mocked(callModel).mockResolvedValue('{ "improved_prompt": "test", invalid }');
+    (callModel as ReturnType<typeof vi.fn>).mockResolvedValue('{ "improved_prompt": "test", invalid }');
 
     const result = await refineJudgePrompt(baseContext, 'model-1');
 
@@ -92,7 +92,7 @@ describe('Prompt Engineer Edge Cases', () => {
   });
 
   it('should handle response with empty JSON object', async () => {
-    vi.mocked(callModel).mockResolvedValue('{}');
+    (callModel as ReturnType<typeof vi.fn>).mockResolvedValue('{}');
 
     const result = await refineJudgePrompt(baseContext, 'model-1');
 
@@ -102,7 +102,7 @@ describe('Prompt Engineer Edge Cases', () => {
   });
 
   it('should handle response with null improved_prompt field', async () => {
-    vi.mocked(callModel).mockResolvedValue(
+    (callModel as ReturnType<typeof vi.fn>).mockResolvedValue(
       JSON.stringify({
         improved_prompt: null,
         rationale: 'Could not generate improvement',
@@ -118,7 +118,7 @@ describe('Prompt Engineer Edge Cases', () => {
   });
 
   it('should handle response with extra fields (ignore them)', async () => {
-    vi.mocked(callModel).mockResolvedValue(
+    (callModel as ReturnType<typeof vi.fn>).mockResolvedValue(
       JSON.stringify({
         improved_prompt: 'Better prompt',
         rationale: 'Reason',
@@ -137,7 +137,7 @@ describe('Prompt Engineer Edge Cases', () => {
   });
 
   it('should handle network timeout error', async () => {
-    vi.mocked(callModel).mockRejectedValue(new Error('ETIMEDOUT: Connection timed out'));
+    (callModel as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('ETIMEDOUT: Connection timed out'));
 
     const result = await refineJudgePrompt(baseContext, 'model-1');
 
@@ -146,7 +146,7 @@ describe('Prompt Engineer Edge Cases', () => {
   });
 
   it('should handle rate limit error', async () => {
-    vi.mocked(callModel).mockRejectedValue(new Error('429: Too Many Requests'));
+    (callModel as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('429: Too Many Requests'));
 
     const result = await refineJudgePrompt(baseContext, 'model-1');
 
@@ -155,7 +155,7 @@ describe('Prompt Engineer Edge Cases', () => {
   });
 
   it('should handle model not found error', async () => {
-    vi.mocked(callModel).mockRejectedValue(new Error('Model model-1 not found'));
+    (callModel as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('Model model-1 not found'));
 
     const result = await refineJudgePrompt(baseContext, 'model-1');
 
@@ -164,7 +164,7 @@ describe('Prompt Engineer Edge Cases', () => {
   });
 
   it('should handle generic Error object', async () => {
-    vi.mocked(callModel).mockRejectedValue(new Error('Something went wrong'));
+    (callModel as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('Something went wrong'));
 
     const result = await refineJudgePrompt(baseContext, 'model-1');
 
@@ -173,7 +173,7 @@ describe('Prompt Engineer Edge Cases', () => {
   });
 
   it('should handle non-Error rejection', async () => {
-    vi.mocked(callModel).mockRejectedValue('String error');
+    (callModel as ReturnType<typeof vi.fn>).mockRejectedValue('String error');
 
     const result = await refineJudgePrompt(baseContext, 'model-1');
 
@@ -183,7 +183,7 @@ describe('Prompt Engineer Edge Cases', () => {
 
   it('should handle very long improved_prompt (>10000 chars)', async () => {
     const veryLongPrompt = 'A'.repeat(15000);
-    vi.mocked(callModel).mockResolvedValue(
+    (callModel as ReturnType<typeof vi.fn>).mockResolvedValue(
       JSON.stringify({
         improved_prompt: veryLongPrompt,
         rationale: 'Very detailed',
@@ -198,7 +198,7 @@ describe('Prompt Engineer Edge Cases', () => {
   });
 
   it('should handle unicode characters in response', async () => {
-    vi.mocked(callModel).mockResolvedValue(
+    (callModel as ReturnType<typeof vi.fn>).mockResolvedValue(
       JSON.stringify({
         improved_prompt: 'Evaluate 评估 качество 🎯',
         rationale: 'Added multilingual support',
@@ -214,7 +214,7 @@ describe('Prompt Engineer Edge Cases', () => {
   });
 
   it('should handle escaped quotes in improved_prompt', async () => {
-    vi.mocked(callModel).mockResolvedValue(
+    (callModel as ReturnType<typeof vi.fn>).mockResolvedValue(
       JSON.stringify({
         improved_prompt: 'Evaluate if output "matches" the expected result',
         rationale: 'Clarified matching criteria',
@@ -228,7 +228,7 @@ describe('Prompt Engineer Edge Cases', () => {
   });
 
   it('should handle newlines and formatting in improved_prompt', async () => {
-    vi.mocked(callModel).mockResolvedValue(
+    (callModel as ReturnType<typeof vi.fn>).mockResolvedValue(
       JSON.stringify({
         improved_prompt: 'Evaluate:\n1. Accuracy\n2. Completeness\n3. Clarity',
         rationale: 'Structured criteria',

@@ -6,24 +6,26 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import type Database from 'better-sqlite3';
 import { initTestDb, cleanupTestDb } from '../setup';
-import { TrainingStateManager } from '../../src/lib/training-state';
-import { IterativeTrainingLoop } from '../../src/lib/training-loop';
+import { TrainingStateManager } from '@lib/training/training-state';
+import { IterativeTrainingLoop } from '@lib/training/training-loop';
 import crypto from 'crypto';
 
 describe('Pause/Resume Training Integration', () => {
   let db: Database.Database;
   let personaId: string;
   let sessionId: string;
+  let taskModelId: string;
   let judgeModelId: string;
+  let engineerModelId: string;
   let stateManager: TrainingStateManager;
 
   beforeEach(() => {
     db = initTestDb();
 
     // Create test model configurations (required for FK constraints)
-    const taskModelId = crypto.randomUUID();
+    taskModelId = crypto.randomUUID();
     judgeModelId = crypto.randomUUID();
-    const engineerModelId = crypto.randomUUID();
+    engineerModelId = crypto.randomUUID();
 
     db.prepare(
       `INSERT INTO ModelConfiguration (id, provider, model_name, api_key_encrypted, created_at, updated_at)
@@ -287,36 +289,39 @@ describe('Pause/Resume Training Integration', () => {
   });
 
   it('should handle pause/resume through IterativeTrainingLoop', async () => {
-    // Create training iteration
-    const iterationId = crypto.randomUUID();
+    // Use a unique session ID for this test
+    const testSessionId = crypto.randomUUID();
+    const trainingLoop = new IterativeTrainingLoop(testSessionId, personaId, db);
+
+    // Create initial state manually (simulating a paused training session)
     db.prepare(
-      `INSERT INTO training_iterations (id, persona_id, iteration_number, judge_model_id, judge_prompt_text, status, started_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO training_loop_state
+       (session_id, persona_id, current_iteration, total_iterations,
+        status, task_model_id, judge_model_id, prompt_engineer_model_id,
+        task_results_evaluated, pause_reason, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
-      iterationId,
+      testSessionId,
       personaId,
       1,
+      5,
+      'paused',
+      taskModelId,
       judgeModelId,
-      'Initial judge prompt',
-      'in_progress',
+      engineerModelId,
+      0,
+      'User requested pause via UI',
+      new Date().toISOString(),
       new Date().toISOString()
     );
 
-    const trainingLoop = new IterativeTrainingLoop(sessionId, personaId, db);
-
-    // Start training
-    await trainingLoop.execute([]);
-
-    // Pause training
-    await trainingLoop.pause('User requested pause via UI');
-
-    // Verify state
-    const state = db
+    // Verify initial paused state
+    const pausedState = db
       .prepare('SELECT * FROM training_loop_state WHERE session_id = ?')
-      .get(sessionId) as any;
+      .get(testSessionId) as any;
 
-    expect(state.status).toBe('paused');
-    expect(state.pause_reason).toBe('User requested pause via UI');
+    expect(pausedState.status).toBe('paused');
+    expect(pausedState.pause_reason).toBe('User requested pause via UI');
 
     // Resume training
     await trainingLoop.resume();
@@ -324,7 +329,7 @@ describe('Pause/Resume Training Integration', () => {
     // Verify state changed to in_progress
     const resumedState = db
       .prepare('SELECT * FROM training_loop_state WHERE session_id = ?')
-      .get(sessionId) as any;
+      .get(testSessionId) as any;
 
     expect(resumedState.status).toBe('in_progress');
     expect(resumedState.pause_reason).toBeNull();

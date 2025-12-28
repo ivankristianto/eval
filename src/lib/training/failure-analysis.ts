@@ -4,7 +4,7 @@
  */
 
 import type { Database } from 'better-sqlite3';
-import type { MetricsResult } from '../types/training';
+import type { MetricsResult } from '@src-types/training';
 
 /**
  * Example of a model output that the judge incorrectly agreed with (False Positive).

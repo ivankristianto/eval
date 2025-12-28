@@ -18,7 +18,7 @@ import {
   listPersonas,
   updatePersona,
   deletePersona,
-} from '../../src/lib/persona-db';
+} from '@lib/db/persona-db';
 
 describe('Personas API Integration', () => {
   beforeAll(() => {

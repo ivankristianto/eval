@@ -14,7 +14,7 @@ import {
   calculateCohensKappa,
   calculateAccuracy,
   calculateBatchMetrics,
-} from '../../src/lib/metrics';
+} from '@lib/evaluation/metrics';
 
 describe('Metrics Edge Cases', () => {
   describe('Empty confusion matrix (all zeros)', () => {

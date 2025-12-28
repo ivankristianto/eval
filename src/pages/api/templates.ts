@@ -2,13 +2,13 @@
 // Template CRUD endpoints
 
 import type { APIRoute } from 'astro';
-import { insertTemplate, getTemplates } from '../../lib/db';
+import { insertTemplate, getTemplates } from '@lib/db';
 import {
   validateCreateTemplate,
   validateSystemPrompt,
   validateTemperature,
-} from '../../lib/validators';
-import type { RubricType } from '../../lib/types';
+} from '@lib/validation/validators';
+import type { RubricType } from '@lib/utils/types';
 
 /**
  * POST /api/templates

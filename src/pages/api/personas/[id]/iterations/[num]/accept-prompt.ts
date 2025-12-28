@@ -4,8 +4,8 @@
  */
 
 import type { APIRoute } from 'astro';
-import { getDatabase } from '../../../../../../lib/db';
-import { storePromptVersion } from '../../../../../../lib/prompt-version-manager';
+import { getDatabase } from '@lib/db';
+import { storePromptVersion } from '@lib/training/prompt-version-manager';
 
 /**
  * POST /api/personas/[id]/iterations/[num]/accept-prompt

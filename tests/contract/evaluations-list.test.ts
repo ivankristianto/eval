@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { APIContext } from 'astro';
 import { GET } from '../../src/pages/api/evaluations/index';
-import * as db from '../../src/lib/db';
+import * as db from '@lib/db';
 import { createMockDb } from '../helpers/mock-db';
 import { readJson } from '../helpers/requests';
 

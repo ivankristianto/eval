@@ -9,7 +9,7 @@ import JudgeDecisionReview from '../../../../components/JudgeDecisionReview.astr
 import Badge from '../../../../components/ui/Badge.astro';
 import Breadcrumbs from '../../../../components/ui/Breadcrumbs.astro';
 import PersonaTabs from '../../../../components/PersonaTabs.astro';
-import { getDatabase } from '../../../../lib/db';
+import { getDatabase } from '@lib/db';
 
 const { id, iteration } = Astro.params;
 
@@ -238,7 +238,8 @@ const breadcrumbItems = [
               </svg>
               <div class="flex-1">
                 <span>
-                  All decisions have been reviewed! You can now calculate metrics for this iteration.
+                  All decisions have been reviewed! You can now calculate metrics for this
+                  iteration.
                 </span>
               </div>
               <button
@@ -294,7 +295,7 @@ const breadcrumbItems = [
 </Layout>
 
 <script>
-  import { addToast } from '../../../../lib/toastStore';
+  import { addToast } from '@lib/ui/toastStore';
 
   // Calculate metrics button
   document.querySelectorAll('.calculate-metrics-btn').forEach((btn) => {

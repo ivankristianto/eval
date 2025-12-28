@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import * as accuracy from '../../src/lib/accuracy';
-import { getSemanticSimilarityScore } from '../../src/lib/semanticSimilarity';
+import * as accuracy from '@lib/evaluation/accuracy';
+import { getSemanticSimilarityScore } from '@lib/evaluation/semanticSimilarity';
 
-vi.mock('../../src/lib/semanticSimilarity', () => ({
+vi.mock('@lib/evaluation/semanticSimilarity', () => ({
   getSemanticSimilarityScore: vi.fn(),
 }));
 
@@ -84,11 +84,11 @@ describe('partialCredit', () => {
 
 describe('semanticSimilarity', () => {
   beforeEach(() => {
-    vi.mocked(getSemanticSimilarityScore).mockResolvedValue(baseSemanticResult);
+    (getSemanticSimilarityScore as ReturnType<typeof vi.fn>).mockResolvedValue(baseSemanticResult);
   });
 
   it('returns 100 for identical text', async () => {
-    vi.mocked(getSemanticSimilarityScore).mockResolvedValueOnce({
+    (getSemanticSimilarityScore as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
       ...baseSemanticResult,
       score: 100,
     });
@@ -99,7 +99,7 @@ describe('semanticSimilarity', () => {
   });
 
   it('returns low score for different text', async () => {
-    vi.mocked(getSemanticSimilarityScore).mockResolvedValueOnce({
+    (getSemanticSimilarityScore as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
       ...baseSemanticResult,
       score: 10,
     });
@@ -110,7 +110,7 @@ describe('semanticSimilarity', () => {
   });
 
   it('returns high score for similar meaning', async () => {
-    vi.mocked(getSemanticSimilarityScore).mockResolvedValueOnce({
+    (getSemanticSimilarityScore as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
       ...baseSemanticResult,
       score: 85,
     });
@@ -122,7 +122,7 @@ describe('semanticSimilarity', () => {
 
   it('returns 0 when scoring fails', async () => {
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
-    vi.mocked(getSemanticSimilarityScore).mockRejectedValueOnce(new Error('API failure'));
+    (getSemanticSimilarityScore as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error('API failure'));
 
     const result = await accuracy.semanticSimilarity('A', 'B');
 
@@ -140,7 +140,7 @@ describe('calculateAccuracy', () => {
     const partialResult = await accuracy.calculateAccuracy('partial_credit', 'A', 'A', ['a', 'b']);
     expect(partialResult.score).toBe(50);
 
-    vi.mocked(getSemanticSimilarityScore).mockResolvedValueOnce({
+    (getSemanticSimilarityScore as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
       ...baseSemanticResult,
       score: 77,
       reasoning: 'Semantic check',

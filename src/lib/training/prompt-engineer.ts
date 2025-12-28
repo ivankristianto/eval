@@ -3,7 +3,7 @@
  * Uses LLM to refine judge prompts based on failure analysis
  */
 
-import { callModel } from './api-clients';
+import { callModel } from '@lib/utils/api-clients';
 import type { FailureAnalysisContext } from './failure-analysis';
 
 /**

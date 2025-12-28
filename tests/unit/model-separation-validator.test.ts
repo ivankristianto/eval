@@ -10,7 +10,7 @@ import {
   cleanTestDatabase,
   createTestModelConfig,
 } from '../setup';
-import { validateModelSeparation } from '../../src/lib/model-separation-validator';
+import { validateModelSeparation } from '@lib/validation/model-separation-validator';
 
 describe('Model Separation Validator', () => {
   beforeEach(() => {

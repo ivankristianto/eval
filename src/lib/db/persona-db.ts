@@ -6,7 +6,7 @@
 import Database from 'better-sqlite3';
 import { v4 as uuidv4 } from 'uuid';
 import { getDatabase } from './db';
-import { validatePersonaCreation } from './persona-validator';
+import { validatePersonaCreation } from '@lib/validation/persona-validator';
 import type {
   Persona,
   CreatePersonaInput,
@@ -25,7 +25,7 @@ import type {
   SessionStatus,
   JudgeDecisionType,
   PromptSource,
-} from '../types/training';
+} from '@src-types/training';
 
 /**
  * Get database connection with training tables initialized.

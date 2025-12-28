@@ -4,8 +4,8 @@ import Breadcrumbs from '../components/ui/Breadcrumbs.astro';
 import Button from '../components/ui/Button.astro';
 import Input from '../components/ui/Input.astro';
 import EmptyState from '../components/ui/EmptyState.astro';
-import { getModels, getModelUsageCount } from '../lib/db';
-import type { Provider } from '../lib/types';
+import { getModels, getModelUsageCount } from '@lib/db';
+import type { Provider } from '@lib/utils/types';
 
 // Get models for initial render
 let models: Array<{
@@ -239,7 +239,7 @@ const modelIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text
 </Layout>
 
 <script>
-  import { addToast } from '../lib/toastStore';
+  import { addToast } from '@lib/ui/toastStore';
 
   // Elements
   const addModelBtn = document.getElementById('add-model-btn') as HTMLButtonElement;

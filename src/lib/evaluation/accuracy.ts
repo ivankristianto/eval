@@ -1,7 +1,7 @@
 // src/lib/accuracy.ts
 // Accuracy calculation functions for AI Model Evaluation Framework
 
-import type { AccuracyResult, RubricType } from './types';
+import type { AccuracyResult, RubricType } from '@lib/utils/types';
 import { getSemanticSimilarityScore } from './semanticSimilarity';
 
 // ===== Exact Match Rubric =====

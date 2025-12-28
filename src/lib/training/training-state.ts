@@ -4,15 +4,15 @@
  */
 
 import Database from 'better-sqlite3';
-import { getDatabase } from './db';
+import { getDatabase } from '@lib/db';
 import {
   getTrainingLoopState,
   createTrainingLoopState,
   updateTrainingLoopState,
   createCheckpoint,
   getLatestCheckpoint,
-} from './persona-db';
-import type { CheckpointData } from '../types/training';
+} from '@lib/db/persona-db';
+import type { CheckpointData } from '@src-types/training';
 
 /**
  * TrainingStateManager class

@@ -4,8 +4,8 @@
  */
 
 import type { APIRoute } from 'astro';
-import { getDatabase } from '../../../../../lib/db';
-import { IterativeTrainingLoop } from '../../../../../lib/training-loop';
+import { getDatabase } from '@lib/db';
+import { IterativeTrainingLoop } from '@lib/training/training-loop';
 import { v4 as uuidv4 } from 'uuid';
 
 /**

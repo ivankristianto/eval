@@ -5,15 +5,15 @@ import type {
   Provider,
   Result,
   ResultStatus,
-} from '../../src/lib/types';
+} from '@lib/utils/types';
 import {
   EvaluationExecutor,
   cancelEvaluation,
   isEvaluationRunning,
   startEvaluation,
-} from '../../src/lib/evaluator';
-import { ClientFactory } from '../../src/lib/api-clients';
-import { calculateAccuracy } from '../../src/lib/accuracy';
+} from '@lib/evaluation/evaluator';
+import { ClientFactory } from '@lib/utils/api-clients';
+import { calculateAccuracy } from '@lib/evaluation/accuracy';
 import {
   decryptApiKey,
   getEvaluation,
@@ -21,13 +21,13 @@ import {
   getResults,
   updateEvaluationStatus,
   updateResult,
-} from '../../src/lib/db';
+} from '@lib/db';
 
 const models = new Map<string, ModelConfiguration>();
 let results: (Result & { model_name: string; provider: Provider })[] = [];
 let consoleErrorSpy: ReturnType<typeof vi.spyOn> | null = null;
 
-vi.mock('../../src/lib/db', () => {
+vi.mock('@lib/db', () => {
   return {
     getModelById: vi.fn(),
     getResults: vi.fn(),
@@ -38,13 +38,13 @@ vi.mock('../../src/lib/db', () => {
   };
 });
 
-vi.mock('../../src/lib/api-clients', () => ({
+vi.mock('@lib/utils/api-clients', () => ({
   ClientFactory: {
     createClient: vi.fn(),
   },
 }));
 
-vi.mock('../../src/lib/accuracy', () => ({
+vi.mock('@lib/evaluation/accuracy', () => ({
   calculateAccuracy: vi.fn(),
 }));
 

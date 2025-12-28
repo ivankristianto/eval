@@ -6,9 +6,9 @@
  */
 
 import type { APIRoute } from 'astro';
-import { getPersona } from '../../../../../lib/persona-db';
-import { parseCSV } from '../../../../../lib/csv-parser';
-import { getDatabase } from '../../../../../lib/db';
+import { getPersona } from '@lib/db/persona-db';
+import { parseCSV } from '@lib/utils/csv-parser';
+import { getDatabase } from '@lib/db';
 import { randomUUID } from 'crypto';
 
 /**

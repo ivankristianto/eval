@@ -1,8 +1,8 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import Breadcrumbs from '../../components/ui/Breadcrumbs.astro';
-import { getModels } from '../../lib/db';
-import type { ModelConfiguration } from '../../lib/types';
+import { getModels } from '@lib/db';
+import type { ModelConfiguration } from '@lib/utils/types';
 
 // Fetch available models directly from DB
 let models: ModelConfiguration[] = [];
@@ -380,7 +380,7 @@ const breadcrumbItems = [
 </Layout>
 
 <script>
-  import { addToast } from '../../lib/toastStore';
+  import { addToast } from '@lib/ui/toastStore';
 
   const form = document.getElementById('create-persona-form') as HTMLFormElement;
   const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;

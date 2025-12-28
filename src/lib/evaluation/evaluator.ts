@@ -17,7 +17,7 @@
 // This ensures evaluation integrity and prevents inconsistent retry behavior
 // across different failure scenarios.
 
-import { ClientFactory } from './api-clients';
+import { ClientFactory } from '@lib/utils/api-clients';
 import { calculateAccuracy } from './accuracy';
 import {
   getModelById,
@@ -26,8 +26,8 @@ import {
   updateResult,
   getResults,
   decryptApiKey,
-} from './db';
-import type { RubricType, ResultStatus } from './types';
+} from '@lib/db';
+import type { RubricType, ResultStatus } from '@lib/utils/types';
 
 // Timeout constants
 const MODEL_TIMEOUT_MS = 30000; // 30 seconds per model

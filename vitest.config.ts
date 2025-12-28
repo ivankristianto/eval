@@ -54,8 +54,9 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@lib': '/src/lib',
-      '@components': '/src/components',
+      '@lib': fileURLToPath(new URL('./src/lib', import.meta.url)),
+      '@components': fileURLToPath(new URL('./src/components', import.meta.url)),
+      '@src-types': fileURLToPath(new URL('./src/types', import.meta.url)),
     },
   },
 });

@@ -4,9 +4,9 @@
  */
 
 import type { APIRoute } from 'astro';
-import { getDatabase } from '../../../../../lib/db';
-import { TrainingStateManager } from '../../../../../lib/training-state';
-import { IterativeTrainingLoop } from '../../../../../lib/training-loop';
+import { getDatabase } from '@lib/db';
+import { TrainingStateManager } from '@lib/training/training-state';
+import { IterativeTrainingLoop } from '@lib/training/training-loop';
 
 /**
  * Persona database row type
@@ -190,9 +190,7 @@ export const POST: APIRoute = async ({ params }) => {
 
       // Get current iteration data
       const iteration = db
-        .prepare(
-          'SELECT * FROM training_iterations WHERE persona_id = ? AND iteration_number = ?'
-        )
+        .prepare('SELECT * FROM training_iterations WHERE persona_id = ? AND iteration_number = ?')
         .get(id, pausedSession!.current_iteration) as any;
 
       if (iteration) {

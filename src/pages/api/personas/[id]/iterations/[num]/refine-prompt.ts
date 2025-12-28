@@ -4,9 +4,9 @@
  */
 
 import type { APIRoute } from 'astro';
-import { getDatabase } from '../../../../../../lib/db';
-import { analyzeIterationFailures } from '../../../../../../lib/failure-analysis';
-import { refineJudgePrompt } from '../../../../../../lib/prompt-engineer';
+import { getDatabase } from '@lib/db';
+import { analyzeIterationFailures } from '@lib/training/failure-analysis';
+import { refineJudgePrompt } from '@lib/training/prompt-engineer';
 
 /**
  * POST /api/personas/[id]/iterations/[num]/refine-prompt

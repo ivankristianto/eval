@@ -3,7 +3,7 @@
  * Implements confusion matrix, F1 score, precision, recall, Cohen's Kappa, and accuracy
  */
 
-import type { ConfusionMatrix, MetricsResult } from '../types/training';
+import type { ConfusionMatrix, MetricsResult } from '@src-types/training';
 
 /**
  * Build confusion matrix from judge and human agreement arrays

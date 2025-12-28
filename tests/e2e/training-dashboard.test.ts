@@ -157,10 +157,8 @@ test.describe('Training Dashboard', () => {
 
         // If training data exists, cards should be present
         // If no data, may show "No Training Data Yet" message instead
-        const hasData =
-          (await page.locator('text=No Training Data Yet').count()) === 0;
-        const hasNoDataMessage =
-          (await page.locator('text=No Training Data Yet').count()) > 0;
+        const hasData = (await page.locator('text=No Training Data Yet').count()) === 0;
+        const hasNoDataMessage = (await page.locator('text=No Training Data Yet').count()) > 0;
 
         expect(hasData || hasNoDataMessage).toBe(true);
       } else {
@@ -182,7 +180,9 @@ test.describe('Training Dashboard', () => {
             await page.goto(`/personas/${persona.id}/metrics`);
 
             // Check for success alert
-            const successAlert = page.locator('.alert.alert-success:has-text("Training Converged!")');
+            const successAlert = page.locator(
+              '.alert.alert-success:has-text("Training Converged!")'
+            );
             await expect(successAlert).toBeVisible();
 
             // Check for target F1 mentioned
@@ -196,9 +196,7 @@ test.describe('Training Dashboard', () => {
       }
     });
 
-    test('should display current iteration status when training in progress', async ({
-      page,
-    }) => {
+    test('should display current iteration status when training in progress', async ({ page }) => {
       const personasResponse = await page.request.get('/api/personas');
       const personas = await personasResponse.json();
 
@@ -343,9 +341,7 @@ test.describe('Training Dashboard', () => {
           const response = await page.request.get(`/api/personas/${persona.id}/dashboard`);
           const data = await response.json();
 
-          const iterationWithMetrics = data.iterations.find(
-            (i: any) => i.f1_score !== null
-          );
+          const iterationWithMetrics = data.iterations.find((i: any) => i.f1_score !== null);
 
           if (iterationWithMetrics) {
             await page.goto(`/personas/${persona.id}/metrics`);
@@ -375,9 +371,7 @@ test.describe('Training Dashboard', () => {
           const response = await page.request.get(`/api/personas/${persona.id}/dashboard`);
           const data = await response.json();
 
-          const iterationWithMetrics = data.iterations.find(
-            (i: any) => i.f1_score !== null
-          );
+          const iterationWithMetrics = data.iterations.find((i: any) => i.f1_score !== null);
 
           if (iterationWithMetrics) {
             await page.goto(`/personas/${persona.id}/metrics`);
@@ -390,8 +384,7 @@ test.describe('Training Dashboard', () => {
             const cardCount = await confusionMatrixCard.count();
 
             // May be displayed inline or in a card
-            const hasCohenKappa =
-              (await page.locator('text=Cohen\'s Kappa').count()) > 0;
+            const hasCohenKappa = (await page.locator("text=Cohen's Kappa").count()) > 0;
             expect(hasCohenKappa).toBe(true);
             return; // Test passed, exit
           }
@@ -402,9 +395,9 @@ test.describe('Training Dashboard', () => {
       }
     });
 
-    test('should display Cohen\'s Kappa interpretation guide', async ({ page }) => {
+    test("should display Cohen's Kappa interpretation guide", async ({ page }) => {
       const personasResponse = await page.request.get('/api/personas');
-      const personas = personasResponse.ok ? await personasResponse.json() : [];
+      const personas = await personasResponse.json();
 
       if (Array.isArray(personas) && personas.length > 0) {
         // Find a persona with metrics
@@ -412,9 +405,7 @@ test.describe('Training Dashboard', () => {
           const response = await page.request.get(`/api/personas/${persona.id}/dashboard`);
           const data = await response.json();
 
-          const iterationWithMetrics = data.iterations.find(
-            (i: any) => i.f1_score !== null
-          );
+          const iterationWithMetrics = data.iterations.find((i: any) => i.f1_score !== null);
 
           if (iterationWithMetrics) {
             await page.goto(`/personas/${persona.id}/metrics`);
@@ -452,8 +443,8 @@ test.describe('Training Dashboard', () => {
 
         // Check for active metrics tab
         const metricsTab = page.locator('.tabs a:has-text("Metrics")');
-        const hasActiveClass = await metricsTab.evaluate(
-          (el) => el.classList.contains('tab-active')
+        const hasActiveClass = await metricsTab.evaluate((el) =>
+          el.classList.contains('tab-active')
         );
         expect(hasActiveClass).toBe(true);
       } else {
@@ -497,8 +488,7 @@ test.describe('Training Dashboard', () => {
           const data = await response.json();
 
           if (data.persona.best_f1_score !== null) {
-            const expectedConvergence =
-              data.persona.best_f1_score >= data.persona.target_f1_score;
+            const expectedConvergence = data.persona.best_f1_score >= data.persona.target_f1_score;
             expect(data.convergence_achieved).toBe(expectedConvergence);
           }
         }
@@ -518,9 +508,7 @@ test.describe('Training Dashboard', () => {
 
           // Current iteration should match iterations count or be one less
           if (data.iterations.length > 0) {
-            const maxIterationNum = Math.max(
-              ...data.iterations.map((i: any) => i.iteration_num)
-            );
+            const maxIterationNum = Math.max(...data.iterations.map((i: any) => i.iteration_num));
             expect(data.persona.current_iteration).toBeGreaterThanOrEqual(maxIterationNum);
           }
         }

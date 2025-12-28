@@ -3,8 +3,8 @@ import Layout from '../layouts/Layout.astro';
 import Breadcrumbs from '../components/ui/Breadcrumbs.astro';
 import EmptyState from '../components/ui/EmptyState.astro';
 import PersonaCard from '../components/PersonaCard.astro';
-import { listPersonas } from '../lib/persona-db';
-import type { Persona, PersonaStatus } from '../types/training';
+import { listPersonas } from '@lib/db/persona-db';
+import type { Persona, PersonaStatus } from '@src-types/training';
 
 // Fetch personas directly from DB
 const url = Astro.url;
@@ -122,7 +122,7 @@ const personaIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 te
 </Layout>
 
 <script>
-  import { addToast } from '../lib/toastStore';
+  import { addToast } from '@lib/ui/toastStore';
 
   /**
    * Handles navigation to the persona creation page.

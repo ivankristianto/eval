@@ -20,10 +20,10 @@
 </div>
 
 <script>
-  import { toasts, removeToast } from '../../lib/toastStore';
-  import type { Toast } from '../../lib/toastStore';
-  import { createIconElement } from '../../lib/icons';
-  import { initializeOnce } from '../../lib/client-utils';
+  import { toasts, removeToast } from '@lib/ui/toastStore';
+  import type { Toast } from '@lib/ui/toastStore';
+  import { createIconElement } from '@lib/ui/icons';
+  import { initializeOnce } from '@lib/utils/client-utils';
 
   /**
    * Create toast alert element using DOM methods (no innerHTML for security).

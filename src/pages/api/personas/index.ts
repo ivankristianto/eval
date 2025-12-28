@@ -5,9 +5,9 @@
  */
 
 import type { APIRoute } from 'astro';
-import { createPersona, listPersonas } from '../../../lib/persona-db';
-import { validatePersonaCreation } from '../../../lib/persona-validator';
-import type { CreatePersonaInput, Persona } from '../../../types/training';
+import { createPersona, listPersonas } from '@lib/db/persona-db';
+import { validatePersonaCreation } from '@lib/validation/persona-validator';
+import type { CreatePersonaInput, Persona } from '@src-types/training';
 
 /**
  * POST /api/personas

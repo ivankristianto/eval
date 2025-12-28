@@ -18,14 +18,15 @@ import type {
   ResultStatus,
   FilterOptions,
   EvaluationWithStats,
-} from './types';
+} from '@lib/utils/types';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const envDbPath = import.meta.env?.EVAL_DB_PATH || process.env.EVAL_DB_PATH;
-const DB_PATH = envDbPath || join(__dirname, '../../db/evaluation.db');
-const SCHEMA_PATH = join(__dirname, '../../db/schema.sql');
-const MIGRATIONS_DIR = join(__dirname, '../../db/migrations');
+// Note: db.ts is now in src/lib/db/, so we need to go up 3 levels to reach project root
+const DB_PATH = envDbPath || join(__dirname, '../../../db/evaluation.db');
+const SCHEMA_PATH = join(__dirname, '../../../db/schema.sql');
+const MIGRATIONS_DIR = join(__dirname, '../../../db/migrations');
 
 let db: Database.Database | null = null;
 

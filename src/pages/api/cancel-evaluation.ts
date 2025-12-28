@@ -2,8 +2,8 @@
 // Cancel a running evaluation
 
 import type { APIRoute } from 'astro';
-import { getEvaluation } from '../../lib/db';
-import { cancelEvaluation } from '../../lib/evaluator';
+import { getEvaluation } from '@lib/db';
+import { cancelEvaluation } from '@lib/evaluation/evaluator';
 
 /**
  * POST /api/cancel-evaluation

@@ -4,44 +4,48 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { getDatabase } from '../../src/lib/db';
+import { getDatabase } from '@lib/db';
 import type { Database } from 'better-sqlite3';
-import { analyzeIterationFailures } from '../../src/lib/failure-analysis';
+import { analyzeIterationFailures } from '@lib/training/failure-analysis';
 import { v4 as uuidv4 } from 'uuid';
 
 describe('Failure Analysis', () => {
   let db: Database;
   let personaId: string;
   let iterationId: string;
+  let modelTaskId: string;
+  let modelJudgeId: string;
+  let modelEngineerId: string;
 
   beforeEach(async () => {
     db = getDatabase();
 
-    // Create test model configurations
-    const modelTaskId = 'model-task-1';
-    const modelJudgeId = 'model-judge-1';
-    const modelEngineerId = 'model-engineer-1';
+    // Create test model configurations with unique IDs
+    const testId = uuidv4().substring(0, 8);
+    modelTaskId = `model-task-fa-${testId}`;
+    modelJudgeId = `model-judge-fa-${testId}`;
+    modelEngineerId = `model-engineer-fa-${testId}`;
 
     db.prepare(
       `
-      INSERT OR IGNORE INTO ModelConfiguration (id, provider, model_name, api_key_encrypted, is_active)
-      VALUES (?, ?, ?, ?, ?)
+      INSERT OR REPLACE INTO ModelConfiguration (id, provider, model_name, api_key_encrypted, is_active, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, datetime('now'), datetime('now'))
     `
-    ).run(modelTaskId, 'openai', 'gpt-4', 'fake-key', 1);
+    ).run(modelTaskId, 'openai', 'gpt-4-fa', 'fake-key', 1);
 
     db.prepare(
       `
-      INSERT OR IGNORE INTO ModelConfiguration (id, provider, model_name, api_key_encrypted, is_active)
-      VALUES (?, ?, ?, ?, ?)
+      INSERT OR REPLACE INTO ModelConfiguration (id, provider, model_name, api_key_encrypted, is_active, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, datetime('now'), datetime('now'))
     `
-    ).run(modelJudgeId, 'anthropic', 'claude-3', 'fake-key', 1);
+    ).run(modelJudgeId, 'anthropic', 'claude-3-fa', 'fake-key', 1);
 
     db.prepare(
       `
-      INSERT OR IGNORE INTO ModelConfiguration (id, provider, model_name, api_key_encrypted, is_active)
-      VALUES (?, ?, ?, ?, ?)
+      INSERT OR REPLACE INTO ModelConfiguration (id, provider, model_name, api_key_encrypted, is_active, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, datetime('now'), datetime('now'))
     `
-    ).run(modelEngineerId, 'google', 'gemini-pro', 'fake-key', 1);
+    ).run(modelEngineerId, 'google', 'gemini-pro-fa', 'fake-key', 1);
 
     // Create test persona
     personaId = uuidv4();
@@ -54,7 +58,7 @@ describe('Failure Analysis', () => {
     `
     ).run(
       personaId,
-      'Test Persona',
+      'Test Persona FA ' + personaId.substring(0, 8),
       'Test description',
       'Evaluate customer support quality',
       modelTaskId,
@@ -78,7 +82,7 @@ describe('Failure Analysis', () => {
       iterationId,
       personaId,
       1,
-      'model-judge-1',
+      modelJudgeId,
       'Evaluate if the response is helpful and polite',
       'completed',
       10,
@@ -97,11 +101,7 @@ describe('Failure Analysis', () => {
     db.prepare('DELETE FROM training_iterations WHERE id = ?').run(iterationId);
     db.prepare('DELETE FROM training_pairs WHERE persona_id = ?').run(personaId);
     db.prepare('DELETE FROM personas WHERE id = ?').run(personaId);
-    db.prepare('DELETE FROM ModelConfiguration WHERE id IN (?, ?, ?)').run(
-      'model-task-1',
-      'model-judge-1',
-      'model-engineer-1'
-    );
+    // Don't delete ModelConfiguration as they use INSERT OR REPLACE and have ON DELETE RESTRICT
   });
 
   it('should extract false positives (judge agreed, human disagreed)', async () => {

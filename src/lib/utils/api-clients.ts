@@ -4,7 +4,7 @@
 import OpenAI from 'openai';
 import Anthropic from '@anthropic-ai/sdk';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import type { Provider, ModelResponse } from './types';
+import type { Provider, ModelResponse } from '@lib/utils/types';
 
 /**
  * Common interface for all AI model provider clients.
@@ -400,7 +400,7 @@ export async function callModel(
   instruction: string,
   options?: { systemPrompt?: string; temperature?: number }
 ): Promise<string> {
-  const { getModelById, decryptApiKey } = await import('./db');
+  const { getModelById, decryptApiKey } = await import('@lib/db');
   const modelConfig = getModelById(modelId);
 
   if (!modelConfig) {

@@ -2,8 +2,8 @@
 // API endpoint to fetch judge prompt versions for a persona
 
 import type { APIRoute } from 'astro';
-import { getDatabase } from '../../../../lib/db';
-import type { JudgePromptVersion } from '../../../../types/training';
+import { getDatabase } from '@lib/db';
+import type { JudgePromptVersion } from '@src-types/training';
 
 // GET /api/personas/[id]/prompts - Get all judge prompt versions for a persona
 /**

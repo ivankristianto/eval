@@ -4,16 +4,16 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { getDatabase } from '../../src/lib/db';
+import { getDatabase } from '@lib/db';
 import type { Database } from 'better-sqlite3';
 import { v4 as uuidv4 } from 'uuid';
 
 // Mock the API clients
-vi.mock('../../src/lib/api-clients', () => ({
+vi.mock('@lib/utils/api-clients', () => ({
   callModel: vi.fn(),
 }));
 
-import { callModel } from '../../src/lib/api-clients';
+import { callModel } from '@lib/utils/api-clients';
 
 describe('Prompt Refinement API Integration', () => {
   let db: Database;
@@ -26,22 +26,22 @@ describe('Prompt Refinement API Integration', () => {
     // Create test model configurations
     db.prepare(
       `
-      INSERT OR IGNORE INTO ModelConfiguration (id, provider, model_name, api_key_encrypted, is_active)
-      VALUES (?, ?, ?, ?, ?)
+      INSERT OR REPLACE INTO ModelConfiguration (id, provider, model_name, api_key_encrypted, is_active, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, datetime('now'), datetime('now'))
     `
     ).run('model-task-1', 'openai', 'gpt-4', 'fake-key', 1);
 
     db.prepare(
       `
-      INSERT OR IGNORE INTO ModelConfiguration (id, provider, model_name, api_key_encrypted, is_active)
-      VALUES (?, ?, ?, ?, ?)
+      INSERT OR REPLACE INTO ModelConfiguration (id, provider, model_name, api_key_encrypted, is_active, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, datetime('now'), datetime('now'))
     `
     ).run('model-judge-1', 'anthropic', 'claude-3', 'fake-key', 1);
 
     db.prepare(
       `
-      INSERT OR IGNORE INTO ModelConfiguration (id, provider, model_name, api_key_encrypted, is_active)
-      VALUES (?, ?, ?, ?, ?)
+      INSERT OR REPLACE INTO ModelConfiguration (id, provider, model_name, api_key_encrypted, is_active, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, datetime('now'), datetime('now'))
     `
     ).run('model-engineer-1', 'google', 'gemini-pro', 'fake-key', 1);
 

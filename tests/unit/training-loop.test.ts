@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
-import { IterativeTrainingLoop } from '../../src/lib/training-loop';
+import { IterativeTrainingLoop } from '@lib/training/training-loop';
 import { getTestDatabase, initializeTestDatabase, cleanTestDatabase } from '../setup';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -225,6 +225,11 @@ describe('IterativeTrainingLoop', () => {
       // execute should return a promise
       const promise = loop.execute([]);
       expect(promise).toBeInstanceOf(Promise);
+
+      // Catch the error to prevent unhandled rejection
+      await promise.catch(() => {
+        // Expected to fail since persona doesn't exist
+      });
     });
   });
 

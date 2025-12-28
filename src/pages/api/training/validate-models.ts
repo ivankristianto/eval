@@ -7,7 +7,7 @@ import {
   getAvailableProviders,
   getModelsByProvider,
   suggestModelCombinations,
-} from '../../../lib/model-separation-validator';
+} from '@lib/validation/model-separation-validator';
 
 /**
  * POST /api/training/validate-models

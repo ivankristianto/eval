@@ -4,21 +4,21 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, beforeAll, vi } from 'vitest';
-import { getDatabase } from '../../src/lib/db';
+import { getDatabase } from '@lib/db';
 import type { Database } from 'better-sqlite3';
 import { v4 as uuidv4 } from 'uuid';
 import {
   analyzeHumanFeedback,
   refineJudgePromptFromHumanFeedback,
   storeHumanRefinedPromptVersion,
-} from '../../src/lib/human-prompt-refiner';
+} from '@lib/training/human-prompt-refiner';
 
 // Mock the API clients
-vi.mock('../../src/lib/api-clients', () => ({
+vi.mock('@lib/utils/api-clients', () => ({
   callModel: vi.fn(),
 }));
 
-import { callModel } from '../../src/lib/api-clients';
+import { callModel } from '@lib/utils/api-clients';
 
 describe('Human-Driven Prompt Refiner Integration', () => {
   let db: Database;
@@ -29,13 +29,27 @@ describe('Human-Driven Prompt Refiner Integration', () => {
   // Clean up any leftover test data before running tests
   beforeAll(() => {
     db = getDatabase();
-    db.prepare("DELETE FROM human_reviews WHERE judge_decision_id IN (SELECT id FROM judge_decisions WHERE iteration_id IN (SELECT id FROM training_iterations WHERE persona_id IN (SELECT id FROM personas WHERE name LIKE '%Test%')))").run();
-    db.prepare("DELETE FROM judge_decisions WHERE iteration_id IN (SELECT id FROM training_iterations WHERE persona_id IN (SELECT id FROM personas WHERE name LIKE '%Test%'))").run();
-    db.prepare("DELETE FROM iteration_metrics WHERE iteration_id IN (SELECT id FROM training_iterations WHERE persona_id IN (SELECT id FROM personas WHERE name LIKE '%Test%'))").run();
-    db.prepare("DELETE FROM training_iterations WHERE persona_id IN (SELECT id FROM personas WHERE name LIKE '%Test%')").run();
-    db.prepare("DELETE FROM training_pairs WHERE persona_id IN (SELECT id FROM personas WHERE name LIKE '%Test%')").run();
-    db.prepare("DELETE FROM judge_prompt_versions WHERE persona_id IN (SELECT id FROM personas WHERE name LIKE '%Test%')").run();
-    db.prepare("DELETE FROM training_loop_state WHERE persona_id IN (SELECT id FROM personas WHERE name LIKE '%Test%')").run();
+    db.prepare(
+      "DELETE FROM human_reviews WHERE judge_decision_id IN (SELECT id FROM judge_decisions WHERE iteration_id IN (SELECT id FROM training_iterations WHERE persona_id IN (SELECT id FROM personas WHERE name LIKE '%Test%')))"
+    ).run();
+    db.prepare(
+      "DELETE FROM judge_decisions WHERE iteration_id IN (SELECT id FROM training_iterations WHERE persona_id IN (SELECT id FROM personas WHERE name LIKE '%Test%'))"
+    ).run();
+    db.prepare(
+      "DELETE FROM iteration_metrics WHERE iteration_id IN (SELECT id FROM training_iterations WHERE persona_id IN (SELECT id FROM personas WHERE name LIKE '%Test%'))"
+    ).run();
+    db.prepare(
+      "DELETE FROM training_iterations WHERE persona_id IN (SELECT id FROM personas WHERE name LIKE '%Test%')"
+    ).run();
+    db.prepare(
+      "DELETE FROM training_pairs WHERE persona_id IN (SELECT id FROM personas WHERE name LIKE '%Test%')"
+    ).run();
+    db.prepare(
+      "DELETE FROM judge_prompt_versions WHERE persona_id IN (SELECT id FROM personas WHERE name LIKE '%Test%')"
+    ).run();
+    db.prepare(
+      "DELETE FROM training_loop_state WHERE persona_id IN (SELECT id FROM personas WHERE name LIKE '%Test%')"
+    ).run();
     db.prepare("DELETE FROM personas WHERE name LIKE '%Test%'").run();
     db.prepare("DELETE FROM ModelConfiguration WHERE id LIKE '%-test-%'").run();
   });
@@ -50,22 +64,22 @@ describe('Human-Driven Prompt Refiner Integration', () => {
 
     db.prepare(
       `
-      INSERT OR IGNORE INTO ModelConfiguration (id, provider, model_name, api_key_encrypted, is_active)
-      VALUES (?, ?, ?, ?, ?)
+      INSERT OR REPLACE INTO ModelConfiguration (id, provider, model_name, api_key_encrypted, is_active, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, datetime('now'), datetime('now'))
     `
     ).run(modelTaskId, 'openai', 'gpt-4', 'fake-key', 1);
 
     db.prepare(
       `
-      INSERT OR IGNORE INTO ModelConfiguration (id, provider, model_name, api_key_encrypted, is_active)
-      VALUES (?, ?, ?, ?, ?)
+      INSERT OR REPLACE INTO ModelConfiguration (id, provider, model_name, api_key_encrypted, is_active, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, datetime('now'), datetime('now'))
     `
     ).run(modelJudgeId, 'anthropic', 'claude-3', 'fake-key', 1);
 
     db.prepare(
       `
-      INSERT OR IGNORE INTO ModelConfiguration (id, provider, model_name, api_key_encrypted, is_active)
-      VALUES (?, ?, ?, ?, ?)
+      INSERT OR REPLACE INTO ModelConfiguration (id, provider, model_name, api_key_encrypted, is_active, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, datetime('now'), datetime('now'))
     `
     ).run(modelEngineerId, 'google', 'gemini-pro', 'fake-key', 1);
 
@@ -116,15 +130,31 @@ describe('Human-Driven Prompt Refiner Integration', () => {
   afterEach(() => {
     // Clean up all test data by persona name pattern
     // Clean up in reverse dependency order
-    db.prepare("DELETE FROM human_reviews WHERE judge_decision_id IN (SELECT id FROM judge_decisions WHERE iteration_id IN (SELECT id FROM training_iterations WHERE persona_id IN (SELECT id FROM personas WHERE name LIKE '%Test%')))").run();
-    db.prepare("DELETE FROM judge_decisions WHERE iteration_id IN (SELECT id FROM training_iterations WHERE persona_id IN (SELECT id FROM personas WHERE name LIKE '%Test%'))").run();
-    db.prepare("DELETE FROM iteration_metrics WHERE iteration_id IN (SELECT id FROM training_iterations WHERE persona_id IN (SELECT id FROM personas WHERE name LIKE '%Test%'))").run();
-    db.prepare("DELETE FROM training_iterations WHERE persona_id IN (SELECT id FROM personas WHERE name LIKE '%Test%')").run();
-    db.prepare("DELETE FROM training_pairs WHERE persona_id IN (SELECT id FROM personas WHERE name LIKE '%Test%')").run();
-    db.prepare("DELETE FROM judge_prompt_versions WHERE persona_id IN (SELECT id FROM personas WHERE name LIKE '%Test%')").run();
-    db.prepare("DELETE FROM training_loop_state WHERE persona_id IN (SELECT id FROM personas WHERE name LIKE '%Test%')").run();
+    db.prepare(
+      "DELETE FROM human_reviews WHERE judge_decision_id IN (SELECT id FROM judge_decisions WHERE iteration_id IN (SELECT id FROM training_iterations WHERE persona_id IN (SELECT id FROM personas WHERE name LIKE '%Test%')))"
+    ).run();
+    db.prepare(
+      "DELETE FROM judge_decisions WHERE iteration_id IN (SELECT id FROM training_iterations WHERE persona_id IN (SELECT id FROM personas WHERE name LIKE '%Test%'))"
+    ).run();
+    db.prepare(
+      "DELETE FROM iteration_metrics WHERE iteration_id IN (SELECT id FROM training_iterations WHERE persona_id IN (SELECT id FROM personas WHERE name LIKE '%Test%'))"
+    ).run();
+    db.prepare(
+      "DELETE FROM training_iterations WHERE persona_id IN (SELECT id FROM personas WHERE name LIKE '%Test%')"
+    ).run();
+    db.prepare(
+      "DELETE FROM training_pairs WHERE persona_id IN (SELECT id FROM personas WHERE name LIKE '%Test%')"
+    ).run();
+    db.prepare(
+      "DELETE FROM judge_prompt_versions WHERE persona_id IN (SELECT id FROM personas WHERE name LIKE '%Test%')"
+    ).run();
+    db.prepare(
+      "DELETE FROM training_loop_state WHERE persona_id IN (SELECT id FROM personas WHERE name LIKE '%Test%')"
+    ).run();
     db.prepare("DELETE FROM personas WHERE name LIKE '%Test%'").run();
-    db.prepare("DELETE FROM ModelConfiguration WHERE id IN ('model-task-integration', 'model-judge-integration', 'model-engineer-integration')").run();
+    db.prepare(
+      "DELETE FROM ModelConfiguration WHERE id IN ('model-task-integration', 'model-judge-integration', 'model-engineer-integration')"
+    ).run();
     vi.clearAllMocks();
   });
 
@@ -274,7 +304,9 @@ describe('Human-Driven Prompt Refiner Integration', () => {
       expect(refinementResult.rationale).toContain('too lenient');
       expect(refinementResult.rationale).toContain('too strict');
       expect(refinementResult.expected_impact).toContain('agreement rate');
-      expect(refinementResult.original_prompt).toBe('Evaluate if the response is accurate and helpful');
+      expect(refinementResult.original_prompt).toBe(
+        'Evaluate if the response is accurate and helpful'
+      );
       expect(refinementResult.analysis).toBe(analysis);
 
       // Step 3: Store refined prompt version
@@ -482,16 +514,7 @@ describe('Human-Driven Prompt Refiner Integration', () => {
         `INSERT INTO judge_decisions
          (id, iteration_id, training_pair_id, generated_output, judge_decision, judge_confidence, judge_reasoning, created_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-      ).run(
-        decisionId,
-        iterationId,
-        pairId,
-        'R',
-        'agree',
-        0.8,
-        'Good',
-        new Date().toISOString()
-      );
+      ).run(decisionId, iterationId, pairId, 'R', 'agree', 0.8, 'Good', new Date().toISOString());
 
       const reviewId = uuidv4();
       db.prepare(
@@ -543,16 +566,7 @@ describe('Human-Driven Prompt Refiner Integration', () => {
         `INSERT INTO judge_decisions
          (id, iteration_id, training_pair_id, generated_output, judge_decision, judge_confidence, judge_reasoning, created_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-      ).run(
-        decisionId,
-        iterationId,
-        pairId,
-        'R',
-        'agree',
-        0.8,
-        'Good',
-        new Date().toISOString()
-      );
+      ).run(decisionId, iterationId, pairId, 'R', 'agree', 0.8, 'Good', new Date().toISOString());
 
       const reviewId = uuidv4();
       db.prepare(
@@ -571,7 +585,11 @@ describe('Human-Driven Prompt Refiner Integration', () => {
       };
       vi.mocked(callModel).mockResolvedValue(JSON.stringify(mockResponse));
 
-      const result = await refineJudgePromptFromHumanFeedback('Original', analysis, modelEngineerId);
+      const result = await refineJudgePromptFromHumanFeedback(
+        'Original',
+        analysis,
+        modelEngineerId
+      );
 
       // Store version
       const versionId1 = storeHumanRefinedPromptVersion(
@@ -585,7 +603,9 @@ describe('Human-Driven Prompt Refiner Integration', () => {
 
       // Verify history
       const history = db
-        .prepare('SELECT * FROM judge_prompt_versions WHERE persona_id = ? ORDER BY iteration_number ASC')
+        .prepare(
+          'SELECT * FROM judge_prompt_versions WHERE persona_id = ? ORDER BY iteration_number ASC'
+        )
         .all(personaId) as any[];
 
       expect(history).toHaveLength(1);

@@ -4,15 +4,15 @@
  */
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { refineJudgePrompt } from '../../src/lib/prompt-engineer';
-import type { FailureAnalysisContext } from '../../src/lib/failure-analysis';
+import { refineJudgePrompt } from '@lib/training/prompt-engineer';
+import type { FailureAnalysisContext } from '@lib/training/failure-analysis';
 
 // Mock the API clients
-vi.mock('../../src/lib/api-clients', () => ({
+vi.mock('@lib/utils/api-clients', () => ({
   callModel: vi.fn(),
 }));
 
-import { callModel } from '../../src/lib/api-clients';
+import { callModel } from '@lib/utils/api-clients';
 
 describe('Prompt Refinement Integration', () => {
   const mockFailureContext: FailureAnalysisContext = {
@@ -80,7 +80,7 @@ describe('Prompt Refinement Integration', () => {
         'This should reduce false positives by 30% (requiring more complete responses) and reduce false negatives by 40% (accepting semantic equivalence).',
     };
 
-    vi.mocked(callModel).mockResolvedValue(JSON.stringify(mockLLMResponse));
+    (callModel as ReturnType<typeof vi.fn>).mockResolvedValue(JSON.stringify(mockLLMResponse));
 
     const result = await refineJudgePrompt(mockFailureContext, 'model-engineer-1');
 
@@ -91,7 +91,7 @@ describe('Prompt Refinement Integration', () => {
 
     // Verify LLM was called with correct parameters
     expect(callModel).toHaveBeenCalledOnce();
-    const callArgs = vi.mocked(callModel).mock.calls[0];
+    const callArgs = (callModel as ReturnType<typeof vi.fn>).mock.calls[0];
     expect(callArgs[0]).toBe('model-engineer-1'); // modelId
     expect(callArgs[1]).toContain('F1 Score: 0.72'); // Metrics included
     expect(callArgs[1]).toContain('False Positives'); // Failure patterns included
@@ -99,7 +99,7 @@ describe('Prompt Refinement Integration', () => {
   });
 
   it('should handle malformed JSON response from LLM', async () => {
-    vi.mocked(callModel).mockResolvedValue('This is not JSON');
+    (callModel as ReturnType<typeof vi.fn>).mockResolvedValue('This is not JSON');
 
     const result = await refineJudgePrompt(mockFailureContext, 'model-engineer-1');
 
@@ -114,7 +114,7 @@ describe('Prompt Refinement Integration', () => {
       // Missing rationale and expected_impact
     };
 
-    vi.mocked(callModel).mockResolvedValue(JSON.stringify(incompleteResponse));
+    (callModel as ReturnType<typeof vi.fn>).mockResolvedValue(JSON.stringify(incompleteResponse));
 
     const result = await refineJudgePrompt(mockFailureContext, 'model-engineer-1');
 
@@ -124,7 +124,7 @@ describe('Prompt Refinement Integration', () => {
   });
 
   it('should handle LLM API failures gracefully', async () => {
-    vi.mocked(callModel).mockRejectedValue(new Error('API rate limit exceeded'));
+    (callModel as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('API rate limit exceeded'));
 
     const result = await refineJudgePrompt(mockFailureContext, 'model-engineer-1');
 
@@ -139,11 +139,11 @@ describe('Prompt Refinement Integration', () => {
       expected_impact: 'Test',
     };
 
-    vi.mocked(callModel).mockResolvedValue(JSON.stringify(mockResponse));
+    (callModel as ReturnType<typeof vi.fn>).mockResolvedValue(JSON.stringify(mockResponse));
 
     await refineJudgePrompt(mockFailureContext, 'model-engineer-1');
 
-    const promptSent = vi.mocked(callModel).mock.calls[0][1];
+    const promptSent = (callModel as ReturnType<typeof vi.fn>).mock.calls[0][1];
     expect(promptSent).toContain('Precision: 0.75');
     expect(promptSent).toContain('Recall: 0.70');
     expect(promptSent).toContain('F1 Score: 0.72');
@@ -157,11 +157,11 @@ describe('Prompt Refinement Integration', () => {
       expected_impact: 'Test',
     };
 
-    vi.mocked(callModel).mockResolvedValue(JSON.stringify(mockResponse));
+    (callModel as ReturnType<typeof vi.fn>).mockResolvedValue(JSON.stringify(mockResponse));
 
     await refineJudgePrompt(mockFailureContext, 'model-engineer-1');
 
-    const promptSent = vi.mocked(callModel).mock.calls[0][1];
+    const promptSent = (callModel as ReturnType<typeof vi.fn>).mock.calls[0][1];
     expect(promptSent).toContain('The answer is yes');
     expect(promptSent).toContain('Too brief, lacks context');
   });
@@ -173,11 +173,11 @@ describe('Prompt Refinement Integration', () => {
       expected_impact: 'Test',
     };
 
-    vi.mocked(callModel).mockResolvedValue(JSON.stringify(mockResponse));
+    (callModel as ReturnType<typeof vi.fn>).mockResolvedValue(JSON.stringify(mockResponse));
 
     await refineJudgePrompt(mockFailureContext, 'model-engineer-1');
 
-    const promptSent = vi.mocked(callModel).mock.calls[0][1];
+    const promptSent = (callModel as ReturnType<typeof vi.fn>).mock.calls[0][1];
     expect(promptSent).toContain('Yes, you are allowed to do that');
     expect(promptSent).toContain('Semantically equivalent');
   });
@@ -189,11 +189,11 @@ describe('Prompt Refinement Integration', () => {
       expected_impact: 'Test',
     };
 
-    vi.mocked(callModel).mockResolvedValue(JSON.stringify(mockResponse));
+    (callModel as ReturnType<typeof vi.fn>).mockResolvedValue(JSON.stringify(mockResponse));
 
     await refineJudgePrompt(mockFailureContext, 'model-engineer-1');
 
-    const promptSent = vi.mocked(callModel).mock.calls[0][1];
+    const promptSent = (callModel as ReturnType<typeof vi.fn>).mock.calls[0][1];
     expect(promptSent).toContain('Free shipping on orders over $50');
     expect(promptSent).toContain('Semantically correct despite different wording');
   });
@@ -212,7 +212,7 @@ describe('Prompt Refinement Integration', () => {
       expected_impact: 'Should improve slightly',
     };
 
-    vi.mocked(callModel).mockResolvedValue(JSON.stringify(mockResponse));
+    (callModel as ReturnType<typeof vi.fn>).mockResolvedValue(JSON.stringify(mockResponse));
 
     const result = await refineJudgePrompt(emptyContext, 'model-engineer-1');
 

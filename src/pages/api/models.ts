@@ -2,10 +2,10 @@
 // Model configuration API endpoints
 
 import type { APIRoute } from 'astro';
-import { insertModel, getModels, getModelUsageCount } from '../../lib/db';
-import { ClientFactory } from '../../lib/api-clients';
-import { validateCreateModel, validateProvider } from '../../lib/validators';
-import type { Provider } from '../../lib/types';
+import { insertModel, getModels, getModelUsageCount } from '@lib/db';
+import { ClientFactory } from '@lib/utils/api-clients';
+import { validateCreateModel, validateProvider } from '@lib/validation/validators';
+import type { Provider } from '@lib/utils/types';
 
 /**
  * POST /api/models

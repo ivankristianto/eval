@@ -2,7 +2,7 @@
 // Evaluation results endpoint
 
 import type { APIRoute } from 'astro';
-import { getEvaluation, getResults } from '../../lib/db';
+import { getEvaluation, getResults } from '@lib/db';
 
 /**
  * GET /api/results

@@ -5,9 +5,9 @@
  */
 
 import type { APIRoute } from 'astro';
-import { getDatabase } from '../../../../lib/db';
-import { getPersonaMetricsHistory } from '../../../../lib/metrics-orchestrator';
-import type { Persona, TrainingIteration } from '../../../../types/training';
+import { getDatabase } from '@lib/db';
+import { getPersonaMetricsHistory } from '@lib/evaluation/metrics-orchestrator';
+import type { Persona, TrainingIteration } from '@src-types/training';
 
 /**
  *

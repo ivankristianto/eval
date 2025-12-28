@@ -4,13 +4,13 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { getDatabase } from '../../src/lib/db';
+import { getDatabase } from '@lib/db';
 import type { Database } from 'better-sqlite3';
 import {
   storePromptVersion,
   getPromptHistory,
   getPromptDiff,
-} from '../../src/lib/prompt-version-manager';
+} from '@lib/training/prompt-version-manager';
 import { v4 as uuidv4 } from 'uuid';
 
 describe('Prompt Version Manager', () => {
