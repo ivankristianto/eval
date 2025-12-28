@@ -1,0 +1,287 @@
+---
+/**
+ * MetricsChart Component
+ * Line chart displaying F1 Score and Cohen's Kappa trends over training iterations
+ *
+ * @param iterations - Array of iteration metrics
+ * @param targetF1 - Target F1 score threshold (default: 0.80)
+ */
+
+export interface Props {
+  iterations: Array<{
+    iteration_num: number;
+    f1_score: number;
+    cohens_kappa: number;
+  }>;
+  targetF1?: number;
+}
+
+const { iterations, targetF1 = 0.80 } = Astro.props;
+
+// Chart dimensions
+const width = 800;
+const height = 400;
+const padding = { top: 20, right: 120, bottom: 50, left: 60 };
+const chartWidth = width - padding.left - padding.right;
+const chartHeight = height - padding.top - padding.bottom;
+
+// Calculate scales
+const xMin = 0;
+const xMax = Math.max(...iterations.map((i) => i.iteration_num), 1);
+const yMin = 0;
+const yMax = 1;
+
+// Scale functions
+function scaleX(iteration: number): number {
+  return padding.left + (iteration / xMax) * chartWidth;
+}
+
+function scaleY(value: number): number {
+  return padding.top + chartHeight - (value / yMax) * chartHeight;
+}
+
+// Generate path for line chart
+function generatePath(data: Array<{ x: number; y: number }>): string {
+  if (data.length === 0) return '';
+
+  return data
+    .map((point, index) => {
+      const x = scaleX(point.x);
+      const y = scaleY(point.y);
+      return index === 0 ? `M ${x} ${y}` : `L ${x} ${y}`;
+    })
+    .join(' ');
+}
+
+// F1 Score path
+const f1Path = generatePath(
+  iterations.map((iter) => ({ x: iter.iteration_num, y: iter.f1_score }))
+);
+
+// Cohen's Kappa path
+const kappaPath = generatePath(
+  iterations.map((iter) => ({ x: iter.iteration_num, y: iter.cohens_kappa }))
+);
+
+// Target line
+const targetY = scaleY(targetF1);
+
+// Y-axis ticks (0%, 20%, 40%, 60%, 80%, 100%)
+const yTicks = [0, 0.2, 0.4, 0.6, 0.8, 1.0];
+
+// X-axis ticks (iterations)
+const xTicks = iterations.map((i) => i.iteration_num);
+---
+
+<div class="metrics-chart-container">
+  <svg
+    viewBox={`0 0 ${width} ${height}`}
+    class="w-full h-auto"
+    role="img"
+    aria-label="Training metrics chart showing F1 score and Cohen's Kappa over iterations"
+  >
+    <!-- Grid lines -->
+    <g class="grid opacity-20">
+      {yTicks.map((tick) => (
+        <line
+          x1={padding.left}
+          y1={scaleY(tick)}
+          x2={width - padding.right}
+          y2={scaleY(tick)}
+          stroke="currentColor"
+          stroke-width="1"
+          stroke-dasharray="4 4"
+        />
+      ))}
+    </g>
+
+    <!-- Target F1 line -->
+    <line
+      x1={padding.left}
+      y1={targetY}
+      x2={width - padding.right}
+      y2={targetY}
+      stroke="#10b981"
+      stroke-width="2"
+      stroke-dasharray="6 3"
+      opacity="0.6"
+    />
+    <text
+      x={width - padding.right + 5}
+      y={targetY + 4}
+      class="text-xs fill-success"
+      font-family="monospace"
+    >
+      Target {(targetF1 * 100).toFixed(0)}%
+    </text>
+
+    <!-- F1 Score Line -->
+    {f1Path && (
+      <path
+        d={f1Path}
+        fill="none"
+        stroke="#3b82f6"
+        stroke-width="3"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+    )}
+
+    <!-- Cohen's Kappa Line -->
+    {kappaPath && (
+      <path
+        d={kappaPath}
+        fill="none"
+        stroke="#8b5cf6"
+        stroke-width="3"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+    )}
+
+    <!-- Data points -->
+    {iterations.map((iter) => (
+      <>
+        <!-- F1 Score point -->
+        <circle
+          cx={scaleX(iter.iteration_num)}
+          cy={scaleY(iter.f1_score)}
+          r="4"
+          fill="#3b82f6"
+          class="hover:r-6 transition-all cursor-pointer"
+        >
+          <title>Iteration {iter.iteration_num}: F1 = {(iter.f1_score * 100).toFixed(1)}%</title>
+        </circle>
+
+        <!-- Cohen's Kappa point -->
+        <circle
+          cx={scaleX(iter.iteration_num)}
+          cy={scaleY(iter.cohens_kappa)}
+          r="4"
+          fill="#8b5cf6"
+          class="hover:r-6 transition-all cursor-pointer"
+        >
+          <title>Iteration {iter.iteration_num}: Kappa = {(iter.cohens_kappa * 100).toFixed(1)}%</title>
+        </circle>
+      </>
+    ))}
+
+    <!-- X-axis -->
+    <line
+      x1={padding.left}
+      y1={height - padding.bottom}
+      x2={width - padding.right}
+      y2={height - padding.bottom}
+      stroke="currentColor"
+      stroke-width="2"
+    />
+
+    <!-- X-axis ticks and labels -->
+    {xTicks.map((tick) => (
+      <>
+        <line
+          x1={scaleX(tick)}
+          y1={height - padding.bottom}
+          x2={scaleX(tick)}
+          y2={height - padding.bottom + 6}
+          stroke="currentColor"
+          stroke-width="2"
+        />
+        <text
+          x={scaleX(tick)}
+          y={height - padding.bottom + 20}
+          text-anchor="middle"
+          class="text-xs fill-current"
+          font-family="monospace"
+        >
+          {tick}
+        </text>
+      </>
+    ))}
+
+    <!-- X-axis label -->
+    <text
+      x={padding.left + chartWidth / 2}
+      y={height - 5}
+      text-anchor="middle"
+      class="text-sm fill-current font-semibold"
+    >
+      Iteration
+    </text>
+
+    <!-- Y-axis -->
+    <line
+      x1={padding.left}
+      y1={padding.top}
+      x2={padding.left}
+      y2={height - padding.bottom}
+      stroke="currentColor"
+      stroke-width="2"
+    />
+
+    <!-- Y-axis ticks and labels -->
+    {yTicks.map((tick) => (
+      <>
+        <line
+          x1={padding.left - 6}
+          y1={scaleY(tick)}
+          x2={padding.left}
+          y2={scaleY(tick)}
+          stroke="currentColor"
+          stroke-width="2"
+        />
+        <text
+          x={padding.left - 10}
+          y={scaleY(tick) + 4}
+          text-anchor="end"
+          class="text-xs fill-current"
+          font-family="monospace"
+        >
+          {(tick * 100).toFixed(0)}%
+        </text>
+      </>
+    ))}
+
+    <!-- Y-axis label -->
+    <text
+      x={15}
+      y={padding.top + chartHeight / 2}
+      text-anchor="middle"
+      transform={`rotate(-90, 15, ${padding.top + chartHeight / 2})`}
+      class="text-sm fill-current font-semibold"
+    >
+      Score
+    </text>
+
+    <!-- Legend -->
+    <g transform={`translate(${width - padding.right + 10}, ${padding.top + 20})`}>
+      <!-- F1 Score -->
+      <line x1="0" y1="0" x2="30" y2="0" stroke="#3b82f6" stroke-width="3" />
+      <circle cx="15" cy="0" r="4" fill="#3b82f6" />
+      <text x="35" y="4" class="text-xs fill-current">F1 Score</text>
+
+      <!-- Cohen's Kappa -->
+      <line x1="0" y1="25" x2="30" y2="25" stroke="#8b5cf6" stroke-width="3" />
+      <circle cx="15" cy="25" r="4" fill="#8b5cf6" />
+      <text x="35" y="29" class="text-xs fill-current">Cohen's κ</text>
+    </g>
+  </svg>
+</div>
+
+<style>
+  .metrics-chart-container {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+
+  /* Ensure SVG text inherits theme colors */
+  svg text {
+    fill: currentColor;
+  }
+
+  /* Smooth transitions for hover effects */
+  circle {
+    transition: r 0.2s ease;
+  }
+</style>

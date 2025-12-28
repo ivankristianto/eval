@@ -5,7 +5,7 @@
  * Route: /personas/:id/metrics
  */
 import Layout from '../../../layouts/Layout.astro';
-import MetricCard from '../../../components/MetricCard.astro';
+import TrainingDashboard from '../../../components/TrainingDashboard.astro';
 import ConfusionMatrix from '../../../components/ConfusionMatrix.astro';
 import Badge from '../../../components/ui/Badge.astro';
 import Breadcrumbs from '../../../components/ui/Breadcrumbs.astro';
@@ -178,48 +178,18 @@ const breadcrumbItems = [
   <!-- Tabs -->
   <PersonaTabs personaId={id} activeTab="metrics" />
 
-  <!-- Current Metrics Summary -->
-  {
-    latestMetrics ? (
-      <div class="mb-8 animate-reveal delay-200">
-        <h2 class="text-xl font-semibold mb-4">
-          Latest Metrics (Iteration {latestIterationWithMetrics.iteration_number})
-        </h2>
+  <!-- Training Dashboard with Chart -->
+  <div class="mb-8 animate-reveal delay-200">
+    <TrainingDashboard personaId={id} showChart={true} />
+  </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <MetricCard
-            label="F1 Score"
-            value={latestMetrics.f1_score}
-            format="percentage"
-            variant="success"
-            trend={f1Trend}
-            description="Harmonic mean of precision and recall. Higher is better."
-          />
-          <MetricCard
-            label="Precision"
-            value={latestMetrics.precision}
-            format="percentage"
-            variant="info"
-            trend={precisionTrend}
-            description="Ratio of true positives to all positive predictions. Measures exactness."
-          />
-          <MetricCard
-            label="Recall"
-            value={latestMetrics.recall}
-            format="percentage"
-            variant="info"
-            trend={recallTrend}
-            description="Ratio of true positives to all actual positives. Measures completeness."
-          />
-          <MetricCard
-            label="Accuracy"
-            value={latestMetrics.accuracy}
-            format="percentage"
-            variant="primary"
-            trend={accuracyTrend}
-            description="Overall correctness of predictions."
-          />
-        </div>
+  <!-- Detailed Confusion Matrix (if metrics exist) -->
+  {
+    latestMetrics && (
+      <div class="mb-8 animate-reveal delay-300">
+        <h2 class="text-xl font-semibold mb-4">
+          Detailed Analysis (Iteration {latestIterationWithMetrics.iteration_number})
+        </h2>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <ConfusionMatrix matrix={latestMetrics.confusion_matrix} />
@@ -253,25 +223,6 @@ const breadcrumbItems = [
             </div>
           </div>
         </div>
-      </div>
-    ) : (
-      <div class="alert alert-info mb-8 animate-reveal delay-200">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          class="stroke-current shrink-0 w-6 h-6"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-          />
-        </svg>
-        <span>
-          No metrics available yet. Complete human reviews and calculate metrics to see results.
-        </span>
       </div>
     )
   }
