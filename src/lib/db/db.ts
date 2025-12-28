@@ -29,6 +29,7 @@ const SCHEMA_PATH = join(__dirname, '../../../db/schema.sql');
 const MIGRATIONS_DIR = join(__dirname, '../../../db/migrations');
 
 let db: Database.Database | null = null;
+let databaseInitialized = false;
 
 // ===== Database Initialization =====
 
@@ -41,16 +42,21 @@ export function getDatabase(): Database.Database {
     db = new Database(DB_PATH);
     db.pragma('journal_mode = WAL');
     db.pragma('foreign_keys = ON');
+
+    // Auto-initialize database schema and migrations on first connection
+    if (!databaseInitialized) {
+      initializeSchemaInternal(db);
+      databaseInitialized = true;
+    }
   }
   return db;
 }
 
 /**
- * Initializes the database by applying schema and pending migrations.
+ * Internal function to initialize database schema.
+ * @param database - Database instance to initialize
  */
-export function initializeDatabase(): void {
-  const database = getDatabase();
-
+function initializeSchemaInternal(database: Database.Database): void {
   // Apply base schema
   const schema = readFileSync(SCHEMA_PATH, 'utf-8');
   database.exec(schema);
@@ -66,6 +72,18 @@ export function initializeDatabase(): void {
       const migration = readFileSync(migrationPath, 'utf-8');
       database.exec(migration);
     }
+  }
+}
+
+/**
+ * Initializes the database by applying schema and pending migrations.
+ * This can be called explicitly to ensure database is initialized.
+ */
+export function initializeDatabase(): void {
+  const database = getDatabase();
+  if (!databaseInitialized) {
+    initializeSchemaInternal(database);
+    databaseInitialized = true;
   }
 }
 
