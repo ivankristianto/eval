@@ -13,7 +13,7 @@ type InputArgs = {
 };
 
 const meta = {
-  title: 'UI/Input',
+  title: 'Components/UI/Input',
   argTypes: {
     type: {
       control: 'select',
@@ -71,4 +71,47 @@ export const Default: Story = {
       </div>
     `;
   },
+};
+
+export const Required: Story = {
+  args: {
+    label: 'Evaluation name',
+    name: 'evaluation-name',
+    type: 'text',
+    placeholder: 'Weekly regression',
+    required: true,
+  },
+  render: Default.render,
+};
+
+export const WithValue: Story = {
+  args: {
+    label: 'Baseline model',
+    name: 'baseline',
+    type: 'text',
+    value: 'gpt-4.1',
+  },
+  render: Default.render,
+};
+
+export const ErrorState: Story = {
+  args: {
+    label: 'API key',
+    name: 'api-key',
+    type: 'password',
+    placeholder: 'sk-...',
+    error: 'API key is required.',
+  },
+  render: Default.render,
+};
+
+export const Disabled: Story = {
+  args: {
+    label: 'Organization',
+    name: 'org',
+    type: 'text',
+    value: 'eval-core',
+    disabled: true,
+  },
+  render: Default.render,
 };

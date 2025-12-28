@@ -7,7 +7,7 @@ type AlertArgs = {
 };
 
 const meta = {
-  title: 'UI/Alert',
+  title: 'Components/UI/Alert',
   argTypes: {
     variant: {
       control: 'select',
@@ -48,4 +48,40 @@ export const Informational: Story = {
       </div>
     `;
   },
+};
+
+export const Success: Story = {
+  args: {
+    variant: 'success',
+    title: 'Evaluation complete',
+    message: 'All checks passed with 93% overall accuracy.',
+  },
+  render: Informational.render,
+};
+
+export const Warning: Story = {
+  args: {
+    variant: 'warning',
+    title: 'Latency spike detected',
+    message: 'One provider exceeded the 2s response budget.',
+  },
+  render: Informational.render,
+};
+
+export const ErrorState: Story = {
+  args: {
+    variant: 'error',
+    title: 'Evaluation failed',
+    message: 'Missing credentials for at least one provider.',
+  },
+  render: Informational.render,
+};
+
+export const NoTitle: Story = {
+  args: {
+    variant: 'info',
+    title: '',
+    message: 'This alert omits a title for compact layouts.',
+  },
+  render: Informational.render,
 };

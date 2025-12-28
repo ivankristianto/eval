@@ -18,7 +18,7 @@ type BadgeArgs = {
 };
 
 const meta = {
-  title: 'UI/Badge',
+  title: 'Components/UI/Badge',
   argTypes: {
     variant: {
       control: 'select',
@@ -70,4 +70,24 @@ export const Status: Story = {
 
     return `<span class="${classes}">${args.label}</span>`;
   },
+};
+
+export const Outline: Story = {
+  args: {
+    label: 'Pending',
+    variant: 'warning',
+    size: 'md',
+    outline: true,
+  },
+  render: Status.render,
+};
+
+export const NeutralSmall: Story = {
+  args: {
+    label: 'Queued',
+    variant: 'neutral',
+    size: 'xs',
+    outline: false,
+  },
+  render: Status.render,
 };

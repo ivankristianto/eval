@@ -11,7 +11,7 @@ type SelectArgs = {
 };
 
 const meta = {
-  title: 'UI/Select',
+  title: 'Components/UI/Select',
   argTypes: {
     size: {
       control: 'select',
@@ -64,4 +64,32 @@ export const Default: Story = {
       </div>
     `;
   },
+};
+
+export const Required: Story = {
+  args: {
+    label: 'Provider',
+    name: 'provider-required',
+    required: true,
+  },
+  render: Default.render,
+};
+
+export const ErrorState: Story = {
+  args: {
+    label: 'Model family',
+    name: 'model-family',
+    error: 'Please choose a provider.',
+  },
+  render: Default.render,
+};
+
+export const Disabled: Story = {
+  args: {
+    label: 'Region',
+    name: 'region',
+    options: ['us-east', 'eu-west', 'ap-south'],
+    disabled: true,
+  },
+  render: Default.render,
 };

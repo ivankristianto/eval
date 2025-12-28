@@ -6,7 +6,7 @@ type IconArgs = {
 };
 
 const meta = {
-  title: 'UI/Icon',
+  title: 'Components/UI/Icon',
   argTypes: {
     name: {
       control: 'select',
@@ -50,4 +50,20 @@ export const Default: Story = {
       </svg>
     `;
   },
+};
+
+export const WarningSmall: Story = {
+  args: {
+    name: 'warning',
+    size: 'sm',
+  },
+  render: Default.render,
+};
+
+export const ErrorLarge: Story = {
+  args: {
+    name: 'error',
+    size: 'xl',
+  },
+  render: Default.render,
 };

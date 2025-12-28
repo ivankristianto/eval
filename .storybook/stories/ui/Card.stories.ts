@@ -7,7 +7,7 @@ type CardArgs = {
 };
 
 const meta = {
-  title: 'UI/Card',
+  title: 'Components/UI/Card',
   args: {
     title: 'Evaluation summary',
     content: 'Accuracy: 92%. Tokens: 18,420. Runtime: 42s.',
@@ -38,4 +38,21 @@ export const Default: Story = {
       </div>
     `;
   },
+};
+
+export const NoTitle: Story = {
+  args: {
+    title: '',
+    content: 'Tokens: 12,450. Cost: $0.18. Errors: 0.',
+  },
+  render: Default.render,
+};
+
+export const NoPadding: Story = {
+  args: {
+    title: 'Compact card',
+    content: 'Padding is disabled for embedded layouts.',
+    noPadding: true,
+  },
+  render: Default.render,
 };

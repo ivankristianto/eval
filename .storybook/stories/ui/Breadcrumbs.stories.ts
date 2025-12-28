@@ -5,7 +5,7 @@ type BreadcrumbArgs = {
 };
 
 const meta = {
-  title: 'UI/Breadcrumbs',
+  title: 'Components/UI/Breadcrumbs',
   args: {
     items: [
       { label: 'Home', href: '/' },
@@ -32,4 +32,24 @@ export const Trail: Story = {
 
     return `<div class="text-sm breadcrumbs mb-4 text-base-content/70"><ul>${items}</ul></div>`;
   },
+};
+
+export const ShortTrail: Story = {
+  args: {
+    items: [{ label: 'Dashboard', href: '/' }, { label: 'Evaluations' }],
+  },
+  render: Trail.render,
+};
+
+export const LongTrail: Story = {
+  args: {
+    items: [
+      { label: 'Home', href: '/' },
+      { label: 'Projects', href: '/projects' },
+      { label: 'Q4 Benchmarks', href: '/projects/q4' },
+      { label: 'Runs', href: '/projects/q4/runs' },
+      { label: 'Run #4021' },
+    ],
+  },
+  render: Trail.render,
 };

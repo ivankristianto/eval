@@ -8,7 +8,7 @@ type EmptyStateArgs = {
 };
 
 const meta = {
-  title: 'UI/EmptyState',
+  title: 'Components/UI/EmptyState',
   args: {
     title: 'No evaluations yet',
     description: 'Create your first evaluation to compare model performance.',
@@ -42,4 +42,25 @@ export const Default: Story = {
       </div>
     `;
   },
+};
+
+export const WithoutAction: Story = {
+  args: {
+    title: 'No templates found',
+    description: 'Try creating a new evaluation template to get started.',
+    actionLabel: '',
+    actionHref: '',
+  },
+  render: Default.render,
+};
+
+export const LongCopy: Story = {
+  args: {
+    title: 'Nothing to compare',
+    description:
+      'Build a rubric, add prompts, and run an evaluation to see detailed accuracy and latency insights.',
+    actionLabel: 'Create template',
+    actionHref: '/templates/new',
+  },
+  render: Default.render,
 };

@@ -20,7 +20,7 @@ type ButtonArgs = {
 };
 
 const meta = {
-  title: 'UI/Button',
+  title: 'Components/UI/Button',
   argTypes: {
     variant: {
       control: 'select',
@@ -78,4 +78,42 @@ export const Primary: Story = {
 
     return `<button class="${classes}" type="button" ${args.disabled ? 'disabled' : ''}>${args.label}</button>`;
   },
+};
+
+export const Secondary: Story = {
+  args: {
+    label: 'View results',
+    variant: 'secondary',
+    size: 'md',
+    outline: false,
+    disabled: false,
+  },
+  render: Primary.render,
+};
+
+export const Outline: Story = {
+  args: {
+    label: 'Learn more',
+    variant: 'accent',
+    outline: true,
+  },
+  render: Primary.render,
+};
+
+export const Disabled: Story = {
+  args: {
+    label: 'Queued',
+    variant: 'neutral',
+    disabled: true,
+  },
+  render: Primary.render,
+};
+
+export const AsLink: Story = {
+  args: {
+    label: 'Documentation',
+    variant: 'link',
+    href: '/docs',
+  },
+  render: Primary.render,
 };
