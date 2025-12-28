@@ -1,13 +1,15 @@
 /**
  * POST /api/personas/[id]/iterations/[num]/calculate-metrics
- * Calculate metrics AUTOMATICALLY from ground truth (no human review required)
- * LEGACY: Also supports manual metrics calculation from human reviews
+ * Calculate metrics and continue training.
+ * For iteration 1: Calculate metrics from human reviews → Refine prompts → Continue to iteration 2+
+ * For iterations 2+: Calculate metrics AUTOMATICALLY from ground truth
  */
 
 import type { APIRoute } from 'astro';
 import { getDatabase } from '@lib/db';
 import { calculateIterationMetricsFromGroundTruth } from '@lib/evaluation/metrics-orchestrator';
 import type { JudgeResult } from '@lib/training/training-loop';
+import { IterativeTrainingLoop } from '@lib/training/training-loop';
 
 /**
  * POST /api/personas/[id]/iterations/[num]/calculate-metrics
@@ -72,6 +74,81 @@ export const POST: APIRoute = async ({ params, request }) => {
       );
     }
 
+    // ITERATION 1 SPECIAL HANDLING: Calculate metrics, refine prompts, and continue to iteration 2+
+    if (iterationNumber === 1) {
+      // Get training loop state
+      const state = db
+        .prepare(
+          `SELECT session_id FROM training_loop_state
+           WHERE persona_id = ? AND status = 'awaiting_human_review'
+           ORDER BY created_at DESC LIMIT 1`
+        )
+        .get(id) as { session_id: string } | undefined;
+
+      if (!state) {
+        return new Response(
+          JSON.stringify({
+            error: 'NO_ACTIVE_SESSION',
+            message: 'No training session awaiting human review found for this persona',
+          }),
+          { status: 400, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Create training loop instance and continue training
+      const loop = new IterativeTrainingLoop(state.session_id, id, db);
+
+      // This will:
+      // 1. Calculate metrics from human votes
+      // 2. Refine both prompts using LLM based on human feedback
+      // 3. Continue to iteration 2+ automatically
+      await loop.acceptPromptsAndContinue(iteration.id);
+
+      // Get final state after training continues
+      const finalState = db
+        .prepare('SELECT status, current_iteration FROM training_loop_state WHERE session_id = ?')
+        .get(state.session_id) as { status: string; current_iteration: number } | undefined;
+
+      const latestIteration = db
+        .prepare('SELECT iteration_number, status FROM training_iterations WHERE persona_id = ? ORDER BY iteration_number DESC LIMIT 1')
+        .get(id) as { iteration_number: number; status: string } | undefined;
+
+      // Get the calculated metrics
+      const metricsRow = db
+        .prepare('SELECT * FROM iteration_metrics WHERE iteration_id = ?')
+        .get(iteration.id) as any;
+
+      return new Response(
+        JSON.stringify({
+          message: 'Iteration 1 complete. Metrics calculated, prompts refined, and training continued.',
+          metrics: metricsRow ? {
+            f1_score: metricsRow.f1_score,
+            precision: metricsRow.precision,
+            recall: metricsRow.recall,
+            cohens_kappa: metricsRow.cohens_kappa,
+            accuracy: metricsRow.accuracy,
+            confusion_matrix: {
+              true_positives: metricsRow.true_positives,
+              true_negatives: metricsRow.true_negatives,
+              false_positives: metricsRow.false_positives,
+              false_negatives: metricsRow.false_negatives,
+            },
+          } : null,
+          iteration: {
+            id: iteration.id,
+            iteration_number: 1,
+            status: 'completed',
+          },
+          training_status: finalState?.status || 'unknown',
+          current_iteration: finalState?.current_iteration,
+          latest_iteration: latestIteration?.iteration_number,
+          latest_iteration_status: latestIteration?.status,
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // ITERATIONS 2+: Original behavior - just calculate metrics
     // Check if metrics already calculated
     const existingMetrics = db
       .prepare('SELECT * FROM iteration_metrics WHERE iteration_id = ?')

@@ -112,6 +112,19 @@ export const POST: APIRoute = async ({ params }) => {
           .get(id) as TrainingSessionRow | undefined;
 
         if (!pausedSession) {
+          // Check if session is in awaiting_human_review state
+          const awaitingReview = db
+            .prepare(
+              `SELECT session_id, current_iteration
+               FROM training_loop_state
+               WHERE persona_id = ? AND status = 'awaiting_human_review'
+               ORDER BY created_at DESC LIMIT 1`
+            )
+            .get(id) as { session_id: string; current_iteration: number } | undefined;
+
+          if (awaitingReview) {
+            throw new Error('AWAITING_HUMAN_REVIEW');
+          }
           throw new Error('NO_SESSION');
         }
 
@@ -164,6 +177,15 @@ export const POST: APIRoute = async ({ params }) => {
           { status: 200, headers: { 'Content-Type': 'application/json' } }
         );
       }
+      if (error instanceof Error && error.message === 'AWAITING_HUMAN_REVIEW') {
+        return new Response(
+          JSON.stringify({
+            error: 'AWAITING_HUMAN_REVIEW',
+            message: 'Iteration 1 is awaiting human review. Use the accept-prompt endpoint to continue.',
+          }),
+          { status: 400, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
       if (error instanceof Error && error.message === 'NO_PAUSED_SESSION') {
         return new Response(
           JSON.stringify({
@@ -171,6 +193,15 @@ export const POST: APIRoute = async ({ params }) => {
             message: 'No paused training session found for this persona',
           }),
           { status: 400, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+      if (error instanceof Error && error.message === 'NO_SESSION') {
+        return new Response(
+          JSON.stringify({
+            error: 'NO_SESSION',
+            message: 'No training session found for this persona',
+          }),
+          { status: 404, headers: { 'Content-Type': 'application/json' } }
         );
       }
       throw error;
@@ -211,10 +242,15 @@ export const POST: APIRoute = async ({ params }) => {
           )
           .get(id) as { prompt_text: string } | undefined;
 
-        const currentPrompt =
-          judgePrompt?.prompt_text || (persona as any).task_prompt || 'No prompt available';
+        // Get task prompt from persona if judge prompt not found
+        const personaFull = db
+          .prepare('SELECT task_prompt FROM personas WHERE id = ?')
+          .get(id) as { task_prompt: string } | undefined;
 
-        // Build checkpoint data
+        const currentPrompt =
+          judgePrompt?.prompt_text || personaFull?.task_prompt || iteration.judge_prompt_text || 'Initial judge prompt';
+
+        // Build checkpoint data with proper defaults
         const checkpointData = {
           iterationNumber: pausedSession!.current_iteration,
           evaluatedResultCount: evaluatedDecisions.length,
@@ -235,10 +271,49 @@ export const POST: APIRoute = async ({ params }) => {
           currentPrompt,
         };
 
+        // Verify the checkpoint data BEFORE saving to catch issues early
+        const metricsSnapshot = checkpointData.metricsSnapshot;
+        const hasValidMetrics =
+          typeof metricsSnapshot.f1_score === 'number' &&
+          typeof metricsSnapshot.precision === 'number' &&
+          typeof metricsSnapshot.recall === 'number' &&
+          typeof metricsSnapshot.accuracy === 'number' &&
+          typeof metricsSnapshot.cohens_kappa === 'number' &&
+          metricsSnapshot.confusion_matrix &&
+          typeof metricsSnapshot.confusion_matrix.true_positives === 'number' &&
+          typeof metricsSnapshot.confusion_matrix.true_negatives === 'number' &&
+          typeof metricsSnapshot.confusion_matrix.false_positives === 'number' &&
+          typeof metricsSnapshot.confusion_matrix.false_negatives === 'number' &&
+          Array.isArray(checkpointData.evaluatedResultIds) &&
+          checkpointData.currentPrompt &&
+          checkpointData.currentPrompt.length > 0;
+
+        if (!hasValidMetrics) {
+          // Rollback state if checkpoint data is invalid
+          db.prepare(
+            'UPDATE training_loop_state SET status = ?, updated_at = ? WHERE session_id = ?'
+          ).run('paused', new Date().toISOString(), checkpointSessionId);
+
+          db.prepare(
+            `UPDATE training_iterations
+             SET status = 'paused'
+             WHERE persona_id = ?
+             AND iteration_number = ?`
+          ).run(id, pausedSession!.current_iteration);
+
+          return new Response(
+            JSON.stringify({
+              error: 'CHECKPOINT_INVALID',
+              message: 'Checkpoint data validation failed. Please check your training data and try again.',
+            }),
+            { status: 500, headers: { 'Content-Type': 'application/json' } }
+          );
+        }
+
         // Save checkpoint
         stateManager.saveCheckpoint(checkpointSessionId, id, checkpointData);
 
-        // Use the newly created checkpoint
+        // Use the newly created checkpoint (which we've already validated)
         checkpoint = checkpointData;
       } else {
         // Rollback state if we can't create a checkpoint
@@ -264,8 +339,8 @@ export const POST: APIRoute = async ({ params }) => {
       }
     }
 
-    // Verify checkpoint integrity
-    const isCheckpointValid = stateManager.verifyCheckpointIntegrity(checkpointSessionId);
+    // Verify checkpoint integrity (only verify if we loaded from database, not if we just created)
+    const isCheckpointValid = checkpoint ? true : stateManager.verifyCheckpointIntegrity(checkpointSessionId);
     if (!isCheckpointValid) {
       // Rollback state if checkpoint is invalid
       db.prepare(

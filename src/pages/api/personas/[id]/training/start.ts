@@ -86,49 +86,10 @@ export const POST: APIRoute = async ({ params }) => {
       );
     }
 
-    // Get next iteration number
-    const latestIteration = db
-      .prepare(
-        'SELECT MAX(iteration_number) as max_iteration FROM training_iterations WHERE persona_id = ?'
-      )
-      .get(id) as { max_iteration: number | null };
-
-    const nextIterationNumber = (latestIteration.max_iteration || 0) + 1;
-
-    // Get current judge prompt (either from latest prompt version or initial)
-    const judgePrompt = db
-      .prepare(
-        'SELECT prompt_text FROM judge_prompt_versions WHERE persona_id = ? ORDER BY iteration_number DESC LIMIT 1'
-      )
-      .get(id) as { prompt_text: string } | undefined;
-
-    const judgePromptText = judgePrompt?.prompt_text || persona.task_prompt;
-
-    // Create training iteration record
-    const iterationId = uuidv4();
+    // Update persona status to training (iteration will be set by execute())
     db.prepare(
-      `
-      INSERT INTO training_iterations
-      (id, persona_id, iteration_number, judge_model_id, judge_prompt_text,
-       status, total_pairs_evaluated, pairs_reviewed_by_human, started_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `
-    ).run(
-      iterationId,
-      id,
-      nextIterationNumber,
-      persona.judge_model_id,
-      judgePromptText,
-      'in_progress',
-      0,
-      0,
-      new Date().toISOString()
-    );
-
-    // Update persona status and current iteration
-    db.prepare(
-      'UPDATE personas SET status = ?, current_iteration = ?, updated_at = ? WHERE id = ?'
-    ).run('training', nextIterationNumber, new Date().toISOString(), id);
+      'UPDATE personas SET status = ?, updated_at = ? WHERE id = ?'
+    ).run('training', new Date().toISOString(), id);
 
     // Create session and start training loop
     const sessionId = uuidv4();
@@ -136,17 +97,41 @@ export const POST: APIRoute = async ({ params }) => {
 
     // Execute training loop (for MVP, run synchronously to ensure decisions are created)
     // In production, this would be fire-and-forget with background job processing
+    // NOTE: For iteration 1, execute() will stop after judge evaluation and wait for human review
     await trainingLoop.execute([]);
+
+    // Get the created iteration info after execute completes
+    const createdIteration = db
+      .prepare(
+        `SELECT id, iteration_number, status, started_at
+         FROM training_iterations
+         WHERE persona_id = ?
+         ORDER BY iteration_number DESC
+         LIMIT 1`
+      )
+      .get(id) as { id: string; iteration_number: number; status: string; started_at: string } | undefined;
+
+    // Get the training loop state to return current status
+    const loopState = db
+      .prepare('SELECT status FROM training_loop_state WHERE session_id = ?')
+      .get(sessionId) as { status: string } | undefined;
 
     return new Response(
       JSON.stringify({
         session_id: sessionId,
-        iteration: {
-          id: iterationId,
-          iteration_number: nextIterationNumber,
-          status: 'in_progress',
-          started_at: new Date().toISOString(),
-        },
+        status: loopState?.status || 'awaiting_human_review',
+        iteration: createdIteration
+          ? {
+              id: createdIteration.id,
+              iteration_number: createdIteration.iteration_number,
+              status: createdIteration.status,
+              started_at: createdIteration.started_at,
+            }
+          : null,
+        message:
+          createdIteration?.iteration_number === 1
+            ? 'Iteration 1 complete. Awaiting human review before continuing.'
+            : 'Training started successfully.',
       }),
       { status: 202, headers: { 'Content-Type': 'application/json' } }
     );

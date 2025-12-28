@@ -17,6 +17,51 @@ export interface PromptRefinementResult {
 }
 
 /**
+ * Result of refining both task and judge prompts based on human feedback.
+ */
+export interface BothPromptsRefinementResult {
+  refined_task_prompt: string | null;
+  refined_judge_prompt: string | null;
+  task_rationale?: string;
+  judge_rationale?: string;
+  expected_impact?: string;
+  error?: string;
+}
+
+/**
+ * Context for refining prompts based on human feedback.
+ */
+export interface HumanFeedbackContext {
+  current_task_prompt: string;
+  current_judge_prompt: string;
+  human_disagreements: Array<{
+    judge_decision: 'agree' | 'disagree';
+    human_decision: 'agree' | 'disagree';
+    generated_output: string;
+    expected_output: string;
+    judge_reasoning: string;
+    human_feedback: string;
+    input: string;
+  }>;
+  metrics: {
+    f1_score: number;
+    precision: number;
+    recall: number;
+    cohens_kappa: number;
+    accuracy: number;
+    confusion_matrix: {
+      true_positives: number;
+      true_negatives: number;
+      false_positives: number;
+      false_negatives: number;
+    };
+  };
+  iteration_number: number;
+  total_decisions: number;
+  disagreements_count: number;
+}
+
+/**
  * Refine judge prompt using Prompt Engineer LLM.
  *
  * Builds comprehensive context from failure analysis and asks LLM to:
@@ -185,5 +230,341 @@ Important:
 - The improved_prompt should be a complete, standalone prompt (not a diff)
 - Focus on the most impactful changes based on failure patterns
 - Ensure the prompt is clear and unambiguous for the judge model
+`;
+}
+
+/**
+ * Refine both Task and Judge prompts based on human feedback from iteration 1.
+ * Uses LLM to analyze human disagreements and generate improved versions of both prompts.
+ *
+ * @param context - Human feedback context with disagreements and metrics
+ * @param promptEngineerModelId - Model ID for prompt engineer
+ * @returns Promise with refined task prompt, refined judge prompt, and rationales
+ */
+export async function refineBothPromptsFromHumanFeedback(
+  context: HumanFeedbackContext,
+  promptEngineerModelId: string
+): Promise<BothPromptsRefinementResult> {
+  try {
+    const systemPrompt = buildHumanFeedbackPromptContext(context);
+
+    // Call Prompt Engineer Model
+    const response = await callModel(promptEngineerModelId, systemPrompt);
+
+    // Parse JSON response
+    let parsedResponse: any;
+    try {
+      parsedResponse = JSON.parse(response);
+    } catch (parseError) {
+      return {
+        refined_task_prompt: null,
+        refined_judge_prompt: null,
+        error: `Failed to parse LLM response as JSON: ${parseError instanceof Error ? parseError.message : 'Unknown error'}`,
+      };
+    }
+
+    // Extract fields from response
+    return {
+      refined_task_prompt: parsedResponse.refined_task_prompt || null,
+      refined_judge_prompt: parsedResponse.refined_judge_prompt || null,
+      task_rationale: parsedResponse.task_rationale,
+      judge_rationale: parsedResponse.judge_rationale,
+      expected_impact: parsedResponse.expected_impact,
+    };
+  } catch (error) {
+    return {
+      refined_task_prompt: null,
+      refined_judge_prompt: null,
+      error: error instanceof Error ? error.message : 'Unknown error during prompt refinement',
+    };
+  }
+}
+
+/**
+ * Build detailed context prompt for LLM prompt engineer based on human feedback.
+ * Includes metrics, human disagreements, and current prompts.
+ * @param context - Human feedback context
+ * @returns String containing the full system prompt for the prompt engineer model
+ */
+function buildHumanFeedbackPromptContext(context: HumanFeedbackContext): string {
+  const {
+    current_task_prompt,
+    current_judge_prompt,
+    human_disagreements,
+    metrics,
+    iteration_number,
+    total_decisions,
+    disagreements_count,
+  } = context;
+
+  return `You are an expert prompt engineer tasked with refining both the task prompt and judge prompt for an LLM evaluation system based on human feedback.
+
+## Context
+This is iteration ${iteration_number} of the training process. Humans have reviewed the judge's decisions and provided feedback where they disagreed.
+
+## Current Task Prompt
+"${current_task_prompt}"
+
+## Current Judge Prompt (Iteration ${iteration_number})
+"${current_judge_prompt}"
+
+## Metrics from Human Review
+- Precision: ${metrics.precision.toFixed(2)}
+- Recall: ${metrics.recall.toFixed(2)}
+- F1 Score: ${metrics.f1_score.toFixed(2)}
+- Cohen's Kappa: ${metrics.cohens_kappa.toFixed(2)}
+- Accuracy: ${metrics.accuracy.toFixed(2)}
+
+Confusion Matrix (Human vs Judge):
+- True Positives (TP): ${metrics.confusion_matrix.true_positives} - Human agreed with correct decision
+- True Negatives (TN): ${metrics.confusion_matrix.true_negatives} - Human agreed with incorrect decision
+- False Positives (FP): ${metrics.confusion_matrix.false_positives} - Human disagreed with correct decision (judge was wrong)
+- False Negatives (FN): ${metrics.confusion_matrix.false_negatives} - Human disagreed with incorrect decision (judge was wrong)
+
+Total decisions: ${total_decisions}
+Disagreements: ${disagreements_count} (${((disagreements_count / total_decisions) * 100).toFixed(1)}%)
+
+## Human Disagreements (Cases where human disagreed with judge - ${human_disagreements.length} examples)
+${
+  human_disagreements.length > 0
+    ? human_disagreements
+        .map(
+          (d, idx) => `
+${idx + 1}. Judge Decision: "${d.judge_decision}" | Human Decision: "${d.human_decision}"
+   Input: "${d.input}"
+   Generated Output: "${d.generated_output}"
+   Expected Output: "${d.expected_output}"
+   Judge Reasoning: "${d.judge_reasoning}"
+   Human Feedback: "${d.human_feedback}"
+`
+        )
+        .join('\n')
+    : 'No disagreements in this iteration.'
+}
+
+## Your Task
+
+Using chain-of-thought reasoning, analyze the human disagreements and refine BOTH prompts to improve alignment with human judgment.
+
+### Step 1: Identify Patterns
+- What patterns do you see in the human disagreements?
+- Are there specific types of cases where the judge consistently gets it wrong?
+- What aspects of the prompts are causing these misalignments?
+
+### Step 2: Design Improvements for Task Prompt
+- How should the task prompt be modified to generate better outputs?
+- What additional guidance or constraints should be added?
+- What should the task model focus on or avoid?
+
+### Step 3: Design Improvements for Judge Prompt
+- How should the judge prompt be modified to better align with human judgment?
+- What evaluation criteria should be clarified?
+- What should the judge focus on when making decisions?
+
+### Step 4: Generate Refined Prompts
+Create improved prompts that:
+1. Address the identified disagreement patterns
+2. Provide clearer guidance for both models
+3. Align better with human judgment patterns
+4. Are concise but comprehensive
+
+## Response Format
+
+Respond with a JSON object containing:
+{
+  "refined_task_prompt": "Your refined task prompt here",
+  "task_rationale": "Explain what you changed in the task prompt and why (2-3 sentences)",
+  "refined_judge_prompt": "Your refined judge prompt here",
+  "judge_rationale": "Explain what you changed in the judge prompt and why (2-3 sentences)",
+  "expected_impact": "Predict how these changes will improve alignment with human judgment (1-2 sentences)"
+}
+
+Important:
+- Both refined prompts should be complete, standalone prompts (not diffs)
+- Focus on the most impactful changes based on disagreement patterns
+- Ensure prompts are clear and unambiguous for their respective models
+- The goal is to reduce the disagreement rate and improve F1 score
+`;
+}
+
+/**
+ * Refine both Task and Judge prompts based on FP/FN failure analysis (iterations 2+).
+ * Uses LLM to analyze failure patterns and generate improved versions of both prompts.
+ *
+ * @param failureContext - Failure analysis context with metrics and FP/FN examples
+ * @param promptEngineerModelId - Model ID for prompt engineer
+ * @returns Promise with refined task prompt, refined judge prompt, and rationales
+ */
+export async function refineBothPromptsFromFailureAnalysis(
+  failureContext: FailureAnalysisContext,
+  promptEngineerModelId: string
+): Promise<BothPromptsRefinementResult> {
+  try {
+    const systemPrompt = buildFailureAnalysisPromptContextForBothPrompts(failureContext);
+
+    // Call Prompt Engineer Model
+    const response = await callModel(promptEngineerModelId, systemPrompt);
+
+    // Parse JSON response
+    let parsedResponse: any;
+    try {
+      parsedResponse = JSON.parse(response);
+    } catch (parseError) {
+      return {
+        refined_task_prompt: null,
+        refined_judge_prompt: null,
+        error: `Failed to parse LLM response as JSON: ${parseError instanceof Error ? parseError.message : 'Unknown error'}`,
+      };
+    }
+
+    // Extract fields from response
+    return {
+      refined_task_prompt: parsedResponse.refined_task_prompt || null,
+      refined_judge_prompt: parsedResponse.refined_judge_prompt || null,
+      task_rationale: parsedResponse.task_rationale,
+      judge_rationale: parsedResponse.judge_rationale,
+      expected_impact: parsedResponse.expected_impact,
+    };
+  } catch (error) {
+    return {
+      refined_task_prompt: null,
+      refined_judge_prompt: null,
+      error: error instanceof Error ? error.message : 'Unknown error during prompt refinement',
+    };
+  }
+}
+
+/**
+ * Build detailed context prompt for LLM prompt engineer based on FP/FN failure analysis.
+ * Includes metrics, failure examples, and current prompts.
+ * @param context - Failure analysis context
+ * @returns String containing the full system prompt for the prompt engineer model
+ */
+function buildFailureAnalysisPromptContextForBothPrompts(context: FailureAnalysisContext): string {
+  const {
+    current_metrics,
+    iteration_number,
+    false_positives,
+    false_negatives,
+    correct_examples,
+    current_prompt,
+    task_description,
+  } = context;
+
+  return `You are an expert prompt engineer tasked with refining both the task prompt and judge prompt for an LLM evaluation system based on failure analysis.
+
+## Task Description
+${task_description}
+
+## Current Task Prompt
+"${task_description}"
+
+## Current Judge Prompt (Iteration ${iteration_number})
+"${current_prompt}"
+
+## Current Performance Metrics
+- Precision: ${current_metrics.precision.toFixed(2)}
+- Recall: ${current_metrics.recall.toFixed(2)}
+- F1 Score: ${current_metrics.f1_score.toFixed(2)}
+- Cohen's Kappa: ${current_metrics.cohens_kappa.toFixed(2)}
+- Accuracy: ${current_metrics.accuracy.toFixed(2)}
+
+Confusion Matrix:
+- True Positives (TP): ${current_metrics.confusion_matrix.true_positives}
+- True Negatives (TN): ${current_metrics.confusion_matrix.true_negatives}
+- False Positives (FP): ${current_metrics.confusion_matrix.false_positives}
+- False Negatives (FN): ${current_metrics.confusion_matrix.false_negatives}
+
+## Failure Analysis
+
+### False Positives (Judge agreed, but should have disagreed - ${false_positives.length} examples)
+${
+  false_positives.length > 0
+    ? false_positives
+        .map(
+          (fp, idx) => `
+${idx + 1}. Model Output: "${fp.model_output}"
+   Expected Output: "${fp.expected_output}"
+   Why it should have disagreed: ${fp.why_it_should_have_disagreed}
+`
+        )
+        .join('\n')
+    : 'No false positives in this iteration.'
+}
+
+### False Negatives (Judge disagreed, but should have agreed - ${false_negatives.length} examples)
+${
+  false_negatives.length > 0
+    ? false_negatives
+        .map(
+          (fn, idx) => `
+${idx + 1}. Model Output: "${fn.model_output}"
+   Expected Output: "${fn.expected_output}"
+   Why it should have agreed: ${fn.why_it_should_have_agreed}
+`
+        )
+        .join('\n')
+    : 'No false negatives in this iteration.'
+}
+
+### Correct Classifications (For calibration - ${correct_examples.length} examples)
+${
+  correct_examples.length > 0
+    ? correct_examples
+        .map(
+          (ce, idx) => `
+${idx + 1}. Model Output: "${ce.model_output}"
+   Expected Output: "${ce.expected_output}"
+   Decision: ${ce.decision}
+   Reasoning: ${ce.reasoning}
+`
+        )
+        .join('\n')
+    : 'No correct examples available for this iteration.'
+}
+
+## Your Task
+
+Using chain-of-thought reasoning, analyze the failure patterns and refine BOTH prompts to improve performance.
+
+### Step 1: Identify Patterns
+- What common patterns do you see in false positives?
+- What common patterns do you see in false negatives?
+- What aspects of the current prompts are causing these failures?
+
+### Step 2: Design Improvements for Task Prompt
+- How should the task prompt be modified to generate better outputs that match expected outputs?
+- What additional guidance or constraints should be added?
+- What should the task model focus on or avoid?
+
+### Step 3: Design Improvements for Judge Prompt
+- How should the judge prompt be modified to reduce FP/FN cases?
+- What evaluation criteria should be clarified?
+- What should the judge focus on when making decisions?
+
+### Step 4: Generate Refined Prompts
+Create improved prompts that:
+1. Address the identified failure patterns
+2. Maintain the strengths shown in correct classifications
+3. Provide clear, actionable criteria
+4. Are concise but comprehensive
+
+## Response Format
+
+Respond with a JSON object containing:
+{
+  "refined_task_prompt": "Your refined task prompt here (should improve output quality)",
+  "task_rationale": "Explain what you changed in the task prompt and why (2-3 sentences)",
+  "refined_judge_prompt": "Your refined judge prompt here (should improve evaluation accuracy)",
+  "judge_rationale": "Explain what you changed in the judge prompt and why (2-3 sentences)",
+  "expected_impact": "Predict how this will affect metrics (1-2 sentences)"
+}
+
+Important:
+- Both refined prompts should be complete, standalone prompts (not diffs)
+- Focus on the most impactful changes based on failure patterns
+- Ensure prompts are clear and unambiguous for their respective models
+- The task prompt should guide the model to generate outputs that match expected outputs
+- The judge prompt should guide the model to correctly evaluate outputs against expected outputs
 `;
 }
