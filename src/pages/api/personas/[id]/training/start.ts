@@ -44,6 +44,33 @@ export const POST: APIRoute = async ({ params }) => {
       );
     }
 
+    // Check if there's already an active or paused training session
+    const existingSession = db
+      .prepare(
+        `SELECT session_id, status, current_iteration
+         FROM training_loop_state
+         WHERE persona_id = ?
+         AND status IN ('in_progress', 'paused')
+         ORDER BY created_at DESC
+         LIMIT 1`
+      )
+      .get(id) as { session_id: string; status: string; current_iteration: number } | undefined;
+
+    if (existingSession) {
+      return new Response(
+        JSON.stringify({
+          error: 'TRAINING_ALREADY_ACTIVE',
+          message: `Training is already ${existingSession.status}. Please pause or wait for completion before starting a new session.`,
+          existing_session: {
+            session_id: existingSession.session_id,
+            status: existingSession.status,
+            current_iteration: existingSession.current_iteration,
+          },
+        }),
+        { status: 409, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Verify persona has training pairs
     const pairCount = db
       .prepare('SELECT COUNT(*) as count FROM training_pairs WHERE persona_id = ?')

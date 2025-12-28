@@ -161,10 +161,67 @@ export const POST: APIRoute = async ({ params, request }) => {
       // Empty or invalid JSON body, use default reason
     }
 
+    // Create checkpoint before pausing
+    const stateManager = new TrainingStateManager(db);
+
+    // Get current iteration data for checkpoint
+    const iteration = db
+      .prepare(
+        'SELECT * FROM training_iterations WHERE persona_id = ? AND iteration_number = ?'
+      )
+      .get(id, activeSession.current_iteration) as any;
+
+    if (iteration) {
+      // Get current metrics if available
+      const metrics = db
+        .prepare('SELECT * FROM iteration_metrics WHERE iteration_id = ?')
+        .get(iteration.id) as any;
+
+      // Get evaluated decision IDs
+      const evaluatedDecisions = db
+        .prepare('SELECT id FROM judge_decisions WHERE iteration_id = ?')
+        .all(iteration.id) as Array<{ id: string }>;
+
+      // Get current judge prompt
+      const judgePrompt = db
+        .prepare(
+          'SELECT prompt_text FROM judge_prompt_versions WHERE persona_id = ? ORDER BY iteration_number DESC LIMIT 1'
+        )
+        .get(id) as { prompt_text: string } | undefined;
+
+      const currentPrompt =
+        judgePrompt?.prompt_text ||
+        (persona as any).task_prompt ||
+        'No prompt available';
+
+      // Build checkpoint data
+      const checkpointData = {
+        iterationNumber: activeSession.current_iteration,
+        evaluatedResultCount: evaluatedDecisions.length,
+        metricsSnapshot: metrics || {
+          f1_score: 0,
+          precision: 0,
+          recall: 0,
+          accuracy: 0,
+          cohens_kappa: 0,
+          confusion_matrix: {
+            true_positives: 0,
+            true_negatives: 0,
+            false_positives: 0,
+            false_negatives: 0,
+          },
+        },
+        evaluatedResultIds: evaluatedDecisions.map((d) => d.id),
+        currentPrompt,
+      };
+
+      // Save checkpoint
+      stateManager.saveCheckpoint(activeSession.session_id, id, checkpointData);
+    }
+
     // Perform all database operations in a transaction
     const transaction = db.transaction(() => {
       // Pause the training session
-      const stateManager = new TrainingStateManager(db);
       stateManager.pause(activeSession.session_id, pauseReason);
 
       // Update current iteration status to paused

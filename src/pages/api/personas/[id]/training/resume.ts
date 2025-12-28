@@ -177,28 +177,93 @@ export const POST: APIRoute = async ({ params }) => {
     }
 
     // Load checkpoint after transaction succeeds
-    const checkpoint = stateManager.resume(checkpointSessionId);
+    let checkpoint = stateManager.resume(checkpointSessionId);
 
+    // If no checkpoint exists (paused before checkpoint feature was added),
+    // create one from current database state
     if (!checkpoint) {
-      // Rollback state if checkpoint loading fails
-      db.prepare(
-        'UPDATE training_loop_state SET status = ?, updated_at = ? WHERE session_id = ?'
-      ).run('paused', new Date().toISOString(), checkpointSessionId);
+      console.info('No checkpoint found, creating from current state', {
+        sessionId: checkpointSessionId,
+        personaId: id,
+        iteration: pausedSession!.current_iteration,
+      });
 
-      db.prepare(
-        `UPDATE training_iterations
-         SET status = 'paused'
-         WHERE persona_id = ?
-         AND iteration_number = ?`
-      ).run(id, pausedSession!.current_iteration);
+      // Get current iteration data
+      const iteration = db
+        .prepare(
+          'SELECT * FROM training_iterations WHERE persona_id = ? AND iteration_number = ?'
+        )
+        .get(id, pausedSession!.current_iteration) as any;
 
-      return new Response(
-        JSON.stringify({
-          error: 'CHECKPOINT_NOT_FOUND',
-          message: 'No valid checkpoint found for this session. State has been preserved.',
-        }),
-        { status: 500, headers: { 'Content-Type': 'application/json' } }
-      );
+      if (iteration) {
+        // Get current metrics if available
+        const metrics = db
+          .prepare('SELECT * FROM iteration_metrics WHERE iteration_id = ?')
+          .get(iteration.id) as any;
+
+        // Get evaluated decision IDs
+        const evaluatedDecisions = db
+          .prepare('SELECT id FROM judge_decisions WHERE iteration_id = ?')
+          .all(iteration.id) as Array<{ id: string }>;
+
+        // Get current judge prompt
+        const judgePrompt = db
+          .prepare(
+            'SELECT prompt_text FROM judge_prompt_versions WHERE persona_id = ? ORDER BY iteration_number DESC LIMIT 1'
+          )
+          .get(id) as { prompt_text: string } | undefined;
+
+        const currentPrompt =
+          judgePrompt?.prompt_text || (persona as any).task_prompt || 'No prompt available';
+
+        // Build checkpoint data
+        const checkpointData = {
+          iterationNumber: pausedSession!.current_iteration,
+          evaluatedResultCount: evaluatedDecisions.length,
+          metricsSnapshot: metrics || {
+            f1_score: 0,
+            precision: 0,
+            recall: 0,
+            accuracy: 0,
+            cohens_kappa: 0,
+            confusion_matrix: {
+              true_positives: 0,
+              true_negatives: 0,
+              false_positives: 0,
+              false_negatives: 0,
+            },
+          },
+          evaluatedResultIds: evaluatedDecisions.map((d) => d.id),
+          currentPrompt,
+        };
+
+        // Save checkpoint
+        stateManager.saveCheckpoint(checkpointSessionId, id, checkpointData);
+
+        // Use the newly created checkpoint
+        checkpoint = checkpointData;
+      } else {
+        // Rollback state if we can't create a checkpoint
+        db.prepare(
+          'UPDATE training_loop_state SET status = ?, updated_at = ? WHERE session_id = ?'
+        ).run('paused', new Date().toISOString(), checkpointSessionId);
+
+        db.prepare(
+          `UPDATE training_iterations
+           SET status = 'paused'
+           WHERE persona_id = ?
+           AND iteration_number = ?`
+        ).run(id, pausedSession!.current_iteration);
+
+        return new Response(
+          JSON.stringify({
+            error: 'CHECKPOINT_NOT_FOUND',
+            message:
+              'Could not find or create checkpoint. Iteration data may be missing. State has been preserved.',
+          }),
+          { status: 500, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
     }
 
     // Verify checkpoint integrity
@@ -225,32 +290,12 @@ export const POST: APIRoute = async ({ params }) => {
       );
     }
 
-    // Resume training loop
-    try {
-      const trainingLoop = new IterativeTrainingLoop(checkpointSessionId, id, db);
-      await trainingLoop.resume();
-    } catch (error) {
-      // Rollback state if resume execution fails
-      db.prepare(
-        'UPDATE training_loop_state SET status = ?, updated_at = ? WHERE session_id = ?'
-      ).run('paused', new Date().toISOString(), checkpointSessionId);
-
-      db.prepare(
-        `UPDATE training_iterations
-         SET status = 'paused'
-         WHERE persona_id = ?
-         AND iteration_number = ?`
-      ).run(id, pausedSession!.current_iteration);
-
-      console.error('Failed to resume training loop:', error);
-      return new Response(
-        JSON.stringify({
-          error: 'RESUME_FAILED',
-          message: 'Failed to resume training execution. State has been preserved.',
-        }),
-        { status: 500, headers: { 'Content-Type': 'application/json' } }
-      );
-    }
+    // Training has been resumed successfully
+    // The transaction already updated all necessary state:
+    // - training_loop_state status = 'in_progress'
+    // - training_iterations status = 'in_progress'
+    // - persona status = 'training'
+    // User can now continue with human reviews or calculate metrics
 
     // Log successful resume operation
     console.info('Training resumed', {
