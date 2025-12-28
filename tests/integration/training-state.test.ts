@@ -89,7 +89,7 @@ describe('Training State Manager - Integration Tests', () => {
             true_negatives: 3,
             false_positives: 1,
             false_negatives: 2,
-          }
+          },
         },
         evaluatedResultIds: ['id1', 'id2'],
         currentPrompt: 'Test',
@@ -123,7 +123,7 @@ describe('Training State Manager - Integration Tests', () => {
             true_negatives: 3,
             false_positives: 1,
             false_negatives: 2,
-          }
+          },
         },
         evaluatedResultIds: ['id1', 'id2', 'id3'],
         currentPrompt: 'Checkpoint before crash',
@@ -163,7 +163,7 @@ describe('Training State Manager - Integration Tests', () => {
             true_negatives: 3,
             false_positives: 1,
             false_negatives: 2,
-          }
+          },
         },
         evaluatedResultIds: ['iter1-id1'],
         currentPrompt: 'Iteration 1',
@@ -183,7 +183,7 @@ describe('Training State Manager - Integration Tests', () => {
             true_negatives: 3,
             false_positives: 1,
             false_negatives: 2,
-          }
+          },
         },
         evaluatedResultIds: ['iter2-id1'],
         currentPrompt: 'Iteration 2',
@@ -203,7 +203,7 @@ describe('Training State Manager - Integration Tests', () => {
             true_negatives: 3,
             false_positives: 1,
             false_negatives: 2,
-          }
+          },
         },
         evaluatedResultIds: ['iter3-id1'],
         currentPrompt: 'Iteration 3',
@@ -233,7 +233,7 @@ describe('Training State Manager - Integration Tests', () => {
             true_negatives: 3,
             false_positives: 1,
             false_negatives: 2,
-          }
+          },
         },
         evaluatedResultIds: ['iter4-id1'],
         currentPrompt: 'Iteration 4',
@@ -265,7 +265,7 @@ describe('Training State Manager - Integration Tests', () => {
             true_negatives: 3,
             false_positives: 1,
             false_negatives: 2,
-          }
+          },
         },
         evaluatedResultIds: ['id1'],
         currentPrompt: 'Before pause',
@@ -310,7 +310,7 @@ describe('Training State Manager - Integration Tests', () => {
             true_negatives: 3,
             false_positives: 1,
             false_negatives: 2,
-          }
+          },
         },
         evaluatedResultIds: ['id1', 'id2', 'id3'],
         currentPrompt: 'Persistent prompt',
@@ -357,7 +357,7 @@ describe('Training State Manager - Integration Tests', () => {
             true_negatives: 3,
             false_positives: 1,
             false_negatives: 2,
-          }
+          },
         },
         evaluatedResultIds: Array.from({ length: 50 }, (_, i) => `result-${i + 1}`),
         currentPrompt: 'Complex prompt with special chars: "quotes", \'apostrophes\', \nneeds\n',
@@ -404,7 +404,7 @@ describe('Training State Manager - Integration Tests', () => {
             true_negatives: 3,
             false_positives: 1,
             false_negatives: 2,
-          }
+          },
         },
         evaluatedResultIds: ['s1-id1'],
         currentPrompt: 'Session 1 prompt',
@@ -424,7 +424,7 @@ describe('Training State Manager - Integration Tests', () => {
             true_negatives: 3,
             false_positives: 1,
             false_negatives: 2,
-          }
+          },
         },
         evaluatedResultIds: ['s2-id1'],
         currentPrompt: 'Session 2 prompt',
@@ -467,12 +467,12 @@ describe('Training State Manager - Integration Tests', () => {
             recall: 0.65,
             accuracy: 0.7,
             cohens_kappa: 0.5,
-          confusion_matrix: {
-            true_positives: 4,
-            true_negatives: 3,
-            false_positives: 1,
-            false_negatives: 2,
-          }
+            confusion_matrix: {
+              true_positives: 4,
+              true_negatives: 3,
+              false_positives: 1,
+              false_negatives: 2,
+            },
           },
           evaluatedResultIds: [`s1-iter${i}`],
           currentPrompt: `Session 1 Iteration ${i}`,
@@ -490,12 +490,12 @@ describe('Training State Manager - Integration Tests', () => {
             recall: 0.75,
             accuracy: 0.8,
             cohens_kappa: 0.7,
-          confusion_matrix: {
-            true_positives: 4,
-            true_negatives: 3,
-            false_positives: 1,
-            false_negatives: 2,
-          }
+            confusion_matrix: {
+              true_positives: 4,
+              true_negatives: 3,
+              false_positives: 1,
+              false_negatives: 2,
+            },
           },
           evaluatedResultIds: [`s2-iter${i}`],
           currentPrompt: `Session 2 Iteration ${i}`,
@@ -542,12 +542,12 @@ describe('Training State Manager - Integration Tests', () => {
             recall: 0.65,
             accuracy: 0.7,
             cohens_kappa: 0.5,
-          confusion_matrix: {
-            true_positives: 4,
-            true_negatives: 3,
-            false_positives: 1,
-            false_negatives: 2,
-          }
+            confusion_matrix: {
+              true_positives: 4,
+              true_negatives: 3,
+              false_positives: 1,
+              false_negatives: 2,
+            },
           },
           evaluatedResultIds: Array.from({ length: i }, (_, idx) => `id-${idx}`),
           currentPrompt: `Progress: ${i * 10}%`,
@@ -588,7 +588,7 @@ describe('Training State Manager - Integration Tests', () => {
             true_negatives: 3,
             false_positives: 1,
             false_negatives: 2,
-          }
+          },
         },
         evaluatedResultIds: ['id1'],
         currentPrompt: 'Valid',

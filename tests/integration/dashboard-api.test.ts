@@ -20,27 +20,56 @@ describe('Dashboard API Integration Tests', () => {
     judgeModelId = crypto.randomUUID();
     const engineerModelId = crypto.randomUUID();
 
-    db.prepare(`
+    db.prepare(
+      `
       INSERT INTO ModelConfiguration (id, provider, model_name, api_key_encrypted, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?)
-    `).run(taskModelId, 'openai', 'gpt-4', 'encrypted', new Date().toISOString(), new Date().toISOString());
+    `
+    ).run(
+      taskModelId,
+      'openai',
+      'gpt-4',
+      'encrypted',
+      new Date().toISOString(),
+      new Date().toISOString()
+    );
 
-    db.prepare(`
+    db.prepare(
+      `
       INSERT INTO ModelConfiguration (id, provider, model_name, api_key_encrypted, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?)
-    `).run(judgeModelId, 'anthropic', 'claude-3', 'encrypted', new Date().toISOString(), new Date().toISOString());
+    `
+    ).run(
+      judgeModelId,
+      'anthropic',
+      'claude-3',
+      'encrypted',
+      new Date().toISOString(),
+      new Date().toISOString()
+    );
 
-    db.prepare(`
+    db.prepare(
+      `
       INSERT INTO ModelConfiguration (id, provider, model_name, api_key_encrypted, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?)
-    `).run(engineerModelId, 'google', 'gemini-pro', 'encrypted', new Date().toISOString(), new Date().toISOString());
+    `
+    ).run(
+      engineerModelId,
+      'google',
+      'gemini-pro',
+      'encrypted',
+      new Date().toISOString(),
+      new Date().toISOString()
+    );
 
     // Create test persona
     personaId = crypto.randomUUID();
-    db.prepare(`
+    db.prepare(
+      `
       INSERT INTO personas (id, name, description, task_prompt, task_model_id, judge_model_id, prompt_engineer_model_id, status, target_f1_score, max_iterations)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
+    `
+    ).run(
       personaId,
       'Test Judge Persona',
       'Test description',
@@ -49,7 +78,7 @@ describe('Dashboard API Integration Tests', () => {
       judgeModelId,
       engineerModelId,
       'training',
-      0.80,
+      0.8,
       5
     );
   });
@@ -67,7 +96,7 @@ describe('Dashboard API Integration Tests', () => {
           name: 'Test Judge Persona',
           description: 'Test description',
           status: 'training',
-          target_f1_score: 0.80,
+          target_f1_score: 0.8,
           max_iterations: 5,
           current_iteration: 0,
           best_f1_score: null,
@@ -89,8 +118,8 @@ describe('Dashboard API Integration Tests', () => {
     it('should return dashboard data with completed iterations', () => {
       // Create 3 completed iterations with metrics
       const iterations = [
-        { num: 1, f1: 0.65, precision: 0.70, recall: 0.61, kappa: 0.55 },
-        { num: 2, f1: 0.75, precision: 0.80, recall: 0.71, kappa: 0.65 },
+        { num: 1, f1: 0.65, precision: 0.7, recall: 0.61, kappa: 0.55 },
+        { num: 2, f1: 0.75, precision: 0.8, recall: 0.71, kappa: 0.65 },
         { num: 3, f1: 0.82, precision: 0.85, recall: 0.79, kappa: 0.72 },
       ];
 
@@ -98,11 +127,13 @@ describe('Dashboard API Integration Tests', () => {
         const iterationId = crypto.randomUUID();
 
         // Create iteration
-        db.prepare(`
+        db.prepare(
+          `
           INSERT INTO training_iterations
           (id, persona_id, iteration_number, judge_model_id, judge_prompt_text, status, started_at, completed_at)
           VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        `).run(
+        `
+        ).run(
           iterationId,
           personaId,
           iter.num,
@@ -114,12 +145,14 @@ describe('Dashboard API Integration Tests', () => {
         );
 
         // Create metrics for iteration
-        db.prepare(`
+        db.prepare(
+          `
           INSERT INTO iteration_metrics
           (id, iteration_id, true_positives, true_negatives, false_positives, false_negatives,
            precision, recall, f1_score, cohens_kappa, accuracy, calculated_at)
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `).run(
+        `
+        ).run(
           crypto.randomUUID(),
           iterationId,
           10,
@@ -136,11 +169,13 @@ describe('Dashboard API Integration Tests', () => {
       }
 
       // Update persona with best F1 score
-      db.prepare(`
+      db.prepare(
+        `
         UPDATE personas
         SET best_f1_score = ?, best_f1_iteration = ?, current_iteration = ?
         WHERE id = ?
-      `).run(0.82, 3, 3, personaId);
+      `
+      ).run(0.82, 3, 3, personaId);
 
       // Fetch persona
       const persona = db.prepare('SELECT * FROM personas WHERE id = ?').get(personaId) as any;
@@ -150,7 +185,9 @@ describe('Dashboard API Integration Tests', () => {
       expect(persona.current_iteration).toBe(3);
 
       // Fetch metrics history
-      const metricsHistory = db.prepare(`
+      const metricsHistory = db
+        .prepare(
+          `
         SELECT
           ti.iteration_number,
           im.f1_score,
@@ -162,7 +199,9 @@ describe('Dashboard API Integration Tests', () => {
         JOIN training_iterations ti ON ti.id = im.iteration_id
         WHERE ti.persona_id = ?
         ORDER BY ti.iteration_number ASC
-      `).all(personaId) as any[];
+      `
+        )
+        .all(personaId) as any[];
 
       expect(metricsHistory).toHaveLength(3);
       expect(metricsHistory[0].f1_score).toBe(0.65);
@@ -178,11 +217,13 @@ describe('Dashboard API Integration Tests', () => {
       // Create persona with F1 = 0.85, target = 0.80
       const iterationId = crypto.randomUUID();
 
-      db.prepare(`
+      db.prepare(
+        `
         INSERT INTO training_iterations
         (id, persona_id, iteration_number, judge_model_id, judge_prompt_text, status, started_at, completed_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(
+      `
+      ).run(
         iterationId,
         personaId,
         1,
@@ -193,12 +234,14 @@ describe('Dashboard API Integration Tests', () => {
         new Date().toISOString()
       );
 
-      db.prepare(`
+      db.prepare(
+        `
         INSERT INTO iteration_metrics
         (id, iteration_id, true_positives, true_negatives, false_positives, false_negatives,
          precision, recall, f1_score, cohens_kappa, accuracy, calculated_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(
+      `
+      ).run(
         crypto.randomUUID(),
         iterationId,
         15,
@@ -213,11 +256,13 @@ describe('Dashboard API Integration Tests', () => {
         new Date().toISOString()
       );
 
-      db.prepare(`
+      db.prepare(
+        `
         UPDATE personas
         SET best_f1_score = 0.85, best_f1_iteration = 1, current_iteration = 1
         WHERE id = ?
-      `).run(personaId);
+      `
+      ).run(personaId);
 
       const persona = db.prepare('SELECT * FROM personas WHERE id = ?').get(personaId) as any;
 
@@ -230,11 +275,13 @@ describe('Dashboard API Integration Tests', () => {
       // Create in-progress iteration
       const iterationId = crypto.randomUUID();
 
-      db.prepare(`
+      db.prepare(
+        `
         INSERT INTO training_iterations
         (id, persona_id, iteration_number, judge_model_id, judge_prompt_text, status, total_pairs_evaluated, started_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(
+      `
+      ).run(
         iterationId,
         personaId,
         1,
@@ -246,12 +293,16 @@ describe('Dashboard API Integration Tests', () => {
       );
 
       // Fetch latest iteration
-      const latestIteration = db.prepare(`
+      const latestIteration = db
+        .prepare(
+          `
         SELECT * FROM training_iterations
         WHERE persona_id = ?
         ORDER BY iteration_number DESC
         LIMIT 1
-      `).get(personaId) as any;
+      `
+        )
+        .get(personaId) as any;
 
       expect(latestIteration.status).toBe('in_progress');
       expect(latestIteration.total_pairs_evaluated).toBe(25);
@@ -261,7 +312,9 @@ describe('Dashboard API Integration Tests', () => {
     it('should return empty iterations for persona without training', () => {
       const persona = db.prepare('SELECT * FROM personas WHERE id = ?').get(personaId) as any;
 
-      const metricsHistory = db.prepare(`
+      const metricsHistory = db
+        .prepare(
+          `
         SELECT
           ti.iteration_number,
           im.f1_score
@@ -269,7 +322,9 @@ describe('Dashboard API Integration Tests', () => {
         JOIN training_iterations ti ON ti.id = im.iteration_id
         WHERE ti.persona_id = ?
         ORDER BY ti.iteration_number ASC
-      `).all(personaId) as any[];
+      `
+        )
+        .all(personaId) as any[];
 
       expect(metricsHistory).toHaveLength(0);
       expect(persona.current_iteration).toBe(0);

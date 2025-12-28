@@ -28,17 +28,38 @@ describe('Pause/Resume Training Integration', () => {
     db.prepare(
       `INSERT INTO ModelConfiguration (id, provider, model_name, api_key_encrypted, created_at, updated_at)
        VALUES (?, ?, ?, ?, ?, ?)`
-    ).run(taskModelId, 'openai', 'gpt-4', 'encrypted', new Date().toISOString(), new Date().toISOString());
+    ).run(
+      taskModelId,
+      'openai',
+      'gpt-4',
+      'encrypted',
+      new Date().toISOString(),
+      new Date().toISOString()
+    );
 
     db.prepare(
       `INSERT INTO ModelConfiguration (id, provider, model_name, api_key_encrypted, created_at, updated_at)
        VALUES (?, ?, ?, ?, ?, ?)`
-    ).run(judgeModelId, 'anthropic', 'claude-3', 'encrypted', new Date().toISOString(), new Date().toISOString());
+    ).run(
+      judgeModelId,
+      'anthropic',
+      'claude-3',
+      'encrypted',
+      new Date().toISOString(),
+      new Date().toISOString()
+    );
 
     db.prepare(
       `INSERT INTO ModelConfiguration (id, provider, model_name, api_key_encrypted, created_at, updated_at)
        VALUES (?, ?, ?, ?, ?, ?)`
-    ).run(engineerModelId, 'google', 'gemini-pro', 'encrypted', new Date().toISOString(), new Date().toISOString());
+    ).run(
+      engineerModelId,
+      'google',
+      'gemini-pro',
+      'encrypted',
+      new Date().toISOString(),
+      new Date().toISOString()
+    );
 
     // Create test persona
     personaId = crypto.randomUUID();
@@ -56,7 +77,7 @@ describe('Pause/Resume Training Integration', () => {
       judgeModelId,
       engineerModelId,
       'training',
-      0.80,
+      0.8,
       5,
       1
     );
@@ -84,7 +105,7 @@ describe('Pause/Resume Training Integration', () => {
       evaluatedResultCount: 5,
       metricsSnapshot: {
         f1_score: 0.75,
-        precision: 0.80,
+        precision: 0.8,
         recall: 0.71,
         accuracy: 0.75,
         cohens_kappa: 0.65,
@@ -139,7 +160,9 @@ describe('Pause/Resume Training Integration', () => {
 
     // Verify checkpoint was saved
     const savedCheckpoint = db
-      .prepare('SELECT * FROM training_loop_checkpoints WHERE session_id = ? AND iteration_number = ?')
+      .prepare(
+        'SELECT * FROM training_loop_checkpoints WHERE session_id = ? AND iteration_number = ?'
+      )
       .get(sessionId, 2) as any;
 
     expect(savedCheckpoint).toBeDefined();
@@ -164,7 +187,7 @@ describe('Pause/Resume Training Integration', () => {
       evaluatedResultCount: 15,
       metricsSnapshot: {
         f1_score: 0.88,
-        precision: 0.90,
+        precision: 0.9,
         recall: 0.86,
         accuracy: 0.88,
         cohens_kappa: 0.78,
@@ -241,7 +264,7 @@ describe('Pause/Resume Training Integration', () => {
       evaluatedResultCount: 5,
       metricsSnapshot: {
         f1_score: 0.75,
-        precision: 0.80,
+        precision: 0.8,
         recall: 0.71,
         accuracy: 0.75,
         cohens_kappa: 0.65,
@@ -269,7 +292,15 @@ describe('Pause/Resume Training Integration', () => {
     db.prepare(
       `INSERT INTO training_iterations (id, persona_id, iteration_number, judge_model_id, judge_prompt_text, status, started_at)
        VALUES (?, ?, ?, ?, ?, ?, ?)`
-    ).run(iterationId, personaId, 1, judgeModelId, 'Initial judge prompt', 'in_progress', new Date().toISOString());
+    ).run(
+      iterationId,
+      personaId,
+      1,
+      judgeModelId,
+      'Initial judge prompt',
+      'in_progress',
+      new Date().toISOString()
+    );
 
     const trainingLoop = new IterativeTrainingLoop(sessionId, personaId, db);
 
@@ -319,7 +350,7 @@ describe('Pause/Resume Training Integration', () => {
         evaluatedResultCount: 5,
         metricsSnapshot: {
           f1_score: 0.75,
-          precision: 0.80,
+          precision: 0.8,
           recall: 0.71,
           accuracy: 0.75,
           cohens_kappa: 0.65,
@@ -349,7 +380,7 @@ describe('Pause/Resume Training Integration', () => {
         evaluatedResultCount: 5,
         metricsSnapshot: {
           f1_score: 0.75,
-          precision: 0.80,
+          precision: 0.8,
           recall: 0.71,
           accuracy: 0.75,
           cohens_kappa: 0.65,
@@ -384,7 +415,7 @@ describe('Pause/Resume Training Integration', () => {
         evaluatedResultCount: 5,
         metricsSnapshot: {
           f1_score: 0.75,
-          precision: 0.80,
+          precision: 0.8,
           recall: 0.71,
           accuracy: 0.75,
           cohens_kappa: 0.65,
@@ -417,7 +448,7 @@ describe('Pause/Resume Training Integration', () => {
         evaluatedResultCount: 5,
         metricsSnapshot: {
           f1_score: 0.75,
-          precision: 0.80,
+          precision: 0.8,
           recall: 0.71,
           accuracy: 0.75,
           cohens_kappa: 0.65,
@@ -437,7 +468,7 @@ describe('Pause/Resume Training Integration', () => {
       // Corrupt metrics by removing confusion_matrix
       const corruptedMetrics = JSON.stringify({
         f1_score: 0.75,
-        precision: 0.80,
+        precision: 0.8,
         recall: 0.71,
         accuracy: 0.75,
         cohens_kappa: 0.65,
@@ -459,7 +490,7 @@ describe('Pause/Resume Training Integration', () => {
         evaluatedResultCount: 5,
         metricsSnapshot: {
           f1_score: 0.75,
-          precision: 0.80,
+          precision: 0.8,
           recall: 0.71,
           accuracy: 0.75,
           cohens_kappa: 0.65,
@@ -479,7 +510,7 @@ describe('Pause/Resume Training Integration', () => {
       // Corrupt metrics with incomplete confusion_matrix
       const corruptedMetrics = JSON.stringify({
         f1_score: 0.75,
-        precision: 0.80,
+        precision: 0.8,
         recall: 0.71,
         accuracy: 0.75,
         cohens_kappa: 0.65,
@@ -504,7 +535,7 @@ describe('Pause/Resume Training Integration', () => {
         evaluatedResultCount: 5,
         metricsSnapshot: {
           f1_score: 0.75,
-          precision: 0.80,
+          precision: 0.8,
           recall: 0.71,
           accuracy: 0.75,
           cohens_kappa: 0.65,
@@ -524,7 +555,7 @@ describe('Pause/Resume Training Integration', () => {
       // Corrupt metrics with invalid types
       const corruptedMetrics = JSON.stringify({
         f1_score: '0.75', // String instead of number
-        precision: 0.80,
+        precision: 0.8,
         recall: 0.71,
         accuracy: 0.75,
         cohens_kappa: 0.65,
@@ -551,7 +582,7 @@ describe('Pause/Resume Training Integration', () => {
         evaluatedResultCount: 5,
         metricsSnapshot: {
           f1_score: 0.75,
-          precision: 0.80,
+          precision: 0.8,
           recall: 0.71,
           accuracy: 0.75,
           cohens_kappa: 0.65,
@@ -584,7 +615,7 @@ describe('Pause/Resume Training Integration', () => {
         evaluatedResultCount: 5,
         metricsSnapshot: {
           f1_score: 0.75,
-          precision: 0.80,
+          precision: 0.8,
           recall: 0.71,
           accuracy: 0.75,
           cohens_kappa: 0.65,
@@ -631,7 +662,7 @@ describe('Pause/Resume Training Integration', () => {
         evaluatedResultCount: 5,
         metricsSnapshot: {
           f1_score: 0.75,
-          precision: 0.80,
+          precision: 0.8,
           recall: 0.71,
           accuracy: 0.75,
           cohens_kappa: 0.65,
