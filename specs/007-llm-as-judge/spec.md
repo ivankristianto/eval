@@ -63,9 +63,9 @@ An AI researcher uploads CSV training data containing input/correct output pairs
 
 ---
 
-### User Story 3 - Execute Automated Training Iteration (Priority: P1)
+### User Story 3 - Execute Automated Training Loop (Priority: P1)
 
-The system runs fully automated training iterations that generate outputs from a model, evaluate them using the current judge prompt, and calculate accuracy metrics by comparing judge decisions against ground truth (expected_output). Iterations run automatically until convergence (F1 ≥ target) or max iterations reached, with AI-assisted prompt refinement between iterations.
+The system runs a **fully automated training loop** that generates outputs from a model, evaluates them using the current judge prompt, and calculates accuracy metrics by comparing judge decisions against ground truth (expected_output). The **automated training loop** runs continuously until convergence (F1 ≥ target) or max iterations reached, with AI-assisted prompt refinement between iterations. No human intervention is required between iterations.
 
 **Why this priority**: P1 because the core automation loop is the heart of the feature. Without executing iterations and automatically calculating metrics, there is no learning mechanism.
 
@@ -82,19 +82,21 @@ The system runs fully automated training iterations that generate outputs from a
 
 ---
 
-### User Story 3A - Optional Human Review for Validation (Priority: P2)
+### User Story 3A - First Iteration Human Review (Priority: P1)
 
-For the first iteration or any iteration requiring validation, a human reviewer can inspect judge decisions and provide agreement/disagreement feedback. This is OPTIONAL and primarily used for validation purposes, not required for metrics calculation.
+**Iteration 1 requires MANDATORY human review** before automated training can proceed. The system requires human feedback on all judge decisions from iteration 1, and uses human reasoning to refine the judge prompt before iteration 2 begins. This ensures the initial prompt refinement is guided by human domain expertise.
 
-**Why this priority**: P2 because human review is not required for the automated training loop. Metrics are calculated automatically from ground truth comparison. Human review provides additional validation insight.
+**Why this priority**: P1 because iteration 1 establishes the baseline for all subsequent automated iterations. Without human-guided refinement on the first iteration, the automated loop may propagate systematic errors from the start.
 
-**Independent Test**: Can be fully tested by completing an iteration, optionally providing human feedback, and verifying both automatic metrics (from ground truth) and human validation metrics are calculated independently.
+**Independent Test**: Can be fully tested by completing iteration 1, providing mandatory human feedback, and verifying the judge prompt is refined based on human reasoning. Then verify iteration 2 begins automatically with the refined prompt.
 
 **Acceptance Scenarios**:
 
-1. **Given** an iteration has completed, **When** the user chooses to review judge decisions, **Then** the system displays all judge decisions with input, expected_output, suggested_output, and judge reasoning.
-2. **Given** judge decisions are displayed, **When** the human reviewer votes "Agree" or "Disagree" with the judge's assessment, **Then** the system records their feedback separately from automatic metrics.
-3. **Given** human feedback has been provided, **When** the user views metrics, **Then** both automatic metrics (from ground truth) and human validation metrics are displayed for comparison.
+1. **Given** iteration 1 has completed, **When** the user navigates to the review page, **Then** the system requires human review of ALL judge decisions before iteration 2 can begin.
+2. **Given** judge decisions are displayed for iteration 1, **When** the human reviewer votes "Agree" or "Disagree" and provides reasoning, **Then** the system records their feedback and aggregates patterns from human corrections.
+3. **Given** all iteration 1 decisions have been reviewed, **When** the user clicks "Generate Refined Prompt", **Then** the system analyzes human feedback patterns and generates an improved judge prompt incorporating human reasoning.
+4. **Given** the human-refined prompt is displayed, **When** the user accepts it, **Then** iteration 2 begins automatically using the refined prompt.
+5. **Given** iteration 2+ are running, **When** iterations complete, **Then** the system uses LLM-based automatic prompt refinement (no further human review required).
 
 ---
 
@@ -150,13 +152,13 @@ A researcher can pause an ongoing training session and resume it later without l
 
 ### Edge Cases
 
-- What happens when a training pair has an empty input or output field?
-- How does the system handle model API failures during output generation?
-- What happens if human reviewer feedback is contradictory across iterations (e.g., same judge decision marked correct in iteration 1 but incorrect in iteration 2)?
-- How does the system handle judge prompts that become extremely long after multiple refinements?
-- What happens when all training pairs receive identical feedback across an iteration (e.g., 100% accuracy)?
-- How does the system handle timezone differences when tracking iteration timestamps?
-- What happens if a CSV upload is interrupted mid-stream?
+- **EC-001**: Empty input/output fields in CSV → System MUST reject the row with error: "Row {N}: input and expected_output must be non-empty". Whitespace-only values treated as empty.
+- **EC-002**: Model API failures during output generation → System MUST retry with exponential backoff (1s → 2s → 4s, max 3 retries). If all retries fail, mark iteration as failed and notify user.
+- **EC-003**: Contradictory human feedback across iterations → Each iteration's metrics are calculated independently using only that iteration's human reviews. No cross-iteration comparison or consistency enforcement.
+- **EC-004**: Extremely long judge prompts after refinements → No explicit limit enforced for MVP. Display prompt length in UI; defer truncation/warning to Phase 3.
+- **EC-005**: 100% accuracy iteration (all identical feedback) → Training continues normally if F1 < target. Prompt refinement may have minimal failures to analyze; system handles empty FP/FN sets gracefully.
+- **EC-006**: Timezone differences for timestamps → All timestamps stored in UTC (ISO 8601 with Z suffix). UI converts to user's local timezone for display using JavaScript `toLocaleString()`.
+- **EC-007**: CSV upload interruption → Partial uploads rejected. System validates complete file receipt before parsing; returns error if stream interrupted mid-file.
 
 ## Requirements *(mandatory)*
 
@@ -173,16 +175,26 @@ A researcher can pause an ongoing training session and resume it later without l
 - **FR-004**: System MUST parse and store training pairs from uploaded CSV files, validating that both input and expected_output fields are present and non-empty, and enforcing pair count constraints (10-200 pairs).
 - **FR-005**: System MUST generate outputs for training pairs using the selected Task Model and current Task Prompt during each iteration.
 - **FR-006**: System MUST evaluate generated outputs using the current Judge Prompt and the selected Judge Model, collecting correct/incorrect decisions from the judge with reasoning.
-- **FR-007**: System MUST automatically calculate metrics by comparing judge decisions against ground truth (expected_output from training data). TP = judge says correct AND suggested_output matches expected_output; TN = judge says incorrect AND suggested_output does not match expected_output; FP = judge says correct BUT suggested_output does not match expected_output; FN = judge says incorrect BUT suggested_output matches expected_output.
-- **FR-008**: System MUST calculate F1 score, precision, recall, and Cohen's Kappa metrics automatically after each iteration completes, using the confusion matrix from ground truth comparison. Metrics are calculated immediately after judge decisions are made, without requiring human review.
-- **FR-009** (OPTIONAL): System MAY allow human reviewers to vote "Agree" or "Disagree" with judge decisions for validation purposes. Human feedback is stored separately and displayed alongside automatic metrics for comparison. Human feedback is NOT required for training to proceed.
-- **FR-010**: System MUST automatically generate improved Task Prompt and Judge Prompt based on iteration failures (FP/FN cases) and current metrics, using the Prompt Engineer Model. Both prompts are refined to maximize F1 score alignment with ground truth.
+- **FR-007**: System MUST calculate metrics **immediately after each iteration completes** (before any human review). Metrics are derived by comparing judge decisions against ground truth (expected_output from training data):
+  - **Confusion Matrix**: TP = judge says correct AND suggested_output matches expected_output; TN = judge says incorrect AND suggested_output does not match expected_output; FP = judge says correct BUT suggested_output does not match expected_output; FN = judge says incorrect BUT suggested_output matches expected_output
+  - **Formulas**: F1 score, precision, recall, Cohen's Kappa, and accuracy calculated from the confusion matrix
+  - **Timing**: Metrics calculation is automatic and synchronous with iteration completion; it does NOT wait for or require human review
+- **FR-009**:
+  - **Iteration 1 (REQUIRED)**: System MUST require human reviewers to vote "Agree" or "Disagree" on ALL judge decisions and provide reasoning. Training CANNOT proceed to iteration 2 without completing human review and accepting the refined prompt.
+  - **Iteration 2+ (OPTIONAL)**: System MAY allow human reviewers to vote "Agree" or "Disagree" with judge decisions for validation purposes. Human feedback is stored separately and displayed alongside automatic metrics for comparison. Human feedback is NOT required for training to proceed.
+- **FR-010**:
+  - **Iteration 1 (Human-Driven Refinement)**: System MUST require human review of all judge decisions from iteration 1. After human completes review, system MUST analyze human feedback patterns (agree/disagree votes with reasoning) and generate an improved Judge Prompt incorporating human insights. The refined prompt must be presented to user for acceptance before iteration 2.
+  - **Iteration 2+ (LLM-Driven Refinement)**: System MUST automatically generate improved Task Prompt and Judge Prompt based on iteration failures (FP/FN cases) and current metrics, using the Prompt Engineer Model. Both prompts are refined to maximize F1 score alignment with ground truth.
 - **FR-011**: System MUST persist all iteration data including generated outputs, judge decisions, optional human feedback, calculated metrics, and prompt versions (both task and judge).
 - **FR-012**: System MUST display training progress dashboard showing metric trends across iterations.
 - **FR-013**: System MUST indicate when F1 score ≥ target (convergence achieved) and identify the best-performing iteration (highest F1 score).
 - **FR-014**: System MUST allow pausing an active training iteration and resuming it without data loss.
-- **FR-015**: System MUST support automatic iteration until the target F1 score is achieved OR max_iterations is reached, refining prompts automatically between iterations without user intervention.
-- **FR-016**: System MUST store both Task Prompt and Judge Prompt versions for only significant changes across iterations (semantic changes, not formatting), maintaining a clear audit trail of meaningful refinements. Each iteration must be tagged with the specific prompt versions used.
+- **FR-015**:
+  - **Iteration 1**: System MUST require mandatory human review completion and prompt refinement acceptance before proceeding to iteration 2.
+  - **Iteration 2+**: System MUST support automatic iteration until the target F1 score is achieved OR max_iterations is reached, refining prompts automatically between iterations without user intervention (using Prompt Engineer Model).
+- **FR-016**: System MUST store both Task Prompt and Judge Prompt versions for **significant changes only**. Significant changes are defined as text modifications that remain after whitespace normalization (collapsing multiple spaces, trimming leading/trailing whitespace, normalizing line endings to \n). Purely formatting changes (indentation, spacing) do NOT create new versions. Each iteration must be tagged with the specific prompt versions used. Examples:
+  - **SIGNIFICANT**: "Evaluate correctness" → "Evaluate correctness and completeness"
+  - **NOT SIGNIFICANT**: "Evaluate correctness" → "  Evaluate  correctness\n"
 - **FR-017**: System MUST track which iteration achieved the best F1 score and allow users to export the best-performing Task Prompt and Judge Prompt combination.
 - **FR-018**: System MUST handle API rate limits and failures gracefully during model calls using automatic retry with exponential backoff (maximum 3 retries), notifying the user if all retries are exhausted.
 - **FR-019**: System MUST provide an API interface for all core functionality (create persona, upload data, start/pause/resume training, retrieve metrics, export best prompts).
@@ -195,7 +207,10 @@ A researcher can pause an ongoing training session and resume it later without l
 - **TaskPromptVersion**: Represents a version of the task prompt. Attributes: persona_id, version_number, prompt_text, improvement_rationale, created_by (human/ai), created_at.
 - **JudgePromptVersion**: Represents a version of the judge prompt. Attributes: persona_id, version_number, prompt_text, improvement_rationale, created_by (human/ai), created_at.
 - **JudgeDecision**: Represents the judge's evaluation of a single generated output. Attributes: iteration_id, training_pair_id, suggested_output, judge_decision (correct/incorrect), judge_reasoning, judge_confidence, created_at.
-- **HumanReview** (OPTIONAL): Represents optional human validation feedback. Attributes: judge_decision_id, human_decision (agree/disagree), reviewer_notes, created_at. Semantics: "agree" means human affirms the judge's assessment; "disagree" means human contradicts it.
+- **HumanReview** (OPTIONAL): Represents optional human validation feedback. Attributes: judge_decision_id, human_decision (agree/disagree), reviewer_notes, created_at.
+  - **Creation Semantics**: HumanReview records are created **ONLY when a user explicitly provides feedback** via the review interface. Records are NEVER auto-created or defaulted.
+  - **Storage**: HumanReview is stored separately from automatic metrics and does NOT block training progression.
+  - **Semantics**: "agree" means human affirms the judge's assessment was correct; "disagree" means human contradicts the judge's decision. This is separate from ground-truth correctness (which determines TP/TN/FP/FN).
 - **IterationMetrics**: Represents automatically calculated metrics from ground truth comparison. Attributes: iteration_id, f1_score, precision, recall, cohens_kappa, accuracy, true_positives, true_negatives, false_positives, false_negatives, calculated_at. Metrics derived by comparing judge decisions against expected_output (ground truth).
 
 ## Success Criteria *(mandatory)*
@@ -231,7 +246,9 @@ A researcher can pause an ongoing training session and resume it later without l
 - **A-009**: Three different model providers (Task, Judge, Prompt Engineer) are selected to prevent bias from same model evaluating its own outputs or refining its own prompts.
 - **A-010**: Cost management is out of scope for this feature. Users are responsible for monitoring API costs during training. System will not provide cost estimation or budget limiting features.
 - **A-011**: Training datasets must contain minimum 10 pairs and maximum 200 pairs per session to maintain reasonable data quality and API cost constraints.
-- **A-012**: Training iterations run FULLY AUTOMATICALLY from start to finish: generate outputs → judge evaluation → automatic metrics calculation (via ground truth comparison) → prompt refinement → next iteration. No human intervention required between iterations.
+- **A-012**: Training follows a two-phase approach:
+  - **Iteration 1 (Human-Guided)**: Semi-automatic workflow requiring mandatory human review: generate outputs → judge evaluation → automatic metrics calculation → **MANDATORY human review with feedback** → human-driven prompt refinement based on aggregated reasoning → user accepts refined prompt.
+  - **Iteration 2+ (Fully Automatic)**: Fully automatic: generate outputs → judge evaluation → automatic metrics calculation → LLM-based prompt refinement → next iteration. No human intervention required between iterations.
 - **A-013**: MVP uses `max_iterations = 5` by default (configurable per persona, minimum 1, maximum 20 for MVP phase). This is documented in data-model.md section 1; production deployments may allow higher limits. Rationale: 5 iterations sufficient for typical 50-pair training datasets to converge; early feedback indicated 8-12 iterations average across diverse tasks; 5 is conservative MVP default.
 - **A-014**: System tracks BEST performing iteration (highest F1 score) across all iterations and allows export of best task prompt + judge prompt combination for production use.
 - **A-015**: Open questions from overview.md (line 445-456) are resolved as follows:
@@ -252,22 +269,23 @@ This feature is designed across four implementation phases to deliver value incr
 Core system foundation enabling basic training workflow:
 - Persona CRUD (create, read, update, delete) with model selection
 - CSV training data upload and parsing (10-200 pair validation)
-- Manual training iteration trigger with output generation and judge evaluation
-- Human review interface for Agree/Disagree voting on judge decisions
+- **Iteration 1 mandatory human review workflow**: output generation → judge evaluation → metrics calculation → mandatory human review → human-driven prompt refinement
+- Human review interface for Agree/Disagree voting on judge decisions (REQUIRED for iteration 1)
 - Metrics calculation (confusion matrix, F1, precision, recall, Cohen's Kappa)
 - Database schema and API endpoints for core CRUD operations
-- Assumption: Training loop runs synchronously or with basic queueing (not fully automated)
+- Human-driven prompt refinement based on aggregated human reasoning (iteration 1 only)
 
 ### Phase 2: Automation
 
-Fully automated training loop with AI-assisted improvements:
-- Automated training loop execution (runs iteratively until F1 ≥0.80 or max iterations)
-- AI-assisted judge prompt refinement using Prompt Engineer Model
+Fully automated training loop (starting from iteration 2) with AI-assisted improvements:
+- Automated training loop execution for iterations 2+ (runs iteratively until F1 ≥0.80 or max iterations)
+- **Iteration 1 prerequisite**: Human review completion and prompt refinement acceptance required before automated loop begins
+- AI-assisted Task Prompt and Judge Prompt refinement using Prompt Engineer Model (iterations 2+ only)
 - Real-time training progress dashboard with metric trends and convergence indicators
 - Pause/resume functionality with state preservation
 - Background job processing for non-blocking training execution
 - WebSocket or polling updates for live iteration status
-- Assumption: Full automation with graceful failure handling
+- Assumption: Full automation from iteration 2+, with graceful failure handling
 
 ### Phase 3: Polish
 

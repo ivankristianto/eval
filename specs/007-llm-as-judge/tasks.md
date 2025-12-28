@@ -385,11 +385,11 @@ _User can upload CSV file with input/expected_output pairs and view imported dat
 
 ---
 
-## Phase 5: User Story 3 - Execute Automated Training Iteration (P1)
+## Phase 5: User Story 3 - Execute Training Loop (P1)
 
-_System runs FULLY AUTOMATED iteration cycle: generate outputs → judge → automatic metrics → prompt refinement → next iteration_
+_System runs TWO-PHASE training: (1) Iteration 1 with mandatory human review and human-driven prompt refinement; (2) Iterations 2+ FULLY AUTOMATED with LLM prompt refinement_
 
-**Phase Goal**: Implement complete automated training loop with automatic metrics calculation from ground truth and prompt refinement
+**Phase Goal**: Implement complete training loop with iteration 1 human review requirement and automatic metrics calculation from ground truth
 
 **Independent Test Criteria**:
 
@@ -397,37 +397,46 @@ _System runs FULLY AUTOMATED iteration cycle: generate outputs → judge → aut
 - System generates outputs for each pair using Task Model + Task Prompt
 - Judge evaluates each output using Judge Model + Judge Prompt
 - Metrics (F1, precision, recall, Cohen's Kappa) calculate AUTOMATICALLY by comparing judge decisions against ground truth (expected_output)
-- System automatically refines BOTH Task Prompt and Judge Prompt based on failures (FP/FN cases)
-- Next iteration starts automatically with refined prompts until F1 ≥ target OR max iterations reached
-- E2E test: start training → verify multiple iterations run automatically → verify convergence or max iterations
+- **Iteration 1**: System REQUIRES human review of ALL decisions before proceeding
+- **Iteration 1**: Human reasoning is aggregated to refine Judge Prompt
+- **Iteration 1**: User accepts refined prompt before iteration 2 begins
+- **Iteration 2+**: System automatically refines BOTH Task Prompt and Judge Prompt using LLM based on failures (FP/FN cases)
+- Iterations 2+ start automatically with refined prompts until F1 ≥ target OR max iterations reached
+- E2E test: start training → verify iteration 1 requires human review → verify iteration 2+ run automatically → verify convergence or max iterations
 
 ---
 
 ### Training Loop Orchestration
 
-- [x] T041 [P] Create test file tests/unit/training-loop.test.ts for AUTOMATED iteration orchestration
+- [x] T041 [P] Create test file tests/unit/training-loop.test.ts for TWO-PHASE training orchestration
 
 - [x] T042 Create src/lib/training-loop.ts implementing IterativeTrainingLoop class:
-  - executeFullTraining() → Promise<void> (runs ALL iterations automatically until convergence or max iterations)
+  - executeTrainingLoop() → Promise<void> (runs iteration 1 with human review, then iterations 2+ automatically until convergence or max iterations)
+  - runFirstIterationWithHumanReview() → Promise<IterationResult> (iteration 1: requires human review completion before proceeding)
+  - runAutomatedIterations(startIteration: 2) → Promise<void> (iterations 2+: fully automated with LLM prompt refinement)
   - runSingleIteration(iterationNumber) → Promise<IterationResult>
   - generateOutputs() → generate suggested_output for each training pair using Task Model + current Task Prompt
   - evaluateWithJudge() → judge all outputs and store judge_decisions (correct/incorrect)
   - calculateMetricsFromGroundTruth() → automatically compare judge decisions vs expected_output to compute TP/TN/FP/FN
-  - refinePrompts(failures) → use Prompt Engineer Model to improve BOTH Task Prompt AND Judge Prompt
+  - waitForHumanReviewCompletion(iterationNumber: 1) → Promise<void> (BLOCKS until all iteration 1 decisions reviewed)
+  - refinePromptsFromHumanFeedback(iterationNumber: 1, humanReviews) → {refined_judge_prompt, rationale} (human-driven for iteration 1)
+  - refinePromptsFromLLM(iterationNumber: 2+, failures) → {refined_task_prompt, refined_judge_prompt, rationale} (LLM-driven for iterations 2+)
   - checkConvergence(f1Score) → determine if F1 ≥ target or iterations ≥ max
   - sessionId property for tracking
-  - pause() method to pause training between iterations
+  - pause() method to pause training between iterations (iteration 2+ only)
 
-- [x] T043 [P] Create test file tests/integration/training-loop-flow.test.ts with simulated AUTOMATED multi-iteration flow
+- [x] T043 [P] Create test file tests/integration/training-loop-flow.test.ts with simulated TWO-PHASE flow (iteration 1 human review, iterations 2+ automated)
 
 **Acceptance Criteria**:
 
-- Iteration loop runs FULLY AUTOMATED: generate → judge → metrics → refine prompts → next iteration
+- Iteration 1 BLOCKS until human review complete: generate → judge → metrics → MANDATORY human review → human-driven prompt refinement → wait for user acceptance
+- Iterations 2+ run FULLY AUTOMATED: generate → judge → metrics → LLM prompt refinement → next iteration
 - State persisted to database after each iteration
 - Metrics calculated automatically from ground truth comparison (NOT human feedback)
-- Both task prompt and judge prompt refined based on FP/FN failures
-- Training continues until F1 ≥ target OR max iterations
-- Can pause/resume training between iterations
+- Iteration 1: Judge prompt refined from aggregated human reasoning
+- Iterations 2+: Both task and judge prompts refined by LLM based on FP/FN failures
+- Training continues from iteration 2 until F1 ≥ target OR max iterations
+- Can pause/resume training during automated iterations (iteration 2+ only)
 - > 80% code coverage
 
 ---
@@ -456,30 +465,34 @@ _System runs FULLY AUTOMATED iteration cycle: generate outputs → judge → aut
 
 ---
 
-### Optional Human Review Interface (OPTIONAL - for validation only)
+### Human Review Interface (REQUIRED for Iteration 1, OPTIONAL for Iterations 2+)
 
-- [ ] T047 [P] Create test file tests/e2e/human-review.test.ts for OPTIONAL validation review workflow
+- [ ] T047 [P] Create test file tests/e2e/human-review.test.ts for MANDATORY iteration 1 review workflow and OPTIONAL iteration 2+ validation
 
 - [x] T048 Create src/pages/api/personas/[id]/iterations/[num]/decisions.ts implementing:
-  - GET /api/personas/[id]/iterations/[num]/decisions: Fetch all judge decisions for OPTIONAL human validation
-  - Return: {input, expected_output, suggested_output, judge_decision, judge_reasoning, automatic_correctness (from ground truth), decision_id}
+  - GET /api/personas/[id]/iterations/[num]/decisions: Fetch all judge decisions for human review
+  - Return: {input, expected_output, suggested_output, judge_decision, judge_reasoning, automatic_correctness (from ground truth), decision_id, iteration_number}
+  - For iteration 1: Return ALL decisions (mandatory review)
+  - For iterations 2+: Return all decisions (optional validation)
 
 - [x] T049 Create src/pages/api/personas/[id]/iterations/[num]/feedback.ts implementing:
-  - POST /api/personas/[id]/iterations/[num]/feedback: Submit OPTIONAL human validation feedback
-  - Accept: {decision_id, human_decision: "agree"|"disagree", notes?: string}
+  - POST /api/personas/[id]/iterations/[num]/feedback: Submit human review feedback
+  - Accept: {decision_id, human_decision: "agree"|"disagree", reviewer_notes: string}
   - Store HumanReview record SEPARATELY from automatic metrics
   - Return 201 with stored feedback
-  - NOTE: Human feedback is OPTIONAL and does NOT block training or affect automatic metrics calculation
+  - For iteration 1: Track completion status (how many decisions reviewed vs total)
+  - NOTE: Iteration 1 requires 100% completion before training can proceed; iterations 2+ are optional
 
 - [x] T050 Create src/pages/personas/[id]/review/[iteration].astro implementing:
-  - OPTIONAL validation view (not required for training)
-  - Split view: left side shows decision + automatic correctness, right side shows optional feedback form
+  - **Iteration 1**: MANDATORY review page with clear "REQUIRED FOR ITERATION 1" indicator
+  - **Iterations 2+**: Optional validation page
+  - Split view: left side shows decision + automatic correctness, right side shows feedback form
   - Display: input, expected_output, suggested_output, judge_decision, judge_reasoning, automatic_correctness_badge
-  - Buttons: "Agree with Judge" / "Disagree with Judge" (for validation only)
-  - Optional notes textarea
-  - Progress: "X of Y decisions validated (optional)"
+  - Buttons: "Agree with Judge" / "Disagree with Judge" with required notes field
+  - Progress: "X of Y decisions reviewed (100% required for iteration 1)"
   - Previous/Next navigation between decisions
-  - Clear indicator that this is OPTIONAL validation
+  - **Iteration 1 only**: "Generate Refined Prompt" button appears when 100% complete
+  - **Iteration 1 only**: Review page blocks navigation to other pages until review complete
 
 - [x] T051 [P] Create src/components/JudgeDecisionReview.astro as reusable decision card component with automatic correctness badge
 
@@ -487,15 +500,17 @@ _System runs FULLY AUTOMATED iteration cycle: generate outputs → judge → aut
 
 - Decisions fetch with automatic correctness calculated from ground truth
 - Human validation feedback is stored separately from automatic metrics
-- Feedback UI clearly indicates this is OPTIONAL
-- Both automatic metrics and optional human validation metrics displayed side-by-side
-- Training continues regardless of whether human validation is provided
+- **Iteration 1**: Feedback UI clearly indicates MANDATORY status and blocks progress until 100% complete
+- **Iterations 2+**: Feedback UI clearly indicates OPTIONAL status
+- Both automatic metrics and human validation metrics displayed side-by-side
+- **Iteration 1**: Training CANNOT proceed without completing human review and accepting refined prompt
+- **Iterations 2+**: Training continues regardless of whether human validation is provided
 
 ---
 
 ### Automatic Metrics Calculation from Ground Truth
 
-- [x] T052 [P] Create test file tests/integration/metrics-calculation.test.ts with AUTOMATIC metrics flow (NO human review required)
+- [x] T052 [P] Create test file tests/integration/metrics-calculation.test.ts with AUTOMATIC metrics flow (applies to ALL iterations)
 
 - [x] T053 Create src/lib/metrics-orchestrator.ts implementing:
   - calculateIterationMetrics(iterationId) → MetricsResult (AUTOMATIC - no human review required)
@@ -580,49 +595,82 @@ _System runs FULLY AUTOMATED iteration cycle: generate outputs → judge → aut
 
 ### Integration & E2E Tests
 
-- [ ] T060 Create end-to-end test tests/e2e/automated-training.test.ts covering:
+- [ ] T060 Create end-to-end test tests/e2e/two-phase-training.test.ts covering:
   - Create persona and upload training data (prerequisites)
   - Click "Start Training" button
-  - Wait for AUTOMATED training to run multiple iterations (e.g., 3-5 iterations)
-  - Verify metrics are calculated automatically after each iteration (no human review)
-  - Verify prompts are refined automatically between iterations
+  - **Iteration 1**: Wait for iteration 1 to complete, verify user is redirected to mandatory review page
+  - **Iteration 1**: Complete mandatory human review (all decisions), provide reasoning
+  - **Iteration 1**: Click "Generate Refined Prompt", verify human-refined judge prompt displayed
+  - **Iteration 1**: Accept refined prompt, verify iteration 2 begins automatically
+  - **Iteration 2+**: Wait for AUTOMATED training to run multiple iterations (e.g., 2-3 more iterations)
+  - **Iteration 2+**: Verify prompts are refined automatically by LLM between iterations
   - Verify training stops when F1 ≥ target OR max iterations reached
   - Verify best iteration is identified with highest F1 score
-  - Optionally navigate to review page to view decisions (validation only, not required)
 
 **Acceptance Criteria**:
 
-- E2E test passes for complete AUTOMATED training (multiple iterations)
+- E2E test passes for complete TWO-PHASE training (iteration 1 human-driven, iterations 2+ automated)
 - Outputs generated successfully for each iteration
 - Judge evaluates correctly using current prompts
-- Metrics calculated AUTOMATICALLY from ground truth (no human review required)
-- Prompts refined automatically between iterations
+- Metrics calculated AUTOMATICALLY from ground truth (for all iterations)
+- **Iteration 1**: Human review MANDATORY, prompts refined from human reasoning
+- **Iterations 2+**: LLM refines both prompts automatically based on FP/FN failures
 - Training converges or reaches max iterations
 - Best performing iteration tracked correctly
 
 ---
 
-## Phase 6: User Story 4 - AI-Assisted Prompt Refinement (P1)
+## Phase 6: User Story 4 - Two-Phase Prompt Refinement (P1)
 
-_System AUTOMATICALLY refines BOTH task prompt and judge prompt based on failure analysis after each iteration_
+_System uses TWO approaches: (1) Iteration 1 - human-driven prompt refinement based on human feedback; (2) Iteration 2+ - LLM-driven prompt refinement based on failure analysis_
 
-**Phase Goal**: Implement AUTOMATIC LLM-based refinement of BOTH task and judge prompts using failure analysis (FP/FN cases)
+**Phase Goal**: Implement both human-driven (iteration 1) and LLM-driven (iterations 2+) prompt refinement mechanisms
 
 **Independent Test Criteria**:
 
-- After each iteration, system analyzes false positives and false negatives from ground truth comparison
-- Prompt Engineer Model generates improved TASK PROMPT (to generate better outputs) AND JUDGE PROMPT (to evaluate more accurately)
-- Refined prompts are used automatically in next iteration (no user approval needed for automated training)
-- User can view prompt refinement history and rationale
-- E2E test: complete iteration → automatic refinement → next iteration with new prompts → verify F1 improves
+- **Iteration 1**: After human completes review, system analyzes human feedback patterns and generates improved judge prompt
+- **Iteration 1**: Human accepts refined prompt before iteration 2 begins
+- **Iterations 2+**: System analyzes FP/FN cases from ground truth comparison
+- **Iterations 2+**: Prompt Engineer Model generates improved task prompt AND judge prompt
+- **Iterations 2+**: Refined prompts used automatically without user approval
+- User can view prompt refinement history and rationale for all iterations
+- E2E test: iteration 1 human review → human refinement accepted → iteration 2 LLM refinement → verify F1 improves
 
 ---
 
-### Failure Analysis & Context Building (from Ground Truth)
+### Human-Driven Prompt Refinement (Iteration 1 Only)
 
-- [x] T061 [P] Create test file tests/unit/failure-analysis.test.ts for analyzing iteration failures FROM GROUND TRUTH
+- [ ] T061 [P] Create test file tests/unit/human-prompt-refiner.test.ts for iteration 1 human-driven prompt refinement
 
-- [x] T062 Create src/lib/failure-analysis.ts implementing:
+- [ ] T062 Create src/lib/human-prompt-refiner.ts implementing:
+  - analyzeHumanFeedback(iterationId: 1) → HumanFeedbackAnalysis
+  - Fetch all HumanReview records for iteration 1 (must be 100% complete)
+  - Aggregate patterns: common reasons for "Disagree" votes, missed edge cases, systematic errors
+  - Extract key insights from human reasoning comments
+  - identifyRefinementOpportunities() → {patterns, insights, suggestedImprovements}
+  - refineJudgePromptFromHumanFeedback(currentPrompt, analysis) → {refined_prompt, rationale, expected_impact}
+  - Present refined prompt with clear explanation of changes based on human input
+  - Store refined prompt as judge_prompt_version with created_by="human"
+  - Return prompt for user acceptance before iteration 2
+
+- [ ] T063 [P] Create test file tests/integration/human-prompt-refiner.test.ts with complete iteration 1 flow
+
+**Acceptance Criteria**:
+
+- Aggregates human feedback patterns from iteration 1 reviews
+- Identifies systematic errors and edge cases missed by judge
+- Generates refined judge prompt incorporating human insights
+- Rationale clearly explains how human feedback shaped the refinement
+- Stores prompt with created_by="human" attribution
+- > 80% code coverage
+
+---
+
+### LLM-Driven Prompt Refinement (Iterations 2+ Only)
+
+- [x] T064 [P] Create test file tests/unit/failure-analysis.test.ts for analyzing iteration failures FROM GROUND TRUTH (iterations 2+)
+
+- [x] T065 Create src/lib/failure-analysis.ts implementing:
   - analyzeIterationFailures(iterationId) → FailureAnalysisContext
   - Extract false positives: judge says "correct" BUT suggested_output ≠ expected_output (ground truth says wrong)
   - Extract false negatives: judge says "incorrect" BUT suggested_output = expected_output (ground truth says right)
@@ -641,16 +689,18 @@ _System AUTOMATICALLY refines BOTH task prompt and judge prompt based on failure
 - Extracts TP examples for few-shot learning
 - Limits examples to reasonable count (5 each)
 - Context includes current prompts and metrics
+- **Applies to iterations 2+ only** (iteration 1 uses human-driven refinement)
 - > 80% code coverage
 
 ---
 
-### Automatic Prompt Refinement via LLM (BOTH Task + Judge Prompts)
+### Automatic Prompt Refinement via LLM (Iterations 2+ Only)
 
-- [x] T063 [P] Create test file tests/integration/prompt-refinement.test.ts with LLM mock for BOTH prompts
+- [x] T066 [P] Create test file tests/integration/prompt-refinement.test.ts with LLM mock for BOTH prompts (iterations 2+)
 
-- [x] T064 Create src/lib/prompt-engineer.ts implementing:
+- [x] T067 Create src/lib/prompt-engineer.ts implementing:
   - refinePrompts(failureContext, promptEngineerModel) → {refined_task_prompt, refined_judge_prompt, rationale, expected_impact}
+  - **Iterations 2+ only** (iteration 1 uses human-driven refinement via human-prompt-refiner.ts)
   - Build detailed context with:
     - Current task prompt and judge prompt
     - FP cases (both outputs and judge reasoning)
@@ -663,12 +713,13 @@ _System AUTOMATICALLY refines BOTH task prompt and judge prompt based on failure
   - Parse JSON response with both refined prompts and rationales
   - Handle LLM failures gracefully (return null to keep current prompts)
 
-- [x] T065 [P] Create test file tests/unit/prompt-engineer-edge-cases.test.ts for LLM response parsing
+- [x] T068 [P] Create test file tests/unit/prompt-engineer-edge-cases.test.ts for LLM response parsing
 
 **Acceptance Criteria**:
 
 - Builds comprehensive failure context from ground truth comparison
 - Calls LLM with clear instructions for BOTH prompts
+- **Applies to iterations 2+ only** (iteration 1 uses human-prompt-refiner.ts)
 - Parses JSON response with task prompt + judge prompt + rationales
 - Provides rationale for changes to each prompt
 - Gracefully handles failures (keeps current prompts)
@@ -1081,15 +1132,15 @@ _End-to-end integration tests and MVP validation against spec_
 
 ## Task Summary
 
-**Total Tasks**: 136
+**Total Tasks**: 139 (updated for human-first iteration workflow)
 **Estimated Effort by Phase**:
 
 - Phase 1 (Setup): 5 tasks (~0.5 days)
 - Phase 2 (Foundation): 17 tasks (~2 days)
 - Phase 3 (US1): 21 tasks (~2.5 days)
 - Phase 4 (US2): 11 tasks (~1.5 days)
-- Phase 5 (US3): 20 tasks (~3 days)
-- Phase 6 (US4): 13 tasks (~1.5 days)
+- Phase 5 (US3): 20 tasks (~3 days) - updated for two-phase training
+- Phase 6 (US4): 15 tasks (~2 days) - updated for human-driven + LLM-driven refinement
 - Phase 7 (US5): 8 tasks (~1 day)
 - Phase 8 (US6): 5 tasks (~0.5 days)
 - Phase 9 (Polish): 18 tasks (~2 days)

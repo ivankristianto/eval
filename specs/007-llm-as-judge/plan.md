@@ -5,15 +5,15 @@
 
 ## Summary
 
-Implement an iterative training system for AI judge personas that evaluates non-deterministic LLM outputs through human feedback loops. The system trains judge LLMs to achieve >80% F1 score alignment with human judgment by:
+Implement an iterative training system for AI judge personas that evaluates non-deterministic LLM outputs through a two-phase training approach. The system trains judge LLMs to achieve >80% F1 score alignment with human judgment by:
 
-1. Running iterative cycles: generate outputs → judge with current prompt → collect human agreement/disagreement feedback → calculate metrics (F1, precision, recall, Cohen's Kappa)
-2. Using a Prompt Engineer LLM to automatically refine judge prompts based on failure analysis
+1. **Iteration 1 (Human-Guided)**: generate outputs → judge with current prompt → calculate metrics → **MANDATORY human review with reasoning** → human-driven prompt refinement (judge prompt only)
+2. **Iterations 2+ (Fully Automated)**: generate outputs → judge with refined prompt → calculate metrics → LLM-based prompt refinement (both task and judge prompts) → next iteration
 3. Maintaining strict model provider diversification (Task Model, Judge Model, and Prompt Engineer Model from different providers) to prevent bias
 4. Supporting pause/resume functionality with SQLite-backed state persistence for crash recovery
 5. Enforcing training dataset constraints (10-200 pairs per session) for data quality and cost management
 
-Technical approach: Async/await with SQLite transactions for state persistence (no external job queue needed), confusion matrix calculation, and background worker threads for CPU-intensive metrics computation.
+Technical approach: Async/await with SQLite transactions for state persistence (no external job queue needed), confusion matrix calculation, background worker threads for CPU-intensive metrics computation, and **two-phase prompt refinement** (human-driven for iteration 1, LLM-driven for iterations 2+).
 
 ## Technical Context
 
@@ -249,8 +249,8 @@ Run `.specify/scripts/bash/update-agent-context.sh claude` to inject:
 
 See [spec.md Implementation Phases](./spec.md#implementation-phases) for detailed phase breakdown.
 
-**Phase 1 (Foundation/MVP)**: Persona CRUD, CSV upload, manual iteration, human review, metrics calculation (~1 week)
-**Phase 2 (Automation)**: Automated loop, AI prompt refinement, dashboard, pause/resume (~1 week)
+**Phase 1 (Foundation/MVP)**: Persona CRUD, CSV upload, iteration 1 with MANDATORY human review, human-driven prompt refinement, metrics calculation (~1 week)
+**Phase 2 (Automation)**: Automated loop for iterations 2+, LLM-based prompt refinement for both prompts, dashboard, pause/resume (~1 week)
 **Phase 3 (Polish)**: Reports, diff viewer, cloning, export/import (~3-5 days)
 **Phase 4 (Integration)**: Integration with evaluations, A/B testing, continuous improvement (~1-2 weeks)
 
