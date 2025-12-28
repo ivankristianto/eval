@@ -64,7 +64,6 @@ function getIterationStatusVariant(status: string): 'warning' | 'info' | 'succes
 }
 
 // Determine if training is active
-const isTraining = persona.status === 'training';
 const hasMetrics = persona.best_f1_score !== null;
 
 // Calculate F1 score progress
@@ -201,12 +200,12 @@ const targetReached = hasMetrics && persona.best_f1_score >= persona.target_f1_s
     {
       showActions && (
         <div class="card-actions justify-end mt-4">
-          {isTraining && currentIteration && (
+          {currentIteration && (
             <a
               href={`/personas/${persona.id}/review/${currentIteration.iteration_number}`}
               class="btn btn-sm btn-primary"
             >
-              Review Decisions
+              Review Iteration {currentIteration.iteration_number}
             </a>
           )}
 

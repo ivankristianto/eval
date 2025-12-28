@@ -10,6 +10,7 @@ interface Props {
     | 'training-data'
     | 'training-progress'
     | 'metrics'
+    | 'task-prompts'
     | 'judge-prompts'
     | 'settings';
 }
@@ -41,6 +42,12 @@ const { personaId, activeTab } = Astro.props;
     class={`tab tab-lg ${activeTab === 'metrics' ? 'tab-active' : ''}`}
   >
     Metrics
+  </a>
+  <a
+    href={`/personas/${personaId}/task-prompts`}
+    class={`tab tab-lg ${activeTab === 'task-prompts' ? 'tab-active' : ''}`}
+  >
+    Task Prompts
   </a>
   <a
     href={`/personas/${personaId}/judge-prompts`}

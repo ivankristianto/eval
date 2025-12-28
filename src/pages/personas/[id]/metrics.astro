@@ -223,25 +223,31 @@ const breadcrumbItems = [
                 <th>Iteration</th>
                 <th>Status</th>
                 <th>Pairs Evaluated</th>
-                <th>Human Reviews</th>
                 <th>F1 Score</th>
                 <th>Precision</th>
                 <th>Recall</th>
                 <th>Accuracy</th>
                 <th>Started</th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
               {iterations.map((iteration) => (
                 <tr>
-                  <td class="font-mono font-semibold">{iteration.iteration_number}</td>
+                  <td class="font-mono font-semibold">
+                    <a
+                      href={`/personas/${id}/review/${iteration.iteration_number}`}
+                      class="link link-primary font-mono font-semibold"
+                    >
+                      #{iteration.iteration_number}
+                    </a>
+                  </td>
                   <td>
                     <Badge variant={getIterationStatusVariant(iteration.status)} size="sm">
                       {iteration.status}
                     </Badge>
                   </td>
                   <td class="font-mono">{iteration.total_pairs_evaluated}</td>
-                  <td class="font-mono">{iteration.pairs_reviewed_by_human}</td>
                   <td class="font-mono">
                     {iteration.f1_score !== null
                       ? `${(iteration.f1_score * 100).toFixed(1)}%`
@@ -261,6 +267,14 @@ const breadcrumbItems = [
                       : '—'}
                   </td>
                   <td>{new Date(iteration.started_at).toLocaleDateString()}</td>
+                  <td>
+                    <a
+                      href={`/personas/${id}/review/${iteration.iteration_number}`}
+                      class="btn btn-xs btn-ghost"
+                    >
+                      Review
+                    </a>
+                  </td>
                 </tr>
               ))}
             </tbody>
