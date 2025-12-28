@@ -326,3 +326,26 @@ export function setupTestLifecycle(): void {
     closeTestDatabase();
   });
 }
+
+/**
+ * Initialize a test database (alias for convenience)
+ * @returns The initialized test database
+ */
+export function initTestDb(): Database.Database {
+  const db = getTestDatabase();
+  // Re-initialize schema if needed
+  try {
+    db.prepare('SELECT 1 FROM personas LIMIT 1').get();
+  } catch {
+    initializeTestDatabase();
+  }
+  return db;
+}
+
+/**
+ * Clean up test database (alias for convenience)
+ * @param db - Database to clean
+ */
+export function cleanupTestDb(db: Database.Database): void {
+  cleanTestDatabase();
+}

@@ -43,6 +43,12 @@ describe('Training State Manager', () => {
           recall: 0.7,
           accuracy: 0.75,
           cohens_kappa: 0.6,
+          confusion_matrix: {
+            true_positives: 4,
+            true_negatives: 3,
+            false_positives: 1,
+            false_negatives: 2,
+          }
         },
         evaluatedResultIds: ['result-1', 'result-2', 'result-3'],
         currentPrompt: 'Initial judge prompt',
@@ -74,6 +80,12 @@ describe('Training State Manager', () => {
           recall: 0.65,
           accuracy: 0.7,
           cohens_kappa: 0.5,
+          confusion_matrix: {
+            true_positives: 4,
+            true_negatives: 3,
+            false_positives: 1,
+            false_negatives: 2,
+          }
         },
         evaluatedResultIds: ['id1', 'id2'],
         currentPrompt: 'Test prompt',
@@ -105,6 +117,12 @@ describe('Training State Manager', () => {
           recall: 0.65,
           accuracy: 0.7,
           cohens_kappa: 0.5,
+          confusion_matrix: {
+            true_positives: 4,
+            true_negatives: 3,
+            false_positives: 1,
+            false_negatives: 2,
+          }
         },
         evaluatedResultIds: ['id1', 'id2'],
         currentPrompt: 'Initial',
@@ -120,6 +138,12 @@ describe('Training State Manager', () => {
           recall: 0.7,
           accuracy: 0.75,
           cohens_kappa: 0.6,
+          confusion_matrix: {
+            true_positives: 4,
+            true_negatives: 3,
+            false_positives: 1,
+            false_negatives: 2,
+          }
         },
         evaluatedResultIds: ['id1', 'id2', 'id3', 'id4'],
         currentPrompt: 'Initial',
@@ -147,6 +171,12 @@ describe('Training State Manager', () => {
           recall: 0.65,
           accuracy: 0.7,
           cohens_kappa: 0.5,
+          confusion_matrix: {
+            true_positives: 4,
+            true_negatives: 3,
+            false_positives: 1,
+            false_negatives: 2,
+          }
         },
         evaluatedResultIds: ['id1'],
         currentPrompt: 'Prompt v1',
@@ -162,6 +192,12 @@ describe('Training State Manager', () => {
           recall: 0.7,
           accuracy: 0.75,
           cohens_kappa: 0.6,
+          confusion_matrix: {
+            true_positives: 4,
+            true_negatives: 3,
+            false_positives: 1,
+            false_negatives: 2,
+          }
         },
         evaluatedResultIds: ['id2'],
         currentPrompt: 'Prompt v2',
@@ -177,6 +213,12 @@ describe('Training State Manager', () => {
           recall: 0.75,
           accuracy: 0.8,
           cohens_kappa: 0.7,
+          confusion_matrix: {
+            true_positives: 4,
+            true_negatives: 3,
+            false_positives: 1,
+            false_negatives: 2,
+          }
         },
         evaluatedResultIds: ['id3'],
         currentPrompt: 'Prompt v3',
@@ -203,6 +245,12 @@ describe('Training State Manager', () => {
           recall: 0.7,
           accuracy: 0.75,
           cohens_kappa: 0.6,
+          confusion_matrix: {
+            true_positives: 4,
+            true_negatives: 3,
+            false_positives: 1,
+            false_negatives: 2,
+          }
         },
         evaluatedResultIds: ['id1', 'id2'],
         currentPrompt: 'Test',
@@ -246,6 +294,12 @@ describe('Training State Manager', () => {
           recall: 0.7,
           accuracy: 0.75,
           cohens_kappa: 0.6,
+          confusion_matrix: {
+            true_positives: 4,
+            true_negatives: 3,
+            false_positives: 1,
+            false_negatives: 2,
+          }
         },
         evaluatedResultIds: ['id1'],
         currentPrompt: 'Prompt',
@@ -276,6 +330,12 @@ describe('Training State Manager', () => {
           recall: 0.75,
           accuracy: 0.8,
           cohens_kappa: 0.7,
+          confusion_matrix: {
+            true_positives: 4,
+            true_negatives: 3,
+            false_positives: 1,
+            false_negatives: 2,
+          }
         },
         evaluatedResultIds: ['id1', 'id2', 'id3'],
         currentPrompt: 'Resume test prompt',
@@ -318,6 +378,12 @@ describe('Training State Manager', () => {
           recall: 0.7,
           accuracy: 0.75,
           cohens_kappa: 0.6,
+          confusion_matrix: {
+            true_positives: 4,
+            true_negatives: 3,
+            false_positives: 1,
+            false_negatives: 2,
+          }
         },
         evaluatedResultIds: ['id1'],
         currentPrompt: 'Prompt',
@@ -346,6 +412,12 @@ describe('Training State Manager', () => {
           recall: 0.7,
           accuracy: 0.75,
           cohens_kappa: 0.6,
+          confusion_matrix: {
+            true_positives: 4,
+            true_negatives: 3,
+            false_positives: 1,
+            false_negatives: 2,
+          }
         },
         evaluatedResultIds: ['id1', 'id2'],
         currentPrompt: 'Test',
@@ -379,6 +451,12 @@ describe('Training State Manager', () => {
           recall: 0.7,
           accuracy: 0.75,
           cohens_kappa: 0.6,
+          confusion_matrix: {
+            true_positives: 4,
+            true_negatives: 3,
+            false_positives: 1,
+            false_negatives: 2,
+          }
         },
         evaluatedResultIds: ['id1'],
         currentPrompt: 'Test',
@@ -409,6 +487,12 @@ describe('Training State Manager', () => {
           recall: 0.7,
           accuracy: 0.75,
           cohens_kappa: 0.6,
+          confusion_matrix: {
+            true_positives: 4,
+            true_negatives: 3,
+            false_positives: 1,
+            false_negatives: 2,
+          }
         },
         evaluatedResultIds: ['id1'],
         currentPrompt: 'Test',
@@ -440,6 +524,12 @@ describe('Training State Manager', () => {
             recall: 0.7,
             accuracy: 0.75,
             cohens_kappa: 0.6,
+          confusion_matrix: {
+            true_positives: 4,
+            true_negatives: 3,
+            false_positives: 1,
+            false_negatives: 2,
+          }
           },
           evaluatedResultIds: ['id1'],
           currentPrompt: 'Test',
@@ -473,6 +563,12 @@ describe('Training State Manager', () => {
           recall: 0.65,
           accuracy: 0.7,
           cohens_kappa: 0.5,
+          confusion_matrix: {
+            true_positives: 4,
+            true_negatives: 3,
+            false_positives: 1,
+            false_negatives: 2,
+          }
         },
         evaluatedResultIds: ['id1'],
         currentPrompt: 'First',
@@ -487,6 +583,12 @@ describe('Training State Manager', () => {
           recall: 0.7,
           accuracy: 0.75,
           cohens_kappa: 0.6,
+          confusion_matrix: {
+            true_positives: 4,
+            true_negatives: 3,
+            false_positives: 1,
+            false_negatives: 2,
+          }
         },
         evaluatedResultIds: ['id1', 'id2'],
         currentPrompt: 'Second',
