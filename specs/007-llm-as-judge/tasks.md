@@ -877,7 +877,7 @@ _Dashboard displays real-time metrics and convergence status_
 
 ### Integration & E2E Tests
 
-- [ ] T081 Create end-to-end test tests/e2e/training-dashboard.test.ts covering:
+- [x] T081 Create end-to-end test tests/e2e/training-dashboard.test.ts covering:
   - Complete multiple iterations (3-5)
   - Wait for metrics calculation
   - Navigate to training progress dashboard
@@ -955,7 +955,7 @@ _User can pause training and resume later without data loss_
 
 ### Integration & E2E Tests
 
-- [ ] T086 Create end-to-end test tests/e2e/pause-resume.test.ts covering:
+- [x] T086 Create end-to-end test tests/e2e/pause-resume.test.ts covering:
   - Create persona and upload data (prerequisites)
   - Start training iteration
   - Wait for iteration to begin processing (judge outputs)
