@@ -11,8 +11,6 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
-    include: ['tests/**/*.test.ts'],
-    exclude: ['tests/e2e/**/*', 'node_modules/**/*'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
@@ -20,6 +18,14 @@ export default defineConfig({
       exclude: ['src/lib/types.ts'],
     },
     projects: [
+      {
+        extends: true,
+        test: {
+          name: 'default',
+          include: ['tests/**/*.test.ts'],
+          exclude: ['tests/e2e/**/*', 'node_modules/**/*'],
+        },
+      },
       {
         extends: true,
         plugins: [
