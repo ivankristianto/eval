@@ -46,10 +46,14 @@ export function initializeTestDatabase(): void {
   const schema = readFileSync(schemaPath, 'utf-8');
   db.exec(schema);
 
-  // Load training tables migration - use absolute path from project root
-  const migrationPath = join(process.cwd(), 'db/migrations/001-add-judge-training-tables.sql');
-  const migration = readFileSync(migrationPath, 'utf-8');
-  db.exec(migration);
+  // Load migrations in order
+  const migration001Path = join(process.cwd(), 'db/migrations/001-add-judge-training-tables.sql');
+  const migration001 = readFileSync(migration001Path, 'utf-8');
+  db.exec(migration001);
+
+  const migration002Path = join(process.cwd(), 'db/migrations/002-add-task-prompt-versions.sql');
+  const migration002 = readFileSync(migration002Path, 'utf-8');
+  db.exec(migration002);
 }
 
 /**
@@ -61,6 +65,7 @@ export function cleanTestDatabase(): void {
   // Delete in correct order to respect foreign keys
   db.exec('DELETE FROM training_loop_checkpoints');
   db.exec('DELETE FROM training_loop_state');
+  db.exec('DELETE FROM task_prompt_versions');
   db.exec('DELETE FROM judge_prompt_versions');
   db.exec('DELETE FROM iteration_metrics');
   db.exec('DELETE FROM human_reviews');

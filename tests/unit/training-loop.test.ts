@@ -47,13 +47,13 @@ describe('IterativeTrainingLoop', () => {
       const sessionId = uuidv4();
       const personaId = uuidv4();
 
-      // Create persona first
+      // Create persona first with max_iterations and target_f1_score
       db.prepare(
         `
         INSERT INTO personas (id, name, description, task_prompt,
           task_model_id, judge_model_id, prompt_engineer_model_id,
-          status, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          status, target_f1_score, max_iterations, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `
       ).run(
         personaId,
@@ -64,9 +64,27 @@ describe('IterativeTrainingLoop', () => {
         'model-2',
         'model-3',
         'draft',
+        0.95,
+        5,
         new Date().toISOString(),
         new Date().toISOString()
       );
+
+      // Create training pairs (required for automated training loop)
+      const pairId1 = uuidv4();
+      const pairId2 = uuidv4();
+      db.prepare(
+        `
+        INSERT INTO training_pairs (id, persona_id, input, expected_output, created_at)
+        VALUES (?, ?, ?, ?, ?)
+      `
+      ).run(pairId1, personaId, 'Test input 1', 'Test output 1', new Date().toISOString());
+      db.prepare(
+        `
+        INSERT INTO training_pairs (id, persona_id, input, expected_output, created_at)
+        VALUES (?, ?, ?, ?, ?)
+      `
+      ).run(pairId2, personaId, 'Test input 2', 'Test output 2', new Date().toISOString());
 
       const loop = new IterativeTrainingLoop(sessionId, personaId, db);
 
@@ -82,13 +100,13 @@ describe('IterativeTrainingLoop', () => {
       const sessionId = uuidv4();
       const personaId = uuidv4();
 
-      // Create persona first
+      // Create persona first with max_iterations and target_f1_score
       db.prepare(
         `
         INSERT INTO personas (id, name, description, task_prompt,
           task_model_id, judge_model_id, prompt_engineer_model_id,
-          status, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          status, target_f1_score, max_iterations, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `
       ).run(
         personaId,
@@ -99,9 +117,20 @@ describe('IterativeTrainingLoop', () => {
         'model-2',
         'model-3',
         'draft',
+        0.95,
+        5,
         new Date().toISOString(),
         new Date().toISOString()
       );
+
+      // Create training pairs (required for automated training loop)
+      const pairId = uuidv4();
+      db.prepare(
+        `
+        INSERT INTO training_pairs (id, persona_id, input, expected_output, created_at)
+        VALUES (?, ?, ?, ?, ?)
+      `
+      ).run(pairId, personaId, 'Test input', 'Test output', new Date().toISOString());
 
       const loop = new IterativeTrainingLoop(sessionId, personaId, db);
 
@@ -193,8 +222,8 @@ describe('IterativeTrainingLoop', () => {
 
       const loop = new IterativeTrainingLoop(sessionId, personaId, db);
 
-      // evaluateWithJudge should return a promise
-      const promise = loop.evaluateWithJudge([]);
+      // execute should return a promise
+      const promise = loop.execute([]);
       expect(promise).toBeInstanceOf(Promise);
     });
   });
