@@ -1,7 +1,7 @@
 # Implementation Tasks: LLM-as-a-Judge System
 
-**Branch**: `007-llm-as-judge` | **Date**: 2025-12-26 | **Total Tasks**: 116
-**Implementation Strategy**: Test-first (TDD). Phase 1 (MVP) focuses on User Stories 1-3; Phases 2-4 add P2 and P3 features.
+**Branch**: `007-llm-as-judge` | **Date**: 2025-12-26 | **Total Tasks**: 136
+**Implementation Strategy**: Test-first (TDD). Phase 1 (MVP) focuses on User Stories 1-3; Phases 2-4 add P2 and P3 features. Phase 11 addresses technical debt and specification gaps.
 
 **Note**: Each task is independently actionable. Tasks marked [P] can execute in parallel with other [P] tasks in the same phase (no file conflicts, no blocking dependencies).
 
@@ -9,11 +9,12 @@
 
 ## Phase 1: Setup & Infrastructure
 
-*Setup foundational project structure, database schema, and shared utilities*
+_Setup foundational project structure, database schema, and shared utilities_
 
 **Phase Goal**: Initialize project structure and create database schema for all training-related tables
 
 **Independent Test Criteria**:
+
 - Database initializes with all 9 new tables created (personas, training_pairs, training_iterations, judge_decisions, human_reviews, iteration_metrics, judge_prompt_versions, training_loop_state, training_loop_checkpoints)
 - Project structure matches plan.md (src/lib/ modules, src/pages/, tests/)
 - TypeScript compilation succeeds with no errors
@@ -23,13 +24,14 @@
 
 ### Setup Tasks
 
-- [X] T001 [P] Create database schema file db/migrations/001-add-judge-training-tables.sql with all 9 tables from data-model.md
-- [X] T002 [P] Create TypeScript types file src/types/training.ts with interfaces: Persona, TrainingPair, TrainingIteration, JudgeDecision, HumanReview, IterationMetrics, TrainingLoopState
-- [X] T003 [P] Create database initialization script src/lib/persona-db.ts with connection helper and transaction utilities for training-related tables
-- [X] T004 [P] Create test setup file tests/setup.ts with database fixtures for personas, training pairs, and iterations
-- [X] T005 Create API error types file src/lib/training-errors.ts with: ModelSeparationError, CSVValidationError, TrainingStateError, MetricsCalculationError
+- [x] T001 [P] Create database schema file db/migrations/001-add-judge-training-tables.sql with all 9 tables from data-model.md
+- [x] T002 [P] Create TypeScript types file src/types/training.ts with interfaces: Persona, TrainingPair, TrainingIteration, JudgeDecision, HumanReview, IterationMetrics, TrainingLoopState
+- [x] T003 [P] Create database initialization script src/lib/persona-db.ts with connection helper and transaction utilities for training-related tables
+- [x] T004 [P] Create test setup file tests/setup.ts with database fixtures for personas, training pairs, and iterations
+- [x] T005 Create API error types file src/lib/training-errors.ts with: ModelSeparationError, CSVValidationError, TrainingStateError, MetricsCalculationError
 
 **Acceptance Criteria**:
+
 - All 9 tables exist in SQLite schema with correct columns and constraints
 - Types compile without errors and match data-model.md entity definitions
 - Database connection works with better-sqlite3; can insert/query test data
@@ -39,11 +41,12 @@
 
 ## Phase 2: Foundational (Critical Path)
 
-*Implement core modules that all user stories depend on*
+_Implement core modules that all user stories depend on_
 
 **Phase Goal**: Build foundation modules (metrics calculation, model validation, database access) that enable all user stories
 
 **Independent Test Criteria**:
+
 - Metrics calculation handles edge cases (zero division, all-correct evaluations, empty datasets)
 - Model separation validation enforces provider diversification at API level
 - Database access layer (persona-db.ts) provides CRUD for all core tables with transaction support
@@ -53,13 +56,13 @@
 
 ### Metrics Calculation Module (Critical Path)
 
-- [X] T006 [P] Create test file tests/unit/metrics.test.ts with tests for confusion matrix, F1, precision, recall, Cohen's Kappa calculations
-- [X] T007 Create src/lib/metrics.ts implementing ConfusionMatrix interface and calculateMetrics() function with:
+- [x] T006 [P] Create test file tests/unit/metrics.test.ts with tests for confusion matrix, F1, precision, recall, Cohen's Kappa calculations
+- [x] T007 Create src/lib/metrics.ts implementing ConfusionMatrix interface and calculateMetrics() function with:
   - buildConfusionMatrix(judgeAgreements, humanAgreements) → TP/TN/FP/FN
   - calculateMetrics(cm) → {precision, recall, f1_score, cohens_kappa, accuracy, confusion_matrix}
   - Edge case handling: division by zero, empty datasets, all-correct scenarios
 
-- [X] T008 [P] Create test file tests/unit/metrics-edge-cases.test.ts covering:
+- [x] T008 [P] Create test file tests/unit/metrics-edge-cases.test.ts covering:
   - Empty confusion matrix (all zeros)
   - All true positives (100% agreement)
   - All false positives (no ground truth matches)
@@ -68,86 +71,91 @@
 - [ ] T009 Create metrics-worker.ts as Worker Thread for CPU-intensive calculations (optional; fallback to main thread if not needed for MVP)
 
 **Acceptance Criteria**:
+
 - All metrics formulas calculate correctly (verified against scikit-learn reference)
 - Cohen's Kappa ranges -1 to 1 correctly
 - Edge cases return 0 instead of NaN/Infinity
-- >80% code coverage
+- > 80% code coverage
 
 ---
 
 ### Model Separation Validation
 
-- [X] T010 [P] Create test file tests/unit/model-separation-validator.test.ts with tests for:
+- [x] T010 [P] Create test file tests/unit/model-separation-validator.test.ts with tests for:
   - Validation passes when task, judge, engineer models are from different providers
   - Validation fails when any two models share same provider
   - Clear error messages for validation failures
 
-- [X] T011 Create src/lib/model-separation-validator.ts implementing:
+- [x] T011 Create src/lib/model-separation-validator.ts implementing:
   - validateModelSeparation(config) → ValidationResult {isValid, errors, warnings, models}
   - Fetch model configs from DB; extract providers
   - Verify exactly 3 different providers
   - Check models are active (not deleted)
 
-- [X] T012 [P] Create test file tests/integration/model-separation-validator.test.ts with database integration tests
+- [x] T012 [P] Create test file tests/integration/model-separation-validator.test.ts with database integration tests
 
 **Acceptance Criteria**:
+
 - Validation enforces strict 3-provider separation per spec clarification Q3
 - Clear error messages help users understand violations
 - Integration tests verify database constraints work
-- >80% code coverage
+- > 80% code coverage
 
 ---
 
 ### Database Access Layer for Training
 
-- [X] T013 [P] Create test file tests/unit/persona-db.test.ts with CRUD operations for personas
+- [x] T013 [P] Create test file tests/unit/persona-db.test.ts with CRUD operations for personas
 
-- [X] T014 Create src/lib/persona-db.ts implementing (complete database access layer):
+- [x] T014 Create src/lib/persona-db.ts implementing (complete database access layer):
   - createPersona(name, description, taskPrompt, taskModelId, judgeModelId, promptEngineerModelId) → Persona
   - getPersona(id) → Persona | null
   - listPersonas(status?) → Persona[]
   - updatePersona(id, updates) → Persona
   - deletePersona(id) → void
-  - + Similar for TrainingPair, TrainingIteration, JudgeDecision, HumanReview, IterationMetrics
+  - - Similar for TrainingPair, TrainingIteration, JudgeDecision, HumanReview, IterationMetrics
 
-- [X] T015 [P] Create test file tests/integration/persona-db.test.ts with transaction and cascade delete tests
+- [x] T015 [P] Create test file tests/integration/persona-db.test.ts with transaction and cascade delete tests
 
 **Acceptance Criteria**:
+
 - All CRUD operations work correctly
 - Transactions ensure atomicity (all-or-nothing)
 - Cascade deletes work (deleting persona deletes pairs/iterations/decisions)
 - FK constraints prevent orphaned records
-- >80% code coverage
+- > 80% code coverage
 
 ---
 
 ### State Management for Training Loop
 
-- [X] T016 [P] Create test file tests/unit/training-state.test.ts with checkpoint save/resume tests
+- [x] T016 [P] Create test file tests/unit/training-state.test.ts with checkpoint save/resume tests
 
-- [X] T017 Create src/lib/training-state.ts implementing TrainingStateManager class:
+- [x] T017 Create src/lib/training-state.ts implementing TrainingStateManager class:
   - saveCheckpoint(sessionId, iteration, checkpoint) → void (ACID transaction)
   - pause(sessionId, reason) → void
   - resume(sessionId) → CheckpointData | null
   - verifyCheckpointIntegrity(sessionId) → boolean
 
-- [X] T018 [P] Create test file tests/integration/training-state.test.ts with simulated crash recovery scenarios
+- [x] T018 [P] Create test file tests/integration/training-state.test.ts with simulated crash recovery scenarios
 
 **Acceptance Criteria**:
+
 - Checkpoints saved atomically (no partial saves)
 - Pause halts iteration; resume continues from checkpoint
 - All state persisted across process restarts
-- >80% code coverage
+- > 80% code coverage
 
 ---
 
 ## Phase 3: User Story 1 - Create and Configure a Judge Persona (P1)
 
-*User can create a new persona with task description, initial judge prompt, and model selections*
+_User can create a new persona with task description, initial judge prompt, and model selections_
 
 **Phase Goal**: Implement complete persona creation workflow (CRUD + validation)
 
 **Independent Test Criteria**:
+
 - User can create persona via API with task name, description, and model IDs
 - Model separation is validated (must be different providers)
 - Persona appears in list and detail pages
@@ -158,9 +166,9 @@
 
 ### Database Models & Validation
 
-- [X] T019 [P] Create test file tests/unit/persona-validator.test.ts for persona creation validation
+- [x] T019 [P] Create test file tests/unit/persona-validator.test.ts for persona creation validation
 
-- [X] T020 Create src/lib/persona-validator.ts implementing:
+- [x] T020 Create src/lib/persona-validator.ts implementing:
   - validatePersonaCreation(input) → ValidationResult
   - Check required fields (name, task_description, initial_judge_prompt, model IDs)
   - Verify persona name is unique
@@ -168,39 +176,41 @@
   - Suggest error messages for each validation failure
 
 **Acceptance Criteria**:
+
 - Validates all required fields
 - Checks uniqueness of persona names
 - Integrates model separation validation
 - Clear, actionable error messages
-- >80% code coverage
+- > 80% code coverage
 
 ---
 
 ### API Endpoints
 
-- [X] T021 [P] Create test file tests/integration/personas-api.test.ts for CRUD endpoints
+- [x] T021 [P] Create test file tests/integration/personas-api.test.ts for CRUD endpoints
 
-- [X] T022 Create src/pages/api/personas/index.ts implementing:
+- [x] T022 Create src/pages/api/personas/index.ts implementing:
   - POST /api/personas: Create new persona
     - Accept: {name, description, task_prompt, task_model_id, judge_model_id, prompt_engineer_model_id}
     - Validate via persona-validator
     - Return 201 with created persona or 400 with errors
   - GET /api/personas: List all personas with optional filtering by status
 
-- [X] T023 Create src/pages/api/personas/[id].ts implementing:
+- [x] T023 Create src/pages/api/personas/[id].ts implementing:
   - GET /api/personas/[id]: Fetch specific persona with all details
   - PUT /api/personas/[id]: Update persona name/description
   - DELETE /api/personas/[id]: Delete persona (cascade deletes training data)
 
-- [X] T024 Create src/pages/api/training/validate-models.ts implementing:
+- [x] T024 Create src/pages/api/training/validate-models.ts implementing:
   - POST /api/training/validate-models: Validate model separation before creating persona
 
 **Acceptance Criteria**:
+
 - All endpoints return correct HTTP status codes
 - Error responses include helpful messages
 - Model validation blocks invalid combinations
 - Cascade delete works correctly
-- >80% integration test coverage
+- > 80% integration test coverage
 
 ---
 
@@ -208,22 +218,23 @@
 
 - [ ] T025 [P] Create test file tests/e2e/persona-creation.test.ts for end-to-end persona creation
 
-- [X] T026 Create src/pages/personas.astro implementing:
+- [x] T026 Create src/pages/personas.astro implementing:
   - Display list of all personas as cards (PersonaCard component)
   - Show status badge (draft/training/trained/incomplete)
   - Display F1 score and iteration count for trained personas
   - "Create New Persona" button
   - Filter by status dropdown
 
-- [X] T027 Create src/pages/personas/[id]/index.astro implementing:
+- [x] T027 Create src/pages/personas/[id]/index.astro implementing:
   - Persona detail page with tabs: Overview, Training Data, Training Progress, Judge Prompts, Settings
   - Overview tab: Name, description, models selected, status, created date
   - Settings tab: Allow editing task name/description
   - Action buttons: Start Training, Delete, Export (Phase 3)
 
-- [X] T028 [P] Create src/components/PersonaCard.astro as summary card for persona list (name, status, F1, iteration count, action menu)
+- [x] T028 [P] Create src/components/PersonaCard.astro as summary card for persona list (name, status, F1, iteration count, action menu)
 
 **Acceptance Criteria**:
+
 - Persona list displays all personas correctly
 - Create button opens form modal (or new page)
 - Form validates all required fields
@@ -246,6 +257,7 @@
   - Verify all fields displayed correctly
 
 **Acceptance Criteria**:
+
 - E2E test passes for complete persona creation workflow
 - All validation messages display correctly
 - Form submission succeeds and persists data
@@ -255,11 +267,12 @@
 
 ## Phase 4: User Story 2 - Upload Training Data (P1)
 
-*User can upload CSV file with input/expected_output pairs and view imported data*
+_User can upload CSV file with input/expected_output pairs and view imported data_
 
 **Phase Goal**: Implement CSV parsing, validation, and storage of training pairs
 
 **Independent Test Criteria**:
+
 - CSV file with correct columns (input, expected_output) parses successfully
 - System validates 10-200 pairs constraint
 - Training pairs appear in data list with input/output displayed
@@ -270,9 +283,9 @@
 
 ### CSV Parsing & Validation
 
-- [X] T030 [P] Create test file tests/unit/csv-parser.test.ts for CSV validation and parsing
+- [x] T030 [P] Create test file tests/unit/csv-parser.test.ts for CSV validation and parsing
 
-- [X] T031 Create src/lib/csv-parser.ts implementing:
+- [x] T031 Create src/lib/csv-parser.ts implementing:
   - parseCSV(fileContent) → {rows: Array<{input, expected_output}>, errors: string[]}
   - Validate columns (accept both "input"/"expected_output" AND "Input A"/"Correct Output" for user flexibility per A-016)
   - Normalize all column names to "input"/"expected_output" internally
@@ -280,7 +293,7 @@
   - Trim whitespace; validate non-empty input and output
   - Detect duplicates and report
 
-- [X] T032 [P] Create test file tests/unit/csv-parser-edge-cases.test.ts covering:
+- [x] T032 [P] Create test file tests/unit/csv-parser-edge-cases.test.ts covering:
   - Missing columns
   - Wrong column names (case sensitivity)
   - Flexible column names: test both "input"/"expected_output" AND "Input A"/"Correct Output" normalize correctly
@@ -290,19 +303,20 @@
   - Duplicate pairs
 
 **Acceptance Criteria**:
+
 - Parses well-formed CSV correctly
 - Enforces 10-200 pair constraint
 - Clear error messages for invalid CSVs
 - Reports duplicate detection
-- >80% code coverage
+- > 80% code coverage
 
 ---
 
 ### API Endpoints
 
-- [X] T033 [P] Create test file tests/integration/training-data-upload.test.ts for upload endpoint
+- [x] T033 [P] Create test file tests/integration/training-data-upload.test.ts for upload endpoint
 
-- [X] T034 Create src/pages/api/personas/[id]/training/upload.ts implementing:
+- [x] T034 Create src/pages/api/personas/[id]/training/upload.ts implementing:
   - POST /api/personas/[id]/training/upload: Upload CSV file
   - Accept multipart/form-data with file
   - Parse CSV via csv-parser
@@ -310,16 +324,17 @@
   - Insert training pairs to database
   - Return 201 with count of pairs inserted or 400 with error details
 
-- [X] T035 Create src/pages/api/personas/[id]/training/pairs.ts implementing:
+- [x] T035 Create src/pages/api/personas/[id]/training/pairs.ts implementing:
   - GET /api/personas/[id]/training/pairs: List all training pairs for a persona
   - Return paginated list with input/output preview
 
 **Acceptance Criteria**:
+
 - Upload endpoint accepts CSV files
 - Validates and parses correctly
 - Stores pairs in database
 - List endpoint returns all pairs with correct data
-- >80% integration test coverage
+- > 80% integration test coverage
 
 ---
 
@@ -327,22 +342,23 @@
 
 - [ ] T036 [P] Create test file tests/e2e/training-data-upload.test.ts for upload workflow
 
-- [X] T037 Create src/components/CSVUploader.astro implementing:
+- [x] T037 Create src/components/CSVUploader.astro implementing:
   - Drag-drop zone for CSV file
   - File size/type validation
   - Upload progress indicator
   - Error message display
   - Success message with pair count
 
-- [X] T038 Create src/pages/personas/[id]/training/index.astro (Training Data tab) implementing:
+- [x] T038 Create src/pages/personas/[id]/training/index.astro (Training Data tab) implementing:
   - Display uploaded training pairs in table (input, expected_output)
   - "Upload New Data" button
   - Pair count display (X of Y)
   - Pair search/filter by input text
 
-- [X] T039 [P] Create test file tests/integration/training-data-display.test.ts
+- [x] T039 [P] Create test file tests/integration/training-data-display.test.ts
 
 **Acceptance Criteria**:
+
 - CSV uploader displays file input
 - Drag-drop works for file selection
 - Upload sends file to API
@@ -354,7 +370,7 @@
 
 ### Integration & E2E Tests
 
-- [X] T040 Create end-to-end test tests/e2e/training-data-upload.test.ts covering:
+- [x] T040 Create end-to-end test tests/e2e/training-data-upload.test.ts covering:
   - Create persona (prerequisite)
   - Navigate to training data tab
   - Drag-drop CSV file (or use file picker)
@@ -362,6 +378,7 @@
   - Verify all pairs appear in table
 
 **Acceptance Criteria**:
+
 - E2E test passes for complete upload workflow
 - CSV validation works in real API call
 - Training pairs persisted and retrievable
@@ -370,11 +387,12 @@
 
 ## Phase 5: User Story 3 - Execute Automated Training Iteration (P1)
 
-*System runs iteration cycle: generate outputs → judge → collect feedback → calculate metrics*
+_System runs iteration cycle: generate outputs → judge → collect feedback → calculate metrics_
 
 **Phase Goal**: Implement complete training iteration orchestration and metrics calculation
 
 **Independent Test Criteria**:
+
 - Can start training iteration for a persona with training data
 - System generates outputs for each pair using Task Model
 - Judge evaluates each output using Judge Model
@@ -386,46 +404,48 @@
 
 ### Training Loop Orchestration
 
-- [X] T041 [P] Create test file tests/unit/training-loop.test.ts for iteration orchestration
+- [x] T041 [P] Create test file tests/unit/training-loop.test.ts for iteration orchestration
 
-- [X] T042 Create src/lib/training-loop.ts implementing IterativeTrainingLoop class:
+- [x] T042 Create src/lib/training-loop.ts implementing IterativeTrainingLoop class:
   - execute(taskResultIds) → Promise<void> (fire-and-forget, persists state)
   - evaluateWithJudge(taskResultIds) → judge outputs and store judge_decisions
   - calculateMetricsInWorker(judgeResults) → MetricsResult
   - sessionId property for tracking
   - pause() method to pause training
 
-- [X] T043 [P] Create test file tests/integration/training-loop-flow.test.ts with simulated iteration flow
+- [x] T043 [P] Create test file tests/integration/training-loop-flow.test.ts with simulated iteration flow
 
 **Acceptance Criteria**:
+
 - Iteration loop runs complete cycle: judge → feedback → metrics
 - State persisted to database after each step
 - Metrics calculated correctly from feedback
 - Can pause iteration (state saved)
-- >80% code coverage
+- > 80% code coverage
 
 ---
 
 ### Judge Evaluation Module
 
-- [X] T044 [P] Create test file tests/unit/judge-evaluator.test.ts for judge decision parsing
+- [x] T044 [P] Create test file tests/unit/judge-evaluator.test.ts for judge decision parsing
 
-- [X] T045 Create src/lib/judge-evaluator.ts implementing:
+- [x] T045 Create src/lib/judge-evaluator.ts implementing:
   - evaluateOutput(input, correctOutput, suggestedOutput, judgePrompt, judgeModel) → JudgeDecisionResult
   - Call judge model with formatted prompt
   - Parse JSON response: {decision: "agree"|"disagree", confidence: 0.0-1.0, reasoning: string}
   - Handle parsing errors gracefully
   - Store decision to database
 
-- [X] T046 [P] Create test file tests/integration/judge-api-calls.test.ts with mock API client tests
+- [x] T046 [P] Create test file tests/integration/judge-api-calls.test.ts with mock API client tests
 
 **Acceptance Criteria**:
+
 - Correctly formats judge prompt with input/output/criteria
 - Calls correct judge model via API client
 - Parses judge response correctly
 - Handles malformed JSON response
 - Stores judge decision with reasoning
-- >80% code coverage
+- > 80% code coverage
 
 ---
 
@@ -433,18 +453,18 @@
 
 - [ ] T047 [P] Create test file tests/e2e/human-review.test.ts for decision review workflow
 
-- [X] T048 Create src/pages/api/personas/[id]/iterations/[num]/decisions.ts implementing:
+- [x] T048 Create src/pages/api/personas/[id]/iterations/[num]/decisions.ts implementing:
   - GET /api/personas/[id]/iterations/[num]/decisions: Fetch all judge decisions awaiting human review
   - Return: {input, expected_output, suggested_output, judge_decision, judge_reasoning, decision_id}
 
-- [X] T049 Create src/pages/api/personas/[id]/iterations/[num]/feedback.ts implementing:
+- [x] T049 Create src/pages/api/personas/[id]/iterations/[num]/feedback.ts implementing:
   - POST /api/personas/[id]/iterations/[num]/feedback: Submit human review feedback
   - Accept: {decision_id, human_decision: "agree"|"disagree", notes?: string}
   - Store HumanReview record
   - Return 201 with stored feedback
   - Constraint (per FR-007, A-012): Feedback is REQUIRED on all decisions in iteration; return 400 if any decisions remain without feedback after submission (incomplete feedback must be completed before proceeding)
 
-- [X] T050 Create src/pages/personas/[id]/review/[iteration].astro implementing:
+- [x] T050 Create src/pages/personas/[id]/review/[iteration].astro implementing:
   - Split view: left side shows decision, right side shows feedback form
   - Display: input, expected_output, suggested_output, judge_decision, judge_reasoning
   - Buttons: "Agree with Judge" / "Disagree with Judge"
@@ -452,9 +472,10 @@
   - Progress: "X of Y decisions reviewed"
   - Previous/Next navigation between decisions
 
-- [X] T051 [P] Create src/components/JudgeDecisionReview.astro as reusable decision card component
+- [x] T051 [P] Create src/components/JudgeDecisionReview.astro as reusable decision card component
 
 **Acceptance Criteria**:
+
 - Decisions fetch correctly from API
 - Agree/Disagree buttons submit feedback to API
 - Feedback persisted to database
@@ -467,9 +488,9 @@
 
 ### Metrics Calculation & Storage
 
-- [X] T052 [P] Create test file tests/integration/metrics-calculation.test.ts with full metrics flow
+- [x] T052 [P] Create test file tests/integration/metrics-calculation.test.ts with full metrics flow
 
-- [X] T053 Create src/lib/metrics-orchestrator.ts implementing:
+- [x] T053 Create src/lib/metrics-orchestrator.ts implementing:
   - calculateIterationMetrics(iterationId) → MetricsResult
   - Constraint (per FR-008, A-012): Verify all judge_decisions have human_reviews before calculating; throw error if any decisions lack feedback
   - Fetch all judge_decisions and human_reviews for iteration
@@ -479,28 +500,30 @@
   - Update persona with best_f1_score if improved
 
 **Acceptance Criteria**:
+
 - Metrics calculate from agree/disagree feedback correctly
 - Metrics stored with iteration_id FK
 - Persona best_f1_score updates if improved
-- >80% code coverage
+- > 80% code coverage
 
 ---
 
 ### API Integration
 
-- [X] T054 [P] Create test file tests/integration/iteration-api.test.ts for full iteration endpoints
+- [x] T054 [P] Create test file tests/integration/iteration-api.test.ts for full iteration endpoints
 
-- [X] T055 Create src/pages/api/personas/[id]/training/start.ts implementing:
+- [x] T055 Create src/pages/api/personas/[id]/training/start.ts implementing:
   - POST /api/personas/[id]/training/start: Start new training iteration
   - Create training_iteration record
   - Start IterativeTrainingLoop.execute() (fire-and-forget)
   - Return 202 with session_id and training_iteration record
 
-- [X] T056 Create src/pages/api/personas/[id]/training/status.ts implementing:
+- [x] T056 Create src/pages/api/personas/[id]/training/status.ts implementing:
   - GET /api/personas/[id]/training/status: Get current training status
   - Return latest iteration with metrics and human review count
 
 **Acceptance Criteria**:
+
 - Start iteration creates database record
 - Status endpoint returns correct iteration state
 - Returns 202 for async operations
@@ -510,11 +533,11 @@
 
 ### UI Pages & Components
 
-- [X] T057 [P] Create src/components/MetricCard.astro for displaying single metric with trend
+- [x] T057 [P] Create src/components/MetricCard.astro for displaying single metric with trend
 
-- [X] T058 Create src/components/ConfusionMatrix.astro for 2x2 visual grid (TP/TN/FP/FN)
+- [x] T058 Create src/components/ConfusionMatrix.astro for 2x2 visual grid (TP/TN/FP/FN)
 
-- [X] T059 Create training progress UI (implemented as src/pages/personas/[id]/metrics.astro and src/components/TrainingProgress.astro):
+- [x] T059 Create training progress UI (implemented as src/pages/personas/[id]/metrics.astro and src/components/TrainingProgress.astro):
   - Show current iteration number and status
   - Display: F1 Score, Precision, Recall, Cohen's Kappa metrics
   - Show confusion matrix visualization
@@ -524,6 +547,7 @@
   - Note: Implemented as dedicated metrics page rather than replacing training data page at /training/index.astro
 
 **Acceptance Criteria**:
+
 - Metrics display correctly with proper formatting
 - Confusion matrix visualizes TP/TN/FP/FN
 - Buttons navigate to correct pages
@@ -543,6 +567,7 @@
   - Verify metrics display after feedback complete
 
 **Acceptance Criteria**:
+
 - E2E test passes for complete training iteration
 - Outputs generated successfully
 - Judge evaluates correctly
@@ -553,11 +578,12 @@
 
 ## Phase 6: User Story 4 - AI-Assisted Judge Prompt Refinement (P2)
 
-*System automatically refines judge prompt based on failure analysis*
+_System automatically refines judge prompt based on failure analysis_
 
 **Phase Goal**: Implement LLM-based prompt refinement after each iteration
 
 **Independent Test Criteria**:
+
 - After iteration with feedback, system analyzes false positives and false negatives
 - Prompt Engineer Model generates improved judge prompt with explanation
 - User can accept refined prompt or provide manual feedback
@@ -568,9 +594,9 @@
 
 ### Failure Analysis & Context Building
 
-- [X] T061 [P] Create test file tests/unit/failure-analysis.test.ts for analyzing iteration failures
+- [x] T061 [P] Create test file tests/unit/failure-analysis.test.ts for analyzing iteration failures
 
-- [X] T062 Create src/lib/failure-analysis.ts implementing:
+- [x] T062 Create src/lib/failure-analysis.ts implementing:
   - analyzeIterationFailures(iterationId) → FailureAnalysisContext
   - Extract false positives: judge agreed but human disagreed
   - Extract false negatives: judge disagreed but human agreed
@@ -579,40 +605,42 @@
   - Return context object with examples, current metrics, and task description
 
 **Acceptance Criteria**:
+
 - Correctly identifies FP and FN examples from judge/human decisions
 - Extracts correct examples for few-shot learning
 - Limits examples to reasonable count (5 each)
-- >80% code coverage
+- > 80% code coverage
 
 ---
 
 ### Prompt Refinement via LLM
 
-- [X] T063 [P] Create test file tests/integration/prompt-refinement.test.ts with LLM mock
+- [x] T063 [P] Create test file tests/integration/prompt-refinement.test.ts with LLM mock
 
-- [X] T064 Create src/lib/prompt-engineer.ts implementing:
+- [x] T064 Create src/lib/prompt-engineer.ts implementing:
   - refineJudgePrompt(failureContext, promptEngineerModel) → {improved_prompt, rationale, expected_impact}
   - Build detailed context prompt with metrics, failure patterns, correct examples
   - Call Prompt Engineer Model with chain-of-thought instructions
   - Parse JSON response
   - Handle LLM failures gracefully (return improved_prompt = null to fall back to manual refinement)
 
-- [X] T065 [P] Create test file tests/unit/prompt-engineer-edge-cases.test.ts for LLM response parsing
+- [x] T065 [P] Create test file tests/unit/prompt-engineer-edge-cases.test.ts for LLM response parsing
 
 **Acceptance Criteria**:
+
 - Builds comprehensive failure context from iteration data
 - Calls LLM with clear instructions
 - Parses JSON response correctly
 - Provides rationale for changes
-- >80% code coverage
+- > 80% code coverage
 
 ---
 
 ### Prompt Version Management
 
-- [X] T066 [P] Create test file tests/unit/prompt-version-manager.test.ts for version tracking
+- [x] T066 [P] Create test file tests/unit/prompt-version-manager.test.ts for version tracking
 
-- [X] T067 Create src/lib/prompt-version-manager.ts implementing:
+- [x] T067 Create src/lib/prompt-version-manager.ts implementing:
   - storePromptVersion(personaId, iterationNumber, promptText, rationale, createdBy)
   - Only store if prompt significantly changed (not just formatting)
   - Compare with previous prompt; skip if identical
@@ -620,48 +648,50 @@
   - getPromptDiff(version1Id, version2Id) → {before, after, changes}
 
 **Acceptance Criteria**:
+
 - Stores only significant prompt changes (no formatting changes)
 - Tracks which version was user-created vs AI-created
 - Can compare versions
-- >80% code coverage
+- > 80% code coverage
 
 ---
 
 ### API Endpoints
 
-- [X] T068 [P] Create test file tests/integration/prompt-refinement-api.test.ts
+- [x] T068 [P] Create test file tests/integration/prompt-refinement-api.test.ts
 
-- [X] T069 Create src/pages/api/personas/[id]/iterations/[num]/refine-prompt.ts implementing:
+- [x] T069 Create src/pages/api/personas/[id]/iterations/[num]/refine-prompt.ts implementing:
   - POST /api/personas/[id]/iterations/[num]/refine-prompt: Trigger prompt refinement
   - Call failure-analysis.analyzeIterationFailures()
   - Call prompt-engineer.refineJudgePrompt()
   - Return: {improved_prompt, rationale, expected_impact} or {error} if LLM fails
 
-- [X] T070 Create src/pages/api/personas/[id]/iterations/[num]/accept-prompt.ts implementing:
+- [x] T070 Create src/pages/api/personas/[id]/iterations/[num]/accept-prompt.ts implementing:
   - POST /api/personas/[id]/iterations/[num]/accept-prompt: Accept refined prompt for next iteration
   - Accept: {prompt_text, reason: "ai-generated"|"manual-edit"}
   - Store via prompt-version-manager
   - Update persona's judge prompt for next iteration
 
 **Acceptance Criteria**:
+
 - Refine endpoint calls LLM and returns improved prompt
 - Accept endpoint stores version and updates persona
 - Works even if LLM refinement fails (fallback to manual)
-- >80% integration test coverage
+- > 80% integration test coverage
 
 ---
 
 ### UI Components & Pages
 
-- [X] T071 Create src/pages/personas/[id]/judge-prompts.astro implementing:
+- [x] T071 Create src/pages/personas/[id]/judge-prompts.astro implementing:
   - Display judge prompt version history
   - Show which version was "ai-generated" vs "manual"
   - Show iteration number for each version
   - "View Diff" button to compare versions
 
-- [X] T072 Create src/components/PromptDiffViewer.astro for side-by-side prompt comparison
+- [x] T072 Create src/components/PromptDiffViewer.astro for side-by-side prompt comparison
 
-- [X] T073 Create src/pages/personas/[id]/refine-prompt.astro implementing:
+- [x] T073 Create src/pages/personas/[id]/refine-prompt.astro implementing:
   - After iteration completes: show AI-generated refined prompt suggestion
   - Display current metrics and failure analysis
   - "Accept" button to use refined prompt
@@ -669,6 +699,7 @@
   - "Skip" button to use current prompt again
 
 **Acceptance Criteria**:
+
 - Shows refined prompt with rationale
 - Accept button applies prompt for next iteration
 - Diff viewer compares old vs new versions
@@ -678,11 +709,12 @@
 
 ## Phase 7: User Story 5 - Track Training Progress and Metrics (P2)
 
-*Dashboard displays real-time metrics and convergence status*
+_Dashboard displays real-time metrics and convergence status_
 
 **Phase Goal**: Implement training progress dashboard with metrics visualization and convergence tracking
 
 **Independent Test Criteria**:
+
 - Dashboard loads and displays latest metrics from all iterations
 - Chart shows F1/precision/recall trends over iterations
 - Real-time updates when new iteration metrics calculated
@@ -705,10 +737,11 @@
   - Return: Array<{iteration, f1_score, precision, recall, cohens_kappa, timestamp}>
 
 **Acceptance Criteria**:
+
 - Endpoints return correct data structure
 - Data includes all metrics from all iterations
 - Sorted by iteration number
-- >80% integration test coverage
+- > 80% integration test coverage
 
 ---
 
@@ -728,6 +761,7 @@
   - Auto-refresh metrics every 5 seconds (or use WebSocket)
 
 **Acceptance Criteria**:
+
 - Dashboard renders all metric cards correctly
 - Chart displays trends accurately
 - Convergence indicator shows when F1 ≥ 0.80
@@ -741,6 +775,7 @@
 - [ ] T080 [P] Create WebSocket handler (optional; polling fallback acceptable for MVP)
 
 **Acceptance Criteria**:
+
 - Dashboard updates when new metrics available (either polling or WebSocket)
 - <2 second latency per spec success criterion SC-006
 
@@ -757,6 +792,7 @@
   - If F1 ≥ 0.80 after iteration: verify convergence indicator appears
 
 **Acceptance Criteria**:
+
 - E2E test passes for complete dashboard workflow
 - Metrics display correctly after each iteration
 - Chart updates with new data points
@@ -765,11 +801,12 @@
 
 ## Phase 8: User Story 6 - Pause and Resume Training (P3)
 
-*User can pause training and resume later without data loss*
+_User can pause training and resume later without data loss_
 
 **Phase Goal**: Implement pause/resume functionality with state persistence
 
 **Independent Test Criteria**:
+
 - Can pause training iteration via API/UI
 - Training halts after current operation completes
 - Can resume later from exact checkpoint
@@ -797,11 +834,12 @@
   - Return 202 with resumed session
 
 **Acceptance Criteria**:
+
 - Pause halts iteration gracefully
 - State persisted to database
 - Resume loads checkpoint and continues
 - Metrics integrity maintained across pause/resume
-- >80% integration test coverage
+- > 80% integration test coverage
 
 ---
 
@@ -813,6 +851,7 @@
   - Show pause reason in status display
 
 **Acceptance Criteria**:
+
 - Buttons appear/disappear based on training status
 - Pause button triggers pause API
 - Resume button triggers resume API
@@ -834,6 +873,7 @@
   - Verify metrics match expected values
 
 **Acceptance Criteria**:
+
 - E2E test passes for pause/resume workflow
 - No data loss on pause/resume cycle
 - Metrics consistent with continuous run
@@ -842,7 +882,7 @@
 
 ## Phase 9: Cross-Cutting Concerns & Polish
 
-*Error handling, logging, documentation, performance optimization*
+_Error handling, logging, documentation, performance optimization_
 
 **Phase Goal**: Harden implementation with error handling, logging, and performance optimization
 
@@ -863,6 +903,7 @@
 - [ ] T092 [P] Handle worker thread failures in metrics calculation (fallback to main thread)
 
 **Acceptance Criteria**:
+
 - All error cases return appropriate HTTP status codes
 - Error messages are user-friendly and actionable
 - Database transactions rollback on errors
@@ -879,6 +920,7 @@
 - [ ] T095 [P] Add database query logging for debugging (optional; can use query analyzer)
 
 **Acceptance Criteria**:
+
 - Training flow events logged with timestamps
 - API errors logged with context
 - Performance metrics available for monitoring
@@ -896,6 +938,7 @@
 - [ ] T099 [P] Add caching for metrics dashboard (Redis or in-memory cache with TTL)
 
 **Acceptance Criteria**:
+
 - Database indexes improve query performance
 - API responses paginated (limit 100 items per page)
 - Metrics calculation completes in <500ms for 200 pairs
@@ -916,6 +959,7 @@
 - [ ] T104 [P] Ensure TypeScript strict mode enabled and no `any` types used
 
 **Acceptance Criteria**:
+
 - All exported functions have JSDoc comments
 - README documents how to run project and execute tests
 - Architecture document explains module relationships
@@ -934,6 +978,7 @@
 - [ ] T108 [P] Run linting to ensure code quality: `npm run lint`
 
 **Acceptance Criteria**:
+
 - Critical path coverage ≥80%
 - All tests pass
 - TypeScript strict mode passes
@@ -943,7 +988,7 @@
 
 ## Phase 10: Integration Testing & MVP Validation
 
-*End-to-end integration tests and MVP validation against spec*
+_End-to-end integration tests and MVP validation against spec_
 
 **Phase Goal**: Validate all features work together correctly; verify against spec acceptance criteria
 
@@ -967,6 +1012,7 @@
   - No timeout on 200-pair batch (SC-007)
 
 **Acceptance Criteria**:
+
 - Full MVP E2E test passes
 - All performance targets met
 - No test flakiness (run 3x to verify stability)
@@ -983,6 +1029,7 @@
 - [ ] T116 Validate spec acceptance criteria for User Story 6 (pause/resume)
 
 **Acceptance Criteria**:
+
 - All User Story acceptance scenarios pass
 - All Success Criteria met
 - All Functional Requirements implemented
@@ -991,8 +1038,9 @@
 
 ## Task Summary
 
-**Total Tasks**: 116
+**Total Tasks**: 136
 **Estimated Effort by Phase**:
+
 - Phase 1 (Setup): 5 tasks (~0.5 days)
 - Phase 2 (Foundation): 17 tasks (~2 days)
 - Phase 3 (US1): 21 tasks (~2.5 days)
@@ -1003,14 +1051,16 @@
 - Phase 8 (US6): 5 tasks (~0.5 days)
 - Phase 9 (Polish): 18 tasks (~2 days)
 - Phase 10 (Integration): 8 tasks (~1 day)
+- Phase 11 (Technical Debt): 20 tasks (~3 days)
 
-**Total Estimated Effort**: ~16 days (2-3 weeks with parallel work)
+**Total Estimated Effort**: ~19 days (3-4 weeks with parallel work)
 
 ---
 
 ## Task Dependencies & Parallel Execution
 
 ### MVP Scope (Phase 1 + Foundation + Stories 1-3)
+
 - **Minimum Viable Product**: Persona creation → CSV upload → Run single iteration with feedback → Metrics calculation
 - **Can be completed**: ~7-10 days
 - **Stories 4-6 (P2/P3)** added incrementally after MVP
@@ -1018,6 +1068,7 @@
 ### Parallel Execution Opportunities
 
 **Within Phase 5 (US3) - All can run in parallel**:
+
 - T041: Testing training loop orchestration
 - T042: Implementing training loop
 - T044: Testing judge evaluator
@@ -1029,12 +1080,14 @@
 - etc.
 
 **Within Phase 9 (Polish) - All [P] tasks can run in parallel**:
+
 - T087-T092: Error handling across different modules
 - T093-T095: Logging across different layers
 - T096-T099: Performance optimization across different components
 - T100-T104: Documentation and code quality
 
 ### Critical Path
+
 1. Phase 1: Setup (must complete)
 2. Phase 2: Foundation (must complete - blocks all stories)
 3. Phase 3: US1 + Phase 4: US2 (can run in parallel)
@@ -1047,6 +1100,7 @@
 ## Success Definition
 
 **MVP (Phase 1 + Foundation + Stories 1-3) is complete when**:
+
 - ✅ Can create persona with task description and models
 - ✅ Can upload CSV with training pairs (10-200)
 - ✅ Can run single training iteration with human feedback
@@ -1058,6 +1112,7 @@
 - ✅ E2E test passes
 
 **Full Feature (All 4 phases) complete when**:
+
 - ✅ MVP complete
 - ✅ Auto-prompt refinement works (US4)
 - ✅ Dashboard with metrics visualization (US5)
@@ -1068,3 +1123,299 @@
 - ✅ Full E2E test suite passing
 - ✅ Performance benchmarks met
 
+---
+
+## Phase 11: Technical Debt & Specification Gaps
+
+_Address gaps identified in mvp-sanity.md checklist verification_
+
+**Phase Goal**: Close specification gaps and technical debt to ensure production-ready quality
+
+**Independent Test Criteria**:
+
+- All loading states defined and implemented
+- Status transitions follow documented state machine
+- API error responses follow standardized format
+- Edge cases have explicit handling requirements
+- UI/UX patterns consistent with existing modules
+
+---
+
+### Loading States & Status Transitions
+
+- [ ] T117 [P] Document loading state requirements in spec.md or technical specification:
+  - Define loading states for "Start Training" → first judge decision appears
+  - Define spinner/progress indicator behavior during CSV upload
+  - Define loading states for metrics calculation (post-feedback submission)
+  - Define loading states for prompt refinement API calls
+  - Add to FR-017 or new FR-018: "System MUST display loading indicators during async operations with <2 second perceived latency"
+
+- [ ] T118 [P] Document persona status state machine in data-model.md:
+  - Explicitly define "Draft" → "Training" transition on first iteration start
+  - Define "Training" → "Trained" transition when F1 ≥ target_f1_score
+  - Define "Training" → "Incomplete" transition on max_iterations reached without convergence
+  - Add state diagram to data-model.md showing all valid transitions
+  - Update persona-db.ts with state transition validation functions
+
+- [ ] T119 Create test file tests/unit/persona-state-machine.test.ts:
+  - Test Draft → Training transition on iteration start
+  - Test Training → Trained on F1 convergence
+  - Test Training → Incomplete on max iterations
+  - Test invalid transitions (e.g., Draft → Trained directly)
+  - Verify status updates persist to database
+
+**Acceptance Criteria**:
+
+- Loading state requirements documented with specific timing targets
+- State machine diagram in data-model.md shows all valid transitions
+- State transition logic tested with >80% coverage
+- UI implements loading states per specification
+
+---
+
+### Error Handling Standardization
+
+- [ ] T120 [P] Complete API error response standardization (T088 follow-up):
+  - Define standard error response format: `{error: string, code: string, details?: object, timestamp: string}`
+  - Document specific error codes for each validation failure:
+    - `MODEL_SEPARATION_VIOLATION`: Task/Judge/Engineer models not from different providers
+    - `CSV_SIZE_INVALID`: CSV has <10 or >200 pairs
+    - `CSV_FORMAT_INVALID`: CSV missing required columns or has malformed rows
+    - `DUPLICATE_ROWS`: CSV contains duplicate input/output pairs
+    - `INCOMPLETE_FEEDBACK`: Iteration has judge decisions without human reviews
+    - `INVALID_STATUS_TRANSITION`: Persona status transition not allowed
+    - `ITERATION_IN_PROGRESS`: Cannot start new iteration while one is running
+  - Create src/lib/error-codes.ts with error code constants and factory functions
+  - Update all API endpoints to use standardized error format
+
+- [ ] T121 [P] Quantify exponential backoff parameters for FR-016:
+  - Document backoff formula: `delay = min(initial_delay * 2^(attempt-1), max_delay)`
+  - Set initial_delay = 1000ms (1 second)
+  - Set max_delay = 4000ms (4 seconds)
+  - Maximum 3 retry attempts (total 4 attempts including initial)
+  - Update FR-016 in spec.md with explicit parameters
+  - Implement backoff in src/lib/api-retry-handler.ts
+  - Add tests in tests/unit/api-retry-handler.test.ts
+
+- [ ] T122 [P] Create test file tests/integration/api-error-responses.test.ts:
+  - Test each error code returns correct HTTP status and error body
+  - Verify error timestamps are ISO 8601 format
+  - Verify error details include actionable information
+  - Test retry handler with exponential backoff timing
+
+**Acceptance Criteria**:
+
+- All API endpoints return errors in standardized format
+- Error codes documented in API.md
+- Exponential backoff parameters explicit in FR-016
+- Retry handler tested with timing verification
+- > 80% test coverage on error paths
+
+---
+
+### Prompt Versioning Clarity
+
+- [ ] T123 Define quantifiable criteria for "Significant Prompt Change" (FR-015):
+  - Option 1: Whitespace-normalized string comparison (if different after trim/normalize, it's significant)
+  - Option 2: Levenshtein distance threshold (e.g., >10% character changes)
+  - Option 3: Semantic embedding similarity threshold (e.g., cosine similarity <0.95)
+  - **Decision**: Use Option 1 (whitespace normalization) for MVP simplicity
+  - Document in FR-015: "Significant changes are defined as non-whitespace text differences after normalizing spaces, tabs, and newlines"
+  - Update src/lib/prompt-version-manager.ts implementation to match
+  - Add tests in tests/unit/prompt-version-manager.test.ts verifying whitespace normalization
+
+- [ ] T124 [P] Update spec.md FR-015 with explicit definition:
+  - Replace "significant changes (semantic changes, not formatting)" with:
+    "Significant changes are text modifications that remain after whitespace normalization (collapsing multiple spaces, trimming leading/trailing whitespace, normalizing line endings). Purely formatting changes (indentation, spacing) do not create new versions."
+  - Add examples:
+    - SIGNIFICANT: "Evaluate correctness" → "Evaluate correctness and completeness"
+    - NOT SIGNIFICANT: "Evaluate correctness" → " Evaluate correctness \n"
+
+**Acceptance Criteria**:
+
+- FR-015 contains explicit, measurable definition
+- Prompt version manager implements whitespace normalization
+- Tests verify formatting-only changes don't create versions
+- Tests verify semantic changes create versions
+
+---
+
+### Edge Case Specifications
+
+- [ ] T125 [P] Document contradictory feedback handling (CHK011):
+  - Add to spec.md Edge Cases section:
+    "When human feedback contradicts across iterations (e.g., same judge decision marked 'agree' in iteration N, 'disagree' in iteration N+1), the system uses iteration-local feedback only. Each iteration's metrics are calculated independently using that iteration's human reviews. Prompt refinement analyzes only the current iteration's failures."
+  - Add to Assumption A-007: "Training data is representative of domain; human feedback may evolve as reviewer understanding improves across iterations"
+  - No code changes required (existing implementation already iteration-scoped)
+
+- [ ] T126 [P] Document 0-byte and non-CSV file upload handling (CHK012):
+  - Update T037 (CSVUploader component) acceptance criteria:
+    - Reject files <10 bytes with error: "File is empty or corrupted"
+    - Reject files without .csv extension with error: "Only CSV files are accepted"
+    - Reject files that fail CSV parsing with error showing first parse error
+  - Update src/lib/csv-parser.ts to validate file size and content type
+  - Add tests in tests/unit/csv-parser-edge-cases.test.ts:
+    - 0-byte file
+    - 1-byte file
+    - Non-CSV file (e.g., .txt, .json)
+    - Valid CSV with 0 data rows (header only)
+
+- [ ] T127 [P] Clarify empty input field handling (CHK013):
+  - Update FR-004 to explicitly state: "System MUST reject CSV rows where input OR expected_output fields are empty strings, whitespace-only, or null"
+  - Add to csv-parser.ts validation: `row.input.trim() === '' || row.expected_output.trim() === ''`
+  - Update error message: "Row {N} rejected: input and expected_output must be non-empty"
+  - Add tests for: empty string, whitespace-only, tab-only, newline-only fields
+
+- [ ] T128 [P] Document timezone handling for iteration timestamps (CHK014):
+  - Update data-model.md to specify: "All timestamps stored in UTC (ISO 8601 format with Z suffix)"
+  - Update database schema to use: `created_at TEXT NOT NULL DEFAULT (datetime('now', 'utc'))`
+  - Update UI to display timestamps in user's local timezone using JavaScript `toLocaleString()`
+  - Add to spec.md Edge Cases: "Iteration timestamps are stored in UTC to ensure consistent sorting across timezones; UI displays in user's local time"
+  - Add tests in tests/integration/timestamp-handling.test.ts verifying UTC storage and local display
+
+**Acceptance Criteria**:
+
+- Contradictory feedback behavior explicitly documented
+- File upload validates size, type, and content
+- Empty field handling explicitly rejects whitespace-only values
+- All timestamps stored in UTC, displayed in local timezone
+- Edge case tests added with >80% coverage
+
+---
+
+### Zero-State UI Requirements
+
+- [ ] T129 Document zero-state UI requirements for all pages:
+  - **Personas List (no personas)**: Display empty state with:
+    - Illustration or icon
+    - Heading: "No Judge Personas Yet"
+    - Description: "Create your first judge persona to start training AI evaluators"
+    - "Create New Persona" button (primary action)
+
+  - **Training Data Tab (no pairs uploaded)**: Display empty state with:
+    - Heading: "No Training Data"
+    - Description: "Upload a CSV file with input/output pairs to begin training"
+    - "Upload CSV" button
+    - Link to CSV format documentation
+
+  - **Training Progress (no iterations)**: Display empty state with:
+    - Heading: "Training Not Started"
+    - Description: "Upload training data, then start your first iteration"
+    - "Go to Training Data" button (if no data)
+    - "Start Training" button (if data exists)
+
+  - **Metrics Dashboard (no metrics)**: Display empty state with:
+    - Heading: "No Metrics Available"
+    - Description: "Complete at least one iteration to see performance metrics"
+
+  - **Judge Prompts History (no versions)**: Display empty state with:
+    - Heading: "No Prompt History"
+    - Description: "Prompt versions will appear here after iterations with refinements"
+
+- [ ] T130 [P] Implement zero-state components:
+  - Create src/components/EmptyState.astro as reusable component
+  - Props: `{title: string, description: string, actionLabel?: string, actionHref?: string, iconName?: string}`
+  - Update all pages to use EmptyState when no data exists
+  - Add tests in tests/e2e/zero-states.test.ts verifying each empty state displays
+
+**Acceptance Criteria**:
+
+- Zero-state requirements documented for all major pages
+- EmptyState component implemented and reusable
+- All pages display helpful empty states
+- E2E tests verify empty states appear when expected
+
+---
+
+### UI/UX Consistency
+
+- [ ] T131 [P] Validate MetricCard trend indicator consistency (CHK018):
+  - Review existing Evaluations module MetricCard implementation
+  - Document trend logic: ↑ (current > previous), ↓ (current < previous), → (current == previous)
+  - For F1/precision/recall: ↑ is good (green), ↓ is bad (red)
+  - For error rate: ↑ is bad (red), ↓ is good (green)
+  - Update src/components/MetricCard.astro to match existing pattern
+  - Add prop: `higherIsBetter: boolean` to control color logic
+  - Add tests verifying trend indicators match existing module
+
+- [ ] T132 [P] Define Previous/Next navigation edge case behavior (CHK019):
+  - Document in T050 acceptance criteria:
+    - "Previous" button on first decision: disabled/grayed out (not hidden)
+    - "Next" button on last decision: disabled/grayed out (not hidden)
+    - Keyboard navigation: Left arrow = previous, Right arrow = next
+    - URL updates with decision index: `/review/{iteration}/{index}`
+    - After reviewing last decision, show "All decisions reviewed" message
+  - Implement navigation logic in src/pages/personas/[id]/review/[iteration].astro
+  - Add tests in tests/e2e/human-review.test.ts
+
+- [ ] T133 [P] Document validation error display patterns (CHK020):
+  - Define standard error display locations:
+    - **Form validation errors**: Inline below field with red text and icon
+    - **API submission errors**: Toast notification (top-right) with error message
+    - **CSV upload errors**: Inline in upload component with error details
+    - **Critical errors (500)**: Modal dialog with error message and "Retry" button
+  - Document in IMPLEMENTATION.md or new UX_PATTERNS.md
+  - Update all forms to follow inline validation pattern
+  - Update all API calls to use toast notifications
+  - Add tests verifying error display locations
+
+**Acceptance Criteria**:
+
+- MetricCard trend logic matches existing Evaluations module
+- Previous/Next navigation edge cases explicitly defined and tested
+- Validation error patterns documented and consistently applied
+- UI tests verify consistency with existing patterns
+
+---
+
+### Integration & Validation
+
+- [ ] T134 Update mvp-sanity.md checklist:
+  - Mark all addressed items as [X] completed
+  - Add verification notes for each task completion
+  - Update checklist status to "PASS" when all items complete
+
+- [ ] T135 Create comprehensive edge case test suite tests/integration/specification-gaps.test.ts:
+  - Test all edge cases from CHK011-CHK014
+  - Test all error response formats from T120
+  - Test retry logic with exponential backoff from T121
+  - Test prompt versioning whitespace normalization from T123
+  - Verify >80% coverage on all gap areas
+
+- [ ] T136 Update specification documents:
+  - Update spec.md with all clarifications (FR-015, FR-016, FR-018, Edge Cases)
+  - Update data-model.md with state machine diagram and UTC timestamps
+  - Update tasks.md to mark Phase 11 tasks complete
+  - Update API.md (or create if missing) with error code reference
+
+**Acceptance Criteria**:
+
+- mvp-sanity.md shows 100% pass rate (20/20 items)
+- All specification gaps documented in spec.md
+- Edge case test suite passes with >80% coverage
+- Documentation updated and consistent
+
+---
+
+## Phase 11 Summary
+
+**Total Tasks**: 20 (T117-T136)
+**Estimated Effort**: ~3 days
+**Dependencies**: Can run in parallel with other phases; does not block MVP delivery
+**Priority**: Medium (technical debt; improves production readiness but not blocking)
+
+**Parallel Execution Opportunities**:
+
+- All documentation tasks (T117, T118, T120, T121, T123-T128, T129, T131-T133, T136) can run in parallel
+- Test tasks (T119, T122, T130, T135) can run after their corresponding documentation tasks complete
+- Implementation tasks (T120, T121, T126-T128, T130-T133) can run after documentation complete
+
+**Success Definition**:
+
+- ✅ All 20 mvp-sanity.md checklist items pass
+- ✅ API error responses standardized with documented error codes
+- ✅ Exponential backoff parameters explicitly quantified
+- ✅ All edge cases have explicit handling requirements
+- ✅ UI/UX patterns consistent with existing modules
+- ✅ Zero-state UI implemented for all major pages
+- ✅ Documentation updated with all clarifications
