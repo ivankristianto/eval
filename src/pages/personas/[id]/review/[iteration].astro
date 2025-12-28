@@ -236,9 +236,18 @@ const breadcrumbItems = [
                   d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
                 />
               </svg>
-              <span>
-                All decisions have been reviewed! You can now calculate metrics for this iteration.
-              </span>
+              <div class="flex-1">
+                <span>
+                  All decisions have been reviewed! You can now calculate metrics for this iteration.
+                </span>
+              </div>
+              <button
+                class="btn btn-primary calculate-metrics-btn"
+                data-persona-id={id}
+                data-iteration={iterationNumber}
+              >
+                Calculate Metrics & Continue
+              </button>
             </div>
           )
         }
@@ -283,3 +292,67 @@ const breadcrumbItems = [
     )
   }
 </Layout>
+
+<script>
+  import { addToast } from '../../../../lib/toastStore';
+
+  // Calculate metrics button
+  document.querySelectorAll('.calculate-metrics-btn').forEach((btn) => {
+    btn.addEventListener('click', async (e) => {
+      const button = e.currentTarget as HTMLButtonElement;
+      const personaId = button.dataset.personaId;
+      const iteration = button.dataset.iteration;
+
+      if (!personaId || !iteration) return;
+
+      if (
+        !confirm(
+          'Calculate metrics for this iteration? This will complete the current iteration and determine if training should continue.'
+        )
+      ) {
+        return;
+      }
+
+      button.disabled = true;
+      button.classList.add('loading');
+
+      try {
+        const response = await fetch(
+          `/api/personas/${personaId}/iterations/${iteration}/calculate-metrics`,
+          {
+            method: 'POST',
+          }
+        );
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || 'Failed to calculate metrics');
+        }
+
+        const result = await response.json();
+
+        if (result.status === 'training_complete') {
+          addToast(
+            `Training complete! ${result.reason === 'target_reached' ? 'Target F1 score reached' : 'Maximum iterations reached'}`,
+            'success'
+          );
+          // Redirect to metrics page
+          window.location.href = `/personas/${personaId}/metrics`;
+        } else if (result.status === 'continue') {
+          addToast('Metrics calculated! Next iteration started.', 'success');
+          // Redirect to next iteration review page
+          const nextIteration = result.next_iteration.iteration_number;
+          window.location.href = `/personas/${personaId}/review/${nextIteration}`;
+        }
+      } catch (error) {
+        console.error('Failed to calculate metrics:', error);
+        addToast(
+          `Failed to calculate metrics: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          'error'
+        );
+        button.disabled = false;
+        button.classList.remove('loading');
+      }
+    });
+  });
+</script>

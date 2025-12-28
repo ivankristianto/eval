@@ -8,6 +8,7 @@ import { getDatabase } from '../../../lib/db';
 import Badge from '../../../components/ui/Badge.astro';
 import Breadcrumbs from '../../../components/ui/Breadcrumbs.astro';
 import PersonaTabs from '../../../components/PersonaTabs.astro';
+import PromptDiffViewer from '../../../components/PromptDiffViewer.astro';
 
 const { id } = Astro.params;
 
@@ -209,102 +210,48 @@ const breadcrumbItems = [
       }
     </div>
 
-    <!-- Diff Modal (hidden by default) -->
-    <dialog id="diff-modal" class="modal">
-      <div class="modal-box max-w-5xl">
-        <form method="dialog">
-          <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
-        </form>
-        <h3 class="font-bold text-lg mb-4" id="diff-modal-title">Prompt Comparison</h3>
-        <div id="diff-modal-content">
-          <!-- Diff content will be loaded here -->
-        </div>
-      </div>
-      <form method="dialog" class="modal-backdrop">
-        <button>close</button>
-      </form>
-    </dialog>
+    <!-- Modals for each version pair -->
+    {promptVersions.map((version, index) => {
+      const previousVersion = promptVersions[index + 1];
+      if (!previousVersion) return null;
+
+      return (
+        <dialog id={`diff-modal-${version.id}`} class="modal">
+          <div class="modal-box max-w-5xl">
+            <form method="dialog">
+              <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+            </form>
+            <h3 class="font-bold text-lg mb-4">
+              Comparing Iteration {previousVersion.iteration_number} → {version.iteration_number}
+            </h3>
+            <PromptDiffViewer
+              beforePrompt={previousVersion.prompt_text}
+              afterPrompt={version.prompt_text}
+              beforeLabel={`Iteration ${previousVersion.iteration_number}`}
+              afterLabel={`Iteration ${version.iteration_number}`}
+            />
+          </div>
+          <form method="dialog" class="modal-backdrop">
+            <button>close</button>
+          </form>
+        </dialog>
+      );
+    })}
   </div>
 </Layout>
 
 <script>
   // Handle "Compare with Previous" button clicks
   document.querySelectorAll('.view-diff-btn').forEach((btn) => {
-    btn.addEventListener('click', async (e) => {
+    btn.addEventListener('click', (e) => {
       const button = e.currentTarget as HTMLButtonElement;
       const currentId = button.dataset.currentId;
-      const previousId = button.dataset.previousId;
-      const currentIteration = button.dataset.currentIteration;
-      const previousIteration = button.dataset.previousIteration;
 
-      if (!currentId || !previousId) return;
+      if (!currentId) return;
 
-      // Update modal title
-      const modalTitle = document.getElementById('diff-modal-title');
-      if (modalTitle) {
-        modalTitle.textContent = `Comparing Iteration ${previousIteration} → ${currentIteration}`;
-      }
-
-      // Fetch diff from API
-      try {
-        const response = await fetch(
-          `/api/judge-prompts/diff?version1=${previousId}&version2=${currentId}`
-        );
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch diff');
-        }
-
-        const data = await response.json();
-
-        // Render diff in modal
-        const diffContent = document.getElementById('diff-modal-content');
-        if (diffContent) {
-          diffContent.innerHTML = `
-            <div class="grid grid-cols-2 gap-4">
-              <div>
-                <div class="text-sm font-semibold mb-2">Iteration ${previousIteration}</div>
-                <div class="bg-base-300 rounded-lg p-3">
-                  <pre class="text-xs whitespace-pre-wrap">${escapeHtml(data.before)}</pre>
-                </div>
-              </div>
-              <div>
-                <div class="text-sm font-semibold mb-2">Iteration ${currentIteration}</div>
-                <div class="bg-base-300 rounded-lg p-3">
-                  <pre class="text-xs whitespace-pre-wrap">${escapeHtml(data.after)}</pre>
-                </div>
-              </div>
-            </div>
-            <div class="mt-4">
-              <div class="text-sm font-semibold mb-2">Changes</div>
-              <div class="alert alert-info">
-                <span>${data.changes}</span>
-              </div>
-            </div>
-          `;
-        }
-
-        // Show modal
-        const modal = document.getElementById('diff-modal') as HTMLDialogElement;
-        modal?.showModal();
-      } catch (error) {
-        console.error('Failed to load diff:', error);
-        alert('Failed to load prompt comparison. Please try again.');
-      }
+      // Show the corresponding modal
+      const modal = document.getElementById(`diff-modal-${currentId}`) as HTMLDialogElement;
+      modal?.showModal();
     });
   });
-
-  /**
-   * Helper function to escape HTML special characters.
-   * @param unsafe - Unescaped string
-   * @returns Safely escaped HTML string
-   */
-  function escapeHtml(unsafe: string): string {
-    return unsafe
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#039;');
-  }
 </script>

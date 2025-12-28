@@ -203,7 +203,7 @@ function getStatusVariant(status: string): 'warning' | 'info' | 'success' | 'err
       </a>
 
       {
-        pairCount >= 10 && (
+        pairCount >= 10 && persona.status === 'draft' && (
           <button class="btn btn-primary start-training-btn" data-persona-id={id}>
             <svg
               xmlns="http://www.w3.org/2000/svg"
