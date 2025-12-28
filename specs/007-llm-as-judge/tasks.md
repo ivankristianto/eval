@@ -387,40 +387,47 @@ _User can upload CSV file with input/expected_output pairs and view imported dat
 
 ## Phase 5: User Story 3 - Execute Automated Training Iteration (P1)
 
-_System runs iteration cycle: generate outputs → judge → collect feedback → calculate metrics_
+_System runs FULLY AUTOMATED iteration cycle: generate outputs → judge → automatic metrics → prompt refinement → next iteration_
 
-**Phase Goal**: Implement complete training iteration orchestration and metrics calculation
+**Phase Goal**: Implement complete automated training loop with automatic metrics calculation from ground truth and prompt refinement
 
 **Independent Test Criteria**:
 
-- Can start training iteration for a persona with training data
-- System generates outputs for each pair using Task Model
-- Judge evaluates each output using Judge Model
-- Human can provide Agree/Disagree feedback on judge decisions
-- Metrics (F1, precision, recall, Cohen's Kappa) calculate correctly
-- E2E test: start iteration → provide feedback → verify metrics calculated
+- Can start training for a persona with training data
+- System generates outputs for each pair using Task Model + Task Prompt
+- Judge evaluates each output using Judge Model + Judge Prompt
+- Metrics (F1, precision, recall, Cohen's Kappa) calculate AUTOMATICALLY by comparing judge decisions against ground truth (expected_output)
+- System automatically refines BOTH Task Prompt and Judge Prompt based on failures (FP/FN cases)
+- Next iteration starts automatically with refined prompts until F1 ≥ target OR max iterations reached
+- E2E test: start training → verify multiple iterations run automatically → verify convergence or max iterations
 
 ---
 
 ### Training Loop Orchestration
 
-- [x] T041 [P] Create test file tests/unit/training-loop.test.ts for iteration orchestration
+- [x] T041 [P] Create test file tests/unit/training-loop.test.ts for AUTOMATED iteration orchestration
 
 - [x] T042 Create src/lib/training-loop.ts implementing IterativeTrainingLoop class:
-  - execute(taskResultIds) → Promise<void> (fire-and-forget, persists state)
-  - evaluateWithJudge(taskResultIds) → judge outputs and store judge_decisions
-  - calculateMetricsInWorker(judgeResults) → MetricsResult
+  - executeFullTraining() → Promise<void> (runs ALL iterations automatically until convergence or max iterations)
+  - runSingleIteration(iterationNumber) → Promise<IterationResult>
+  - generateOutputs() → generate suggested_output for each training pair using Task Model + current Task Prompt
+  - evaluateWithJudge() → judge all outputs and store judge_decisions (correct/incorrect)
+  - calculateMetricsFromGroundTruth() → automatically compare judge decisions vs expected_output to compute TP/TN/FP/FN
+  - refinePrompts(failures) → use Prompt Engineer Model to improve BOTH Task Prompt AND Judge Prompt
+  - checkConvergence(f1Score) → determine if F1 ≥ target or iterations ≥ max
   - sessionId property for tracking
-  - pause() method to pause training
+  - pause() method to pause training between iterations
 
-- [x] T043 [P] Create test file tests/integration/training-loop-flow.test.ts with simulated iteration flow
+- [x] T043 [P] Create test file tests/integration/training-loop-flow.test.ts with simulated AUTOMATED multi-iteration flow
 
 **Acceptance Criteria**:
 
-- Iteration loop runs complete cycle: judge → feedback → metrics
-- State persisted to database after each step
-- Metrics calculated correctly from feedback
-- Can pause iteration (state saved)
+- Iteration loop runs FULLY AUTOMATED: generate → judge → metrics → refine prompts → next iteration
+- State persisted to database after each iteration
+- Metrics calculated automatically from ground truth comparison (NOT human feedback)
+- Both task prompt and judge prompt refined based on FP/FN failures
+- Training continues until F1 ≥ target OR max iterations
+- Can pause/resume training between iterations
 - > 80% code coverage
 
 ---
@@ -449,209 +456,245 @@ _System runs iteration cycle: generate outputs → judge → collect feedback �
 
 ---
 
-### Human Review Interface
+### Optional Human Review Interface (OPTIONAL - for validation only)
 
-- [ ] T047 [P] Create test file tests/e2e/human-review.test.ts for decision review workflow
+- [ ] T047 [P] Create test file tests/e2e/human-review.test.ts for OPTIONAL validation review workflow
 
 - [x] T048 Create src/pages/api/personas/[id]/iterations/[num]/decisions.ts implementing:
-  - GET /api/personas/[id]/iterations/[num]/decisions: Fetch all judge decisions awaiting human review
-  - Return: {input, expected_output, suggested_output, judge_decision, judge_reasoning, decision_id}
+  - GET /api/personas/[id]/iterations/[num]/decisions: Fetch all judge decisions for OPTIONAL human validation
+  - Return: {input, expected_output, suggested_output, judge_decision, judge_reasoning, automatic_correctness (from ground truth), decision_id}
 
 - [x] T049 Create src/pages/api/personas/[id]/iterations/[num]/feedback.ts implementing:
-  - POST /api/personas/[id]/iterations/[num]/feedback: Submit human review feedback
+  - POST /api/personas/[id]/iterations/[num]/feedback: Submit OPTIONAL human validation feedback
   - Accept: {decision_id, human_decision: "agree"|"disagree", notes?: string}
-  - Store HumanReview record
+  - Store HumanReview record SEPARATELY from automatic metrics
   - Return 201 with stored feedback
-  - Constraint (per FR-007, A-012): Feedback is REQUIRED on all decisions in iteration; return 400 if any decisions remain without feedback after submission (incomplete feedback must be completed before proceeding)
+  - NOTE: Human feedback is OPTIONAL and does NOT block training or affect automatic metrics calculation
 
 - [x] T050 Create src/pages/personas/[id]/review/[iteration].astro implementing:
-  - Split view: left side shows decision, right side shows feedback form
-  - Display: input, expected_output, suggested_output, judge_decision, judge_reasoning
-  - Buttons: "Agree with Judge" / "Disagree with Judge"
+  - OPTIONAL validation view (not required for training)
+  - Split view: left side shows decision + automatic correctness, right side shows optional feedback form
+  - Display: input, expected_output, suggested_output, judge_decision, judge_reasoning, automatic_correctness_badge
+  - Buttons: "Agree with Judge" / "Disagree with Judge" (for validation only)
   - Optional notes textarea
-  - Progress: "X of Y decisions reviewed"
+  - Progress: "X of Y decisions validated (optional)"
   - Previous/Next navigation between decisions
+  - Clear indicator that this is OPTIONAL validation
 
-- [x] T051 [P] Create src/components/JudgeDecisionReview.astro as reusable decision card component
+- [x] T051 [P] Create src/components/JudgeDecisionReview.astro as reusable decision card component with automatic correctness badge
 
 **Acceptance Criteria**:
 
-- Decisions fetch correctly from API
-- Agree/Disagree buttons submit feedback to API
-- Feedback persisted to database
-- Progress indicator shows review status
-- Navigation works (previous/next decisions)
-
-**Phase 2 Enhancement** (per A-014): Add batch action buttons ("Agree with All", "Review Later", "Skip to Next") in Phase 2 to reduce review friction for iterations with 50-200 decisions. MVP Phase 1 focuses on individual decision review with Previous/Next navigation only.
+- Decisions fetch with automatic correctness calculated from ground truth
+- Human validation feedback is stored separately from automatic metrics
+- Feedback UI clearly indicates this is OPTIONAL
+- Both automatic metrics and optional human validation metrics displayed side-by-side
+- Training continues regardless of whether human validation is provided
 
 ---
 
-### Metrics Calculation & Storage
+### Automatic Metrics Calculation from Ground Truth
 
-- [x] T052 [P] Create test file tests/integration/metrics-calculation.test.ts with full metrics flow
+- [x] T052 [P] Create test file tests/integration/metrics-calculation.test.ts with AUTOMATIC metrics flow (NO human review required)
 
 - [x] T053 Create src/lib/metrics-orchestrator.ts implementing:
-  - calculateIterationMetrics(iterationId) → MetricsResult
-  - Constraint (per FR-008, A-012): Verify all judge_decisions have human_reviews before calculating; throw error if any decisions lack feedback
-  - Fetch all judge_decisions and human_reviews for iteration
-  - Extract judge agreements (true if judge_decision='agree') and human agreements (human_decision='agree')
+  - calculateIterationMetrics(iterationId) → MetricsResult (AUTOMATIC - no human review required)
+  - Fetch all judge_decisions and corresponding training_pairs (to get expected_output)
+  - For each decision, determine ground truth correctness:
+    - is_correct = (suggested_output matches expected_output) - use semantic comparison or exact match
+  - Build confusion matrix:
+    - TP: judge says "correct" AND is_correct = true
+    - TN: judge says "incorrect" AND is_correct = false
+    - FP: judge says "correct" BUT is_correct = false (judge wrong - false positive)
+    - FN: judge says "incorrect" BUT is_correct = true (judge wrong - false negative)
   - Call calculateMetrics(confusionMatrix) from metrics.ts
-  - Store to iteration_metrics table
-  - Update persona with best_f1_score if improved
+  - Store to iteration_metrics table with TP/TN/FP/FN counts
+  - Update persona with best_f1_score and best_iteration_number if F1 improved
+  - Return FP and FN cases (failures) for prompt refinement analysis
 
 **Acceptance Criteria**:
 
-- Metrics calculate from agree/disagree feedback correctly
+- Metrics calculate AUTOMATICALLY from ground truth comparison (expected_output vs suggested_output)
+- NO human review required for metrics calculation
+- Confusion matrix correctly identifies TP/TN/FP/FN based on ground truth
 - Metrics stored with iteration_id FK
-- Persona best_f1_score updates if improved
+- Persona best_f1_score and best_iteration_number updated if improved
+- FP/FN failure cases returned for prompt refinement
 - > 80% code coverage
 
 ---
 
 ### API Integration
 
-- [x] T054 [P] Create test file tests/integration/iteration-api.test.ts for full iteration endpoints
+- [x] T054 [P] Create test file tests/integration/iteration-api.test.ts for AUTOMATED training endpoints
 
 - [x] T055 Create src/pages/api/personas/[id]/training/start.ts implementing:
-  - POST /api/personas/[id]/training/start: Start new training iteration
-  - Create training_iteration record
-  - Start IterativeTrainingLoop.execute() (fire-and-forget)
-  - Return 202 with session_id and training_iteration record
+  - POST /api/personas/[id]/training/start: Start AUTOMATED training (runs ALL iterations automatically)
+  - Create training_loop_state record with status='in_progress'
+  - Start IterativeTrainingLoop.executeFullTraining() (fire-and-forget - runs until convergence or max iterations)
+  - Return 202 with session_id and training loop details
 
 - [x] T056 Create src/pages/api/personas/[id]/training/status.ts implementing:
   - GET /api/personas/[id]/training/status: Get current training status
-  - Return latest iteration with metrics and human review count
+  - Return: current_iteration, total_iterations, latest_f1_score, best_f1_score, best_iteration, training_status (in_progress/paused/completed), convergence_achieved
 
 **Acceptance Criteria**:
 
-- Start iteration creates database record
-- Status endpoint returns correct iteration state
+- Start training initiates FULLY AUTOMATED loop (no human intervention)
+- Training continues automatically across multiple iterations
+- Status endpoint returns current iteration progress and best performance
 - Returns 202 for async operations
-- Metrics available after feedback provided
+- Metrics available immediately after each iteration completes (automatic calculation)
 
 ---
 
 ### UI Pages & Components
 
-- [x] T057 [P] Create src/components/MetricCard.astro for displaying single metric with trend
+- [x] T057 [P] Create src/components/MetricCard.astro for displaying single metric with trend across iterations
 
-- [x] T058 Create src/components/ConfusionMatrix.astro for 2x2 visual grid (TP/TN/FP/FN)
+- [x] T058 Create src/components/ConfusionMatrix.astro for 2x2 visual grid (TP/TN/FP/FN) from ground truth
 
 - [x] T059 Create training progress UI (implemented as src/pages/personas/[id]/metrics.astro and src/components/TrainingProgress.astro):
-  - Show current iteration number and status
-  - Display: F1 Score, Precision, Recall, Cohen's Kappa metrics
-  - Show confusion matrix visualization
-  - Progress bar: "X of Y iterations completed"
-  - "Start Training" button (if not started)
-  - "Review Decisions" button (if awaiting human review)
-  - Note: Implemented as dedicated metrics page rather than replacing training data page at /training/index.astro
+  - Show current iteration number / total iterations (e.g., "Iteration 3/5")
+  - Display: Latest F1 Score, Precision, Recall, Cohen's Kappa metrics
+  - Display: BEST F1 Score across all iterations with iteration number
+  - Show confusion matrix visualization (TP/TN/FP/FN from ground truth)
+  - Progress bar: "X of Y iterations completed" with convergence indicator
+  - Training status: "Running..." / "Converged (F1 ≥ 0.80)" / "Max iterations reached"
+  - "Start Training" button (if not started) - starts AUTOMATED loop
+  - "Pause Training" button (if running)
+  - "View Decisions" button (OPTIONAL - for validation only, not required)
+  - Iteration history table showing F1 score progression
+  - Note: Training runs AUTOMATICALLY without human intervention
 
 **Acceptance Criteria**:
 
-- Metrics display correctly with proper formatting
-- Confusion matrix visualizes TP/TN/FP/FN
-- Buttons navigate to correct pages
-- Real-time updates when metrics change
+- Metrics display correctly with proper formatting from automatic calculation
+- Confusion matrix visualizes TP/TN/FP/FN from ground truth comparison
+- Best iteration highlighted with F1 score
+- Real-time updates as automated iterations complete
+- Clear indication of convergence status
+- Training controls work (start/pause)
 
 ---
 
 ### Integration & E2E Tests
 
-- [ ] T060 Create end-to-end test tests/e2e/training-iteration.test.ts covering:
+- [ ] T060 Create end-to-end test tests/e2e/automated-training.test.ts covering:
   - Create persona and upload training data (prerequisites)
   - Click "Start Training" button
-  - Wait for iteration to generate outputs and judge them
-  - Verify "Review Decisions" button appears
-  - Navigate to review page
-  - Provide feedback on 50-200 decisions (simplified: just click Agree/Disagree for each)
-  - Verify metrics display after feedback complete
+  - Wait for AUTOMATED training to run multiple iterations (e.g., 3-5 iterations)
+  - Verify metrics are calculated automatically after each iteration (no human review)
+  - Verify prompts are refined automatically between iterations
+  - Verify training stops when F1 ≥ target OR max iterations reached
+  - Verify best iteration is identified with highest F1 score
+  - Optionally navigate to review page to view decisions (validation only, not required)
 
 **Acceptance Criteria**:
 
-- E2E test passes for complete training iteration
-- Outputs generated successfully
-- Judge evaluates correctly
-- Feedback interface works
-- Metrics calculated and displayed
+- E2E test passes for complete AUTOMATED training (multiple iterations)
+- Outputs generated successfully for each iteration
+- Judge evaluates correctly using current prompts
+- Metrics calculated AUTOMATICALLY from ground truth (no human review required)
+- Prompts refined automatically between iterations
+- Training converges or reaches max iterations
+- Best performing iteration tracked correctly
 
 ---
 
-## Phase 6: User Story 4 - AI-Assisted Judge Prompt Refinement (P2)
+## Phase 6: User Story 4 - AI-Assisted Prompt Refinement (P1)
 
-_System automatically refines judge prompt based on failure analysis_
+_System AUTOMATICALLY refines BOTH task prompt and judge prompt based on failure analysis after each iteration_
 
-**Phase Goal**: Implement LLM-based prompt refinement after each iteration
+**Phase Goal**: Implement AUTOMATIC LLM-based refinement of BOTH task and judge prompts using failure analysis (FP/FN cases)
 
 **Independent Test Criteria**:
 
-- After iteration with feedback, system analyzes false positives and false negatives
-- Prompt Engineer Model generates improved judge prompt with explanation
-- User can accept refined prompt or provide manual feedback
-- Next iteration uses refined prompt
-- E2E test: complete iteration → receive refined prompt → accept → start next iteration with new prompt
+- After each iteration, system analyzes false positives and false negatives from ground truth comparison
+- Prompt Engineer Model generates improved TASK PROMPT (to generate better outputs) AND JUDGE PROMPT (to evaluate more accurately)
+- Refined prompts are used automatically in next iteration (no user approval needed for automated training)
+- User can view prompt refinement history and rationale
+- E2E test: complete iteration → automatic refinement → next iteration with new prompts → verify F1 improves
 
 ---
 
-### Failure Analysis & Context Building
+### Failure Analysis & Context Building (from Ground Truth)
 
-- [x] T061 [P] Create test file tests/unit/failure-analysis.test.ts for analyzing iteration failures
+- [x] T061 [P] Create test file tests/unit/failure-analysis.test.ts for analyzing iteration failures FROM GROUND TRUTH
 
 - [x] T062 Create src/lib/failure-analysis.ts implementing:
   - analyzeIterationFailures(iterationId) → FailureAnalysisContext
-  - Extract false positives: judge agreed but human disagreed
-  - Extract false negatives: judge disagreed but human agreed
+  - Extract false positives: judge says "correct" BUT suggested_output ≠ expected_output (ground truth says wrong)
+  - Extract false negatives: judge says "incorrect" BUT suggested_output = expected_output (ground truth says right)
   - Limit to 5 examples each (for token efficiency)
-  - Extract correct examples: judge matched human
-  - Return context object with examples, current metrics, and task description
+  - Extract true positives (correct examples): judge matched ground truth
+  - Return context object with:
+    - FP cases: {input, suggested_output, expected_output, judge_reasoning} - to improve BOTH task prompt (generate better outputs) and judge prompt (catch these errors)
+    - FN cases: {input, suggested_output, expected_output, judge_reasoning} - to improve judge prompt (stop rejecting correct outputs)
+    - TP cases: {input, suggested_output, expected_output, judge_reasoning} - examples of what works well
+    - Current metrics (F1, precision, recall)
+    - Current task prompt and judge prompt
 
 **Acceptance Criteria**:
 
-- Correctly identifies FP and FN examples from judge/human decisions
-- Extracts correct examples for few-shot learning
+- Correctly identifies FP and FN examples from ground truth comparison (NOT human feedback)
+- Extracts TP examples for few-shot learning
 - Limits examples to reasonable count (5 each)
+- Context includes current prompts and metrics
 - > 80% code coverage
 
 ---
 
-### Prompt Refinement via LLM
+### Automatic Prompt Refinement via LLM (BOTH Task + Judge Prompts)
 
-- [x] T063 [P] Create test file tests/integration/prompt-refinement.test.ts with LLM mock
+- [x] T063 [P] Create test file tests/integration/prompt-refinement.test.ts with LLM mock for BOTH prompts
 
 - [x] T064 Create src/lib/prompt-engineer.ts implementing:
-  - refineJudgePrompt(failureContext, promptEngineerModel) → {improved_prompt, rationale, expected_impact}
-  - Build detailed context prompt with metrics, failure patterns, correct examples
-  - Call Prompt Engineer Model with chain-of-thought instructions
-  - Parse JSON response
-  - Handle LLM failures gracefully (return improved_prompt = null to fall back to manual refinement)
+  - refinePrompts(failureContext, promptEngineerModel) → {refined_task_prompt, refined_judge_prompt, rationale, expected_impact}
+  - Build detailed context with:
+    - Current task prompt and judge prompt
+    - FP cases (both outputs and judge reasoning)
+    - FN cases (judge reasoning)
+    - TP cases (examples that work well)
+    - Current metrics (F1, precision, recall)
+  - Call Prompt Engineer Model with instructions to refine BOTH prompts:
+    - Task Prompt refinement: "How can we modify the task prompt to generate outputs that better match expected_output?"
+    - Judge Prompt refinement: "How can we modify the judge prompt to better identify correct vs incorrect outputs?"
+  - Parse JSON response with both refined prompts and rationales
+  - Handle LLM failures gracefully (return null to keep current prompts)
 
 - [x] T065 [P] Create test file tests/unit/prompt-engineer-edge-cases.test.ts for LLM response parsing
 
 **Acceptance Criteria**:
 
-- Builds comprehensive failure context from iteration data
-- Calls LLM with clear instructions
-- Parses JSON response correctly
-- Provides rationale for changes
+- Builds comprehensive failure context from ground truth comparison
+- Calls LLM with clear instructions for BOTH prompts
+- Parses JSON response with task prompt + judge prompt + rationales
+- Provides rationale for changes to each prompt
+- Gracefully handles failures (keeps current prompts)
 - > 80% code coverage
 
 ---
 
-### Prompt Version Management
+### Prompt Version Management (Task + Judge Prompts)
 
-- [x] T066 [P] Create test file tests/unit/prompt-version-manager.test.ts for version tracking
+- [x] T066 [P] Create test file tests/unit/prompt-version-manager.test.ts for version tracking of BOTH prompts
 
 - [x] T067 Create src/lib/prompt-version-manager.ts implementing:
-  - storePromptVersion(personaId, iterationNumber, promptText, rationale, createdBy)
+  - storeTaskPromptVersion(personaId, versionNumber, promptText, rationale, createdBy) → TaskPromptVersion
+  - storeJudgePromptVersion(personaId, versionNumber, promptText, rationale, createdBy) → JudgePromptVersion
   - Only store if prompt significantly changed (not just formatting)
-  - Compare with previous prompt; skip if identical
-  - getPromptHistory(personaId) → Array<JudgePromptVersion>
-  - getPromptDiff(version1Id, version2Id) → {before, after, changes}
+  - Compare with previous version; skip if identical
+  - getTaskPromptHistory(personaId) → Array<TaskPromptVersion>
+  - getJudgePromptHistory(personaId) → Array<JudgePromptVersion>
+  - getPromptDiff(version1Id, version2Id, promptType) → {before, after, changes}
 
 **Acceptance Criteria**:
 
-- Stores only significant prompt changes (no formatting changes)
+- Stores only significant prompt changes (no formatting changes) for BOTH prompt types
 - Tracks which version was user-created vs AI-created
-- Can compare versions
+- Can compare versions for both task and judge prompts
+- Each iteration tagged with specific task_prompt_version_id and judge_prompt_version_id used
 - > 80% code coverage
 
 ---
