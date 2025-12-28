@@ -11,6 +11,11 @@ db/evaluation.db
 db/evaluation.db-wal
 db/evaluation.db-shm
 
+# E2E Test Database
+db/evaluation.e2e-test.db
+db/evaluation.e2e-test.db-wal
+db/evaluation.e2e-test.db-shm
+
 # Environment files
 .env
 .env.local

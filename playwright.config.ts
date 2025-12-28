@@ -16,5 +16,9 @@ export default defineConfig({
     command: "npm run dev -- --host 127.0.0.1 --port 3000",
     url: baseURL,
     reuseExistingServer: !process.env.CI,
+    env: {
+      // Use separate database for E2E tests to avoid affecting production data
+      EVAL_DB_PATH: "./db/evaluation.e2e-test.db",
+    },
   },
 });
