@@ -1,0 +1,173 @@
+openapi: 3.0.0
+info:
+  title: Bulk Evaluation API
+  version: 1.0.0
+paths:
+  /api/bulk/datasets:
+    post:
+      summary: Upload a new CSV dataset
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BulkDataset'
+  
+  /api/bulk/datasets/{id}:
+    get:
+      summary: Get dataset details and content
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Dataset details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BulkDataset'
+
+  /api/bulk/runs:
+    post:
+      summary: Start a new evaluation run
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRunRequest'
+      responses:
+        '201':
+          description: Run started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EvaluationRun'
+        '409':
+          description: Conflict (Another run active)
+
+  /api/bulk/runs/{id}:
+    get:
+      summary: Get run status and results (polling endpoint)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Run details
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EvaluationRun'
+                  - type: object
+                    properties:
+                      results:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/RowResult'
+
+  /api/bulk/runs/{id}/cancel:
+    post:
+      summary: Cancel an active run
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Run cancelled
+
+components:
+  schemas:
+    BulkDataset:
+      type: object
+      properties:
+        id:
+          type: string
+        filename:
+          type: string
+        row_count:
+          type: integer
+        csv_data:
+          type: array
+          items:
+            type: object
+          description: "Parsed CSV rows"
+        created_at:
+          type: integer
+
+    CreateRunRequest:
+      type: object
+      required:
+        - dataset_id
+        - system_prompt
+        - selected_models
+      properties:
+        dataset_id:
+          type: string
+        system_prompt:
+          type: string
+        temperature:
+          type: number
+        selected_models:
+          type: array
+          items:
+            type: string
+        selected_row_indices:
+          type: array
+          items:
+            type: integer
+          description: "If omitted/empty, run all rows (or API can enforce explicit selection)"
+
+    EvaluationRun:
+      type: object
+      properties:
+        id:
+          type: string
+        dataset_id:
+          type: string
+        status:
+          type: string
+          enum: [pending, running, completed, failed, cancelled]
+        total_rows:
+          type: integer
+        processed_rows:
+          type: integer
+        created_at:
+          type: integer
+
+    RowResult:
+      type: object
+      properties:
+        id:
+          type: string
+        original_row_index:
+          type: integer
+        model_id:
+          type: string
+        output_text:
+          type: string
+        status:
+          type: string
+        error_message:
+          type: string
+        prompt_used:
+          type: string
