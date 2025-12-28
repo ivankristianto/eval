@@ -1,146 +1,133 @@
 # AI Model Evaluation Framework
 
-Compare and evaluate multiple AI models (OpenAI, Anthropic, Google) against specific instructions and rubrics. Measure accuracy, execution time, and token usage to make data-driven decisions about which model to use for your tasks.
+A powerful, local-first framework designed to compare, evaluate, and train AI models (OpenAI, Anthropic, Google). Measure accuracy, latency, and token usage while refining model behavior through advanced judge personas and iterative training loops.
 
-## Features
+## 🚀 Features
 
-- **Multi-Model Comparison**: Run the same prompt across OpenAI (GPT-4), Anthropic (Claude), and Google (Gemini) simultaneously.
-- **Real-Time Metrics**: View execution time, input/output tokens, and cost estimates as they happen.
-- **Accuracy Scoring**:
-  - **Exact Match**: For strict output requirements.
-  - **Partial Credit**: For responses requiring specific key concepts.
-  - **Semantic Similarity**: AI-based scoring for open-ended responses.
-- **Evaluation History Dashboard**: Homepage shows history with status badges, empty states, and quick actions.
-- **Dedicated Evaluation Details**: View results on `/evaluations/[id]` with semantic status styling.
-- **Templates**: Save evaluation configurations to rerun benchmarks easily.
-- **Modern UI**: DaisyUI components, breadcrumbs, responsive navbar, and theme switching.
+- **Multi-Model Evaluation**: Run instructions against GPT-4, Claude 3, and Gemini 2.0 simultaneously.
+- **LLM-as-a-Judge**: Specialized iterative training system for judge personas.
+  - **Iterative Training**: Refine judge prompts based on human feedback until convergence (F1 ≥ 0.80).
+  - **Metrics**: Automated calculation of F1 Score, Precision, Recall, and Cohen's Kappa.
+  - **Human-in-the-Loop**: Mandatory human review for early iterations to ground AI judgment.
+- **Advanced Configuration**: Full control over System Prompts and Temperature (0.0 - 2.0).
+- **Accuracy Rubrics**:
+  - **Exact Match**: String-level identity check.
+  - **Partial Credit**: Keyword/concept detection.
+  - **Semantic Similarity**: LLM-based meaning alignment.
+- **Data Management**:
+  - **Templates**: Save and rerun benchmarks easily.
+  - **Bulk Actions**: Batch delete and advanced filtering (Date, Rubric, Score).
+  - **CSV Support**: Upload training pairs for judge training.
+- **Modern Developer Experience**:
+  - **Astro 5 SSR**: High-performance server-side rendering.
+  - **Tailwind CSS 4 & DaisyUI 5**: Beautiful, themeable interface (Silk, Luxury, Cupcake, Nord).
+  - **SQLite (better-sqlite3)**: Fast, ACID-compliant local persistence with encrypted API keys.
 
-## Tech Stack
+## 📂 Project Structure
 
-- **Runtime**: Node.js (v22+) or Bun (v1.3+)
-- **Framework**: Astro (SSR)
-- **Database**: SQLite (better-sqlite3)
-- **Styling**: Tailwind CSS + DaisyUI
-- **Testing**: Vitest, Playwright
+```text
+├── .storybook/          # Component documentation and isolated testing
+├── db/                  # Database management
+│   ├── migrations/      # SQL schema versioning
+│   ├── init.js          # DB initialization logic
+│   └── schema.sql       # Core schema (9+ tables for evaluations & training)
+├── public/              # Static assets
+├── specs/               # Detailed feature specifications and design docs
+├── src/                 # Application Source
+│   ├── components/      # UI Components
+│   │   ├── layout/      # Navbar, ThemeController, Breadcrumbs
+│   │   ├── ui/          # Atom components (Button, Input, Badge, Card)
+│   │   └── [Feature].astro # Specialized components (MetricCard, ConfusionMatrix)
+│   ├── lib/             # Business Logic
+│   │   ├── db/          # Database access layer (persona-db.ts, etc.)
+│   │   ├── evaluation/  # Evaluator orchestration and API clients
+│   │   ├── training/    # LLM-as-Judge training loop and prompt engineering
+│   │   ├── validation/  # Zod/Manual validation schemas
+│   │   └── utils/       # Encryption, formatting, and metrics helpers
+│   ├── pages/           # Astro routes & API endpoints
+│   │   ├── api/         # REST API implementation
+│   │   ├── evaluations/ # Result details
+│   │   └── personas/    # Judge training workflows
+│   └── styles/          # Tailwind CSS 4 configuration and global styles
+├── tests/               # Comprehensive Test Suite
+│   ├── unit/            # Logic & Metrics testing (Vitest)
+│   ├── integration/     # API & DB flow testing (Vitest)
+│   └── e2e/             # Workflow testing (Playwright)
+├── openapi.yml          # Full REST API Specification
+└── astro.config.mjs     # Astro & Vite configuration
+```
 
-## Quick Start
+## 🛠️ Quick Start
 
 ### Prerequisites
 
-- Node.js v22+ or Bun v1.3+
-- npm v9+
-- API Keys for OpenAI, Anthropic, or Google Gemini
+- **Node.js**: v22.0.0 or higher
+- **npm**: v10.0.0 or higher
+- **API Keys**: OpenAI, Anthropic, or Google Gemini
 
 ### Installation
 
-1. **Clone the repository**
-
+1. **Clone and Install**
    ```bash
    git clone <repository-url>
    cd eval-ai-models
+   npm install
    ```
 
-2. **Install dependencies**
-
-   ```bash
-   npm install # or
-   bun install
-   ```
-
-3. **Configure environment**
-
+2. **Environment Configuration**
    ```bash
    cp .env.example .env
-   # Edit .env and add your API keys
+   # Generate a 32-byte hex key for API key encryption
+   openssl rand -hex 32 # Add this to ENCRYPTION_KEY in .env
    ```
 
-4. **Initialize database**
-
+3. **Initialize Database**
    ```bash
-   npm run db:init # or
-   bun run db:init
+   npm run db:init
    ```
 
-5. **Start development server**
-
+4. **Run Development Server**
    ```bash
-   npm run dev # or
-   bun dev
+   npm run dev
    ```
+   The application will be available at [http://localhost:3000](http://localhost:3000).
 
-   Visit `http://localhost:3000` to start evaluating models.
-   The homepage shows evaluation history; details live at `/evaluations/[id]`.
+## 📖 API Documentation
 
-## Usage Guide
+The project uses a contract-first approach. The complete REST API documentation is maintained in:
+👉 **[openapi.yml](./openapi.yml)**
 
-### Running an Evaluation
+**Key API Modules:**
+- `/api/models`: Model configuration and encryption.
+- `/api/evaluate`: Core evaluation execution.
+- `/api/personas`: Judge persona management and training iterations.
+- `/api/templates`: Reusable benchmark configurations.
 
-1. Enter your **Instruction** (e.g., "Summarize this text...").
-2. Choose a **Rubric** (Exact Match, Partial Credit, or Semantic Similarity).
-3. Select the **Models** you want to compare.
-4. Click **Run Evaluation**.
-5. View results in the table below.
+## 🧪 Testing & Quality
 
-### Saving Templates
-
-After running an evaluation, click **Save as Template** to store the configuration. You can rerun this template later from the **Templates** page to track performance changes or test new models.
-
-## API Documentation
-
-The application exposes a REST API for programmatic access:
-
-- `POST /api/models`: Register a new model configuration.
-- `POST /api/evaluate`: Submit an instruction for evaluation.
-- `GET /api/evaluation-status`: Poll for real-time status updates.
-- `GET /api/results`: Retrieve detailed evaluation metrics.
-- `GET /api/templates`: List saved evaluation templates.
-
-See `specs/001-eval-ai-models/contracts/` for detailed API specifications.
-
-## Troubleshooting
-
-- **Database Errors**: If you encounter database issues, try resetting it (warning: clears all data):
-  ```bash
-  npm run db:reset # or
-  bun run db:reset
-  ```
-- **Port Conflicts**: If port 3000 is in use, run:
-  ```bash
-  npm run dev -- --port 3001 # or
-  bun dev -- --port 3001
-  ```
-- **API Key Issues**: Ensure your keys in `.env` are correct and have active quotas.
-
-## Run Tests
-
-Run the test suites to ensure everything is working:
+Strict adherence to **Constitution Principle II**: Tests are written first for all critical paths.
 
 ```bash
-npm test          # Unit and Integration tests
-npm run test:e2e  # End-to-End tests
-# or
-bun test
-bun run test:e2e
+npm test              # Run unit and integration tests
+npm run test:coverage # Verify >80% coverage on critical paths
+npm run test:e2e      # Run Playwright end-to-end tests
+npm run typecheck     # Verify TypeScript strict mode
 ```
 
-If Playwright browsers are missing, install them once:
+## 🎨 Development
 
+### UI Components (Storybook)
+We use Storybook for component-driven development.
 ```bash
-npx playwright install # or
-bunx playwright install
+npm run storybook
 ```
 
-## Linting & Formatting
-
+### Database Reset
+To wipe the local database and start fresh:
 ```bash
-npm run lint
-npm run lint:fix
-npm run format
-npm run format:check
+npm run db:reset
 ```
 
-ESLint enforces JSDoc on public functions/classes in TypeScript and Astro files.
-
-## License
+## 📄 License
 
 MIT
