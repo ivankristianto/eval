@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from "@storybook/html";
+import type { Meta, StoryObj } from "@storybook/html-vite";
 
 type CsvUploaderArgs = {
   personaId: string;
@@ -12,6 +12,7 @@ type CsvUploaderArgs = {
 
 const meta = {
   title: "Components/CSVUploader",
+  tags: ["autodocs"],
   args: {
     personaId: "persona-42",
     state: "idle",

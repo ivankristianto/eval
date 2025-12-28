@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from "@storybook/html";
+import type { Meta, StoryObj } from "@storybook/html-vite";
 
 type MetricCardArgs = {
   label: string;
@@ -11,6 +11,7 @@ type MetricCardArgs = {
 
 const meta = {
   title: "Components/MetricCard",
+  tags: ["autodocs"],
   args: {
     label: "F1 Score",
     value: 0.923,

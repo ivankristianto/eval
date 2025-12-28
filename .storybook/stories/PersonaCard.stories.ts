@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from "@storybook/html";
+import type { Meta, StoryObj } from "@storybook/html-vite";
 
 type PersonaCardArgs = {
   id: string;
@@ -14,6 +14,7 @@ type PersonaCardArgs = {
 
 const meta = {
   title: "Components/PersonaCard",
+  tags: ["autodocs"],
   args: {
     id: "persona-42",
     name: "Support Concierge",

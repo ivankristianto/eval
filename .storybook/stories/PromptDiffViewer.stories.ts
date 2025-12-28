@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from "@storybook/html";
+import type { Meta, StoryObj } from "@storybook/html-vite";
 
 type PromptDiffArgs = {
   beforePrompt: string;
@@ -10,6 +10,7 @@ type PromptDiffArgs = {
 
 const meta = {
   title: "Components/PromptDiffViewer",
+  tags: ["autodocs"],
   args: {
     beforePrompt: "Summarize the incident report.\nInclude next steps.\nKeep it brief.",
     afterPrompt:

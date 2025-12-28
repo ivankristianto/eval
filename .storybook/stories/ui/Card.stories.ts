@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/html';
+import type { Meta, StoryObj } from '@storybook/html-vite';
 
 type CardArgs = {
   title?: string;
@@ -8,6 +8,7 @@ type CardArgs = {
 
 const meta = {
   title: 'Components/UI/Card',
+  tags: ["autodocs"],
   args: {
     title: 'Evaluation summary',
     content: 'Accuracy: 92%. Tokens: 18,420. Runtime: 42s.',

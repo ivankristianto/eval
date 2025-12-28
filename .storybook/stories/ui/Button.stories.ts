@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/html';
+import type { Meta, StoryObj } from '@storybook/html-vite';
 
 type ButtonArgs = {
   label: string;
@@ -21,6 +21,7 @@ type ButtonArgs = {
 
 const meta = {
   title: 'Components/UI/Button',
+  tags: ["autodocs"],
   argTypes: {
     variant: {
       control: 'select',

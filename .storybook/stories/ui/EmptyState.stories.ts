@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/html';
+import type { Meta, StoryObj } from '@storybook/html-vite';
 
 type EmptyStateArgs = {
   title: string;
@@ -9,6 +9,7 @@ type EmptyStateArgs = {
 
 const meta = {
   title: 'Components/UI/EmptyState',
+  tags: ["autodocs"],
   args: {
     title: 'No evaluations yet',
     description: 'Create your first evaluation to compare model performance.',

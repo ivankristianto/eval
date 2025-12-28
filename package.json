@@ -37,10 +37,11 @@
   "devDependencies": {
     "@eslint/js": "^9.0.0",
     "@playwright/test": "^1.48.0",
-    "@storybook/addon-a11y": "^8.6.12",
-    "@storybook/addon-essentials": "^8.6.12",
-    "@storybook/html": "^8.6.12",
-    "@storybook/html-vite": "^8.6.12",
+    "@storybook/addon-a11y": "^10.1.10",
+    "@storybook/addon-docs": "^10.1.10",
+    "@storybook/addon-vitest": "^10.1.10",
+    "@storybook/html": "^10.1.10",
+    "@storybook/html-vite": "^10.1.10",
     "@tailwindcss/typography": "^0.5.19",
     "@types/better-sqlite3": "^7.6.0",
     "@types/node": "^22.0.0",
@@ -52,13 +53,15 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-astro": "^1.5.0",
     "eslint-plugin-jsdoc": "^61.5.0",
+    "eslint-plugin-storybook": "10.1.10",
     "globals": "^16.5.0",
     "playwright": "^1.48.0",
     "prettier": "^3.7.4",
     "prettier-plugin-astro": "^0.14.1",
-    "storybook": "^8.6.12",
+    "storybook": "^10.1.10",
     "typescript": "^5.6.0",
-    "vitest": "^4.0.16"
+    "vitest": "^4.0.16",
+    "@vitest/browser-playwright": "^4.0.16"
   },
   "engines": {
     "node": ">=22.0.0"

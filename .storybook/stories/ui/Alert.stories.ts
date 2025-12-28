@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/html';
+import type { Meta, StoryObj } from '@storybook/html-vite';
 
 type AlertArgs = {
   variant: 'info' | 'success' | 'warning' | 'error';
@@ -8,6 +8,7 @@ type AlertArgs = {
 
 const meta = {
   title: 'Components/UI/Alert',
+  tags: ["autodocs"],
   argTypes: {
     variant: {
       control: 'select',

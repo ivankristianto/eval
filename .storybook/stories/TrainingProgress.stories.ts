@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from "@storybook/html";
+import type { Meta, StoryObj } from "@storybook/html-vite";
 
 type TrainingProgressArgs = {
   status: "draft" | "training" | "trained" | "incomplete";
@@ -15,6 +15,7 @@ type TrainingProgressArgs = {
 
 const meta = {
   title: "Components/TrainingProgress",
+  tags: ["autodocs"],
   args: {
     status: "training",
     currentIteration: 4,

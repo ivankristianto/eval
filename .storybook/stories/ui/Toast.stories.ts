@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/html';
+import type { Meta, StoryObj } from '@storybook/html-vite';
 
 type ToastArgs = {
   variant: 'success' | 'info' | 'warning' | 'error';
@@ -9,6 +9,7 @@ type ToastArgs = {
 
 const meta = {
   title: 'Components/UI/Toast',
+  tags: ["autodocs"],
   parameters: {
     layout: 'fullscreen',
   },

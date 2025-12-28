@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from "@storybook/html";
+import type { Meta, StoryObj } from '@storybook/html-vite';
 
 type BulkActionsArgs = {
   count: number;
@@ -6,14 +6,15 @@ type BulkActionsArgs = {
 };
 
 const meta = {
-  title: "Components/BulkActions",
+  title: 'Components/BulkActions',
+  tags: ["autodocs"],
   args: {
     count: 3,
     visible: true,
   },
   argTypes: {
     visible: {
-      control: "boolean",
+      control: 'boolean',
     },
   },
 } satisfies Meta<BulkActionsArgs>;
@@ -24,8 +25,8 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {
   render: (args) => {
     const visibilityClasses = args.visible
-      ? "translate-y-0 opacity-100 pointer-events-auto"
-      : "translate-y-24 opacity-0 pointer-events-none";
+      ? 'translate-y-0 opacity-100 pointer-events-auto'
+      : 'translate-y-24 opacity-0 pointer-events-none';
     return `
       <div class="relative min-h-[180px] bg-base-200 rounded-box">
         <div

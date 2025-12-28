@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/html';
+import type { Meta, StoryObj } from '@storybook/html-vite';
 
 type BadgeArgs = {
   label: string;
@@ -19,6 +19,7 @@ type BadgeArgs = {
 
 const meta = {
   title: 'Components/UI/Badge',
+  tags: ["autodocs"],
   argTypes: {
     variant: {
       control: 'select',

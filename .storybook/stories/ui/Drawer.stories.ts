@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/html';
+import type { Meta, StoryObj } from '@storybook/html-vite';
 
 type DrawerArgs = {
   title: string;
@@ -9,6 +9,7 @@ type DrawerArgs = {
 
 const meta = {
   title: 'Components/UI/Drawer',
+  tags: ["autodocs"],
   parameters: {
     layout: 'fullscreen',
   },

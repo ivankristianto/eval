@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/html';
+import type { Meta, StoryObj } from '@storybook/html-vite';
 
 type BreadcrumbArgs = {
   items: Array<{ label: string; href?: string }>;
@@ -6,6 +6,7 @@ type BreadcrumbArgs = {
 
 const meta = {
   title: 'Components/UI/Breadcrumbs',
+  tags: ["autodocs"],
   args: {
     items: [
       { label: 'Home', href: '/' },

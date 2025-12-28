@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from "@storybook/html";
+import type { Meta, StoryObj } from "@storybook/html-vite";
 
 type PaginationArgs = {
   currentPage: number;
@@ -8,6 +8,7 @@ type PaginationArgs = {
 
 const meta = {
   title: "Components/Pagination",
+  tags: ["autodocs"],
   args: {
     currentPage: 3,
     totalPages: 12,

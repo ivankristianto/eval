@@ -1,8 +1,9 @@
-import type { Meta, StoryObj } from "@storybook/html";
+import type { Meta, StoryObj } from "@storybook/html-vite";
 import { renderPageShell } from "./pageShell";
 
 const meta = {
   title: "Pages/Personas/Review",
+  tags: ["autodocs"],
   parameters: {
     layout: "fullscreen",
   },

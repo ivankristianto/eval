@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/html';
+import type { Meta, StoryObj } from '@storybook/html-vite';
 
 type IconArgs = {
   name: 'success' | 'error' | 'warning' | 'info' | 'close';
@@ -7,6 +7,7 @@ type IconArgs = {
 
 const meta = {
   title: 'Components/UI/Icon',
+  tags: ["autodocs"],
   argTypes: {
     name: {
       control: 'select',

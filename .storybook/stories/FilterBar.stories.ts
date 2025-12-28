@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from "@storybook/html";
+import type { Meta, StoryObj } from "@storybook/html-vite";
 
 type FilterBarArgs = {
   fromDate?: string;
@@ -9,6 +9,7 @@ type FilterBarArgs = {
 
 const meta = {
   title: "Components/FilterBar",
+  tags: ["autodocs"],
   args: {
     fromDate: "",
     toDate: "",

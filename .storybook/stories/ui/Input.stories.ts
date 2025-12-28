@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/html';
+import type { Meta, StoryObj } from '@storybook/html-vite';
 
 type InputArgs = {
   label?: string;
@@ -14,6 +14,7 @@ type InputArgs = {
 
 const meta = {
   title: 'Components/UI/Input',
+  tags: ["autodocs"],
   argTypes: {
     type: {
       control: 'select',
