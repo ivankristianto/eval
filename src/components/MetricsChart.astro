@@ -33,11 +33,11 @@ const yMax = 1;
 
 // Scale functions
 function scaleX(iteration: number): number {
-  return padding.left + (iteration / xMax) * chartWidth;
+  return padding.left + ((iteration - xMin) / (xMax - xMin)) * chartWidth;
 }
 
 function scaleY(value: number): number {
-  return padding.top + chartHeight - (value / yMax) * chartHeight;
+  return padding.top + chartHeight - ((value - yMin) / (yMax - yMin)) * chartHeight;
 }
 
 // Generate path for line chart

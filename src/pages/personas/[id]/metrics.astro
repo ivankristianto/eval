@@ -61,24 +61,6 @@ const latestIterationWithMetrics = iterations
   .filter((i) => i.f1_score !== null)
   .sort((a, b) => b.iteration_number - a.iteration_number)[0];
 
-// Calculate trends (compare with previous iteration)
-const getPreviousIteration = (currentNum: number) => {
-  return iterations
-    .filter((i) => i.iteration_number < currentNum && i.f1_score !== null)
-    .sort((a, b) => b.iteration_number - a.iteration_number)[0];
-};
-
-function getTrend(
-  currentValue: number | null,
-  previousValue: number | null
-): 'up' | 'down' | 'stable' | undefined {
-  if (currentValue === null || previousValue === null) return undefined;
-
-  const diff = currentValue - previousValue;
-  if (Math.abs(diff) < 0.01) return 'stable';
-  return diff > 0 ? 'up' : 'down';
-}
-
 const latestMetrics = latestIterationWithMetrics
   ? {
       f1_score: latestIterationWithMetrics.f1_score,
@@ -94,22 +76,6 @@ const latestMetrics = latestIterationWithMetrics
       },
     }
   : null;
-
-const previousIteration = latestIterationWithMetrics
-  ? getPreviousIteration(latestIterationWithMetrics.iteration_number)
-  : null;
-
-// Calculate trends
-const f1Trend = getTrend(latestMetrics?.f1_score ?? null, previousIteration?.f1_score ?? null);
-const precisionTrend = getTrend(
-  latestMetrics?.precision ?? null,
-  previousIteration?.precision ?? null
-);
-const recallTrend = getTrend(latestMetrics?.recall ?? null, previousIteration?.recall ?? null);
-const accuracyTrend = getTrend(
-  latestMetrics?.accuracy ?? null,
-  previousIteration?.accuracy ?? null
-);
 
 // Helper function to get persona status variant
 function getPersonaStatusVariant(status: string): 'warning' | 'info' | 'success' | 'error' {
