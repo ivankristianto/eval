@@ -301,13 +301,7 @@ export interface ValidationResult {
 export interface CheckpointData {
   iterationNumber: number;
   evaluatedResultCount: number;
-  metricsSnapshot: {
-    f1_score: number;
-    precision: number;
-    recall: number;
-    accuracy: number;
-    cohens_kappa: number;
-  };
+  metricsSnapshot: MetricsResult;
   evaluatedResultIds: string[];
   currentPrompt: string;
 }

@@ -136,11 +136,19 @@ export class TrainingStateManager {
    *
    * @param sessionId - Session to pause
    * @param reason - Reason for pausing
+   * @throws Error if session not found or not in pausable state
    */
   pause(sessionId: string, reason: string): void {
     const state = getTrainingLoopState(sessionId, this.db);
     if (!state) {
       throw new Error(`Training session not found: ${sessionId}`);
+    }
+
+    // Validate that session can be paused
+    if (state.status !== 'in_progress') {
+      throw new Error(
+        `Cannot pause session in status '${state.status}'. Only 'in_progress' sessions can be paused.`
+      );
     }
 
     updateTrainingLoopState(
@@ -218,6 +226,18 @@ export class TrainingStateManager {
         typeof metricsSnapshot.recall !== 'number' ||
         typeof metricsSnapshot.accuracy !== 'number' ||
         typeof metricsSnapshot.cohens_kappa !== 'number'
+      ) {
+        return false;
+      }
+
+      // Verify confusion matrix exists and has required fields
+      if (
+        !metricsSnapshot.confusion_matrix ||
+        typeof metricsSnapshot.confusion_matrix !== 'object' ||
+        typeof metricsSnapshot.confusion_matrix.true_positives !== 'number' ||
+        typeof metricsSnapshot.confusion_matrix.true_negatives !== 'number' ||
+        typeof metricsSnapshot.confusion_matrix.false_positives !== 'number' ||
+        typeof metricsSnapshot.confusion_matrix.false_negatives !== 'number'
       ) {
         return false;
       }
