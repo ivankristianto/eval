@@ -169,33 +169,63 @@ A researcher can pause an ongoing training session and resume it later without l
 
 ### Functional Requirements
 
+#### Two-Phase Training Process
+
+The training system operates in **two distinct phases** with different workflows for iteration 1 versus iterations 2+:
+
+| Aspect | Iteration 1 (Human-Guided) | Iterations 2+ (Fully Automated) |
+|--------|---------------------------|--------------------------------|
+| **Human Review** | MANDATORY (100% required) | OPTIONAL (validation only) |
+| **Metrics Ground Truth** | Human Agree/Disagree votes | Automatic: expected_output vs suggested_output |
+| **Prompt Refinement** | Human-driven → LLM-assisted | Fully automatic LLM-driven |
+| **Blocking** | Blocks until review + acceptance complete | No blocking (continuous) |
+| **Correctness Algorithm** | N/A (human provides ground truth) | `is_correct = (suggested_output.trim() === expected_output.trim())` |
+
+**Iteration 1 Workflow** (Human-Guided):
+1. Generate outputs using Task Model + current Task Prompt
+2. Judge outputs using Judge Model + current Judge Prompt → decisions (correct/incorrect)
+3. **STOP** - Require 100% human review (Agree/Disagree on all decisions with reasoning)
+4. Calculate metrics from human votes (TP/TN/FP/FN based on human agreement with judge)
+5. Analyze human feedback patterns to identify systematic errors
+6. Use Prompt Engineer Model to refine **both** Task Prompt and Judge Prompt incorporating human insights
+7. Present refined prompts to user for **explicit acceptance**
+8. User accepts → proceed to iteration 2
+
+**Iterations 2+ Workflow** (Fully Automated):
+1. Generate outputs using Task Model + current Task Prompt
+2. Judge outputs using Judge Model + current Judge Prompt → decisions (correct/incorrect)
+3. **Automatically** calculate metrics from ground truth (expected_output vs suggested_output via exact match)
+4. Analyze FP/FN failure cases
+5. Use Prompt Engineer Model to refine **both** Task Prompt and Judge Prompt based on failures
+6. **Automatically** apply refined prompts (no user approval required)
+7. Check convergence: if F1 ≥ target OR iterations ≥ max, stop; else continue to next iteration
+
+> **Note**: See FR-007 (Metrics), FR-009 (Human Review), FR-010 (Prompt Refinement), and FR-015 (Training Loop) below for detailed requirements.
+
+---
+
 - **FR-001**: System MUST allow users to create a persona with task name, task description, initial task prompt, initial judge prompt, and selection of three different models: (a) Task Model (generates outputs), (b) Judge Model (evaluates outputs), and (c) Prompt Engineer Model (refines prompts). All three must be from different providers.
 - **FR-002**: System MUST validate that persona names are unique within the application.
 - **FR-003**: System MUST accept CSV files for training data upload with columns: input, expected_output. System MUST enforce minimum 10 pairs and maximum 200 pairs per training session.
 - **FR-004**: System MUST parse and store training pairs from uploaded CSV files, validating that both input and expected_output fields are present and non-empty, and enforcing pair count constraints (10-200 pairs).
 - **FR-005**: System MUST generate outputs for training pairs using the selected Task Model and current Task Prompt during each iteration.
 - **FR-006**: System MUST evaluate generated outputs using the current Judge Prompt and the selected Judge Model, collecting correct/incorrect decisions from the judge with reasoning.
-- **FR-007**: System MUST calculate metrics differently for iteration 1 vs iterations 2+:
-  - **Iteration 1 (Human-Guided Metrics)**: System MUST wait for mandatory human review completion before calculating metrics. Metrics are derived by comparing human's Agree/Disagree votes against the judge's original decisions:
-    - **Confusion Matrix**: TP = human agrees with correct decision; TN = human agrees with incorrect decision; FP = human disagrees with correct decision (judge was wrong); FN = human disagrees with incorrect decision (judge was wrong)
-    - **Formulas**: F1 score, precision, recall, Cohen's Kappa, and accuracy calculated from the confusion matrix
-    - **Timing**: Metrics calculation happens AFTER human review completes and is stored as iteration 1 metrics
-  - **Iteration 2+ (Automatic Metrics)**: System MUST calculate metrics automatically after each iteration completes. Metrics are derived by comparing judge decisions against ground truth (expected_output from training data):
-    - **Confusion Matrix**: TP = judge says correct AND suggested_output matches expected_output; TN = judge says incorrect AND suggested_output does not match expected_output; FP = judge says correct BUT suggested_output does not match expected_output; FN = judge says incorrect BUT suggested_output matches expected_output
-    - **Timing**: Metrics calculation is automatic and synchronous with iteration completion
-- **FR-009**:
-  - **Iteration 1 (REQUIRED)**: System MUST require human reviewers to vote "Agree" or "Disagree" on ALL judge decisions and provide reasoning. Training CANNOT proceed to iteration 2 without completing human review and accepting the refined prompt.
-  - **Iteration 2+ (OPTIONAL)**: System MAY allow human reviewers to vote "Agree" or "Disagree" with judge decisions for validation purposes. Human feedback is stored separately and displayed alongside automatic metrics for comparison. Human feedback is NOT required for training to proceed.
-- **FR-010**:
-  - **Iteration 1 (Human-Guided LLM Refinement)**: System MUST require human review of all judge decisions from iteration 1. After human completes review with Agree/Disagree votes and reasoning, system MUST use the Prompt Engineer Model to analyze human feedback patterns and generate improved Task Prompt AND Judge Prompt incorporating human insights. The refined prompts must be presented to user for acceptance before iteration 2.
-  - **Iteration 2+ (LLM-Driven Refinement)**: System MUST automatically generate improved Task Prompt and Judge Prompt based on iteration failures (FP/FN cases) and current metrics, using the Prompt Engineer Model. Both prompts are refined to maximize F1 score alignment with ground truth.
+- **FR-007** (Metrics Calculation): See [Two-Phase Training Process](#two-phase-training-process) above for complete metrics specification.
+  - **Iteration 1**: Metrics calculated from human Agree/Disagree votes (human as ground truth). Confusion matrix: TP/TN/FN/FP based on human agreement with judge decisions.
+  - **Iterations 2+**: Metrics calculated automatically via exact string match (`suggested_output.trim() === expected_output.trim()`). Confusion matrix: TP/TN/FP/FN based on correctness comparison.
+- **FR-009** (Human Review): See [Two-Phase Training Process](#two-phase-training-process) above.
+  - **Iteration 1**: MANDATORY - 100% human review required with Agree/Disagree votes and reasoning. Training blocks until complete.
+  - **Iteration 2+**: OPTIONAL - Human validation for comparison only. Does not block training.
+- **FR-010** (Prompt Refinement): See [Two-Phase Training Process](#two-phase-training-process) above.
+  - **Iteration 1**: Human-driven → LLM-assisted refinement of **both** Task Prompt and Judge Prompt. Requires explicit user acceptance.
+  - **Iteration 2+**: Fully automatic LLM-driven refinement of **both** Task Prompt and Judge Prompt. No user approval required.
 - **FR-011**: System MUST persist all iteration data including generated outputs, judge decisions, optional human feedback, calculated metrics, and prompt versions (both task and judge).
 - **FR-012**: System MUST display training progress dashboard showing metric trends across iterations.
 - **FR-013**: System MUST indicate when F1 score ≥ target (convergence achieved) and identify the best-performing iteration (highest F1 score).
 - **FR-014**: System MUST allow pausing an active training iteration and resuming it without data loss.
-- **FR-015**:
-  - **Iteration 1**: System MUST require mandatory human review completion and prompt refinement acceptance before proceeding to iteration 2.
-  - **Iteration 2+**: System MUST support automatic iteration until the target F1 score is achieved OR max_iterations is reached, refining prompts automatically between iterations without user intervention (using Prompt Engineer Model).
+- **FR-015** (Training Loop): See [Two-Phase Training Process](#two-phase-training-process) above.
+  - **Iteration 1**: Blocks until mandatory human review complete and refined prompts accepted.
+  - **Iteration 2+**: Fully automatic until F1 ≥ target OR max_iterations reached. No user intervention.
 - **FR-016**: System MUST store both Task Prompt and Judge Prompt versions for **significant changes only**. Significant changes are defined as text modifications that remain after whitespace normalization (collapsing multiple spaces, trimming leading/trailing whitespace, normalizing line endings to \n). Purely formatting changes (indentation, spacing) do NOT create new versions. Each iteration must be tagged with the specific prompt versions used. Examples:
   - **SIGNIFICANT**: "Evaluate correctness" → "Evaluate correctness and completeness"
   - **NOT SIGNIFICANT**: "Evaluate correctness" → "  Evaluate  correctness\n"

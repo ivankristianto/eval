@@ -166,21 +166,32 @@ _User can create a new persona with task description, initial judge prompt, and 
 
 ### Database Models & Validation
 
-- [x] T019 [P] Create test file tests/unit/persona-validator.test.ts for persona creation validation
+- [x] T019 [P] Create test file tests/unit/persona-validator.test.ts for persona creation validation:
+  - Test validation passes with all required fields (including both initial_task_prompt and initial_judge_prompt)
+  - Test validation fails when initial_task_prompt is empty string
+  - Test validation fails when initial_task_prompt is whitespace-only
+  - Test validation fails when initial_judge_prompt is empty string
+  - Test validation fails when initial_judge_prompt is whitespace-only
+  - Test validation fails when name is not unique
+  - Test validation fails when model IDs are from same provider
 
 - [x] T020 Create src/lib/persona-validator.ts implementing:
   - validatePersonaCreation(input) → ValidationResult
-  - Check required fields (name, task_description, initial_judge_prompt, model IDs)
+  - Check required fields (name, task_description, initial_task_prompt, initial_judge_prompt, model IDs)
+  - **Validate initial_task_prompt is non-empty after trimming (return error: "Task prompt cannot be empty")**
+  - **Validate initial_judge_prompt is non-empty after trimming (return error: "Judge prompt cannot be empty")**
   - Verify persona name is unique
   - Verify model IDs exist and are from different providers (via model-separation-validator)
   - Suggest error messages for each validation failure
 
 **Acceptance Criteria**:
 
-- Validates all required fields
+- Validates all required fields (name, task_description, initial_task_prompt, initial_judge_prompt, model IDs)
+- **EXPLICITLY validates that initial_task_prompt is non-empty (after trimming)**
+- **EXPLICITLY validates that initial_judge_prompt is non-empty (after trimming)**
 - Checks uniqueness of persona names
 - Integrates model separation validation
-- Clear, actionable error messages
+- Clear, actionable error messages including which prompt is missing
 - > 80% code coverage
 
 ---
@@ -512,11 +523,26 @@ _System runs TWO-PHASE training: (1) Iteration 1 with mandatory human review and
 
 - [x] T052 [P] Create test file tests/integration/metrics-calculation.test.ts with AUTOMATIC metrics flow (applies to ALL iterations)
 
-- [x] T053 Create src/lib/metrics-orchestrator.ts implementing:
-  - calculateIterationMetrics(iterationId) → MetricsResult (AUTOMATIC - no human review required)
+- [x] T053 Create src/lib/metrics-orchestrator.ts implementing TWO-PHASE metrics calculation:
+
+  **Phase A: Iteration 1 (Human-Guided Metrics)** - Called AFTER human review completes
+  - calculateIteration1Metrics(iterationId: 1, humanReviews) → MetricsResult
+  - Fetch all HumanReview records for iteration 1 (must be 100% complete)
+  - Build confusion matrix from human Agree/Disagree votes:
+    - TP: human_agrees AND judge_decision = "correct" (human affirms correct judgment)
+    - TN: human_agrees AND judge_decision = "incorrect" (human affirms incorrect judgment)
+    - FP: human_disagrees AND judge_decision = "correct" (human contradicts - judge was wrong)
+    - FN: human_disagrees AND judge_decision = "incorrect" (human contradicts - judge was wrong)
+  - Call calculateMetrics(confusionMatrix) from metrics.ts
+  - Store to iteration_metrics table with TP/TN/FP/FN counts
+  - Update persona with best_f1_score and best_iteration_number if F1 improved
+  - Return FP and FN cases (from human disagreements) for human-prompt-refiner analysis
+
+  **Phase B: Iterations 2+ (Automatic Ground Truth Metrics)** - Called automatically after iteration completes
+  - calculateIterationMetrics(iterationId: 2+) → MetricsResult (AUTOMATIC - no human review required)
   - Fetch all judge_decisions and corresponding training_pairs (to get expected_output)
-  - For each decision, determine ground truth correctness:
-    - is_correct = (suggested_output matches expected_output) - use semantic comparison or exact match
+  - For each decision, determine ground truth correctness via EXACT STRING MATCH:
+    - is_correct = (suggested_output.trim() === expected_output.trim())
   - Build confusion matrix:
     - TP: judge says "correct" AND is_correct = true
     - TN: judge says "incorrect" AND is_correct = false
@@ -525,16 +551,18 @@ _System runs TWO-PHASE training: (1) Iteration 1 with mandatory human review and
   - Call calculateMetrics(confusionMatrix) from metrics.ts
   - Store to iteration_metrics table with TP/TN/FP/FN counts
   - Update persona with best_f1_score and best_iteration_number if F1 improved
-  - Return FP and FN cases (failures) for prompt refinement analysis
+  - Return FP and FN cases (failures) for failure-analysis/prompt-engineer
 
 **Acceptance Criteria**:
 
-- Metrics calculate AUTOMATICALLY from ground truth comparison (expected_output vs suggested_output)
-- NO human review required for metrics calculation
-- Confusion matrix correctly identifies TP/TN/FP/FN based on ground truth
+- **Iteration 1**: Metrics calculate from human Agree/Disagree votes (human as ground truth)
+- **Iteration 1**: Metrics calculation BLOCKS until 100% human review complete
+- **Iterations 2+**: Metrics calculate AUTOMATICALLY from ground truth comparison (expected_output vs suggested_output)
+- **Iterations 2+**: Use EXACT STRING MATCH (after trim) for correctness comparison
+- Confusion matrix correctly identifies TP/TN/FP/FN based on phase-specific ground truth
 - Metrics stored with iteration_id FK
 - Persona best_f1_score and best_iteration_number updated if improved
-- FP/FN failure cases returned for prompt refinement
+- FP/FN failure cases returned for appropriate refiner (human-prompt-refiner for iteration 1, failure-analysis for iterations 2+)
 - > 80% code coverage
 
 ---

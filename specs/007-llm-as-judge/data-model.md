@@ -254,15 +254,30 @@ CREATE INDEX IF NOT EXISTS idx_iteration_metrics_kappa ON iteration_metrics(cohe
 **Attributes**:
 - `id`: Unique identifier
 - `iteration_id`: FK to iteration (1:1 relationship)
-- `true_positives`: Judge agreed, human agreed
-- `true_negatives`: Judge disagreed, human disagreed
-- `false_positives`: Judge agreed, human disagreed
-- `false_negatives`: Judge disagreed, human agreed
+- `true_positives`: Definition depends on iteration phase:
+  - **Iteration 1**: human_agrees AND judge_decision = "correct" (human affirms correct judgment)
+  - **Iterations 2+**: judge_decision = "correct" AND is_correct = true (where `is_correct = suggested_output.trim() === expected_output.trim()`)
+- `true_negatives`: Definition depends on iteration phase:
+  - **Iteration 1**: human_agrees AND judge_decision = "incorrect" (human affirms incorrect judgment)
+  - **Iterations 2+**: judge_decision = "incorrect" AND is_correct = false
+- `false_positives`: Definition depends on iteration phase:
+  - **Iteration 1**: human_disagrees AND judge_decision = "correct" (human contradicts - judge was wrong)
+  - **Iterations 2+**: judge_decision = "correct" BUT is_correct = false (judge wrong)
+- `false_negatives`: Definition depends on iteration phase:
+  - **Iteration 1**: human_disagrees AND judge_decision = "incorrect" (human contradicts - judge was wrong)
+  - **Iterations 2+**: judge_decision = "incorrect" BUT is_correct = true (judge wrong)
 - `precision`: TP / (TP + FP)
 - `recall`: TP / (TP + FN)
 - `f1_score`: 2 × (precision × recall) / (precision + recall)
 - `cohens_kappa`: Inter-rater reliability (target ≥ 0.66)
 - `accuracy`: (TP + TN) / Total
+
+**Correctness Algorithm (Iterations 2+)**:
+```
+is_correct = (suggested_output.trim() === expected_output.trim())
+```
+- Uses exact string match after trimming leading/trailing whitespace
+- No semantic similarity or fuzzy matching for MVP (deferred to Phase 3)
 
 ---
 
