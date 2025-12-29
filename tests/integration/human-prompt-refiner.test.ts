@@ -257,14 +257,16 @@ describe('Human-Driven Prompt Refiner Integration', () => {
       // Verify the stored version
       const storedVersion = db
         .prepare('SELECT * FROM judge_prompt_versions WHERE id = ?')
-        .get(versionId) as {
-          id: string;
-          persona_id: string;
-          iteration_number: number;
-          prompt_text: string;
-          improvement_rationale: string | null;
-          created_by: string;
-        } | undefined;
+        .get(versionId) as
+        | {
+            id: string;
+            persona_id: string;
+            iteration_number: number;
+            prompt_text: string;
+            improvement_rationale: string | null;
+            created_by: string;
+          }
+        | undefined;
 
       expect(storedVersion).toBeDefined();
       expect(storedVersion!.persona_id).toBe(personaId);
@@ -548,11 +550,11 @@ describe('Human-Driven Prompt Refiner Integration', () => {
           'SELECT * FROM judge_prompt_versions WHERE persona_id = ? ORDER BY iteration_number ASC'
         )
         .all(personaId) as Array<{
-          id: string;
-          iteration_number: number;
-          created_by: string;
-          prompt_text: string;
-        }>;
+        id: string;
+        iteration_number: number;
+        created_by: string;
+        prompt_text: string;
+      }>;
 
       expect(history).toHaveLength(2);
       expect(history[0].iteration_number).toBe(0);

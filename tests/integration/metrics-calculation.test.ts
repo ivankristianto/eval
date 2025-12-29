@@ -238,13 +238,15 @@ describe('Metrics Calculation Integration', () => {
       // Verify stored in database
       const storedMetrics = db
         .prepare('SELECT * FROM iteration_metrics WHERE iteration_id = ?')
-        .get('iteration-1') as {
-          iteration_id: string;
-          f1_score: number;
-          precision: number;
-          recall: number;
-          cohens_kappa: number;
-        } | undefined;
+        .get('iteration-1') as
+        | {
+            iteration_id: string;
+            f1_score: number;
+            precision: number;
+            recall: number;
+            cohens_kappa: number;
+          }
+        | undefined;
 
       expect(storedMetrics).toBeDefined();
       expect(storedMetrics!.iteration_id).toBe('iteration-1');
@@ -285,10 +287,12 @@ describe('Metrics Calculation Integration', () => {
       calculateIterationMetrics('iteration-1', db);
 
       // Verify persona updated
-      const persona = db.prepare('SELECT * FROM personas WHERE id = ?').get('persona-1') as {
-        best_f1_score: number | null;
-        best_f1_iteration: number | null;
-      } | undefined;
+      const persona = db.prepare('SELECT * FROM personas WHERE id = ?').get('persona-1') as
+        | {
+            best_f1_score: number | null;
+            best_f1_iteration: number | null;
+          }
+        | undefined;
 
       expect(persona!.best_f1_score).toBeDefined();
       expect(persona!.best_f1_iteration).toBe(1);

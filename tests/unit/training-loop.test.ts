@@ -249,7 +249,10 @@ describe('IterativeTrainingLoop', () => {
       const loop = new IterativeTrainingLoop(sessionId, personaId, db);
 
       // Mock judge results
-      const judgeResults: Array<{ judge_decision: 'agree' | 'disagree'; human_decision: 'agree' | 'disagree' }> = [
+      const judgeResults: Array<{
+        judge_decision: 'agree' | 'disagree';
+        human_decision: 'agree' | 'disagree';
+      }> = [
         { judge_decision: 'agree', human_decision: 'agree' },
         { judge_decision: 'agree', human_decision: 'disagree' },
         { judge_decision: 'disagree', human_decision: 'agree' },

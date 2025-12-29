@@ -8,7 +8,10 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type { APIContext } from 'astro';
 
-type StatusEndpointContext = APIContext<{ id: string; num: string }, Record<string, string | undefined>>;
+type StatusEndpointContext = APIContext<
+  { id: string; num: string },
+  Record<string, string | undefined>
+>;
 
 // Mock database module
 const mockDb = {

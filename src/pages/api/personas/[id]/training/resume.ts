@@ -245,17 +245,19 @@ export const POST: APIRoute = async ({ params }) => {
         // Get current metrics if available
         const metrics = db
           .prepare('SELECT * FROM iteration_metrics WHERE iteration_id = ?')
-          .get(iteration.id) as {
-          precision: number | null;
-          recall: number | null;
-          f1_score: number | null;
-          cohens_kappa: number | null;
-          accuracy: number | null;
-          true_positives: number | null;
-          true_negatives: number | null;
-          false_positives: number | null;
-          false_negatives: number | null;
-        } | undefined;
+          .get(iteration.id) as
+          | {
+              precision: number | null;
+              recall: number | null;
+              f1_score: number | null;
+              cohens_kappa: number | null;
+              accuracy: number | null;
+              true_positives: number | null;
+              true_negatives: number | null;
+              false_positives: number | null;
+              false_negatives: number | null;
+            }
+          | undefined;
 
         // Get evaluated decision IDs
         const evaluatedDecisions = db
@@ -361,9 +363,8 @@ export const POST: APIRoute = async ({ params }) => {
     }
 
     // Verify checkpoint integrity (only verify if we loaded from database, not if we just created)
-    const isCheckpointValid = checkpoint !== null
-      ? true
-      : stateManager.verifyCheckpointIntegrity(checkpointSessionId);
+    const isCheckpointValid =
+      checkpoint !== null ? true : stateManager.verifyCheckpointIntegrity(checkpointSessionId);
     if (!isCheckpointValid) {
       // Rollback state if checkpoint is invalid
       db.prepare(

@@ -4,7 +4,12 @@
  */
 
 import type { Database } from 'better-sqlite3';
-import type { MetricsResult, Persona, TrainingIteration, IterationMetrics } from '@src-types/training';
+import type {
+  MetricsResult,
+  Persona,
+  TrainingIteration,
+  IterationMetrics,
+} from '@src-types/training';
 
 /**
  * Example of a model output that the judge incorrectly agreed with (False Positive).
@@ -70,9 +75,9 @@ export async function analyzeIterationFailures(
   }
 
   // Fetch persona details
-  const persona = db
-    .prepare('SELECT * FROM personas WHERE id = ?')
-    .get(iteration.persona_id) as Persona | undefined;
+  const persona = db.prepare('SELECT * FROM personas WHERE id = ?').get(iteration.persona_id) as
+    | Persona
+    | undefined;
 
   if (!persona) {
     throw new Error(`Persona not found: ${iteration.persona_id}`);
@@ -131,13 +136,13 @@ export async function analyzeIterationFailures(
     `
     )
     .all(iterationId) as Array<{
-      judge_decision: 'agree' | 'disagree';
-      human_decision: 'agree' | 'disagree';
-      human_notes: string | null;
-      generated_output: string;
-      expected_output: string;
-      judge_reasoning: string | null;
-    }>;
+    judge_decision: 'agree' | 'disagree';
+    human_decision: 'agree' | 'disagree';
+    human_notes: string | null;
+    generated_output: string;
+    expected_output: string;
+    judge_reasoning: string | null;
+  }>;
 
   // Extract false positives (judge agreed, human disagreed)
   const falsePositives: FailureExample[] = decisionsWithReviews

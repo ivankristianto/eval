@@ -4,11 +4,11 @@
  * Displays uploaded training pairs and provides CSV upload interface
  */
 
-import Layout from '../../../../layouts/Layout.astro';
-import Breadcrumbs from '../../../../components/ui/Breadcrumbs.astro';
-import Badge from '../../../../components/ui/Badge.astro';
-import CSVUploader from '../../../../components/CSVUploader.astro';
-import PersonaTabs from '../../../../components/PersonaTabs.astro';
+import Layout from '@layouts/Layout.astro';
+import Breadcrumbs from '@components/ui/Breadcrumbs.astro';
+import Badge from '@components/ui/Badge.astro';
+import CSVUploader from '@components/CSVUploader.astro';
+import PersonaTabs from '@components/PersonaTabs.astro';
 import { getPersona } from '@lib/db/persona-db';
 
 const { id } = Astro.params;

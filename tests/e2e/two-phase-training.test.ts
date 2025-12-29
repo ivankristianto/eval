@@ -305,9 +305,7 @@ test.describe('Two-Phase Training Workflow', () => {
 
       // Submit feedback for all remaining decisions
       for (const decision of decisions) {
-        await request.get(
-          `/api/personas/${personaId}/iterations/1/feedback`
-        );
+        await request.get(`/api/personas/${personaId}/iterations/1/feedback`);
 
         // Skip if already has feedback
         // Submit "Agree" for each
@@ -436,7 +434,9 @@ test.describe('Two-Phase Training Workflow', () => {
       const iterationsResponse = await request.get(`/api/personas/${personaId}/iterations`);
       const iterations = await iterationsResponse.json();
 
-      const iteration2 = iterations.find((i: { iteration_number: number }) => i.iteration_number === 2);
+      const iteration2 = iterations.find(
+        (i: { iteration_number: number }) => i.iteration_number === 2
+      );
 
       if (iteration2) {
         // Should have both task_prompt_version_id and judge_prompt_version_id
@@ -521,7 +521,9 @@ test.describe('Two-Phase Training Workflow', () => {
       const iterations = await iterationsResponse.json();
 
       // Find iterations 2+
-      const laterIterations = iterations.filter((i: { iteration_number: number }) => i.iteration_number >= 2);
+      const laterIterations = iterations.filter(
+        (i: { iteration_number: number }) => i.iteration_number >= 2
+      );
 
       for (const iteration of laterIterations) {
         const metricsResponse = await request.get(

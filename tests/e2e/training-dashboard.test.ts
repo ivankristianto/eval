@@ -341,7 +341,9 @@ test.describe('Training Dashboard', () => {
           const response = await page.request.get(`/api/personas/${persona.id}/dashboard`);
           const data = await response.json();
 
-          const iterationWithMetrics = data.iterations.find((i: { f1_score: number | null }) => i.f1_score !== null);
+          const iterationWithMetrics = data.iterations.find(
+            (i: { f1_score: number | null }) => i.f1_score !== null
+          );
 
           if (iterationWithMetrics) {
             await page.goto(`/personas/${persona.id}/metrics`);
@@ -371,7 +373,9 @@ test.describe('Training Dashboard', () => {
           const response = await page.request.get(`/api/personas/${persona.id}/dashboard`);
           const data = await response.json();
 
-          const iterationWithMetrics = data.iterations.find((i: { f1_score: number | null }) => i.f1_score !== null);
+          const iterationWithMetrics = data.iterations.find(
+            (i: { f1_score: number | null }) => i.f1_score !== null
+          );
 
           if (iterationWithMetrics) {
             await page.goto(`/personas/${persona.id}/metrics`);
@@ -405,7 +409,9 @@ test.describe('Training Dashboard', () => {
           const response = await page.request.get(`/api/personas/${persona.id}/dashboard`);
           const data = await response.json();
 
-          const iterationWithMetrics = data.iterations.find((i: { f1_score: number | null }) => i.f1_score !== null);
+          const iterationWithMetrics = data.iterations.find(
+            (i: { f1_score: number | null }) => i.f1_score !== null
+          );
 
           if (iterationWithMetrics) {
             await page.goto(`/personas/${persona.id}/metrics`);
@@ -508,7 +514,9 @@ test.describe('Training Dashboard', () => {
 
           // Current iteration should match iterations count or be one less
           if (data.iterations.length > 0) {
-            const maxIterationNum = Math.max(...data.iterations.map((i: { iteration_num: number }) => i.iteration_num));
+            const maxIterationNum = Math.max(
+              ...data.iterations.map((i: { iteration_num: number }) => i.iteration_num)
+            );
             expect(data.persona.current_iteration).toBeGreaterThanOrEqual(maxIterationNum);
           }
         }

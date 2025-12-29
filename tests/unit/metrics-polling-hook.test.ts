@@ -4,7 +4,17 @@
  * Tests client-side polling logic for metrics status tracking
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi, beforeAll, afterAll, type Mock } from 'vitest';
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  afterEach,
+  vi,
+  beforeAll,
+  afterAll,
+  type Mock,
+} from 'vitest';
 import type { MetricsStatus } from '../../src/lib/metrics-polling-hook';
 
 describe('MetricsPollingController', () => {

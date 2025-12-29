@@ -76,30 +76,34 @@ export const GET: APIRoute = async ({ params }) => {
         LIMIT 1
       `
       )
-      .get(id) as (TrainingIteration & {
-        f1_score?: number;
-        precision?: number;
-        recall?: number;
-        cohens_kappa?: number;
-        accuracy?: number;
-        true_positives?: number;
-        true_negatives?: number;
-        false_positives?: number;
-        false_negatives?: number;
-      }) | undefined;
+      .get(id) as
+      | (TrainingIteration & {
+          f1_score?: number;
+          precision?: number;
+          recall?: number;
+          cohens_kappa?: number;
+          accuracy?: number;
+          true_positives?: number;
+          true_negatives?: number;
+          false_positives?: number;
+          false_negatives?: number;
+        })
+      | undefined;
 
     // Get training loop state if active
     const loopState = db
       .prepare(
         'SELECT * FROM training_loop_state WHERE persona_id = ? ORDER BY updated_at DESC LIMIT 1'
       )
-      .get(id) as {
-      session_id: string;
-      persona_id: string;
-      status: string;
-      current_iteration: number;
-      task_results_evaluated: number;
-    } | undefined;
+      .get(id) as
+      | {
+          session_id: string;
+          persona_id: string;
+          status: string;
+          current_iteration: number;
+          task_results_evaluated: number;
+        }
+      | undefined;
 
     // Build response
     const response: {

@@ -122,10 +122,12 @@ export const POST: APIRoute = async ({ params, request }) => {
     // Verify decision belongs to this iteration
     const decision = db
       .prepare('SELECT * FROM judge_decisions WHERE id = ? AND iteration_id = ?')
-      .get(decision_id, iteration.id) as {
-      id: string;
-      iteration_id: string;
-    } | undefined;
+      .get(decision_id, iteration.id) as
+      | {
+          id: string;
+          iteration_id: string;
+        }
+      | undefined;
 
     if (!decision) {
       logger.logApiRequest(

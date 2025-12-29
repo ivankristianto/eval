@@ -127,15 +127,15 @@ describe('Judge API Integration', () => {
       expect(decisionId).toBeTruthy();
 
       // Verify stored in database
-      const stored = db
-        .prepare('SELECT * FROM judge_decisions WHERE id = ?')
-        .get(decisionId) as {
-          iteration_id: string;
-          training_pair_id: string;
-          judge_decision: string;
-          judge_confidence: number | null;
-          judge_reasoning: string;
-        } | undefined;
+      const stored = db.prepare('SELECT * FROM judge_decisions WHERE id = ?').get(decisionId) as
+        | {
+            iteration_id: string;
+            training_pair_id: string;
+            judge_decision: string;
+            judge_confidence: number | null;
+            judge_reasoning: string;
+          }
+        | undefined;
 
       expect(stored).toBeDefined();
       expect(stored!.iteration_id).toBe('iteration-1');
@@ -151,12 +151,12 @@ describe('Judge API Integration', () => {
         reasoning: 'The answer is wrong',
       });
 
-      const stored = db
-        .prepare('SELECT * FROM judge_decisions WHERE id = ?')
-        .get(decisionId) as {
-          judge_decision: string;
-          judge_confidence: number | null;
-        } | undefined;
+      const stored = db.prepare('SELECT * FROM judge_decisions WHERE id = ?').get(decisionId) as
+        | {
+            judge_decision: string;
+            judge_confidence: number | null;
+          }
+        | undefined;
 
       expect(stored!.judge_decision).toBe('disagree');
       expect(stored!.judge_confidence).toBeNull();
@@ -176,11 +176,11 @@ describe('Judge API Integration', () => {
         // No result_id provided
       );
 
-      const stored = db
-        .prepare('SELECT * FROM judge_decisions WHERE id = ?')
-        .get(decisionId) as {
-          result_id: string | null;
-        } | undefined;
+      const stored = db.prepare('SELECT * FROM judge_decisions WHERE id = ?').get(decisionId) as
+        | {
+            result_id: string | null;
+          }
+        | undefined;
 
       expect(stored).toBeDefined();
       expect(stored!.result_id).toBeNull();
@@ -203,12 +203,12 @@ describe('Judge API Integration', () => {
       const decisionId = storeJudgeDecision(db, 'iteration-1', 'pair-1', '4', result);
 
       // Verify
-      const stored = db
-        .prepare('SELECT * FROM judge_decisions WHERE id = ?')
-        .get(decisionId) as {
-          judge_decision: string;
-          judge_reasoning: string;
-        } | undefined;
+      const stored = db.prepare('SELECT * FROM judge_decisions WHERE id = ?').get(decisionId) as
+        | {
+            judge_decision: string;
+            judge_reasoning: string;
+          }
+        | undefined;
 
       expect(stored).toBeDefined();
       expect(stored!.judge_decision).toBe(result.decision);

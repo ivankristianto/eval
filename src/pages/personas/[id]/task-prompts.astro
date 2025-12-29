@@ -3,12 +3,12 @@
  * Task Prompts History Page
  * Displays version history of task prompts with diff viewer
  */
-import Layout from '../../../layouts/Layout.astro';
+import Layout from '@layouts/Layout.astro';
 import { getDatabase } from '@lib/db';
-import Badge from '../../../components/ui/Badge.astro';
-import Breadcrumbs from '../../../components/ui/Breadcrumbs.astro';
-import PersonaTabs from '../../../components/PersonaTabs.astro';
-import PromptDiffViewer from '../../../components/PromptDiffViewer.astro';
+import Badge from '@components/ui/Badge.astro';
+import Breadcrumbs from '@components/ui/Breadcrumbs.astro';
+import PersonaTabs from '@components/PersonaTabs.astro';
+import PromptDiffViewer from '@components/PromptDiffViewer.astro';
 
 const { id } = Astro.params;
 

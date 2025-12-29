@@ -133,18 +133,20 @@ export const POST: APIRoute = async ({ params, request }) => {
       // Get the calculated metrics
       const metricsRow = db
         .prepare('SELECT * FROM iteration_metrics WHERE iteration_id = ?')
-        .get(iteration.id) as {
-        id: string;
-        f1_score: number | null;
-        precision: number | null;
-        recall: number | null;
-        cohens_kappa: number | null;
-        accuracy: number | null;
-        true_positives: number | null;
-        true_negatives: number | null;
-        false_positives: number | null;
-        false_negatives: number | null;
-      } | undefined;
+        .get(iteration.id) as
+        | {
+            id: string;
+            f1_score: number | null;
+            precision: number | null;
+            recall: number | null;
+            cohens_kappa: number | null;
+            accuracy: number | null;
+            true_positives: number | null;
+            true_negatives: number | null;
+            false_positives: number | null;
+            false_negatives: number | null;
+          }
+        | undefined;
 
       logger.info('Iteration 1 metrics calculated and training continued', {
         personaId: id,
@@ -197,18 +199,20 @@ export const POST: APIRoute = async ({ params, request }) => {
     // Check if metrics already calculated
     const existingMetrics = db
       .prepare('SELECT * FROM iteration_metrics WHERE iteration_id = ?')
-      .get(iteration.id) as {
-      id: string;
-      f1_score: number | null;
-      precision: number | null;
-      recall: number | null;
-      cohens_kappa: number | null;
-      accuracy: number | null;
-      true_positives: number;
-      true_negatives: number;
-      false_positives: number;
-      false_negatives: number;
-    } | undefined;
+      .get(iteration.id) as
+      | {
+          id: string;
+          f1_score: number | null;
+          precision: number | null;
+          recall: number | null;
+          cohens_kappa: number | null;
+          accuracy: number | null;
+          true_positives: number;
+          true_negatives: number;
+          false_positives: number;
+          false_negatives: number;
+        }
+      | undefined;
 
     let metrics: {
       f1_score: number;

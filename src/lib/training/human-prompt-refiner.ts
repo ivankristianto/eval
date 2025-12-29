@@ -189,11 +189,13 @@ export async function refineJudgePromptFromHumanFeedback(
     const response = await callModel(promptEngineerModelId, systemPrompt);
 
     // Parse JSON response
-    let parsedResponse: {
-      improved_prompt?: string | null;
-      rationale?: string;
-      expected_impact?: string;
-    } | undefined;
+    let parsedResponse:
+      | {
+          improved_prompt?: string | null;
+          rationale?: string;
+          expected_impact?: string;
+        }
+      | undefined;
     try {
       parsedResponse = JSON.parse(response);
     } catch {
@@ -284,12 +286,14 @@ function extractCommonPatterns(notes: string[]): string[] {
 /**
  * Identify systematic errors from disagree reviews.
  */
-function identifySystematicErrors(disagreeReviews: {
-  judge_decision: string;
-  human_notes?: string | null;
-  generated_output?: string;
-  expected_output?: string;
-}[]): string[] {
+function identifySystematicErrors(
+  disagreeReviews: {
+    judge_decision: string;
+    human_notes?: string | null;
+    generated_output?: string;
+    expected_output?: string;
+  }[]
+): string[] {
   const errors: string[] = [];
 
   // Check if judge is consistently too lenient (agrees with wrong outputs)
@@ -318,11 +322,13 @@ function identifySystematicErrors(disagreeReviews: {
 /**
  * Identify edge cases that the judge missed.
  */
-function identifyMissedEdgeCases(disagreeReviews: {
-  human_notes?: string | null;
-  generated_output?: string;
-  expected_output?: string;
-}[]): string[] {
+function identifyMissedEdgeCases(
+  disagreeReviews: {
+    human_notes?: string | null;
+    generated_output?: string;
+    expected_output?: string;
+  }[]
+): string[] {
   const edgeCases: Set<string> = new Set();
 
   for (const review of disagreeReviews) {
@@ -365,11 +371,13 @@ function identifyMissedEdgeCases(disagreeReviews: {
 /**
  * Extract key insights from all reviews (both agree and disagree).
  */
-function extractKeyInsights(reviews: {
-  human_decision: 'agree' | 'disagree';
-  human_notes?: string | null;
-  judge_reasoning?: string | null;
-}[]): string[] {
+function extractKeyInsights(
+  reviews: {
+    human_decision: 'agree' | 'disagree';
+    human_notes?: string | null;
+    judge_reasoning?: string | null;
+  }[]
+): string[] {
   const insights: string[] = [];
 
   // Calculate agreement rate

@@ -39,7 +39,9 @@ export const POST: APIRoute = async ({ params }) => {
     const db = getDatabase();
 
     // Verify persona exists
-    const persona = db.prepare('SELECT * FROM personas WHERE id = ?').get(id) as Persona | undefined;
+    const persona = db.prepare('SELECT * FROM personas WHERE id = ?').get(id) as
+      | Persona
+      | undefined;
     if (!persona) {
       logger.logApiRequest(
         'POST',

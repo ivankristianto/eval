@@ -249,7 +249,9 @@ describe('Training Data Display', () => {
 
       expect(pairs.length).toBeGreaterThanOrEqual(2); // "What is TypeScript?" and "Define TypeScript generics"
       const searchTermLower = searchTerm.toLowerCase();
-      expect(pairs.every((p) => (p as TrainingPairRow).input.toLowerCase().includes(searchTermLower))).toBe(true);
+      expect(
+        pairs.every((p) => (p as TrainingPairRow).input.toLowerCase().includes(searchTermLower))
+      ).toBe(true);
     });
 
     it('should return all pairs when search is empty', () => {

@@ -101,21 +101,21 @@ export const GET: APIRoute = async ({ params }) => {
       `
       )
       .all(iteration.id) as Array<{
-        decision_id: string;
-        review_id: string | null;
-        training_pair_id: string;
-        input: string;
-        expected_output: string;
-        generated_output: string;
-        judge_decision: 'agree' | 'disagree';
-        judge_confidence: number | null;
-        judge_reasoning: string | null;
-        decision_created_at: string;
-        human_decision: 'agree' | 'disagree' | null;
-        human_confidence: number | null;
-        human_notes: string | null;
-        review_created_at: string | null;
-      }>;
+      decision_id: string;
+      review_id: string | null;
+      training_pair_id: string;
+      input: string;
+      expected_output: string;
+      generated_output: string;
+      judge_decision: 'agree' | 'disagree';
+      judge_confidence: number | null;
+      judge_reasoning: string | null;
+      decision_created_at: string;
+      human_decision: 'agree' | 'disagree' | null;
+      human_confidence: number | null;
+      human_notes: string | null;
+      review_created_at: string | null;
+    }>;
 
     // Format response
     const formattedDecisions = decisions.map((d) => ({
@@ -132,15 +132,16 @@ export const GET: APIRoute = async ({ params }) => {
         reasoning: d.judge_reasoning,
         created_at: d.decision_created_at,
       },
-      human_review: d.review_id !== null
-        ? {
-            id: d.review_id,
-            decision: d.human_decision as 'agree' | 'disagree',
-            confidence: d.human_confidence,
-            notes: d.human_notes,
-            created_at: d.review_created_at ?? d.decision_created_at,
-          }
-        : null,
+      human_review:
+        d.review_id !== null
+          ? {
+              id: d.review_id,
+              decision: d.human_decision as 'agree' | 'disagree',
+              confidence: d.human_confidence,
+              notes: d.human_notes,
+              created_at: d.review_created_at ?? d.decision_created_at,
+            }
+          : null,
     }));
 
     // Count reviewed vs pending

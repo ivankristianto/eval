@@ -119,12 +119,12 @@ describe('Human Review API', () => {
         `
         )
         .all(iterationId) as Array<{
-          decision_id: string;
-          input: string;
-          expected_output: string;
-          generated_output: string;
-          judge_decision: string;
-        }>;
+        decision_id: string;
+        input: string;
+        expected_output: string;
+        generated_output: string;
+        judge_decision: string;
+      }>;
 
       expect(decisions).toHaveLength(1);
       expect(decisions[0].decision_id).toBe(decisionId);
@@ -157,10 +157,10 @@ describe('Human Review API', () => {
         `
         )
         .all(iterationId) as Array<{
-          decision_id: string;
-          review_id: string | null;
-          human_decision: string | null;
-        }>;
+        decision_id: string;
+        review_id: string | null;
+        human_decision: string | null;
+      }>;
 
       expect(decisions[0].review_id).toBe(reviewId);
       expect(decisions[0].human_decision).toBe('agree');
@@ -179,10 +179,10 @@ describe('Human Review API', () => {
         `
         )
         .all(iterationId) as Array<{
-          decision_id: string;
-          review_id: string | null;
-          human_decision: string | null;
-        }>;
+        decision_id: string;
+        review_id: string | null;
+        human_decision: string | null;
+      }>;
 
       expect(decisions[0].review_id).toBeNull();
     });
@@ -201,12 +201,14 @@ describe('Human Review API', () => {
       `
       ).run(reviewId, decisionId, 'agree', 0.9, 'Looks good', new Date().toISOString());
 
-      const review = db.prepare('SELECT * FROM human_reviews WHERE id = ?').get(reviewId) as {
-        judge_decision_id: string;
-        human_decision: string;
-        human_confidence: number | null;
-        human_notes: string | null;
-      } | undefined;
+      const review = db.prepare('SELECT * FROM human_reviews WHERE id = ?').get(reviewId) as
+        | {
+            judge_decision_id: string;
+            human_decision: string;
+            human_confidence: number | null;
+            human_notes: string | null;
+          }
+        | undefined;
 
       expect(review).toBeDefined();
       expect(review!.judge_decision_id).toBe(decisionId);
@@ -239,9 +241,11 @@ describe('Human Review API', () => {
 
       const iteration = db
         .prepare('SELECT * FROM training_iterations WHERE id = ?')
-        .get(iterationId) as {
-          pairs_reviewed_by_human: number;
-        } | undefined;
+        .get(iterationId) as
+        | {
+            pairs_reviewed_by_human: number;
+          }
+        | undefined;
 
       expect(iteration!.pairs_reviewed_by_human).toBe(1);
     });
@@ -266,10 +270,12 @@ describe('Human Review API', () => {
       `
       ).run('disagree', 'Changed my mind', reviewId);
 
-      const review = db.prepare('SELECT * FROM human_reviews WHERE id = ?').get(reviewId) as {
-        human_decision: string;
-        human_notes: string | null;
-      } | undefined;
+      const review = db.prepare('SELECT * FROM human_reviews WHERE id = ?').get(reviewId) as
+        | {
+            human_decision: string;
+            human_notes: string | null;
+          }
+        | undefined;
 
       expect(review!.human_decision).toBe('disagree');
       expect(review!.human_notes).toBe('Changed my mind');

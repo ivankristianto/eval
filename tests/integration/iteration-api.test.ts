@@ -91,11 +91,13 @@ describe('Training Iteration API', () => {
       // Verify iteration created
       const iteration = db
         .prepare('SELECT * FROM training_iterations WHERE id = ?')
-        .get(iterationId) as {
-          persona_id: string;
-          iteration_number: number;
-          status: string;
-        } | undefined;
+        .get(iterationId) as
+        | {
+            persona_id: string;
+            iteration_number: number;
+            status: string;
+          }
+        | undefined;
 
       expect(iteration).toBeDefined();
       expect(iteration!.persona_id).toBe('persona-1');
@@ -130,10 +132,12 @@ describe('Training Iteration API', () => {
 
       const state = db
         .prepare('SELECT * FROM training_loop_state WHERE session_id = ?')
-        .get(sessionId) as {
-          status: string;
-          total_iterations: number;
-        } | undefined;
+        .get(sessionId) as
+        | {
+            status: string;
+            total_iterations: number;
+          }
+        | undefined;
 
       expect(state).toBeDefined();
       expect(state!.status).toBe('in_progress');
@@ -181,9 +185,11 @@ describe('Training Iteration API', () => {
 
       const iteration2 = db
         .prepare('SELECT * FROM training_iterations WHERE id = ?')
-        .get(iteration2Id) as {
-          iteration_number: number;
-        } | undefined;
+        .get(iteration2Id) as
+        | {
+            iteration_number: number;
+          }
+        | undefined;
 
       expect(iteration2).toBeDefined();
       expect(iteration2!.iteration_number).toBe(2);
@@ -272,12 +278,14 @@ describe('Training Iteration API', () => {
           LIMIT 1
         `
         )
-        .get('persona-1') as {
-          iteration_number: number;
-          status: string;
-          f1_score: number;
-          pairs_reviewed_by_human: number;
-        } | undefined;
+        .get('persona-1') as
+        | {
+            iteration_number: number;
+            status: string;
+            f1_score: number;
+            pairs_reviewed_by_human: number;
+          }
+        | undefined;
 
       expect(status).toBeDefined();
       expect(status!.iteration_number).toBe(1);
@@ -309,12 +317,14 @@ describe('Training Iteration API', () => {
 
       const status = db
         .prepare('SELECT * FROM training_iterations WHERE id = ?')
-        .get(iterationId) as {
-          iteration_number: number;
-          status: string;
-          pairs_reviewed_by_human: number;
-          total_pairs_evaluated: number;
-        } | undefined;
+        .get(iterationId) as
+        | {
+            iteration_number: number;
+            status: string;
+            pairs_reviewed_by_human: number;
+            total_pairs_evaluated: number;
+          }
+        | undefined;
 
       expect(status).toBeDefined();
       expect(status!.status).toBe('in_progress');

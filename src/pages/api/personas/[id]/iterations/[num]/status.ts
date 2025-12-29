@@ -83,7 +83,9 @@ export const GET: APIRoute = async ({ params, request: _request }) => {
     const db = getDatabase();
 
     // Verify persona exists
-    const persona = db.prepare('SELECT * FROM personas WHERE id = ?').get(id) as Persona | undefined;
+    const persona = db.prepare('SELECT * FROM personas WHERE id = ?').get(id) as
+      | Persona
+      | undefined;
     if (!persona) {
       logger.logApiRequest(
         'GET',
@@ -103,12 +105,14 @@ export const GET: APIRoute = async ({ params, request: _request }) => {
            AND tls.current_iteration = ti.iteration_number
          WHERE ti.persona_id = ? AND ti.iteration_number = ?`
       )
-      .get(id, iterationNumber) as (TrainingIteration & {
-        loop_status?: string;
-        task_results_evaluated?: number;
-        completed_at?: string;
-        started_at?: string;
-      }) | undefined;
+      .get(id, iterationNumber) as
+      | (TrainingIteration & {
+          loop_status?: string;
+          task_results_evaluated?: number;
+          completed_at?: string;
+          started_at?: string;
+        })
+      | undefined;
 
     if (!iterationRecord) {
       logger.logApiRequest(
@@ -185,17 +189,19 @@ export const GET: APIRoute = async ({ params, request: _request }) => {
         // Get calculated metrics
         const metrics = db
           .prepare('SELECT * FROM iteration_metrics WHERE iteration_id = ?')
-          .get(iterationRecord.id) as {
-          f1_score: number;
-          precision: number;
-          recall: number;
-          cohens_kappa: number;
-          accuracy: number;
-          true_positives: number;
-          true_negatives: number;
-          false_positives: number;
-          false_negatives: number;
-        } | undefined;
+          .get(iterationRecord.id) as
+          | {
+              f1_score: number;
+              precision: number;
+              recall: number;
+              cohens_kappa: number;
+              accuracy: number;
+              true_positives: number;
+              true_negatives: number;
+              false_positives: number;
+              false_negatives: number;
+            }
+          | undefined;
 
         if (metrics) {
           response.status = 'completed';

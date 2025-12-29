@@ -25,12 +25,7 @@
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { getDatabase } from '@lib/db';
-import {
-  createPersona,
-  getPersona,
-  updatePersona,
-  listPersonas,
-} from '@lib/db/persona-db';
+import { createPersona, getPersona, updatePersona, listPersonas } from '@lib/db/persona-db';
 
 describe('Persona State Machine', () => {
   let db: ReturnType<typeof getDatabase>;

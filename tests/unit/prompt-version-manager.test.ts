@@ -78,9 +78,9 @@ describe('Prompt Version Manager', () => {
     expect(versionId).toBeDefined();
 
     // Verify stored
-    const stored = db
-      .prepare('SELECT * FROM judge_prompt_versions WHERE id = ?')
-      .get(versionId) as JudgePromptVersionRecord | undefined;
+    const stored = db.prepare('SELECT * FROM judge_prompt_versions WHERE id = ?').get(versionId) as
+      | JudgePromptVersionRecord
+      | undefined;
 
     expect(stored).toBeDefined();
     expect(stored!.persona_id).toBe(personaId);

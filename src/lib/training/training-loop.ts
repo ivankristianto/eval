@@ -11,12 +11,12 @@ import type {
   Persona,
   TrainingPair,
   TrainingIteration,
-  TrainingLoopState
+  TrainingLoopState,
 } from '@src-types/training';
 import type {
   FailureAnalysisContext,
   FailureExample,
-  FalseNegativeExample
+  FalseNegativeExample,
 } from './failure-analysis';
 import { calculateMetrics, buildConfusionMatrix } from '@lib/evaluation/metrics';
 import { calculateIterationMetricsFromGroundTruth } from '@lib/evaluation/metrics-orchestrator';
@@ -93,9 +93,9 @@ export class IterativeTrainingLoop {
   async execute(_taskResultIds: string[]): Promise<void> {
     try {
       // Fetch persona details
-      const persona = this.db
-        .prepare('SELECT * FROM personas WHERE id = ?')
-        .get(this.personaId) as Persona | undefined;
+      const persona = this.db.prepare('SELECT * FROM personas WHERE id = ?').get(this.personaId) as
+        | Persona
+        | undefined;
 
       if (!persona) {
         throw new TrainingStateError(`Persona not found: ${this.personaId}`);
@@ -418,9 +418,9 @@ export class IterativeTrainingLoop {
     }
 
     // Fetch persona and iteration for model IDs
-    const persona = this.db
-      .prepare('SELECT * FROM personas WHERE id = ?')
-      .get(this.personaId) as Persona | undefined;
+    const persona = this.db.prepare('SELECT * FROM personas WHERE id = ?').get(this.personaId) as
+      | Persona
+      | undefined;
 
     const iteration = this.db
       .prepare('SELECT * FROM training_iterations WHERE id = ?')
@@ -689,21 +689,23 @@ Respond with a JSON object containing:
         WHERE ti.id = ?
       `
       )
-      .get(iterationId) as {
-        status: string;
-        iteration_number: number;
-        total_pairs_evaluated: number;
-        judge_prompt_text: string;
-        f1_score: number | null;
-        precision: number | null;
-        recall: number | null;
-        cohens_kappa: number | null;
-        accuracy: number | null;
-        true_positives: number | null;
-        true_negatives: number | null;
-        false_positives: number | null;
-        false_negatives: number | null;
-      } | undefined;
+      .get(iterationId) as
+      | {
+          status: string;
+          iteration_number: number;
+          total_pairs_evaluated: number;
+          judge_prompt_text: string;
+          f1_score: number | null;
+          precision: number | null;
+          recall: number | null;
+          cohens_kappa: number | null;
+          accuracy: number | null;
+          true_positives: number | null;
+          true_negatives: number | null;
+          false_positives: number | null;
+          false_negatives: number | null;
+        }
+      | undefined;
 
     if (!iteration) {
       return;
@@ -1252,9 +1254,9 @@ Respond with a JSON object containing:
    */
   private async refinePromptsBasedOnHumanFeedback(iterationId: string): Promise<void> {
     // Get persona details
-    const persona = this.db
-      .prepare('SELECT * FROM personas WHERE id = ?')
-      .get(this.personaId) as Persona | undefined;
+    const persona = this.db.prepare('SELECT * FROM personas WHERE id = ?').get(this.personaId) as
+      | Persona
+      | undefined;
 
     if (!persona) {
       return;
@@ -1326,17 +1328,19 @@ Respond with a JSON object containing:
     // Get metrics for this iteration
     const metricsRow = this.db
       .prepare('SELECT * FROM iteration_metrics WHERE iteration_id = ?')
-      .get(iterationId) as {
-      f1_score: number | null;
-      precision: number | null;
-      recall: number | null;
-      cohens_kappa: number | null;
-      accuracy: number | null;
-      true_positives: number | null;
-      true_negatives: number | null;
-      false_positives: number | null;
-      false_negatives: number | null;
-    } | undefined;
+      .get(iterationId) as
+      | {
+          f1_score: number | null;
+          precision: number | null;
+          recall: number | null;
+          cohens_kappa: number | null;
+          accuracy: number | null;
+          true_positives: number | null;
+          true_negatives: number | null;
+          false_positives: number | null;
+          false_negatives: number | null;
+        }
+      | undefined;
 
     const metrics = {
       f1_score: metricsRow?.f1_score ?? 0,

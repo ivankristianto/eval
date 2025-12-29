@@ -90,16 +90,18 @@ describe('Dashboard API Integration Tests', () => {
   describe('GET /api/personas/[id]/dashboard', () => {
     it('should return dashboard data with no iterations', () => {
       // Fetch persona from DB to verify structure
-      const persona = db.prepare('SELECT * FROM personas WHERE id = ?').get(personaId) as {
-        id: string;
-        name: string;
-        status: string;
-        target_f1_score: number;
-        max_iterations: number;
-        current_iteration: number;
-        best_f1_score: number | null;
-        best_f1_iteration: number | null;
-      } | undefined;
+      const persona = db.prepare('SELECT * FROM personas WHERE id = ?').get(personaId) as
+        | {
+            id: string;
+            name: string;
+            status: string;
+            target_f1_score: number;
+            max_iterations: number;
+            current_iteration: number;
+            best_f1_score: number | null;
+            best_f1_iteration: number | null;
+          }
+        | undefined;
 
       expect(persona).toBeDefined();
       expect(persona!.name).toBe('Test Judge Persona');
@@ -169,12 +171,14 @@ describe('Dashboard API Integration Tests', () => {
       ).run(0.82, 3, 3, personaId);
 
       // Fetch persona
-      const persona = db.prepare('SELECT * FROM personas WHERE id = ?').get(personaId) as {
-        best_f1_score: number | null;
-        best_f1_iteration: number | null;
-        current_iteration: number;
-        target_f1_score: number;
-      } | undefined;
+      const persona = db.prepare('SELECT * FROM personas WHERE id = ?').get(personaId) as
+        | {
+            best_f1_score: number | null;
+            best_f1_iteration: number | null;
+            current_iteration: number;
+            target_f1_score: number;
+          }
+        | undefined;
 
       expect(persona!.best_f1_score).toBe(0.82);
       expect(persona!.best_f1_iteration).toBe(3);
@@ -198,13 +202,13 @@ describe('Dashboard API Integration Tests', () => {
       `
         )
         .all(personaId) as Array<{
-          iteration_number: number;
-          f1_score: number;
-          precision: number;
-          recall: number;
-          cohens_kappa: number;
-          calculated_at: string;
-        }>;
+        iteration_number: number;
+        f1_score: number;
+        precision: number;
+        recall: number;
+        cohens_kappa: number;
+        calculated_at: string;
+      }>;
 
       expect(metricsHistory).toHaveLength(3);
       expect(metricsHistory[0].f1_score).toBe(0.65);
@@ -267,10 +271,12 @@ describe('Dashboard API Integration Tests', () => {
       `
       ).run(personaId);
 
-      const persona = db.prepare('SELECT * FROM personas WHERE id = ?').get(personaId) as {
-        best_f1_score: number | null;
-        target_f1_score: number;
-      } | undefined;
+      const persona = db.prepare('SELECT * FROM personas WHERE id = ?').get(personaId) as
+        | {
+            best_f1_score: number | null;
+            target_f1_score: number;
+          }
+        | undefined;
 
       const convergenceAchieved = (persona!.best_f1_score ?? 0) >= persona!.target_f1_score;
       expect(convergenceAchieved).toBe(true);
@@ -308,11 +314,13 @@ describe('Dashboard API Integration Tests', () => {
         LIMIT 1
       `
         )
-        .get(personaId) as {
-        status: string;
-        total_pairs_evaluated: number;
-        completed_at: string | null;
-      } | undefined;
+        .get(personaId) as
+        | {
+            status: string;
+            total_pairs_evaluated: number;
+            completed_at: string | null;
+          }
+        | undefined;
 
       expect(latestIteration!.status).toBe('in_progress');
       expect(latestIteration!.total_pairs_evaluated).toBe(25);
@@ -320,10 +328,12 @@ describe('Dashboard API Integration Tests', () => {
     });
 
     it('should return empty iterations for persona without training', () => {
-      const persona = db.prepare('SELECT * FROM personas WHERE id = ?').get(personaId) as {
-        current_iteration: number;
-        best_f1_score: number | null;
-      } | undefined;
+      const persona = db.prepare('SELECT * FROM personas WHERE id = ?').get(personaId) as
+        | {
+            current_iteration: number;
+            best_f1_score: number | null;
+          }
+        | undefined;
 
       const metricsHistory = db
         .prepare(
@@ -338,9 +348,9 @@ describe('Dashboard API Integration Tests', () => {
       `
         )
         .all(personaId) as Array<{
-          iteration_number: number;
-          f1_score: number | null;
-        }>;
+        iteration_number: number;
+        f1_score: number | null;
+      }>;
 
       expect(metricsHistory).toHaveLength(0);
       expect(persona!.current_iteration).toBe(0);

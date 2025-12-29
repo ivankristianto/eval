@@ -185,17 +185,19 @@ export const POST: APIRoute = async ({ params, request }) => {
       // Get current metrics if available
       const metrics = db
         .prepare('SELECT * FROM iteration_metrics WHERE iteration_id = ?')
-        .get(iteration.id) as {
-        precision: number | null;
-        recall: number | null;
-        f1_score: number | null;
-        cohens_kappa: number | null;
-        accuracy: number | null;
-        true_positives: number;
-        true_negatives: number;
-        false_positives: number;
-        false_negatives: number;
-      } | undefined;
+        .get(iteration.id) as
+        | {
+            precision: number | null;
+            recall: number | null;
+            f1_score: number | null;
+            cohens_kappa: number | null;
+            accuracy: number | null;
+            true_positives: number;
+            true_negatives: number;
+            false_positives: number;
+            false_negatives: number;
+          }
+        | undefined;
 
       // Get evaluated decision IDs
       const evaluatedDecisions = db
@@ -216,31 +218,33 @@ export const POST: APIRoute = async ({ params, request }) => {
       const checkpointData = {
         iterationNumber: activeSession.current_iteration,
         evaluatedResultCount: evaluatedDecisions.length,
-        metricsSnapshot: metrics ? {
-          f1_score: metrics.f1_score ?? 0,
-          precision: metrics.precision ?? 0,
-          recall: metrics.recall ?? 0,
-          accuracy: metrics.accuracy ?? 0,
-          cohens_kappa: metrics.cohens_kappa ?? 0,
-          confusion_matrix: {
-            true_positives: metrics.true_positives,
-            true_negatives: metrics.true_negatives,
-            false_positives: metrics.false_positives,
-            false_negatives: metrics.false_negatives,
-          },
-        } : {
-          f1_score: 0,
-          precision: 0,
-          recall: 0,
-          accuracy: 0,
-          cohens_kappa: 0,
-          confusion_matrix: {
-            true_positives: 0,
-            true_negatives: 0,
-            false_positives: 0,
-            false_negatives: 0,
-          },
-        },
+        metricsSnapshot: metrics
+          ? {
+              f1_score: metrics.f1_score ?? 0,
+              precision: metrics.precision ?? 0,
+              recall: metrics.recall ?? 0,
+              accuracy: metrics.accuracy ?? 0,
+              cohens_kappa: metrics.cohens_kappa ?? 0,
+              confusion_matrix: {
+                true_positives: metrics.true_positives,
+                true_negatives: metrics.true_negatives,
+                false_positives: metrics.false_positives,
+                false_negatives: metrics.false_negatives,
+              },
+            }
+          : {
+              f1_score: 0,
+              precision: 0,
+              recall: 0,
+              accuracy: 0,
+              cohens_kappa: 0,
+              confusion_matrix: {
+                true_positives: 0,
+                true_negatives: 0,
+                false_positives: 0,
+                false_negatives: 0,
+              },
+            },
         evaluatedResultIds: evaluatedDecisions.map((d) => d.id),
         currentPrompt,
       };
