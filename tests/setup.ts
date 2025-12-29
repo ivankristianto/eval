@@ -340,8 +340,8 @@ export function initTestDb(): Database.Database {
 
 /**
  * Clean up test database (alias for convenience)
- * @param db - Database to clean
+ * @param _db - Database to clean
  */
-export function cleanupTestDb(db: Database.Database): void {
+export function cleanupTestDb(_db: Database.Database): void {
   cleanTestDatabase();
 }

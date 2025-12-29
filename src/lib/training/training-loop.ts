@@ -19,7 +19,7 @@ const logger = createLogger('TrainingLoop');
  * Check if mock mode is enabled for development.
  * Reads from MOCK_JUDGE_MODE environment variable (defaults to true for safety).
  */
-const MOCK_JUDGE_MODE = process.env.MOCK_JUDGE_MODE !== 'false';
+const MOCK_JUDGE_MODE = import.meta.env?.MOCK_JUDGE_MODE !== 'false';
 
 /**
  * Judge decision result from parsing LLM response.

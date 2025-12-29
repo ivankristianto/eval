@@ -5,6 +5,7 @@ import OpenAI from 'openai';
 import Anthropic from '@anthropic-ai/sdk';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import type { Provider, ModelResponse } from '@lib/utils/types';
+import { createLogger } from '@lib/logger';
 
 /**
  * Common interface for all AI model provider clients.
@@ -36,6 +37,7 @@ export interface ModelClient {
 export class OpenAIClient implements ModelClient {
   private client: OpenAI;
   private modelName: string;
+  private logger = createLogger('OpenAI:ModelClient');
 
   /**
    * Initializes a new OpenAI client.
@@ -106,24 +108,22 @@ export class OpenAIClient implements ModelClient {
     };
 
     // Debug logging
-    if (process.env.DEBUG === 'true') {
-      console.log('[OpenAI Debug]', {
-        model: this.modelName,
-        systemPrompt: options?.systemPrompt
-          ? `"${options.systemPrompt.substring(0, 50)}..."`
-          : 'none',
-        temperature: supportsTemperature
-          ? (options?.temperature ?? 'default')
-          : 'not supported (using model default)',
-        response: result.response.substring(0, 200) + (result.response.length > 200 ? '...' : ''),
-        tokens: {
-          input: result.inputTokens,
-          output: result.outputTokens,
-          total: result.totalTokens,
-        },
-        executionTime: `${result.executionTime}ms`,
-      });
-    }
+    this.logger.debug('OpenAI API response', {
+      model: this.modelName,
+      systemPrompt: options?.systemPrompt
+        ? `"${options.systemPrompt.substring(0, 50)}..."`
+        : 'none',
+      temperature: supportsTemperature
+        ? (options?.temperature ?? 'default')
+        : 'not supported (using model default)',
+      response: result.response.substring(0, 200) + (result.response.length > 200 ? '...' : ''),
+      tokens: {
+        input: result.inputTokens,
+        output: result.outputTokens,
+        total: result.totalTokens,
+      },
+      executionTime: `${result.executionTime}ms`,
+    });
 
     return result;
   }
@@ -150,6 +150,7 @@ export class OpenAIClient implements ModelClient {
 export class AnthropicClient implements ModelClient {
   private client: Anthropic;
   private modelName: string;
+  private logger = createLogger('Anthropic:ModelClient');
 
   /**
    * Initializes a new Anthropic client.
@@ -197,22 +198,20 @@ export class AnthropicClient implements ModelClient {
     };
 
     // Debug logging
-    if (process.env.DEBUG === 'true') {
-      console.log('[Anthropic Debug]', {
-        model: this.modelName,
-        systemPrompt: options?.systemPrompt
-          ? `"${options.systemPrompt.substring(0, 50)}..."`
-          : 'none',
-        temperature: options?.temperature ?? 'default',
-        response: result.response.substring(0, 200) + (result.response.length > 200 ? '...' : ''),
-        tokens: {
-          input: result.inputTokens,
-          output: result.outputTokens,
-          total: result.totalTokens,
-        },
-        executionTime: `${result.executionTime}ms`,
-      });
-    }
+    this.logger.debug('Anthropic API response', {
+      model: this.modelName,
+      systemPrompt: options?.systemPrompt
+        ? `"${options.systemPrompt.substring(0, 50)}..."`
+        : 'none',
+      temperature: options?.temperature ?? 'default',
+      response: result.response.substring(0, 200) + (result.response.length > 200 ? '...' : ''),
+      tokens: {
+        input: result.inputTokens,
+        output: result.outputTokens,
+        total: result.totalTokens,
+      },
+      executionTime: `${result.executionTime}ms`,
+    });
 
     return result;
   }
@@ -244,6 +243,7 @@ export class AnthropicClient implements ModelClient {
 export class GoogleClient implements ModelClient {
   private client: GoogleGenerativeAI;
   private modelName: string;
+  private logger = createLogger('Google:ModelClient');
 
   /**
    * Initializes a new Google client.
@@ -306,23 +306,21 @@ export class GoogleClient implements ModelClient {
     };
 
     // Debug logging
-    if (process.env.DEBUG === 'true') {
-      console.log('[Google Debug]', {
-        model: this.modelName,
-        systemPrompt: options?.systemPrompt
-          ? `"${options.systemPrompt.substring(0, 50)}..."`
-          : 'none',
-        temperature: options?.temperature ?? 'default',
-        response:
-          resultObj.response.substring(0, 200) + (resultObj.response.length > 200 ? '...' : ''),
-        tokens: {
-          input: resultObj.inputTokens,
-          output: resultObj.outputTokens,
-          total: resultObj.totalTokens,
-        },
-        executionTime: `${resultObj.executionTime}ms`,
-      });
-    }
+    this.logger.debug('Google API response', {
+      model: this.modelName,
+      systemPrompt: options?.systemPrompt
+        ? `"${options.systemPrompt.substring(0, 50)}..."`
+        : 'none',
+      temperature: options?.temperature ?? 'default',
+      response:
+        resultObj.response.substring(0, 200) + (resultObj.response.length > 200 ? '...' : ''),
+      tokens: {
+        input: resultObj.inputTokens,
+        output: resultObj.outputTokens,
+        total: resultObj.totalTokens,
+      },
+      executionTime: `${resultObj.executionTime}ms`,
+    });
 
     return resultObj;
   }
@@ -385,6 +383,9 @@ export class ClientFactory {
   }
 }
 
+// Logger for callModel helper function
+const callModelLogger = createLogger('callModel');
+
 /**
  * High-level helper to call an AI model by its configuration ID.
  * Used for prompt engineering and judge evaluations.
@@ -400,16 +401,38 @@ export async function callModel(
   instruction: string,
   options?: { systemPrompt?: string; temperature?: number }
 ): Promise<string> {
+  callModelLogger.debug('Calling model', {
+    modelId,
+    instructionLength: instruction.length,
+    hasSystemPrompt: !!options?.systemPrompt,
+    temperature: options?.temperature ?? 'default',
+  });
+
   const { getModelById, decryptApiKey } = await import('@lib/db');
   const modelConfig = getModelById(modelId);
 
   if (!modelConfig) {
+    callModelLogger.error('Model configuration not found', undefined, { modelId });
     throw new Error(`Model configuration not found: ${modelId}`);
   }
 
   const apiKey = decryptApiKey(modelConfig.api_key_encrypted);
   const client = ClientFactory.createClient(modelConfig.provider, apiKey, modelConfig.model_name);
 
+  callModelLogger.debug('Model client created', {
+    provider: modelConfig.provider,
+    modelName: modelConfig.model_name,
+  });
+
   const result = await client.evaluate(instruction, options);
+
+  callModelLogger.debug('Model response received', {
+    modelId,
+    responseLength: result.response.length,
+    response: result.response.substring(0, 200) + (result.response.length > 200 ? '...' : ''),
+    executionTime: result.executionTime,
+    totalTokens: result.totalTokens,
+  });
+
   return result.response;
 }

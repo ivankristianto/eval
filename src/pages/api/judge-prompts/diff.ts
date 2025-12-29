@@ -6,7 +6,7 @@
 import type { APIRoute } from 'astro';
 import { getDatabase } from '@lib/db';
 import { getPromptDiff } from '@lib/training/prompt-version-manager';
-import { badRequest, notFound, createErrorResponse } from '@lib/api-error-handler';
+import { badRequest, createErrorResponse } from '@lib/api-error-handler';
 import { createLogger } from '@lib/logger';
 
 const logger = createLogger('API:JudgePrompts:Diff');
