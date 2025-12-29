@@ -80,7 +80,8 @@ export const ERROR_CODE_DETAILS: Record<ErrorCode, { message: string; descriptio
   // Model and Validation Errors
   [ErrorCode.MODEL_SEPARATION_VIOLATION]: {
     message: 'Task, Judge, and Prompt Engineer models must be from different providers',
-    description: 'The system requires strict model separation to prevent bias from the same model evaluating its own outputs.',
+    description:
+      'The system requires strict model separation to prevent bias from the same model evaluating its own outputs.',
   },
   [ErrorCode.MODEL_NOT_FOUND]: {
     message: 'Model not found',
@@ -92,13 +93,15 @@ export const ERROR_CODE_DETAILS: Record<ErrorCode, { message: string; descriptio
   },
   [ErrorCode.INVALID_PROVIDER]: {
     message: 'Invalid model provider',
-    description: 'The specified provider is not supported. Must be one of: openai, anthropic, google.',
+    description:
+      'The specified provider is not supported. Must be one of: openai, anthropic, google.',
   },
 
   // CSV Upload Errors
   [ErrorCode.CSV_SIZE_INVALID]: {
     message: 'CSV must contain between 10 and 200 rows',
-    description: 'Training data must have at least 10 pairs and no more than 200 pairs per session.',
+    description:
+      'Training data must have at least 10 pairs and no more than 200 pairs per session.',
   },
   [ErrorCode.CSV_FORMAT_INVALID]: {
     message: 'CSV format is invalid',

@@ -49,11 +49,25 @@ describe('Persona State Machine', () => {
     // Create test models for state machine tests (one from each provider)
     db.prepare(
       'INSERT OR IGNORE INTO ModelConfiguration (id, provider, model_name, api_key_encrypted, is_active, created_at, updated_at) VALUES (?, ?, ?, ?, 1, ?, ?)'
-    ).run(testModelIds.task, 'openai', 'gpt-4', 'encrypted-key-1', new Date().toISOString(), new Date().toISOString());
+    ).run(
+      testModelIds.task,
+      'openai',
+      'gpt-4',
+      'encrypted-key-1',
+      new Date().toISOString(),
+      new Date().toISOString()
+    );
 
     db.prepare(
       'INSERT OR IGNORE INTO ModelConfiguration (id, provider, model_name, api_key_encrypted, is_active, created_at, updated_at) VALUES (?, ?, ?, ?, 1, ?, ?)'
-    ).run(testModelIds.judge, 'anthropic', 'claude-3', 'encrypted-key-2', new Date().toISOString(), new Date().toISOString());
+    ).run(
+      testModelIds.judge,
+      'anthropic',
+      'claude-3',
+      'encrypted-key-2',
+      new Date().toISOString(),
+      new Date().toISOString()
+    );
 
     db.prepare(
       'INSERT OR IGNORE INTO ModelConfiguration (id, provider, model_name, api_key_encrypted, is_active, created_at, updated_at) VALUES (?, ?, ?, ?, 1, ?, ?)'
@@ -67,7 +81,9 @@ describe('Persona State Machine', () => {
     );
 
     // Clean up any existing test personas
-    const personas = db.prepare("SELECT id FROM personas WHERE name LIKE 'State Machine Test%'").all() as { id: string }[];
+    const personas = db
+      .prepare("SELECT id FROM personas WHERE name LIKE 'State Machine Test%'")
+      .all() as { id: string }[];
     for (const persona of personas) {
       db.prepare('DELETE FROM training_pairs WHERE persona_id = ?').run(persona.id);
       db.prepare('DELETE FROM personas WHERE id = ?').run(persona.id);
@@ -184,12 +200,9 @@ describe('Persona State Machine', () => {
       testPersonaIds.push(persona.id);
 
       // Simulate training with best F1 on iteration 3
-      db.prepare('UPDATE personas SET current_iteration = ?, best_f1_score = ?, best_f1_iteration = ? WHERE id = ?').run(
-        3,
-        0.92,
-        3,
-        persona.id
-      );
+      db.prepare(
+        'UPDATE personas SET current_iteration = ?, best_f1_score = ?, best_f1_iteration = ? WHERE id = ?'
+      ).run(3, 0.92, 3, persona.id);
 
       updatePersona(persona.id, { status: 'trained' });
 
@@ -294,12 +307,9 @@ describe('Persona State Machine', () => {
       testPersonaIds.push(persona.id);
 
       // Previous training completed at iteration 5
-      db.prepare('UPDATE personas SET current_iteration = ?, best_f1_score = ?, best_f1_iteration = ? WHERE id = ?').run(
-        5,
-        0.92,
-        3,
-        persona.id
-      );
+      db.prepare(
+        'UPDATE personas SET current_iteration = ?, best_f1_score = ?, best_f1_iteration = ? WHERE id = ?'
+      ).run(5, 0.92, 3, persona.id);
       updatePersona(persona.id, { status: 'trained' });
 
       // Re-train (current_iteration should be reset or incremented)
@@ -427,7 +437,9 @@ describe('Persona State Machine', () => {
       updatePersona(persona.id, { status: 'trained' });
 
       // Verify persistence by querying database directly
-      const result = db.prepare('SELECT status FROM personas WHERE id = ?').get(persona.id) as { status: string };
+      const result = db.prepare('SELECT status FROM personas WHERE id = ?').get(persona.id) as {
+        status: string;
+      };
       expect(result.status).toBe('trained');
     });
 
@@ -532,7 +544,9 @@ describe('Persona State Machine', () => {
       // Set F1 score above target (default target_f1_score is 0.8)
       db.prepare('UPDATE personas SET best_f1_score = ? WHERE id = ?').run(0.85, persona.id);
 
-      const result = db.prepare('SELECT best_f1_score, target_f1_score FROM personas WHERE id = ?').get(persona.id) as {
+      const result = db
+        .prepare('SELECT best_f1_score, target_f1_score FROM personas WHERE id = ?')
+        .get(persona.id) as {
         best_f1_score: number;
         target_f1_score: number;
       };
@@ -557,7 +571,9 @@ describe('Persona State Machine', () => {
       // Set F1 score below target (default target_f1_score is 0.8)
       db.prepare('UPDATE personas SET best_f1_score = ? WHERE id = ?').run(0.65, persona.id);
 
-      const result = db.prepare('SELECT best_f1_score, target_f1_score FROM personas WHERE id = ?').get(persona.id) as {
+      const result = db
+        .prepare('SELECT best_f1_score, target_f1_score FROM personas WHERE id = ?')
+        .get(persona.id) as {
         best_f1_score: number;
         target_f1_score: number;
       };
@@ -584,7 +600,9 @@ describe('Persona State Machine', () => {
       // Set current iteration to max (default max_iterations is 5)
       db.prepare('UPDATE personas SET current_iteration = ? WHERE id = ?').run(5, persona.id);
 
-      const result = db.prepare('SELECT current_iteration, max_iterations FROM personas WHERE id = ?').get(persona.id) as {
+      const result = db
+        .prepare('SELECT current_iteration, max_iterations FROM personas WHERE id = ?')
+        .get(persona.id) as {
         current_iteration: number;
         max_iterations: number;
       };
@@ -609,7 +627,9 @@ describe('Persona State Machine', () => {
       // Set current iteration below max (default max_iterations is 5)
       db.prepare('UPDATE personas SET current_iteration = ? WHERE id = ?').run(2, persona.id);
 
-      const result = db.prepare('SELECT current_iteration, max_iterations FROM personas WHERE id = ?').get(persona.id) as {
+      const result = db
+        .prepare('SELECT current_iteration, max_iterations FROM personas WHERE id = ?')
+        .get(persona.id) as {
         current_iteration: number;
         max_iterations: number;
       };

@@ -16,7 +16,10 @@ import { describe, it, expect } from 'vitest';
 /**
  * Mock trend icon function matching the MetricCard implementation
  */
-function getTrendIcon(t?: string, higherBetter: boolean = true): { icon: string; color: string } | null {
+function getTrendIcon(
+  t?: string,
+  higherBetter: boolean = true
+): { icon: string; color: string } | null {
   if (!t) return null;
 
   switch (t) {

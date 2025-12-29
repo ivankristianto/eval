@@ -31,9 +31,7 @@ describe('MetricsPollingController', () => {
 
   describe('Initialization', () => {
     it('should create controller with correct parameters', async () => {
-      const { MetricsPollingController } = await import(
-        '../../src/lib/metrics-polling-hook'
-      );
+      const { MetricsPollingController } = await import('../../src/lib/metrics-polling-hook');
 
       const controller = new MetricsPollingController('persona-1', 1);
 
@@ -41,9 +39,7 @@ describe('MetricsPollingController', () => {
     });
 
     it('should use custom options when provided', async () => {
-      const { MetricsPollingController } = await import(
-        '../../src/lib/metrics-polling-hook'
-      );
+      const { MetricsPollingController } = await import('../../src/lib/metrics-polling-hook');
 
       const controller = new MetricsPollingController('persona-1', 1, {
         initialInterval: 500,
@@ -57,9 +53,7 @@ describe('MetricsPollingController', () => {
 
   describe('Status Fetching', () => {
     it('should fetch status from correct endpoint', async () => {
-      const { MetricsPollingController } = await import(
-        '../../src/lib/metrics-polling-hook'
-      );
+      const { MetricsPollingController } = await import('../../src/lib/metrics-polling-hook');
 
       mockFetch.mockResolvedValue({
         ok: true,
@@ -74,17 +68,13 @@ describe('MetricsPollingController', () => {
       const controller = new MetricsPollingController('persona-1', 1);
       const status = await controller.fetchStatus();
 
-      expect(mockFetch).toHaveBeenCalledWith(
-        '/api/personas/persona-1/iterations/1/status'
-      );
+      expect(mockFetch).toHaveBeenCalledWith('/api/personas/persona-1/iterations/1/status');
       expect(status).toBeDefined();
       expect(status?.status).toBe('calculating');
     });
 
     it('should handle API errors gracefully', async () => {
-      const { MetricsPollingController } = await import(
-        '../../src/lib/metrics-polling-hook'
-      );
+      const { MetricsPollingController } = await import('../../src/lib/metrics-polling-hook');
 
       mockFetch.mockRejectedValue(new Error('Network error'));
 
@@ -95,9 +85,7 @@ describe('MetricsPollingController', () => {
     });
 
     it('should handle non-OK responses', async () => {
-      const { MetricsPollingController } = await import(
-        '../../src/lib/metrics-polling-hook'
-      );
+      const { MetricsPollingController } = await import('../../src/lib/metrics-polling-hook');
 
       mockFetch.mockResolvedValue({
         ok: false,
@@ -114,9 +102,7 @@ describe('MetricsPollingController', () => {
 
   describe('Polling Behavior', () => {
     it('should start polling when start() is called', async () => {
-      const { MetricsPollingController } = await import(
-        '../../src/lib/metrics-polling-hook'
-      );
+      const { MetricsPollingController } = await import('../../src/lib/metrics-polling-hook');
 
       mockFetch.mockResolvedValue({
         ok: true,
@@ -142,9 +128,7 @@ describe('MetricsPollingController', () => {
     });
 
     it('should stop polling when stop() is called', async () => {
-      const { MetricsPollingController } = await import(
-        '../../src/lib/metrics-polling-hook'
-      );
+      const { MetricsPollingController } = await import('../../src/lib/metrics-polling-hook');
 
       mockFetch.mockResolvedValue({
         ok: true,
@@ -173,9 +157,7 @@ describe('MetricsPollingController', () => {
     });
 
     it('should stop polling when status is completed', async () => {
-      const { MetricsPollingController } = await import(
-        '../../src/lib/metrics-polling-hook'
-      );
+      const { MetricsPollingController } = await import('../../src/lib/metrics-polling-hook');
 
       mockFetch.mockResolvedValue({
         ok: true,
@@ -214,9 +196,7 @@ describe('MetricsPollingController', () => {
     });
 
     it('should stop polling on error status', async () => {
-      const { MetricsPollingController } = await import(
-        '../../src/lib/metrics-polling-hook'
-      );
+      const { MetricsPollingController } = await import('../../src/lib/metrics-polling-hook');
 
       mockFetch.mockResolvedValue({
         ok: true,
@@ -244,9 +224,7 @@ describe('MetricsPollingController', () => {
 
   describe('Listeners', () => {
     it('should notify listeners on status update', async () => {
-      const { MetricsPollingController } = await import(
-        '../../src/lib/metrics-polling-hook'
-      );
+      const { MetricsPollingController } = await import('../../src/lib/metrics-polling-hook');
 
       const mockStatus: any = {
         status: 'calculating',
@@ -284,21 +262,17 @@ describe('MetricsPollingController', () => {
 
   describe('Retry Logic', () => {
     it('should retry on fetch error with exponential backoff', async () => {
-      const { MetricsPollingController } = await import(
-        '../../src/lib/metrics-polling-hook'
-      );
+      const { MetricsPollingController } = await import('../../src/lib/metrics-polling-hook');
 
-      mockFetch
-        .mockRejectedValueOnce(new Error('Network error'))
-        .mockResolvedValue({
-          ok: true,
-          json: async () => ({
-            status: 'calculating',
-            iteration: 1,
-            persona_id: 'persona-1',
-            message: 'The training in progress',
-          }),
-        });
+      mockFetch.mockRejectedValueOnce(new Error('Network error')).mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          status: 'calculating',
+          iteration: 1,
+          persona_id: 'persona-1',
+          message: 'The training in progress',
+        }),
+      });
 
       const controller = new MetricsPollingController('persona-1', 1, {
         initialInterval: 100,
@@ -321,9 +295,7 @@ describe('MetricsPollingController', () => {
     });
 
     it('should stop after max retries', async () => {
-      const { MetricsPollingController } = await import(
-        '../../src/lib/metrics-polling-hook'
-      );
+      const { MetricsPollingController } = await import('../../src/lib/metrics-polling-hook');
 
       mockFetch.mockRejectedValue(new Error('Network error'));
 
@@ -356,9 +328,7 @@ describe('MetricsPollingController', () => {
 
   describe('Exponential Backoff', () => {
     it('should increase interval on each retry', async () => {
-      const { MetricsPollingController } = await import(
-        '../../src/lib/metrics-polling-hook'
-      );
+      const { MetricsPollingController } = await import('../../src/lib/metrics-polling-hook');
 
       mockFetch.mockRejectedValue(new Error('Network error'));
 
@@ -394,9 +364,7 @@ describe('MetricsPollingController', () => {
 
   describe('Cleanup', () => {
     it('should cleanup on destroy', async () => {
-      const { MetricsPollingController } = await import(
-        '../../src/lib/metrics-polling-hook'
-      );
+      const { MetricsPollingController } = await import('../../src/lib/metrics-polling-hook');
 
       mockFetch.mockResolvedValue({
         ok: true,
@@ -452,9 +420,7 @@ describe('useMetricsPolling Hook', () => {
   });
 
   it('should return correct initial state', async () => {
-    const { useMetricsPolling } = await import(
-      '../../src/lib/metrics-polling-hook'
-    );
+    const { useMetricsPolling } = await import('../../src/lib/metrics-polling-hook');
 
     const result = useMetricsPolling('persona-1', 1);
 
@@ -465,9 +431,7 @@ describe('useMetricsPolling Hook', () => {
   });
 
   it('should provide stopPolling function', async () => {
-    const { useMetricsPolling } = await import(
-      '../../src/lib/metrics-polling-hook'
-    );
+    const { useMetricsPolling } = await import('../../src/lib/metrics-polling-hook');
 
     mockFetch.mockResolvedValue({
       ok: true,
@@ -487,9 +451,7 @@ describe('useMetricsPolling Hook', () => {
   });
 
   it('should provide refresh function', async () => {
-    const { useMetricsPolling } = await import(
-      '../../src/lib/metrics-polling-hook'
-    );
+    const { useMetricsPolling } = await import('../../src/lib/metrics-polling-hook');
 
     mockFetch.mockResolvedValue({
       ok: true,
@@ -507,9 +469,7 @@ describe('useMetricsPolling Hook', () => {
   });
 
   it('should provide reset function', async () => {
-    const { useMetricsPolling } = await import(
-      '../../src/lib/metrics-polling-hook'
-    );
+    const { useMetricsPolling } = await import('../../src/lib/metrics-polling-hook');
 
     mockFetch.mockResolvedValue({
       ok: true,
@@ -537,9 +497,7 @@ describe('Utility Functions', () => {
   });
 
   it('isCalculationInProgress should return true for calculating status', async () => {
-    const { isCalculationInProgress } = await import(
-      '../../src/lib/metrics-polling-hook'
-    );
+    const { isCalculationInProgress } = await import('../../src/lib/metrics-polling-hook');
 
     expect(isCalculationInProgress('calculating')).toBe(true);
     expect(isCalculationInProgress('completed')).toBe(false);
@@ -547,9 +505,7 @@ describe('Utility Functions', () => {
   });
 
   it('isCalculationComplete should return true for completed status', async () => {
-    const { isCalculationComplete } = await import(
-      '../../src/lib/metrics-polling-hook'
-    );
+    const { isCalculationComplete } = await import('../../src/lib/metrics-polling-hook');
 
     expect(isCalculationComplete('completed')).toBe(true);
     expect(isCalculationComplete('calculating')).toBe(false);
@@ -557,9 +513,7 @@ describe('Utility Functions', () => {
   });
 
   it('isCalculationError should return true for error status', async () => {
-    const { isCalculationError } = await import(
-      '../../src/lib/metrics-polling-hook'
-    );
+    const { isCalculationError } = await import('../../src/lib/metrics-polling-hook');
 
     expect(isCalculationError('error')).toBe(true);
     expect(isCalculationError('calculating')).toBe(false);

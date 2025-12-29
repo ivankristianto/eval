@@ -159,7 +159,9 @@ describe('API Error Response Standardization', () => {
         const response = modelSeparationViolation();
 
         expect(response.code).toBe(ErrorCode.MODEL_SEPARATION_VIOLATION);
-        expect(response.error).toBe(ERROR_CODE_DETAILS[ErrorCode.MODEL_SEPARATION_VIOLATION].message);
+        expect(response.error).toBe(
+          ERROR_CODE_DETAILS[ErrorCode.MODEL_SEPARATION_VIOLATION].message
+        );
         expect(response.timestamp).toBeDefined();
       });
 
@@ -238,7 +240,8 @@ describe('API Error Response Standardization', () => {
         expect(response.details).toEqual({
           status: 'paused',
           current_iteration: 3,
-          message: 'Training is already paused. Please pause or wait for completion before starting a new session.',
+          message:
+            'Training is already paused. Please pause or wait for completion before starting a new session.',
         });
       });
     });
@@ -251,7 +254,8 @@ describe('API Error Response Standardization', () => {
         expect(response.details).toEqual({
           required: 10,
           provided: 5,
-          message: 'Iteration 1 requires 100% human review (10 decisions), but only 5 have been reviewed.',
+          message:
+            'Iteration 1 requires 100% human review (10 decisions), but only 5 have been reviewed.',
         });
       });
     });

@@ -31,9 +31,7 @@ vi.mock('@lib/logger', () => ({
 }));
 
 // Import after mocking
-const { GET } = await import(
-  '../../src/pages/api/personas/[id]/iterations/[iteration]/status'
-);
+const { GET } = await import('../../src/pages/api/personas/[id]/iterations/[num]/status');
 
 describe('GET /api/personas/{id}/iterations/{iteration}/status', () => {
   beforeEach(() => {
@@ -48,7 +46,7 @@ describe('GET /api/personas/{id}/iterations/{iteration}/status', () => {
   describe('Request Validation', () => {
     it('should return 400 when persona ID is missing', async () => {
       const response = await GET({
-        params: { id: '', iteration: '1' },
+        params: { id: '', num: '1' },
         request: new Request('http://localhost/api/personas//iterations/1/status'),
       } as any);
 
@@ -59,7 +57,7 @@ describe('GET /api/personas/{id}/iterations/{iteration}/status', () => {
 
     it('should return 400 when iteration number is invalid', async () => {
       const response = await GET({
-        params: { id: 'persona-1', iteration: 'abc' },
+        params: { id: 'persona-1', num: 'abc' },
         request: new Request('http://localhost/api/personas/persona-1/iterations/abc/status'),
       } as any);
 
@@ -76,13 +74,13 @@ describe('GET /api/personas/{id}/iterations/{iteration}/status', () => {
       });
 
       const response = await GET({
-        params: { id: 'persona-1', iteration: '1' },
+        params: { id: 'persona-1', num: '1' },
         request: new Request('http://localhost/api/personas/persona-1/iterations/1/status'),
       } as any);
 
       expect(response.status).toBe(404);
       const body = await response.json();
-      expect(body.code).toBe('PERSONA_NOT_FOUND');
+      expect(body.code).toBe('NOT_FOUND');
     });
 
     it('should return 404 when iteration does not exist', async () => {
@@ -96,13 +94,13 @@ describe('GET /api/personas/{id}/iterations/{iteration}/status', () => {
       });
 
       const response = await GET({
-        params: { id: 'persona-1', iteration: '1' },
+        params: { id: 'persona-1', num: '1' },
         request: new Request('http://localhost/api/personas/persona-1/iterations/1/status'),
       } as any);
 
       expect(response.status).toBe(404);
       const body = await response.json();
-      expect(body.code).toBe('ITERATION_NOT_FOUND');
+      expect(body.code).toBe('NOT_FOUND');
     });
   });
 
@@ -115,9 +113,11 @@ describe('GET /api/personas/{id}/iterations/{iteration}/status', () => {
 
       // Iteration is calculating
       mockDb.prepare = vi.fn().mockReturnValue({
-        get: vi.fn()
-          .mockReturnValueOnce({ id: 'persona-1', name: 'Test' })
-          .mockReturnValueOnce({ id: 'iter-1', iteration_number: 1, status: 'calculating_metrics' }),
+        get: vi.fn().mockReturnValueOnce({ id: 'persona-1', name: 'Test' }).mockReturnValueOnce({
+          id: 'iter-1',
+          iteration_number: 1,
+          status: 'calculating_metrics',
+        }),
       });
 
       // No metrics yet
@@ -141,7 +141,7 @@ describe('GET /api/personas/{id}/iterations/{iteration}/status', () => {
       });
 
       const response = await GET({
-        params: { id: 'persona-1', iteration: '1' },
+        params: { id: 'persona-1', num: '1' },
         request: new Request('http://localhost/api/personas/persona-1/iterations/1/status'),
       } as any);
 
@@ -155,39 +155,38 @@ describe('GET /api/personas/{id}/iterations/{iteration}/status', () => {
     it('should return completed status with metrics when calculation is done', async () => {
       const getMock = vi.fn();
 
-      // Persona exists
-      getMock.mockReturnValue({ id: 'persona-1', name: 'Test Persona' });
+      // Persona exists - first call returns persona
+      getMock.mockReturnValueOnce({ id: 'persona-1', name: 'Test Persona' });
 
-      // Iteration is completed
-      mockDb.prepare = vi.fn().mockReturnValue({
-        get: vi.fn()
-          .mockReturnValueOnce({ id: 'persona-1', name: 'Test' })
-          .mockReturnValueOnce({
-            id: 'iter-1',
-            iteration_number: 1,
-            status: 'completed',
-            completed_at: '2025-12-29T10:00:00Z',
-          }),
+      // Iteration record - second call returns iteration with status completed
+      getMock.mockReturnValueOnce({
+        id: 'iter-1',
+        iteration_number: 1,
+        status: 'completed',
+        completed_at: '2025-12-29T10:00:00Z',
+        started_at: '2025-12-29T09:00:00Z',
       });
 
-      // Metrics exist
+      // Metrics - third call returns metrics data
+      getMock.mockReturnValueOnce({
+        f1_score: 0.85,
+        precision: 0.88,
+        recall: 0.82,
+        cohens_kappa: 0.78,
+        accuracy: 0.87,
+        true_positives: 45,
+        true_negatives: 35,
+        false_positives: 8,
+        false_negatives: 7,
+        calculated_at: '2025-12-29T10:00:01Z',
+      });
+
       mockDb.prepare = vi.fn().mockReturnValue({
-        get: vi.fn().mockReturnValue({
-          f1_score: 0.85,
-          precision: 0.88,
-          recall: 0.82,
-          cohens_kappa: 0.78,
-          accuracy: 0.87,
-          true_positives: 45,
-          true_negatives: 35,
-          false_positives: 8,
-          false_negatives: 7,
-          calculated_at: '2025-12-29T10:00:01Z',
-        }),
+        get: getMock,
       });
 
       const response = await GET({
-        params: { id: 'persona-1', iteration: '1' },
+        params: { id: 'persona-1', num: '1' },
         request: new Request('http://localhost/api/personas/persona-1/iterations/1/status'),
       } as any);
 
@@ -217,19 +216,17 @@ describe('GET /api/personas/{id}/iterations/{iteration}/status', () => {
 
       // Iteration has failed
       mockDb.prepare = vi.fn().mockReturnValue({
-        get: vi.fn()
-          .mockReturnValueOnce({ id: 'persona-1', name: 'Test' })
-          .mockReturnValueOnce({
-            id: 'iter-1',
-            iteration_number: 1,
-            status: 'failed',
-            error_message: 'Database connection failed',
-            completed_at: '2025-12-29T10:00:00Z',
-          }),
+        get: vi.fn().mockReturnValueOnce({ id: 'persona-1', name: 'Test' }).mockReturnValueOnce({
+          id: 'iter-1',
+          iteration_number: 1,
+          status: 'failed',
+          error_message: 'Database connection failed',
+          completed_at: '2025-12-29T10:00:00Z',
+        }),
       });
 
       const response = await GET({
-        params: { id: 'persona-1', iteration: '1' },
+        params: { id: 'persona-1', num: '1' },
         request: new Request('http://localhost/api/personas/persona-1/iterations/1/status'),
       } as any);
 
@@ -243,14 +240,12 @@ describe('GET /api/personas/{id}/iterations/{iteration}/status', () => {
   describe('Progress Tracking', () => {
     it('should return progress percent for in-progress calculations', async () => {
       mockDb.prepare = vi.fn().mockReturnValue({
-        get: vi.fn()
-          .mockReturnValueOnce({ id: 'persona-1', name: 'Test' })
-          .mockReturnValueOnce({
-            id: 'iter-1',
-            iteration_number: 1,
-            status: 'calculating_metrics',
-            total_pairs_evaluated: 15,
-          }),
+        get: vi.fn().mockReturnValueOnce({ id: 'persona-1', name: 'Test' }).mockReturnValueOnce({
+          id: 'iter-1',
+          iteration_number: 1,
+          status: 'calculating_metrics',
+          total_pairs_evaluated: 15,
+        }),
       });
 
       // No metrics yet
@@ -267,7 +262,7 @@ describe('GET /api/personas/{id}/iterations/{iteration}/status', () => {
       });
 
       const response = await GET({
-        params: { id: 'persona-1', iteration: '1' },
+        params: { id: 'persona-1', num: '1' },
         request: new Request('http://localhost/api/personas/persona-1/iterations/1/status'),
       } as any);
 
@@ -280,29 +275,54 @@ describe('GET /api/personas/{id}/iterations/{iteration}/status', () => {
     it('should persist completed status on multiple GET requests', async () => {
       // First request returns completed
       mockDb.prepare = vi.fn().mockReturnValue({
-        get: vi.fn()
+        get: vi
+          .fn()
+          // First GET request: persona, iteration, metrics
           .mockReturnValueOnce({ id: 'persona-1', name: 'Test' })
           .mockReturnValueOnce({
             id: 'iter-1',
             iteration_number: 2,
             status: 'completed',
             completed_at: '2025-12-29T10:00:00Z',
+            started_at: '2025-12-29T09:00:00Z',
           })
           .mockReturnValueOnce({
             f1_score: 0.92,
             precision: 0.94,
-            recall: 0.90,
+            recall: 0.9,
             cohens_kappa: 0.85,
             accuracy: 0.91,
             true_positives: 85,
             true_negatives: 75,
             false_positives: 10,
             false_negatives: 8,
+            calculated_at: '2025-12-29T10:00:01Z',
+          })
+          // Second GET request: persona, iteration, metrics (same data)
+          .mockReturnValueOnce({ id: 'persona-1', name: 'Test' })
+          .mockReturnValueOnce({
+            id: 'iter-1',
+            iteration_number: 2,
+            status: 'completed',
+            completed_at: '2025-12-29T10:00:00Z',
+            started_at: '2025-12-29T09:00:00Z',
+          })
+          .mockReturnValueOnce({
+            f1_score: 0.92,
+            precision: 0.94,
+            recall: 0.9,
+            cohens_kappa: 0.85,
+            accuracy: 0.91,
+            true_positives: 85,
+            true_negatives: 75,
+            false_positives: 10,
+            false_negatives: 8,
+            calculated_at: '2025-12-29T10:00:01Z',
           }),
       });
 
       const response = await GET({
-        params: { id: 'persona-1', iteration: '2' },
+        params: { id: 'persona-1', num: '2' },
         request: new Request('http://localhost/api/personas/persona-1/iterations/2/status'),
       } as any);
 
@@ -313,7 +333,7 @@ describe('GET /api/personas/{id}/iterations/{iteration}/status', () => {
 
       // Second request should also return completed (persisted state)
       const response2 = await GET({
-        params: { id: 'persona-1', iteration: '2' },
+        params: { id: 'persona-1', num: '2' },
         request: new Request('http://localhost/api/personas/persona-1/iterations/2/status'),
       } as any);
 

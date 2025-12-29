@@ -128,10 +128,10 @@ describe('Edge Cases - Prompt Versioning (T123, FR-016)', () => {
   describe('Whitespace Normalization', () => {
     function normalizeWhitespace(text: string): string {
       return text
-        .replace(/\s+/g, ' ')  // Collapse multiple spaces
-        .trim()                // Trim leading/trailing
+        .replace(/\s+/g, ' ') // Collapse multiple spaces
+        .trim() // Trim leading/trailing
         .replace(/\r\n/g, '\n') // Normalize line endings
-        .replace(/\t/g, ' ');   // Replace tabs with spaces
+        .replace(/\t/g, ' '); // Replace tabs with spaces
     }
 
     it('should detect significant changes after whitespace normalization', () => {
