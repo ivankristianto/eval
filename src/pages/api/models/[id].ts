@@ -11,7 +11,7 @@ import {
 } from '@lib/db';
 import { ClientFactory } from '@lib/utils/api-clients';
 import { validateApiKeyFormat } from '@lib/validation/validators';
-import { badRequest, notFound, conflict, createErrorResponse } from '@lib/api-error-handler';
+import { badRequest, notFound, createErrorResponse } from '@lib/api-error-handler';
 import { createLogger } from '@lib/logger';
 
 const logger = createLogger('API:Models:ById');

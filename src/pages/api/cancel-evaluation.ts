@@ -4,7 +4,7 @@
 import type { APIRoute } from 'astro';
 import { getEvaluation } from '@lib/db';
 import { cancelEvaluation } from '@lib/evaluation/evaluator';
-import { badRequest, conflict, createErrorResponse } from '@lib/api-error-handler';
+import { badRequest, createErrorResponse } from '@lib/api-error-handler';
 import { createLogger } from '@lib/logger';
 
 const logger = createLogger('API:CancelEvaluation');

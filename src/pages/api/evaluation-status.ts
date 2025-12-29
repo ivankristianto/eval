@@ -3,7 +3,7 @@
 
 import type { APIRoute } from 'astro';
 import { getEvaluationStatus } from '@lib/db';
-import { badRequest, notFound, createErrorResponse } from '@lib/api-error-handler';
+import { badRequest, createErrorResponse } from '@lib/api-error-handler';
 import { createLogger } from '@lib/logger';
 
 const logger = createLogger('API:EvaluationStatus');
