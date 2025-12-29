@@ -505,6 +505,16 @@ _System runs TWO-PHASE training: (1) Iteration 1 with mandatory human review and
   - **Iteration 1 only**: "Generate Refined Prompt" button appears when 100% complete
   - **Iteration 1 only**: Review page blocks navigation to other pages until review complete
 
+  **Navigation Edge Cases** (FR-021):
+  - **"Previous" button on first decision**: Disabled/grayed out (not hidden) - visually indicates no previous decision but maintains layout consistency
+  - **"Next" button on last decision**: Disabled/grayed out (not hidden) - visually indicates end of list but maintains layout consistency
+  - **Keyboard navigation**: Left arrow key = previous decision, Right arrow key = next decision (respects disabled state)
+  - **URL structure**: `/review/{iteration}/{index}` where index is 0-based decision position; URL updates on navigation
+  - **Direct URL access**: Accessing `/review/{iteration}/{index}` directly loads that specific decision; invalid indices redirect to first decision
+  - **After reviewing last decision**: Show "All decisions reviewed" message with action button (Calculate Metrics for iteration 1, or Return to Training for iterations 2+)
+  - **Navigation during submit**: Disable both Previous/Next buttons while form submission is in progress
+  - **Unsaved changes warning**: If user navigates away with unsaved changes, show confirmation dialog (browser beforeunload or custom modal)
+
 - [x] T051 [P] Create src/components/JudgeDecisionReview.astro as reusable decision card component with automatic correctness badge
 
 **Acceptance Criteria**:
@@ -516,6 +526,7 @@ _System runs TWO-PHASE training: (1) Iteration 1 with mandatory human review and
 - Both automatic metrics and human validation metrics displayed side-by-side
 - **Iteration 1**: Training CANNOT proceed without completing human review and accepting refined prompt
 - **Iterations 2+**: Training continues regardless of whether human validation is provided
+- Navigation edge cases handled gracefully (disabled buttons, keyboard support, URL updates)
 
 ---
 

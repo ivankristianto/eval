@@ -279,7 +279,14 @@ The training system operates in **two distinct phases** with different workflows
   - **Judge Prompts History (no versions)**: Display empty state with heading "No Prompt History", description "Prompt versions will appear here after iterations with refinements"
   - **Empty State Component**: Reusable EmptyState component with props: `{title, description, actionLabel?, actionHref?, iconName?}`
 
-- **FR-021**: System MUST provide an API interface for all core functionality (create persona, upload data, start/pause/resume training, retrieve metrics, export best prompts).
+- **FR-021** (Metric Trend Indicators): System MUST display metric trends with contextually appropriate colors based on metric semantics:
+  - **Trend Logic**: Trends are calculated as: ↑ (current > previous), ↓ (current < previous), → (current == previous)
+  - **Higher-Is-Better Metrics** (F1 Score, Precision, Recall, Accuracy): ↑ = green (good), ↓ = red (bad), → = gray (neutral)
+  - **Lower-Is-Better Metrics** (Error Rate, False Positive Rate, False Negative Rate): ↑ = red (bad), ↓ = green (good), → = gray (neutral)
+  - **Component Support**: MetricCard component accepts `higherIsBetter` boolean prop to control color semantics (defaults to `true`)
+  - **Visual Indicators**: Up arrow (M5 15l7-7 7 7), Down arrow (M19 9l-7 7-7-7), Horizontal line (M5 12h14)
+
+- **FR-022**: System MUST provide an API interface for all core functionality (create persona, upload data, start/pause/resume training, retrieve metrics, export best prompts).
 
 ### Key Entities
 
