@@ -3,14 +3,19 @@
  * Metrics Dashboard Page
  * Displays training metrics and iteration history for a persona
  * Route: /personas/:id/metrics
+ *
+ * Phase 12 Enhancement: Supports async metrics calculation with polling
  */
-import Layout from '../../../layouts/Layout.astro';
-import TrainingDashboard from '../../../components/TrainingDashboard.astro';
-import ConfusionMatrix from '../../../components/ConfusionMatrix.astro';
-import Badge from '../../../components/ui/Badge.astro';
-import Breadcrumbs from '../../../components/ui/Breadcrumbs.astro';
-import PersonaTabs from '../../../components/PersonaTabs.astro';
+import Layout from '@layouts/Layout.astro';
+import TrainingDashboard from '@components/TrainingDashboard.astro';
+import ConfusionMatrix from '@components/ConfusionMatrix.astro';
+import Badge from '@components/ui/Badge.astro';
+import Breadcrumbs from '@components/ui/Breadcrumbs.astro';
+import PersonaTabs from '@components/PersonaTabs.astro';
+import MetricsCalculationProgress from '@components/MetricsCalculationProgress.astro';
+import MetricCard from '@components/MetricCard.astro';
 import { getDatabase } from '@lib/db';
+import { notFound } from '@lib/api-error-handler';
 
 const { id } = Astro.params;
 
@@ -18,13 +23,68 @@ if (!id) {
   return Astro.redirect('/personas');
 }
 
+// Read iteration from query parameter (e.g., ?iteration=3)
+const queryIteration = Astro.url.searchParams.get('iteration');
+const iteration = queryIteration ? parseInt(queryIteration, 10) : undefined;
+
 const db = getDatabase();
 
 // Fetch persona
-const persona = db.prepare('SELECT * FROM personas WHERE id = ?').get(id) as any;
+const persona = db.prepare('SELECT * FROM personas WHERE id = ?').get(id) as any | undefined;
 
 if (!persona) {
-  return Astro.redirect('/personas');
+  return notFound('Persona');
+}
+
+// Fetch iteration data
+let iterationData: any = null;
+if (iteration) {
+  iterationData = db
+    .prepare(
+      `SELECT ti.*, tls.status as loop_status
+       FROM training_iterations ti
+       LEFT JOIN training_loop_state tls ON tls.persona_id = ti.persona_id
+         AND tls.current_iteration = ti.iteration_number
+       WHERE ti.persona_id = ? AND ti.iteration_number = ?`
+    )
+    .get(id, iteration);
+} else {
+  iterationData = db
+    .prepare(
+      `SELECT ti.*, tls.status as loop_status
+       FROM training_iterations ti
+       LEFT JOIN training_loop_state tls ON tls.persona_id = ti.persona_id
+         AND tls.current_iteration = ti.iteration_number
+       WHERE ti.persona_id = ?
+       ORDER BY ti.iteration_number DESC
+       LIMIT 1`
+    )
+    .get(id);
+}
+
+// Fetch metrics if iteration exists
+let metrics: any = null;
+if (iterationData?.id) {
+  const rawMetrics = db
+    .prepare('SELECT * FROM iteration_metrics WHERE iteration_id = ?')
+    .get(iterationData.id) as any | undefined;
+
+  // Transform to have same structure as latestMetrics
+  if (rawMetrics) {
+    metrics = {
+      f1_score: rawMetrics.f1_score,
+      precision: rawMetrics.precision,
+      recall: rawMetrics.recall,
+      cohens_kappa: rawMetrics.cohens_kappa,
+      accuracy: rawMetrics.accuracy,
+      confusion_matrix: {
+        true_positives: rawMetrics.true_positives,
+        true_negatives: rawMetrics.true_negatives,
+        false_positives: rawMetrics.false_positives,
+        false_negatives: rawMetrics.false_negatives,
+      },
+    };
+  }
 }
 
 // Fetch all iterations with metrics
@@ -47,7 +107,8 @@ const iterations = db
       im.true_positives,
       im.true_negatives,
       im.false_positives,
-      im.false_negatives
+      im.false_negatives,
+      im.calculated_at
     FROM training_iterations ti
     LEFT JOIN iteration_metrics im ON im.iteration_id = ti.id
     WHERE ti.persona_id = ?
@@ -76,6 +137,44 @@ const latestMetrics = latestIterationWithMetrics
       },
     }
   : null;
+
+// Use current iteration metrics or latest metrics (for ConfusionMatrix display regardless of iteration)
+const displayMetrics = metrics || latestMetrics;
+
+// Determine current status for Phase 12 async calculation
+let displayStatus: 'calculating' | 'completed' | 'error' = 'completed';
+let progressMessage = 'The training in progress';
+let progressPercent: number | undefined;
+
+if (iterationData) {
+  switch (iterationData.status) {
+    case 'calculating_metrics':
+    case 'in_progress':
+      displayStatus = 'calculating';
+      if (iterationData.total_pairs_evaluated) {
+        const totalPairs = db
+          .prepare('SELECT COUNT(*) as count FROM training_pairs WHERE persona_id = ?')
+          .get(id) as { count: number };
+        if (totalPairs?.count) {
+          progressPercent = Math.min(
+            100,
+            Math.round((iterationData.total_pairs_evaluated / totalPairs.count) * 100)
+          );
+        }
+      }
+      break;
+    case 'failed':
+      displayStatus = 'error';
+      progressMessage = iterationData.error_message || 'Calculation failed';
+      break;
+    default:
+      if (!metrics) {
+        displayStatus = 'calculating';
+      }
+  }
+} else {
+  displayStatus = 'calculating';
+}
 
 // Helper function to get persona status variant
 function getPersonaStatusVariant(status: string): 'warning' | 'info' | 'success' | 'error' {
@@ -144,30 +243,85 @@ const breadcrumbItems = [
   <!-- Tabs -->
   <PersonaTabs personaId={id} activeTab="metrics" />
 
-  <!-- Training Dashboard with Chart -->
-  <div class="mb-8 animate-reveal delay-200">
-    <TrainingDashboard personaId={id} showChart={true} />
-  </div>
-
-  <!-- Detailed Confusion Matrix (if metrics exist) -->
+  <!-- Phase 12: Async Metrics Calculation Progress -->
   {
-    latestMetrics && (
+    (displayStatus === 'calculating' || displayStatus === 'error') && iteration && (
+      <div class="max-w-2xl mx-auto mb-8 animate-reveal">
+        <MetricsCalculationProgress
+          status={displayStatus}
+          message={progressMessage}
+          progressPercent={progressPercent}
+          iteration={iterationData?.iteration_number || iteration}
+          personaId={id}
+        />
+      </div>
+    )
+  }
+
+  <!-- Training Dashboard with Chart -->
+  {
+    displayStatus === 'completed' && (
+      <div class="mb-8 animate-reveal delay-200">
+        <TrainingDashboard personaId={id} showChart={true} />
+      </div>
+    )
+  }
+
+  <!-- Phase 12: Display metrics with new MetricCard components -->
+  {
+    displayStatus === 'completed' && metrics && (
       <div class="mb-8 animate-reveal delay-300">
         <h2 class="text-xl font-semibold mb-4">
-          Detailed Analysis (Iteration {latestIterationWithMetrics.iteration_number})
+          {iteration
+            ? `Iteration ${iteration} Metrics`
+            : `Iteration ${latestIterationWithMetrics?.iteration_number} Metrics`}
         </h2>
 
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <MetricCard
+            label="F1 Score"
+            value={metrics.f1_score}
+            format="percentage"
+            description="Harmonic mean of precision and recall"
+            variant="primary"
+          />
+          <MetricCard
+            label="Precision"
+            value={metrics.precision}
+            format="percentage"
+            description="Ratio of true positives to all positive predictions"
+            variant="success"
+          />
+          <MetricCard
+            label="Recall"
+            value={metrics.recall}
+            format="percentage"
+            description="Ratio of true positives to all actual positives"
+            variant="info"
+          />
+          <MetricCard
+            label="Cohen's Kappa"
+            value={metrics.cohens_kappa}
+            format="percentage"
+            description="Inter-rater reliability measure"
+            variant="warning"
+          />
+        </div>
+
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <ConfusionMatrix matrix={latestMetrics.confusion_matrix} />
+          <ConfusionMatrix
+            truePositives={displayMetrics.confusion_matrix.true_positives}
+            trueNegatives={displayMetrics.confusion_matrix.true_negatives}
+            falsePositives={displayMetrics.confusion_matrix.false_positives}
+            falseNegatives={displayMetrics.confusion_matrix.false_negatives}
+          />
 
           <div class="card bg-base-200 shadow-md">
             <div class="card-body">
               <h3 class="card-title text-lg mb-4">Cohen's Kappa</h3>
               <div class="text-center">
                 <div class="text-5xl font-bold font-mono text-primary mb-2">
-                  {latestMetrics.cohens_kappa !== null
-                    ? latestMetrics.cohens_kappa.toFixed(3)
-                    : 'N/A'}
+                  {metrics.cohens_kappa !== null ? metrics.cohens_kappa.toFixed(3) : 'N/A'}
                 </div>
                 <p class="text-sm text-base-content/70">
                   Measures agreement between judge and human, accounting for chance.
@@ -197,90 +351,106 @@ const breadcrumbItems = [
   <div class="animate-reveal delay-300">
     <h2 class="text-xl font-semibold mb-4">Iteration History</h2>
 
-    {
-      iterations.length === 0 ? (
-        <div class="alert alert-info">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            class="stroke-current shrink-0 w-6 h-6"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-          <span>No training iterations found.</span>
-        </div>
-      ) : (
-        <div class="overflow-x-auto">
-          <table class="table table-zebra w-full">
-            <thead>
-              <tr>
-                <th>Iteration</th>
-                <th>Status</th>
-                <th>Pairs Evaluated</th>
-                <th>F1 Score</th>
-                <th>Precision</th>
-                <th>Recall</th>
-                <th>Accuracy</th>
-                <th>Started</th>
-                <th />
+    <div class="overflow-x-auto">
+      <table class="table table-zebra">
+        <thead>
+          <tr>
+            <th>Iteration</th>
+            <th>Status</th>
+            <th>Progress</th>
+            <th>F1 Score</th>
+            <th>Cohen's Kappa</th>
+            <th>Completed</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {
+            iterations.map((iter) => (
+              <tr class={iter.id === iterationData?.id ? 'active' : ''}>
+                <td class="font-mono">#{iter.iteration_number}</td>
+                <td>
+                  <Badge variant={getIterationStatusVariant(iter.status)} size="sm">
+                    {iter.status}
+                  </Badge>
+                </td>
+                <td>
+                  {iter.total_pairs_evaluated ? (
+                    <span class="text-sm">
+                      {iter.pairs_reviewed_by_human || 0} / {iter.total_pairs_evaluated} reviewed
+                    </span>
+                  ) : (
+                    <span class="text-sm text-base-content/50">-</span>
+                  )}
+                </td>
+                <td class="font-mono">
+                  {iter.f1_score !== null ? (iter.f1_score * 100).toFixed(1) + '%' : '-'}
+                </td>
+                <td class="font-mono">
+                  {iter.cohens_kappa !== null ? iter.cohens_kappa.toFixed(3) : '-'}
+                </td>
+                <td>
+                  {iter.completed_at ? new Date(iter.completed_at).toLocaleDateString() : '-'}
+                </td>
+                <td>
+                  <div class="flex gap-2">
+                    {iter.iteration_number === iteration ? (
+                      <span class="text-xs text-base-content/50">Current</span>
+                    ) : (
+                      <a
+                        href={`/personas/${id}/metrics?iteration=${iter.iteration_number}`}
+                        class="btn btn-xs btn-ghost"
+                      >
+                        View
+                      </a>
+                    )}
+                    {iter.status === 'completed' && (
+                      <a
+                        href={`/personas/${id}/review/${iter.iteration_number}`}
+                        class="btn btn-xs btn-ghost"
+                      >
+                        Review
+                      </a>
+                    )}
+                  </div>
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {iterations.map((iteration) => (
-                <tr>
-                  <td class="font-mono font-semibold">
-                    <a
-                      href={`/personas/${id}/review/${iteration.iteration_number}`}
-                      class="link link-primary font-mono font-semibold"
-                    >
-                      #{iteration.iteration_number}
-                    </a>
-                  </td>
-                  <td>
-                    <Badge variant={getIterationStatusVariant(iteration.status)} size="sm">
-                      {iteration.status}
-                    </Badge>
-                  </td>
-                  <td class="font-mono">{iteration.total_pairs_evaluated}</td>
-                  <td class="font-mono">
-                    {iteration.f1_score !== null
-                      ? `${(iteration.f1_score * 100).toFixed(1)}%`
-                      : '—'}
-                  </td>
-                  <td class="font-mono">
-                    {iteration.precision !== null
-                      ? `${(iteration.precision * 100).toFixed(1)}%`
-                      : '—'}
-                  </td>
-                  <td class="font-mono">
-                    {iteration.recall !== null ? `${(iteration.recall * 100).toFixed(1)}%` : '—'}
-                  </td>
-                  <td class="font-mono">
-                    {iteration.accuracy !== null
-                      ? `${(iteration.accuracy * 100).toFixed(1)}%`
-                      : '—'}
-                  </td>
-                  <td>{new Date(iteration.started_at).toLocaleDateString()}</td>
-                  <td>
-                    <a
-                      href={`/personas/${id}/review/${iteration.iteration_number}`}
-                      class="btn btn-xs btn-ghost"
-                    >
-                      Review
-                    </a>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )
-    }
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
   </div>
+
+  <!-- Phase 12: Polling script for async metrics calculation -->
+  <script>
+    import { useMetricsPolling } from '@lib/metrics-polling-hook';
+
+    // Get personaId from URL path and iteration from URL query params
+    const pathParts = window.location.pathname.split('/');
+    const personaId = pathParts[2];
+    const urlParams = new URLSearchParams(window.location.search);
+    const iterNum = parseInt(urlParams.get('iteration') || '0', 10);
+
+    // Only start polling if we have iteration param and are on metrics page
+    if (personaId && iterNum > 0 && window.location.pathname.includes('/metrics')) {
+      const { stopPolling } = useMetricsPolling(personaId, iterNum, {
+        initialInterval: 1000,
+        maxInterval: 3000,
+        onStatusChange: (status) => {
+          // Update UI based on status without reloading
+          const progressSection = document.querySelector('.max-w-2xl.mx-auto.mb-8');
+          if (progressSection && status === 'completed') {
+            // Remove progress section when completed
+            progressSection.remove();
+          }
+        },
+        onError: (error) => {
+          console.error('Metrics polling error:', error);
+          // Stop polling on error - don't reload
+          stopPolling();
+        },
+      });
+    }
+  </script>
 </Layout>
