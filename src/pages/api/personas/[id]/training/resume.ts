@@ -7,6 +7,10 @@ import type { APIRoute } from 'astro';
 import { getDatabase } from '@lib/db';
 import { TrainingStateManager } from '@lib/training/training-state';
 import { IterativeTrainingLoop } from '@lib/training/training-loop';
+import { badRequest, notFound, internalError, createErrorResponse } from '@lib/api-error-handler';
+import { createLogger } from '@lib/logger';
+
+const logger = createLogger('API:Training:Resume');
 
 /**
  * Persona database row type
@@ -47,29 +51,20 @@ function isValidUUID(id: string): boolean {
  * @returns {Promise<Response>}
  */
 export const POST: APIRoute = async ({ params }) => {
-  try {
-    const { id } = params;
+  const startTime = Date.now();
+  const { id } = params;
 
+  try {
     // Validate persona ID is provided
     if (!id) {
-      return new Response(
-        JSON.stringify({
-          error: 'INVALID_REQUEST',
-          message: 'Persona ID is required',
-        }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
-      );
+      logger.logApiRequest('POST', '/api/personas/[id]/training/resume', 400, Date.now() - startTime);
+      return badRequest('Persona ID is required', 'INVALID_REQUEST');
     }
 
     // Validate persona ID is a valid UUID
     if (!isValidUUID(id)) {
-      return new Response(
-        JSON.stringify({
-          error: 'INVALID_REQUEST',
-          message: 'Invalid persona ID format. Must be a valid UUID.',
-        }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
-      );
+      logger.logApiRequest('POST', `/api/personas/${id}/training/resume`, 400, Date.now() - startTime);
+      return badRequest('Invalid persona ID format. Must be a valid UUID.', 'INVALID_REQUEST');
     }
 
     const db = getDatabase();
@@ -79,13 +74,8 @@ export const POST: APIRoute = async ({ params }) => {
       | PersonaRow
       | undefined;
     if (!persona) {
-      return new Response(
-        JSON.stringify({
-          error: 'NOT_FOUND',
-          message: 'Persona not found',
-        }),
-        { status: 404, headers: { 'Content-Type': 'application/json' } }
-      );
+      logger.logApiRequest('POST', `/api/personas/${id}/training/resume`, 404, Date.now() - startTime);
+      return notFound('Persona');
     }
 
     // Load checkpoint and verify integrity (before transaction)
@@ -167,6 +157,7 @@ export const POST: APIRoute = async ({ params }) => {
     } catch (error) {
       if (error instanceof Error && error.message === 'ALREADY_RESUMED') {
         // Idempotency: Return success if already resumed
+        logger.logApiRequest('POST', `/api/personas/${id}/training/resume`, 200, Date.now() - startTime);
         return new Response(
           JSON.stringify({
             session_id: pausedSession!.session_id,
@@ -178,31 +169,19 @@ export const POST: APIRoute = async ({ params }) => {
         );
       }
       if (error instanceof Error && error.message === 'AWAITING_HUMAN_REVIEW') {
-        return new Response(
-          JSON.stringify({
-            error: 'AWAITING_HUMAN_REVIEW',
-            message: 'Iteration 1 is awaiting human review. Use the accept-prompt endpoint to continue.',
-          }),
-          { status: 400, headers: { 'Content-Type': 'application/json' } }
+        logger.logApiRequest('POST', `/api/personas/${id}/training/resume`, 400, Date.now() - startTime);
+        return badRequest(
+          'Iteration 1 is awaiting human review. Use the accept-prompt endpoint to continue.',
+          'TRAINING_STATE_ERROR'
         );
       }
       if (error instanceof Error && error.message === 'NO_PAUSED_SESSION') {
-        return new Response(
-          JSON.stringify({
-            error: 'NO_PAUSED_SESSION',
-            message: 'No paused training session found for this persona',
-          }),
-          { status: 400, headers: { 'Content-Type': 'application/json' } }
-        );
+        logger.logApiRequest('POST', `/api/personas/${id}/training/resume`, 400, Date.now() - startTime);
+        return badRequest('No paused training session found for this persona', 'TRAINING_STATE_ERROR');
       }
       if (error instanceof Error && error.message === 'NO_SESSION') {
-        return new Response(
-          JSON.stringify({
-            error: 'NO_SESSION',
-            message: 'No training session found for this persona',
-          }),
-          { status: 404, headers: { 'Content-Type': 'application/json' } }
-        );
+        logger.logApiRequest('POST', `/api/personas/${id}/training/resume`, 404, Date.now() - startTime);
+        return notFound('Training session');
       }
       throw error;
     }
@@ -213,7 +192,7 @@ export const POST: APIRoute = async ({ params }) => {
     // If no checkpoint exists (paused before checkpoint feature was added),
     // create one from current database state
     if (!checkpoint) {
-      console.info('No checkpoint found, creating from current state', {
+      logger.info('No checkpoint found, creating from current state', {
         sessionId: checkpointSessionId,
         personaId: id,
         iteration: pausedSession!.current_iteration,
@@ -301,13 +280,7 @@ export const POST: APIRoute = async ({ params }) => {
              AND iteration_number = ?`
           ).run(id, pausedSession!.current_iteration);
 
-          return new Response(
-            JSON.stringify({
-              error: 'CHECKPOINT_INVALID',
-              message: 'Checkpoint data validation failed. Please check your training data and try again.',
-            }),
-            { status: 500, headers: { 'Content-Type': 'application/json' } }
-          );
+          return internalError('Checkpoint data validation failed. Please check your training data and try again.');
         }
 
         // Save checkpoint
@@ -328,14 +301,7 @@ export const POST: APIRoute = async ({ params }) => {
            AND iteration_number = ?`
         ).run(id, pausedSession!.current_iteration);
 
-        return new Response(
-          JSON.stringify({
-            error: 'CHECKPOINT_NOT_FOUND',
-            message:
-              'Could not find or create checkpoint. Iteration data may be missing. State has been preserved.',
-          }),
-          { status: 500, headers: { 'Content-Type': 'application/json' } }
-        );
+        return internalError('Could not find or create checkpoint. Iteration data may be missing. State has been preserved.');
       }
     }
 
@@ -354,13 +320,7 @@ export const POST: APIRoute = async ({ params }) => {
          AND iteration_number = ?`
       ).run(id, pausedSession!.current_iteration);
 
-      return new Response(
-        JSON.stringify({
-          error: 'CHECKPOINT_INVALID',
-          message: 'Checkpoint data is corrupted or incomplete. State has been preserved.',
-        }),
-        { status: 500, headers: { 'Content-Type': 'application/json' } }
-      );
+      return internalError('Checkpoint data is corrupted or incomplete. State has been preserved.');
     }
 
     // Training has been resumed successfully
@@ -371,16 +331,14 @@ export const POST: APIRoute = async ({ params }) => {
     // User can now continue with human reviews or calculate metrics
 
     // Log successful resume operation
-    console.info('Training resumed', {
+    logger.info('Training resumed', {
       personaId: id,
       sessionId: checkpointSessionId,
       iterationNumber: pausedSession!.current_iteration,
-      checkpointData: {
-        f1Score: checkpoint.metricsSnapshot.f1_score,
-        evaluatedCount: checkpoint.evaluatedResultCount,
-      },
-      timestamp: new Date().toISOString(),
+      f1Score: checkpoint.metricsSnapshot.f1_score,
+      evaluatedCount: checkpoint.evaluatedResultCount,
     });
+    logger.logApiRequest('POST', `/api/personas/${id}/training/resume`, 200, Date.now() - startTime);
 
     return new Response(
       JSON.stringify({
@@ -397,13 +355,7 @@ export const POST: APIRoute = async ({ params }) => {
       { status: 200, headers: { 'Content-Type': 'application/json' } }
     );
   } catch (error) {
-    console.error('POST /api/personas/[id]/training/resume error:', error);
-    return new Response(
-      JSON.stringify({
-        error: 'INTERNAL_ERROR',
-        message: error instanceof Error ? error.message : 'Internal server error',
-      }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
-    );
+    logger.logApiError('POST', `/api/personas/${id}/training/resume`, error as Error);
+    return createErrorResponse(error);
   }
 };

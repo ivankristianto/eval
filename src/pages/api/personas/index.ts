@@ -8,15 +8,18 @@ import type { APIRoute } from 'astro';
 import { createPersona, listPersonas } from '@lib/db/persona-db';
 import { validatePersonaCreation } from '@lib/validation/persona-validator';
 import type { CreatePersonaInput, Persona } from '@src-types/training';
+import { createErrorResponse, badRequest } from '@lib/api-error-handler';
+import { createLogger } from '@lib/logger';
+
+const logger = createLogger('API:Personas');
 
 /**
  * POST /api/personas
  * Create a new persona with task description, models, and initial judge prompt
- * @param root0
- * @param root0.request
- * @returns {Promise<Response>}
  */
 export const POST: APIRoute = async ({ request }) => {
+  const startTime = Date.now();
+
   try {
     const body = await request.json();
 
@@ -24,17 +27,8 @@ export const POST: APIRoute = async ({ request }) => {
     const validation = validatePersonaCreation(body as CreatePersonaInput);
 
     if (!validation.isValid) {
-      return new Response(
-        JSON.stringify({
-          error: 'Validation failed',
-          code: 'VALIDATION_ERROR',
-          details: validation.errors,
-        }),
-        {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+      logger.logApiRequest('POST', '/api/personas', 400, Date.now() - startTime);
+      return badRequest('Validation failed', 'VALIDATION_ERROR', validation.errors);
     }
 
     // Create persona
@@ -48,53 +42,18 @@ export const POST: APIRoute = async ({ request }) => {
       body.prompt_engineer_model_id
     );
 
+    logger.info('Persona created successfully', { personaId: persona.id, name: persona.name });
+    logger.logApiRequest('POST', '/api/personas', 201, Date.now() - startTime);
+
     return new Response(JSON.stringify(persona), {
       status: 201,
       headers: { 'Content-Type': 'application/json' },
     });
   } catch (error) {
-    console.error('Error creating persona:', error);
+    logger.logApiError('POST', '/api/personas', error as Error);
 
-    // Handle specific errors
-    if (error instanceof Error) {
-      if (error.message.includes('UNIQUE constraint failed')) {
-        return new Response(
-          JSON.stringify({
-            error: 'Persona name already exists',
-            code: 'DUPLICATE_NAME',
-          }),
-          {
-            status: 400,
-            headers: { 'Content-Type': 'application/json' },
-          }
-        );
-      }
-
-      if (error.message.includes('model')) {
-        return new Response(
-          JSON.stringify({
-            error: error.message,
-            code: 'MODEL_VALIDATION_ERROR',
-          }),
-          {
-            status: 400,
-            headers: { 'Content-Type': 'application/json' },
-          }
-        );
-      }
-    }
-
-    return new Response(
-      JSON.stringify({
-        error: 'Failed to create persona',
-        code: 'INTERNAL_ERROR',
-        details: error instanceof Error ? error.message : 'Unknown error',
-      }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
+    // Return standardized error response
+    return createErrorResponse(error);
   }
 };
 
@@ -107,43 +66,29 @@ export const POST: APIRoute = async ({ request }) => {
  * @returns {Promise<Response>}
  */
 export const GET: APIRoute = async ({ url }) => {
+  const startTime = Date.now();
+
   try {
     const status = url.searchParams.get('status') as Persona['status'] | null;
 
     // Validate status parameter if provided
     if (status && !['draft', 'training', 'trained', 'incomplete'].includes(status)) {
-      return new Response(
-        JSON.stringify({
-          error: 'Invalid status filter',
-          code: 'INVALID_PARAMETER',
-          details: 'Status must be one of: draft, training, trained, incomplete',
-        }),
-        {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+      logger.logApiRequest('GET', '/api/personas', 400, Date.now() - startTime);
+      return badRequest('Invalid status filter', 'INVALID_PARAMETER', 'Status must be one of: draft, training, trained, incomplete');
     }
 
     const personas = listPersonas(status || undefined);
+
+    logger.logApiRequest('GET', '/api/personas', 200, Date.now() - startTime);
 
     return new Response(JSON.stringify(personas), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });
   } catch (error) {
-    console.error('Error listing personas:', error);
+    logger.logApiError('GET', '/api/personas', error as Error);
 
-    return new Response(
-      JSON.stringify({
-        error: 'Failed to list personas',
-        code: 'INTERNAL_ERROR',
-        details: error instanceof Error ? error.message : 'Unknown error',
-      }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
+    // Return standardized error response
+    return createErrorResponse(error);
   }
 };

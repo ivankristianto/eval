@@ -6,6 +6,10 @@
 import type { APIRoute } from 'astro';
 import { getDatabase } from '@lib/db';
 import { TrainingStateManager } from '@lib/training/training-state';
+import { badRequest, notFound, internalError, createErrorResponse } from '@lib/api-error-handler';
+import { createLogger } from '@lib/logger';
+
+const logger = createLogger('API:Training:Pause');
 
 /**
  * Persona database row type
@@ -47,29 +51,20 @@ function isValidUUID(id: string): boolean {
  * @returns {Promise<Response>}
  */
 export const POST: APIRoute = async ({ params, request }) => {
-  try {
-    const { id } = params;
+  const startTime = Date.now();
+  const { id } = params;
 
+  try {
     // Validate persona ID is provided
     if (!id) {
-      return new Response(
-        JSON.stringify({
-          error: 'INVALID_REQUEST',
-          message: 'Persona ID is required',
-        }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
-      );
+      logger.logApiRequest('POST', '/api/personas/[id]/training/pause', 400, Date.now() - startTime);
+      return badRequest('Persona ID is required', 'INVALID_REQUEST');
     }
 
     // Validate persona ID is a valid UUID
     if (!isValidUUID(id)) {
-      return new Response(
-        JSON.stringify({
-          error: 'INVALID_REQUEST',
-          message: 'Invalid persona ID format. Must be a valid UUID.',
-        }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
-      );
+      logger.logApiRequest('POST', `/api/personas/${id}/training/pause`, 400, Date.now() - startTime);
+      return badRequest('Invalid persona ID format. Must be a valid UUID.', 'INVALID_REQUEST');
     }
 
     const db = getDatabase();
@@ -79,13 +74,8 @@ export const POST: APIRoute = async ({ params, request }) => {
       | PersonaRow
       | undefined;
     if (!persona) {
-      return new Response(
-        JSON.stringify({
-          error: 'NOT_FOUND',
-          message: 'Persona not found',
-        }),
-        { status: 404, headers: { 'Content-Type': 'application/json' } }
-      );
+      logger.logApiRequest('POST', `/api/personas/${id}/training/pause`, 404, Date.now() - startTime);
+      return notFound('Persona');
     }
 
     // Find active or paused training session (for idempotency)
@@ -101,17 +91,13 @@ export const POST: APIRoute = async ({ params, request }) => {
       .get(id) as (TrainingSessionRow & { pause_reason: string | null }) | undefined;
 
     if (!activeSession) {
-      return new Response(
-        JSON.stringify({
-          error: 'NO_ACTIVE_SESSION',
-          message: 'No active training session found for this persona',
-        }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
-      );
+      logger.logApiRequest('POST', `/api/personas/${id}/training/pause`, 400, Date.now() - startTime);
+      return badRequest('No active training session found for this persona', 'NO_ACTIVE_SESSION');
     }
 
     // Idempotency: If already paused, return success without modification
     if (activeSession.status === 'paused') {
+      logger.logApiRequest('POST', `/api/personas/${id}/training/pause`, 200, Date.now() - startTime);
       return new Response(
         JSON.stringify({
           session_id: activeSession.session_id,
@@ -131,24 +117,14 @@ export const POST: APIRoute = async ({ params, request }) => {
       if (body.reason !== undefined && body.reason !== null) {
         // Validate pause reason is a string
         if (typeof body.reason !== 'string') {
-          return new Response(
-            JSON.stringify({
-              error: 'INVALID_REQUEST',
-              message: 'Pause reason must be a string',
-            }),
-            { status: 400, headers: { 'Content-Type': 'application/json' } }
-          );
+          logger.logApiRequest('POST', `/api/personas/${id}/training/pause`, 400, Date.now() - startTime);
+          return badRequest('Pause reason must be a string', 'INVALID_REQUEST');
         }
 
         // Validate pause reason length
         if (body.reason.length > 500) {
-          return new Response(
-            JSON.stringify({
-              error: 'INVALID_REQUEST',
-              message: 'Pause reason must not exceed 500 characters',
-            }),
-            { status: 400, headers: { 'Content-Type': 'application/json' } }
-          );
+          logger.logApiRequest('POST', `/api/personas/${id}/training/pause`, 400, Date.now() - startTime);
+          return badRequest('Pause reason must not exceed 500 characters', 'INVALID_REQUEST');
         }
 
         pauseReason = body.reason.trim();
@@ -239,14 +215,13 @@ export const POST: APIRoute = async ({ params, request }) => {
     // Execute transaction
     transaction();
 
-    // Log successful pause operation
-    console.info('Training paused', {
+    logger.info('Training paused', {
       personaId: id,
       sessionId: activeSession.session_id,
       iterationNumber: activeSession.current_iteration,
       reason: pauseReason,
-      timestamp: new Date().toISOString(),
     });
+    logger.logApiRequest('POST', `/api/personas/${id}/training/pause`, 200, Date.now() - startTime);
 
     return new Response(
       JSON.stringify({
@@ -259,13 +234,7 @@ export const POST: APIRoute = async ({ params, request }) => {
       { status: 200, headers: { 'Content-Type': 'application/json' } }
     );
   } catch (error) {
-    console.error('POST /api/personas/[id]/training/pause error:', error);
-    return new Response(
-      JSON.stringify({
-        error: 'INTERNAL_ERROR',
-        message: error instanceof Error ? error.message : 'Internal server error',
-      }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
-    );
+    logger.logApiError('POST', `/api/personas/${id}/training/pause`, error as Error);
+    return createErrorResponse(error);
   }
 };

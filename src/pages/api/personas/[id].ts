@@ -4,6 +4,10 @@
 import type { APIRoute, APIContext } from 'astro';
 import { getPersona, updatePersona, deletePersona } from '@lib/db/persona-db';
 import type { Persona } from '@src-types/training';
+import { badRequest, notFound, createErrorResponse } from '@lib/api-error-handler';
+import { createLogger } from '@lib/logger';
+
+const logger = createLogger('API:Personas:Detail');
 
 /**
  * GET /api/personas/:id
@@ -13,37 +17,23 @@ import type { Persona } from '@src-types/training';
  * @returns {Promise<Response>}
  */
 export const GET: APIRoute = async ({ params }) => {
-  try {
-    const { id } = params;
+  const startTime = Date.now();
+  const { id } = params;
 
+  try {
     if (!id) {
-      return new Response(
-        JSON.stringify({
-          error: 'INVALID_INPUT',
-          message: 'Persona ID is required',
-        }),
-        {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+      logger.logApiRequest('GET', '/api/personas/:id', 400, Date.now() - startTime);
+      return badRequest('Persona ID is required', 'INVALID_INPUT');
     }
 
     const persona = getPersona(id);
 
     if (!persona) {
-      return new Response(
-        JSON.stringify({
-          error: 'PERSONA_NOT_FOUND',
-          message: 'Persona does not exist',
-          persona_id: id,
-        }),
-        {
-          status: 404,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+      logger.logApiRequest('GET', `/api/personas/${id}`, 404, Date.now() - startTime);
+      return notFound('Persona');
     }
+
+    logger.logApiRequest('GET', `/api/personas/${id}`, 200, Date.now() - startTime);
 
     return new Response(
       JSON.stringify({
@@ -70,17 +60,8 @@ export const GET: APIRoute = async ({ params }) => {
       }
     );
   } catch (error) {
-    console.error('GET /api/personas/:id error:', error);
-    return new Response(
-      JSON.stringify({
-        error: 'INTERNAL_ERROR',
-        message: error instanceof Error ? error.message : 'Internal server error',
-      }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
+    logger.logApiError('GET', `/api/personas/${id}`, error as Error);
+    return createErrorResponse(error);
   }
 };
 
@@ -104,20 +85,13 @@ export const PUT: APIRoute = async (context: APIContext) => {
  * @returns {Promise<Response>}
  */
 export const PATCH: APIRoute = async ({ params, request }) => {
-  try {
-    const { id } = params;
+  const startTime = Date.now();
+  const { id } = params;
 
+  try {
     if (!id) {
-      return new Response(
-        JSON.stringify({
-          error: 'INVALID_INPUT',
-          message: 'Persona ID is required',
-        }),
-        {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+      logger.logApiRequest('PATCH', '/api/personas/:id', 400, Date.now() - startTime);
+      return badRequest('Persona ID is required', 'INVALID_INPUT');
     }
 
     const body = await request.json();
@@ -147,6 +121,9 @@ export const PATCH: APIRoute = async ({ params, request }) => {
     // updatePersona will validate and throw on error
     const updated = updatePersona(id, updates);
 
+    logger.info('Persona updated', { personaId: id, updates: Object.keys(updates) });
+    logger.logApiRequest('PATCH', `/api/personas/${id}`, 200, Date.now() - startTime);
+
     return new Response(
       JSON.stringify({
         id: updated.id,
@@ -165,46 +142,8 @@ export const PATCH: APIRoute = async ({ params, request }) => {
       }
     );
   } catch (error) {
-    console.error('PATCH /api/personas/:id error:', error);
-
-    // Check if it's a not found error
-    if (error instanceof Error && error.message.includes('not found')) {
-      return new Response(
-        JSON.stringify({
-          error: 'PERSONA_NOT_FOUND',
-          message: error.message,
-        }),
-        {
-          status: 404,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
-    }
-
-    // Check if it's a validation error (duplicate name)
-    if (error instanceof Error && error.message.includes('already exists')) {
-      return new Response(
-        JSON.stringify({
-          error: 'VALIDATION_ERROR',
-          message: error.message,
-        }),
-        {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
-    }
-
-    return new Response(
-      JSON.stringify({
-        error: 'INTERNAL_ERROR',
-        message: error instanceof Error ? error.message : 'Internal server error',
-      }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
+    logger.logApiError('PATCH', `/api/personas/${id}`, error as Error);
+    return createErrorResponse(error);
   }
 };
 
@@ -216,24 +155,20 @@ export const PATCH: APIRoute = async ({ params, request }) => {
  * @returns {Promise<Response>}
  */
 export const DELETE: APIRoute = async ({ params }) => {
-  try {
-    const { id } = params;
+  const startTime = Date.now();
+  const { id } = params;
 
+  try {
     if (!id) {
-      return new Response(
-        JSON.stringify({
-          error: 'INVALID_INPUT',
-          message: 'Persona ID is required',
-        }),
-        {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+      logger.logApiRequest('DELETE', '/api/personas/:id', 400, Date.now() - startTime);
+      return badRequest('Persona ID is required', 'INVALID_INPUT');
     }
 
     // deletePersona will throw if persona not found
     deletePersona(id);
+
+    logger.info('Persona deleted', { personaId: id });
+    logger.logApiRequest('DELETE', `/api/personas/${id}`, 200, Date.now() - startTime);
 
     return new Response(
       JSON.stringify({
@@ -246,31 +181,7 @@ export const DELETE: APIRoute = async ({ params }) => {
       }
     );
   } catch (error) {
-    console.error('DELETE /api/personas/:id error:', error);
-
-    // Check if it's a not found error
-    if (error instanceof Error && error.message.includes('not found')) {
-      return new Response(
-        JSON.stringify({
-          error: 'PERSONA_NOT_FOUND',
-          message: error.message,
-        }),
-        {
-          status: 404,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
-    }
-
-    return new Response(
-      JSON.stringify({
-        error: 'INTERNAL_ERROR',
-        message: error instanceof Error ? error.message : 'Internal server error',
-      }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
+    logger.logApiError('DELETE', `/api/personas/${id}`, error as Error);
+    return createErrorResponse(error);
   }
 };

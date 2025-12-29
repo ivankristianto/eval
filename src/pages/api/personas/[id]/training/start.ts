@@ -7,6 +7,10 @@ import type { APIRoute } from 'astro';
 import { getDatabase } from '@lib/db';
 import { IterativeTrainingLoop } from '@lib/training/training-loop';
 import { v4 as uuidv4 } from 'uuid';
+import { badRequest, notFound, createErrorResponse } from '@lib/api-error-handler';
+import { createLogger } from '@lib/logger';
+
+const logger = createLogger('API:Training:Start');
 
 /**
  * POST /api/personas/[id]/training/start
@@ -17,17 +21,13 @@ import { v4 as uuidv4 } from 'uuid';
  * @returns {Promise<Response>}
  */
 export const POST: APIRoute = async ({ params }) => {
-  try {
-    const { id } = params;
+  const startTime = Date.now();
+  const { id } = params;
 
+  try {
     if (!id) {
-      return new Response(
-        JSON.stringify({
-          error: 'INVALID_REQUEST',
-          message: 'Persona ID is required',
-        }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
-      );
+      logger.logApiRequest('POST', `/api/personas/[id]/training/start`, 400, Date.now() - startTime);
+      return badRequest('Persona ID is required', 'INVALID_REQUEST');
     }
 
     const db = getDatabase();
@@ -35,13 +35,8 @@ export const POST: APIRoute = async ({ params }) => {
     // Verify persona exists
     const persona = db.prepare('SELECT * FROM personas WHERE id = ?').get(id) as any;
     if (!persona) {
-      return new Response(
-        JSON.stringify({
-          error: 'NOT_FOUND',
-          message: 'Persona not found',
-        }),
-        { status: 404, headers: { 'Content-Type': 'application/json' } }
-      );
+      logger.logApiRequest('POST', `/api/personas/${id}/training/start`, 404, Date.now() - startTime);
+      return notFound('Persona');
     }
 
     // Check if there's already an active or paused training session
@@ -57,9 +52,11 @@ export const POST: APIRoute = async ({ params }) => {
       .get(id) as { session_id: string; status: string; current_iteration: number } | undefined;
 
     if (existingSession) {
+      logger.logApiRequest('POST', `/api/personas/${id}/training/start`, 409, Date.now() - startTime);
       return new Response(
         JSON.stringify({
           error: 'TRAINING_ALREADY_ACTIVE',
+          code: 'TRAINING_STATE_ERROR',
           message: `Training is already ${existingSession.status}. Please pause or wait for completion before starting a new session.`,
           existing_session: {
             session_id: existingSession.session_id,
@@ -77,12 +74,10 @@ export const POST: APIRoute = async ({ params }) => {
       .get(id) as { count: number };
 
     if (pairCount.count < 10) {
-      return new Response(
-        JSON.stringify({
-          error: 'INSUFFICIENT_DATA',
-          message: `Persona requires at least 10 training pairs. Current count: ${pairCount.count}`,
-        }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      logger.logApiRequest('POST', `/api/personas/${id}/training/start`, 400, Date.now() - startTime);
+      return badRequest(
+        `Persona requires at least 10 training pairs. Current count: ${pairCount.count}`,
+        'INSUFFICIENT_DATA'
       );
     }
 
@@ -94,6 +89,8 @@ export const POST: APIRoute = async ({ params }) => {
     // Create session and start training loop
     const sessionId = uuidv4();
     const trainingLoop = new IterativeTrainingLoop(sessionId, id, db);
+
+    logger.info('Starting training loop', { sessionId, personaId: id });
 
     // Execute training loop (for MVP, run synchronously to ensure decisions are created)
     // In production, this would be fire-and-forget with background job processing
@@ -116,6 +113,15 @@ export const POST: APIRoute = async ({ params }) => {
       .prepare('SELECT status FROM training_loop_state WHERE session_id = ?')
       .get(sessionId) as { status: string } | undefined;
 
+    logger.info('Training loop executed', {
+      sessionId,
+      personaId: id,
+      iterationNumber: createdIteration?.iteration_number,
+      status: loopState?.status,
+    });
+
+    logger.logApiRequest('POST', `/api/personas/${id}/training/start`, 202, Date.now() - startTime);
+
     return new Response(
       JSON.stringify({
         session_id: sessionId,
@@ -136,13 +142,7 @@ export const POST: APIRoute = async ({ params }) => {
       { status: 202, headers: { 'Content-Type': 'application/json' } }
     );
   } catch (error) {
-    console.error('POST /api/personas/[id]/training/start error:', error);
-    return new Response(
-      JSON.stringify({
-        error: 'INTERNAL_ERROR',
-        message: error instanceof Error ? error.message : 'Internal server error',
-      }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
-    );
+    logger.logApiError('POST', `/api/personas/${id}/training/start`, error as Error);
+    return createErrorResponse(error);
   }
 };

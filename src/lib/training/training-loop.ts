@@ -11,6 +11,9 @@ import { calculateMetrics, buildConfusionMatrix } from '@lib/evaluation/metrics'
 import { calculateIterationMetricsFromGroundTruth } from '@lib/evaluation/metrics-orchestrator';
 import { TrainingStateError } from './training-errors';
 import { callModel } from '@lib/utils/api-clients';
+import { createLogger } from '@lib/logger';
+
+const logger = createLogger('TrainingLoop');
 
 /**
  * Check if mock mode is enabled for development.
@@ -128,7 +131,12 @@ export class IterativeTrainingLoop {
 
       const startIteration = (currentIteration.max_iteration || 0) + 1;
 
-      console.info(`[execute] Starting training loop: startIteration=${startIteration}, max_iterations=${persona.max_iterations}, isStopped=${this.isStopped}, isPaused=${this.isPaused}`);
+      logger.info('Starting training loop', {
+        sessionId: this.sessionId,
+        personaId: this.personaId,
+        startIteration,
+        maxIterations: persona.max_iterations,
+      });
 
       // Run training loop with iteration 1 special handling
       let converged = false;
@@ -138,7 +146,7 @@ export class IterativeTrainingLoop {
         iterationNumber <= persona.max_iterations && !this.isStopped && !this.isPaused;
         iterationNumber++
       ) {
-        console.info(`[execute] Running iteration ${iterationNumber}`);
+        logger.logIterationStart(this.personaId, iterationNumber);
         // Check if paused from outside
         const state = this.db
           .prepare('SELECT status FROM training_loop_state WHERE session_id = ?')
@@ -176,7 +184,10 @@ export class IterativeTrainingLoop {
             .run('awaiting_human_review', new Date().toISOString(), this.personaId);
 
           // STOP - wait for human to call acceptPromptsAndContinue()
-          console.info(`Iteration 1 complete. Awaiting human review and prompt acceptance before continuing.`);
+          logger.info('Iteration 1 complete. Awaiting human review and prompt acceptance before continuing.', {
+            personaId: this.personaId,
+            iterationId: result.iterationId,
+          });
           awaitingHumanReview = true;
           break;
         }
@@ -184,6 +195,11 @@ export class IterativeTrainingLoop {
         // ITERATIONS 2+: Check convergence and continue automatically
         if (result.converged) {
           converged = true;
+          logger.info('Training converged', {
+            personaId: this.personaId,
+            iterationNumber,
+            f1Score: result.f1Score,
+          });
           // Update persona status to trained
           this.db
             .prepare('UPDATE personas SET status = ?, updated_at = ? WHERE id = ?')
@@ -197,13 +213,19 @@ export class IterativeTrainingLoop {
         }
       }
 
-      console.info(`[execute] Loop finished. converged=${converged}, awaitingHumanReview=${awaitingHumanReview}, isPaused=${this.isPaused}`);
+      logger.info('Training loop finished', {
+        sessionId: this.sessionId,
+        personaId: this.personaId,
+        converged,
+        awaitingHumanReview,
+        isPaused: this.isPaused,
+      });
 
       // Update final state ONLY if not awaiting human review
       // (awaiting_human_review status is already set in the iteration 1 block)
       if (!awaitingHumanReview) {
         const finalStateStatus = this.isPaused ? 'paused' : converged ? 'completed' : 'completed';
-        console.info(`[execute] Updating final state to: ${finalStateStatus}`);
+        logger.info('Updating final state', { sessionId: this.sessionId, status: finalStateStatus });
         this.db
           .prepare('UPDATE training_loop_state SET status = ?, updated_at = ? WHERE session_id = ?')
           .run(finalStateStatus, new Date().toISOString(), this.sessionId);
@@ -215,7 +237,7 @@ export class IterativeTrainingLoop {
             .run('incomplete', new Date().toISOString(), this.personaId);
         }
       } else {
-        console.info(`[execute] Skipping final state update - awaiting human review`);
+        logger.info('Skipping final state update - awaiting human review', { sessionId: this.sessionId });
       }
     } catch (error) {
       // Log error and update state
@@ -225,6 +247,10 @@ export class IterativeTrainingLoop {
           'UPDATE training_loop_state SET status = ?, error_message = ?, updated_at = ? WHERE session_id = ?'
         )
         .run('failed', errorMessage, new Date().toISOString(), this.sessionId);
+      logger.error('Training loop failed', error as Error, {
+        sessionId: this.sessionId,
+        personaId: this.personaId,
+      });
       throw error;
     }
   }
@@ -515,7 +541,7 @@ export class IterativeTrainingLoop {
     try {
       return await callModel(taskModelId, instruction, { systemPrompt, temperature: 0.7 });
     } catch (error) {
-      console.error('Task model call failed:', error);
+      logger.logLLMError('unknown', taskModelId, error as Error);
       throw new TrainingStateError(
         `Failed to call task model: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
@@ -553,7 +579,7 @@ Respond with a JSON object containing:
       const response = await callModel(judgeModelId, instruction, { temperature: 0.3 });
       return this.parseJudgeResponse(response);
     } catch (error) {
-      console.error('Judge model call failed:', error);
+      logger.logLLMError('unknown', judgeModelId, error as Error);
       throw new TrainingStateError(
         `Failed to call judge model: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
@@ -737,7 +763,10 @@ Respond with a JSON object containing:
           },
         });
 
-        console.info(`Refined task prompt for iteration ${nextIterationNumber}: ${result.task_rationale}`);
+        logger.info('Refined task prompt', {
+          iterationNumber: nextIterationNumber,
+          rationale: result.task_rationale,
+        });
       } else {
         // Keep current task prompt if refinement failed
         this.storeTaskPromptVersion(nextIterationNumber, persona.task_prompt, 'ai', {
@@ -771,16 +800,27 @@ Respond with a JSON object containing:
           },
         });
 
-        console.info(`Refined judge prompt for iteration ${nextIterationNumber}: ${result.judge_rationale}`);
+        logger.info('Refined judge prompt', {
+          iterationNumber: nextIterationNumber,
+          rationale: result.judge_rationale,
+        });
       } else {
-        console.warn('Judge prompt refinement returned no improved prompt, keeping current prompt');
+        logger.warn('Judge prompt refinement returned no improved prompt, keeping current prompt', {
+          iterationNumber: nextIterationNumber,
+        });
       }
 
       if (result.refined_task_prompt || result.refined_judge_prompt) {
-        console.info(`Expected impact: ${result.expected_impact || 'N/A'}`);
+        logger.info('Prompt refinement expected impact', {
+          expectedImpact: result.expected_impact || 'N/A',
+          iterationNumber: nextIterationNumber,
+        });
       }
     } catch (error) {
-      console.error('Failed to refine prompts using LLM:', error);
+      logger.error('Failed to refine prompts using LLM', error as Error, {
+        personaId: this.personaId,
+        iterationId,
+      });
       // Fallback: store current prompts for next iteration with note about failure
       const nextIterationNumber = iteration.iteration_number + 1;
       const fallbackJudgePrompt = `${iteration.judge_prompt_text}\n\n[Note: Automatic refinement after iteration ${iteration.iteration_number} failed - manual review recommended. F1: ${iteration.f1_score?.toFixed(3) || 'N/A'}]`;
@@ -1074,14 +1114,20 @@ Respond with a JSON object containing:
       .prepare('UPDATE personas SET status = ?, updated_at = ? WHERE id = ?')
       .run('training', new Date().toISOString(), this.personaId);
 
-    console.info(`Iteration 1 human review complete. Metrics: F1=${metrics.f1_score.toFixed(3)}. Starting iteration 2...`);
+    logger.info('Iteration 1 human review complete. Starting iteration 2...', {
+      personaId: this.personaId,
+      f1Score: metrics.f1_score,
+    });
 
     // Get persona to check max_iterations
     const persona = this.db
       .prepare('SELECT max_iterations FROM personas WHERE id = ?')
       .get(this.personaId) as { max_iterations: number } | undefined;
 
-    console.info(`Persona max_iterations: ${persona?.max_iterations}, will run iterations 2-${persona?.max_iterations}`);
+    logger.info('Continuing training with iterations 2+', {
+      personaId: this.personaId,
+      maxIterations: persona?.max_iterations,
+    });
 
     // Continue with iterations 2+
     // This will run synchronously and block until all iterations complete or stop condition is met
@@ -1091,7 +1137,10 @@ Respond with a JSON object containing:
     const finalState = this.db
       .prepare('SELECT status FROM training_loop_state WHERE session_id = ?')
       .get(this.sessionId) as { status: string } | undefined;
-    console.info(`Training loop completed. Final state: ${finalState?.status}`);
+    logger.info('Training loop completed', {
+      sessionId: this.sessionId,
+      finalState: finalState?.status,
+    });
   }
 
   /**
@@ -1257,16 +1306,25 @@ Respond with a JSON object containing:
       if (result.refined_task_prompt) {
         // Store refined task prompt for iteration 2
         this.storeTaskPromptVersion(2, result.refined_task_prompt, 'ai', metrics);
-        console.info(`Refined task prompt for iteration 2: ${result.task_rationale}`);
+        logger.info('Refined task prompt for iteration 2', {
+          personaId: this.personaId,
+          rationale: result.task_rationale,
+        });
       }
 
       if (result.refined_judge_prompt) {
         // Store refined judge prompt for iteration 2
         this.storeJudgePromptVersion(2, result.refined_judge_prompt, 'ai', metrics);
-        console.info(`Refined judge prompt for iteration 2: ${result.judge_rationale}`);
+        logger.info('Refined judge prompt for iteration 2', {
+          personaId: this.personaId,
+          rationale: result.judge_rationale,
+        });
       }
     } catch (error) {
-      console.error('Failed to refine prompts based on human feedback:', error);
+      logger.error('Failed to refine prompts based on human feedback', error as Error, {
+        personaId: this.personaId,
+        iterationId,
+      });
       // Fallback: keep current prompts for iteration 2
       this.storeTaskPromptVersion(2, persona.task_prompt, 'ai', metrics);
       this.storeJudgePromptVersion(2, iteration.judge_prompt_text, 'ai', metrics);
