@@ -9,6 +9,25 @@ import { calculateMetrics, buildConfusionMatrix } from './metrics';
 import type { MetricsResult, FailureCase } from '@src-types/training';
 import { MetricsCalculationError } from '@lib/training/training-errors';
 
+/** Database row type for iteration_metrics */
+interface IterationMetricsRow {
+  precision: number;
+  recall: number;
+  f1_score: number;
+  cohens_kappa: number;
+  accuracy: number;
+  true_positives: number;
+  true_negatives: number;
+  false_positives: number;
+  false_negatives: number;
+  calculated_at: string;
+}
+
+/** Database row type for training_iterations joined with iteration_metrics */
+interface IterationMetricsJoinRow extends IterationMetricsRow {
+  iteration_number: number;
+}
+
 /**
  * Calculate metrics for a training iteration AUTOMATICALLY from ground truth
  * Compares judge decisions against expected_output (ground truth) - NO human review required
@@ -261,7 +280,7 @@ function updatePersonaBestScore(iterationId: string, f1Score: number, db: Databa
 export function getIterationMetrics(iterationId: string, db: Database): MetricsResult | null {
   const metrics = db
     .prepare('SELECT * FROM iteration_metrics WHERE iteration_id = ?')
-    .get(iterationId) as any;
+    .get(iterationId) as IterationMetricsRow | undefined;
 
   if (!metrics) {
     return null;
@@ -308,7 +327,7 @@ export function getPersonaMetricsHistory(
       ORDER BY ti.iteration_number ASC
     `
     )
-    .all(personaId) as any[];
+    .all(personaId) as IterationMetricsJoinRow[];
 
   return results.map((row) => ({
     iteration_number: row.iteration_number,

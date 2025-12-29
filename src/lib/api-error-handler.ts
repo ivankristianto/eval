@@ -161,7 +161,7 @@ export function withErrorHandling<T extends APIRoute>(handler: T): T {
 export async function parseJsonBody<T = unknown>(request: Request): Promise<T> {
   try {
     return await request.json();
-  } catch (error) {
+  } catch {
     throw new Error('Invalid JSON in request body');
   }
 }

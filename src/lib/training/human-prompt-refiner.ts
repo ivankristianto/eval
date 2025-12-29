@@ -7,7 +7,7 @@
  */
 
 import type { Database } from 'better-sqlite3';
-import type { MetricsResult } from '@src-types/training';
+import type { TrainingIteration } from '@src-types/training';
 
 /**
  * Aggregated analysis of human feedback patterns.
@@ -59,7 +59,7 @@ export function analyzeHumanFeedback(iterationId: string, db: Database): HumanFe
   // Fetch iteration details
   const iteration = db
     .prepare('SELECT * FROM training_iterations WHERE id = ?')
-    .get(iterationId) as any;
+    .get(iterationId) as TrainingIteration | undefined;
 
   if (!iteration) {
     throw new Error(`Iteration not found: ${iterationId}`);
@@ -123,8 +123,8 @@ export function analyzeHumanFeedback(iterationId: string, db: Database): HumanFe
   const disagreeReviews = decisionsWithReviews.filter((d) => d.human_decision === 'disagree');
 
   // Group by judge decision to understand patterns
-  const judgeWrongButAgreed = disagreeReviews.filter((d) => d.judge_decision === 'agree'); // Judge said correct but was wrong
-  const judgeWrongButDisagreed = disagreeReviews.filter((d) => d.judge_decision === 'disagree'); // Judge said incorrect but was right
+  const _judgeWrongButAgreed = disagreeReviews.filter((d) => d.judge_decision === 'agree'); // Judge said correct but was wrong
+  const _judgeWrongButDisagreed = disagreeReviews.filter((d) => d.judge_decision === 'disagree'); // Judge said incorrect but was right
 
   // Extract common patterns from human notes
   const humanNotes = disagreeReviews.map((d) => d.human_notes || '').filter(Boolean);
@@ -189,10 +189,14 @@ export async function refineJudgePromptFromHumanFeedback(
     const response = await callModel(promptEngineerModelId, systemPrompt);
 
     // Parse JSON response
-    let parsedResponse: any;
+    let parsedResponse: {
+      improved_prompt?: string | null;
+      rationale?: string;
+      expected_impact?: string;
+    } | undefined;
     try {
       parsedResponse = JSON.parse(response);
-    } catch (parseError) {
+    } catch {
       // Return failure with fallback
       return {
         refined_prompt: null,
@@ -205,9 +209,9 @@ export async function refineJudgePromptFromHumanFeedback(
 
     // Extract fields from response
     return {
-      refined_prompt: parsedResponse.improved_prompt || null,
-      rationale: parsedResponse.rationale || 'No rationale provided',
-      expected_impact: parsedResponse.expected_impact || 'No impact prediction provided',
+      refined_prompt: parsedResponse?.improved_prompt || null,
+      rationale: parsedResponse?.rationale || 'No rationale provided',
+      expected_impact: parsedResponse?.expected_impact || 'No impact prediction provided',
       original_prompt: currentPrompt,
       analysis,
     };
@@ -280,7 +284,12 @@ function extractCommonPatterns(notes: string[]): string[] {
 /**
  * Identify systematic errors from disagree reviews.
  */
-function identifySystematicErrors(disagreeReviews: any[]): string[] {
+function identifySystematicErrors(disagreeReviews: {
+  judge_decision: string;
+  human_notes?: string | null;
+  generated_output?: string;
+  expected_output?: string;
+}[]): string[] {
   const errors: string[] = [];
 
   // Check if judge is consistently too lenient (agrees with wrong outputs)
@@ -309,7 +318,11 @@ function identifySystematicErrors(disagreeReviews: any[]): string[] {
 /**
  * Identify edge cases that the judge missed.
  */
-function identifyMissedEdgeCases(disagreeReviews: any[]): string[] {
+function identifyMissedEdgeCases(disagreeReviews: {
+  human_notes?: string | null;
+  generated_output?: string;
+  expected_output?: string;
+}[]): string[] {
   const edgeCases: Set<string> = new Set();
 
   for (const review of disagreeReviews) {
@@ -352,7 +365,11 @@ function identifyMissedEdgeCases(disagreeReviews: any[]): string[] {
 /**
  * Extract key insights from all reviews (both agree and disagree).
  */
-function extractKeyInsights(reviews: any[]): string[] {
+function extractKeyInsights(reviews: {
+  human_decision: 'agree' | 'disagree';
+  human_notes?: string | null;
+  judge_reasoning?: string | null;
+}[]): string[] {
   const insights: string[] = [];
 
   // Calculate agreement rate
@@ -394,7 +411,7 @@ function generateSuggestedImprovements(
   patterns: string[],
   errors: string[],
   edgeCases: string[],
-  insights: string[]
+  _insights: string[]
 ): string[] {
   const improvements: string[] = [];
 

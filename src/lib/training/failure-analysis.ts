@@ -4,7 +4,7 @@
  */
 
 import type { Database } from 'better-sqlite3';
-import type { MetricsResult } from '@src-types/training';
+import type { MetricsResult, Persona, TrainingIteration, IterationMetrics } from '@src-types/training';
 
 /**
  * Example of a model output that the judge incorrectly agreed with (False Positive).
@@ -63,7 +63,7 @@ export async function analyzeIterationFailures(
   // Fetch iteration details
   const iteration = db
     .prepare('SELECT * FROM training_iterations WHERE id = ?')
-    .get(iterationId) as any;
+    .get(iterationId) as TrainingIteration | undefined;
 
   if (!iteration) {
     throw new Error(`Iteration not found: ${iterationId}`);
@@ -72,7 +72,7 @@ export async function analyzeIterationFailures(
   // Fetch persona details
   const persona = db
     .prepare('SELECT * FROM personas WHERE id = ?')
-    .get(iteration.persona_id) as any;
+    .get(iteration.persona_id) as Persona | undefined;
 
   if (!persona) {
     throw new Error(`Persona not found: ${iteration.persona_id}`);
@@ -81,15 +81,15 @@ export async function analyzeIterationFailures(
   // Fetch metrics for iteration
   const metrics = db
     .prepare('SELECT * FROM iteration_metrics WHERE iteration_id = ?')
-    .get(iterationId) as any;
+    .get(iterationId) as IterationMetrics | undefined;
 
   const currentMetrics: MetricsResult = metrics
     ? {
-        precision: metrics.precision,
-        recall: metrics.recall,
-        f1_score: metrics.f1_score,
-        cohens_kappa: metrics.cohens_kappa,
-        accuracy: metrics.accuracy,
+        precision: metrics.precision ?? 0,
+        recall: metrics.recall ?? 0,
+        f1_score: metrics.f1_score ?? 0,
+        cohens_kappa: metrics.cohens_kappa ?? 0,
+        accuracy: metrics.accuracy ?? 0,
         confusion_matrix: {
           true_positives: metrics.true_positives,
           true_negatives: metrics.true_negatives,
@@ -130,7 +130,14 @@ export async function analyzeIterationFailures(
       WHERE jd.iteration_id = ?
     `
     )
-    .all(iterationId) as any[];
+    .all(iterationId) as Array<{
+      judge_decision: 'agree' | 'disagree';
+      human_decision: 'agree' | 'disagree';
+      human_notes: string | null;
+      generated_output: string;
+      expected_output: string;
+      judge_reasoning: string | null;
+    }>;
 
   // Extract false positives (judge agreed, human disagreed)
   const falsePositives: FailureExample[] = decisionsWithReviews

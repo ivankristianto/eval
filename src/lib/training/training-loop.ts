@@ -6,7 +6,18 @@
  */
 
 import type { Database } from 'better-sqlite3';
-import type { MetricsResult } from '@src-types/training';
+import type {
+  MetricsResult,
+  Persona,
+  TrainingPair,
+  TrainingIteration,
+  TrainingLoopState
+} from '@src-types/training';
+import type {
+  FailureAnalysisContext,
+  FailureExample,
+  FalseNegativeExample
+} from './failure-analysis';
 import { calculateMetrics, buildConfusionMatrix } from '@lib/evaluation/metrics';
 import { calculateIterationMetricsFromGroundTruth } from '@lib/evaluation/metrics-orchestrator';
 import { TrainingStateError } from './training-errors';
@@ -84,7 +95,7 @@ export class IterativeTrainingLoop {
       // Fetch persona details
       const persona = this.db
         .prepare('SELECT * FROM personas WHERE id = ?')
-        .get(this.personaId) as any;
+        .get(this.personaId) as Persona | undefined;
 
       if (!persona) {
         throw new TrainingStateError(`Persona not found: ${this.personaId}`);
@@ -275,7 +286,7 @@ export class IterativeTrainingLoop {
    */
   private async runSingleIteration(
     iterationNumber: number,
-    persona: any
+    persona: Persona
   ): Promise<IterationResult> {
     // Create training iteration record
     const iterationId = crypto.randomUUID();
@@ -399,7 +410,7 @@ export class IterativeTrainingLoop {
     // Fetch all training pairs
     const trainingPairs = this.db
       .prepare('SELECT * FROM training_pairs WHERE persona_id = ?')
-      .all(this.personaId) as any[];
+      .all(this.personaId) as TrainingPair[];
 
     // Skip if no training pairs (nothing to evaluate)
     if (trainingPairs.length === 0) {
@@ -409,11 +420,11 @@ export class IterativeTrainingLoop {
     // Fetch persona and iteration for model IDs
     const persona = this.db
       .prepare('SELECT * FROM personas WHERE id = ?')
-      .get(this.personaId) as any;
+      .get(this.personaId) as Persona | undefined;
 
     const iteration = this.db
       .prepare('SELECT * FROM training_iterations WHERE id = ?')
-      .get(iterationId) as any;
+      .get(iterationId) as TrainingIteration | undefined;
 
     if (!persona || !iteration) {
       throw new TrainingStateError('Persona or iteration not found');
@@ -678,7 +689,21 @@ Respond with a JSON object containing:
         WHERE ti.id = ?
       `
       )
-      .get(iterationId) as any;
+      .get(iterationId) as {
+        status: string;
+        iteration_number: number;
+        total_pairs_evaluated: number;
+        judge_prompt_text: string;
+        f1_score: number | null;
+        precision: number | null;
+        recall: number | null;
+        cohens_kappa: number | null;
+        accuracy: number | null;
+        true_positives: number | null;
+        true_negatives: number | null;
+        false_positives: number | null;
+        false_negatives: number | null;
+      } | undefined;
 
     if (!iteration) {
       return;
@@ -709,8 +734,8 @@ Respond with a JSON object containing:
     }>;
 
     // Separate false positives and false negatives
-    const falsePositives: any[] = [];
-    const falseNegatives: any[] = [];
+    const falsePositives: FailureExample[] = [];
+    const falseNegatives: FalseNegativeExample[] = [];
 
     for (const decision of decisions) {
       const isCorrect = this.isOutputCorrect(decision.generated_output, decision.expected_output);
@@ -737,18 +762,18 @@ Respond with a JSON object containing:
       const { refineBothPromptsFromFailureAnalysis } = await import('./prompt-engineer');
 
       // Build failure analysis context
-      const failureContext: any = {
+      const failureContext: FailureAnalysisContext = {
         current_metrics: {
-          f1_score: iteration.f1_score || 0,
-          precision: iteration.precision || 0,
-          recall: iteration.recall || 0,
-          cohens_kappa: iteration.cohens_kappa || 0,
-          accuracy: iteration.accuracy || 0,
+          f1_score: iteration.f1_score ?? 0,
+          precision: iteration.precision ?? 0,
+          recall: iteration.recall ?? 0,
+          cohens_kappa: iteration.cohens_kappa ?? 0,
+          accuracy: iteration.accuracy ?? 0,
           confusion_matrix: {
-            true_positives: iteration.true_positives || 0,
-            true_negatives: iteration.true_negatives || 0,
-            false_positives: iteration.false_positives || 0,
-            false_negatives: iteration.false_negatives || 0,
+            true_positives: iteration.true_positives ?? 0,
+            true_negatives: iteration.true_negatives ?? 0,
+            false_positives: iteration.false_positives ?? 0,
+            false_negatives: iteration.false_negatives ?? 0,
           },
         },
         iteration_number: iteration.iteration_number,
@@ -757,6 +782,7 @@ Respond with a JSON object containing:
         correct_examples: [], // Could add some correct examples for calibration
         current_prompt: iteration.judge_prompt_text,
         task_description: persona.task_prompt,
+        evaluation_criteria: [],
       };
 
       // Call the prompt engineer to refine BOTH prompts
@@ -770,16 +796,16 @@ Respond with a JSON object containing:
       if (result.refined_task_prompt) {
         // Store the refined task prompt for the NEXT iteration
         this.storeTaskPromptVersion(nextIterationNumber, result.refined_task_prompt, 'ai', {
-          f1_score: iteration.f1_score || 0,
-          precision: iteration.precision || 0,
-          recall: iteration.recall || 0,
-          accuracy: iteration.accuracy || 0,
-          cohens_kappa: iteration.cohens_kappa || 0,
+          f1_score: iteration.f1_score ?? 0,
+          precision: iteration.precision ?? 0,
+          recall: iteration.recall ?? 0,
+          accuracy: iteration.accuracy ?? 0,
+          cohens_kappa: iteration.cohens_kappa ?? 0,
           confusion_matrix: {
-            true_positives: iteration.true_positives || 0,
-            true_negatives: iteration.true_negatives || 0,
-            false_positives: iteration.false_positives || 0,
-            false_negatives: iteration.false_negatives || 0,
+            true_positives: iteration.true_positives ?? 0,
+            true_negatives: iteration.true_negatives ?? 0,
+            false_positives: iteration.false_positives ?? 0,
+            false_negatives: iteration.false_negatives ?? 0,
           },
         });
 
@@ -790,16 +816,16 @@ Respond with a JSON object containing:
       } else {
         // Keep current task prompt if refinement failed
         this.storeTaskPromptVersion(nextIterationNumber, persona.task_prompt, 'ai', {
-          f1_score: iteration.f1_score || 0,
-          precision: iteration.precision || 0,
-          recall: iteration.recall || 0,
-          accuracy: iteration.accuracy || 0,
-          cohens_kappa: iteration.cohens_kappa || 0,
+          f1_score: iteration.f1_score ?? 0,
+          precision: iteration.precision ?? 0,
+          recall: iteration.recall ?? 0,
+          accuracy: iteration.accuracy ?? 0,
+          cohens_kappa: iteration.cohens_kappa ?? 0,
           confusion_matrix: {
-            true_positives: iteration.true_positives || 0,
-            true_negatives: iteration.true_negatives || 0,
-            false_positives: iteration.false_positives || 0,
-            false_negatives: iteration.false_negatives || 0,
+            true_positives: iteration.true_positives ?? 0,
+            true_negatives: iteration.true_negatives ?? 0,
+            false_positives: iteration.false_positives ?? 0,
+            false_negatives: iteration.false_negatives ?? 0,
           },
         });
       }
@@ -807,16 +833,16 @@ Respond with a JSON object containing:
       if (result.refined_judge_prompt) {
         // Store the refined judge prompt for the NEXT iteration
         this.storeJudgePromptVersion(nextIterationNumber, result.refined_judge_prompt, 'ai', {
-          f1_score: iteration.f1_score || 0,
-          precision: iteration.precision || 0,
-          recall: iteration.recall || 0,
-          accuracy: iteration.accuracy || 0,
-          cohens_kappa: iteration.cohens_kappa || 0,
+          f1_score: iteration.f1_score ?? 0,
+          precision: iteration.precision ?? 0,
+          recall: iteration.recall ?? 0,
+          accuracy: iteration.accuracy ?? 0,
+          cohens_kappa: iteration.cohens_kappa ?? 0,
           confusion_matrix: {
-            true_positives: iteration.true_positives || 0,
-            true_negatives: iteration.true_negatives || 0,
-            false_positives: iteration.false_positives || 0,
-            false_negatives: iteration.false_negatives || 0,
+            true_positives: iteration.true_positives ?? 0,
+            true_negatives: iteration.true_negatives ?? 0,
+            false_positives: iteration.false_positives ?? 0,
+            false_negatives: iteration.false_negatives ?? 0,
           },
         });
 
@@ -845,29 +871,29 @@ Respond with a JSON object containing:
       const nextIterationNumber = iteration.iteration_number + 1;
       const fallbackJudgePrompt = `${iteration.judge_prompt_text}\n\n[Note: Automatic refinement after iteration ${iteration.iteration_number} failed - manual review recommended. F1: ${iteration.f1_score?.toFixed(3) || 'N/A'}]`;
       this.storeJudgePromptVersion(nextIterationNumber, fallbackJudgePrompt, 'ai', {
-        f1_score: iteration.f1_score || 0,
-        precision: iteration.precision || 0,
-        recall: iteration.recall || 0,
-        accuracy: iteration.accuracy || 0,
-        cohens_kappa: iteration.cohens_kappa || 0,
+        f1_score: iteration.f1_score ?? 0,
+        precision: iteration.precision ?? 0,
+        recall: iteration.recall ?? 0,
+        accuracy: iteration.accuracy ?? 0,
+        cohens_kappa: iteration.cohens_kappa ?? 0,
         confusion_matrix: {
-          true_positives: iteration.true_positives || 0,
-          true_negatives: iteration.true_negatives || 0,
-          false_positives: iteration.false_positives || 0,
-          false_negatives: iteration.false_negatives || 0,
+          true_positives: iteration.true_positives ?? 0,
+          true_negatives: iteration.true_negatives ?? 0,
+          false_positives: iteration.false_positives ?? 0,
+          false_negatives: iteration.false_negatives ?? 0,
         },
       });
       this.storeTaskPromptVersion(nextIterationNumber, persona.task_prompt, 'ai', {
-        f1_score: iteration.f1_score || 0,
-        precision: iteration.precision || 0,
-        recall: iteration.recall || 0,
-        accuracy: iteration.accuracy || 0,
-        cohens_kappa: iteration.cohens_kappa || 0,
+        f1_score: iteration.f1_score ?? 0,
+        precision: iteration.precision ?? 0,
+        recall: iteration.recall ?? 0,
+        accuracy: iteration.accuracy ?? 0,
+        cohens_kappa: iteration.cohens_kappa ?? 0,
         confusion_matrix: {
-          true_positives: iteration.true_positives || 0,
-          true_negatives: iteration.true_negatives || 0,
-          false_positives: iteration.false_positives || 0,
-          false_negatives: iteration.false_negatives || 0,
+          true_positives: iteration.true_positives ?? 0,
+          true_negatives: iteration.true_negatives ?? 0,
+          false_positives: iteration.false_positives ?? 0,
+          false_negatives: iteration.false_negatives ?? 0,
         },
       });
     }
@@ -1035,7 +1061,7 @@ Respond with a JSON object containing:
   async resume(): Promise<void> {
     const state = this.db
       .prepare('SELECT * FROM training_loop_state WHERE session_id = ?')
-      .get(this.sessionId) as any;
+      .get(this.sessionId) as TrainingLoopState | undefined;
 
     if (!state) {
       throw new TrainingStateError(`Session not found: ${this.sessionId}`);
@@ -1080,7 +1106,7 @@ Respond with a JSON object containing:
     // Verify this is iteration 1
     const iteration = this.db
       .prepare('SELECT * FROM training_iterations WHERE id = ?')
-      .get(iterationId) as any;
+      .get(iterationId) as TrainingIteration | undefined;
 
     if (!iteration) {
       throw new TrainingStateError(`Iteration not found: ${iterationId}`);
@@ -1228,7 +1254,7 @@ Respond with a JSON object containing:
     // Get persona details
     const persona = this.db
       .prepare('SELECT * FROM personas WHERE id = ?')
-      .get(this.personaId) as any;
+      .get(this.personaId) as Persona | undefined;
 
     if (!persona) {
       return;
@@ -1237,7 +1263,7 @@ Respond with a JSON object containing:
     // Get iteration data
     const iteration = this.db
       .prepare('SELECT * FROM training_iterations WHERE id = ?')
-      .get(iterationId) as any;
+      .get(iterationId) as TrainingIteration | undefined;
 
     if (!iteration) {
       return;
@@ -1272,7 +1298,15 @@ Respond with a JSON object containing:
     }>;
 
     // Separate cases where human disagreed with judge (for improvement)
-    const humanDisagreements: any[] = [];
+    const humanDisagreements: Array<{
+      judge_decision: 'agree' | 'disagree';
+      human_decision: 'agree' | 'disagree';
+      generated_output: string;
+      expected_output: string;
+      judge_reasoning: string;
+      human_feedback: string;
+      input: string;
+    }> = [];
 
     for (const review of reviews) {
       if (review.human_decision !== review.judge_decision) {
@@ -1292,19 +1326,29 @@ Respond with a JSON object containing:
     // Get metrics for this iteration
     const metricsRow = this.db
       .prepare('SELECT * FROM iteration_metrics WHERE iteration_id = ?')
-      .get(iterationId) as any;
+      .get(iterationId) as {
+      f1_score: number | null;
+      precision: number | null;
+      recall: number | null;
+      cohens_kappa: number | null;
+      accuracy: number | null;
+      true_positives: number | null;
+      true_negatives: number | null;
+      false_positives: number | null;
+      false_negatives: number | null;
+    } | undefined;
 
     const metrics = {
-      f1_score: metricsRow?.f1_score || 0,
-      precision: metricsRow?.precision || 0,
-      recall: metricsRow?.recall || 0,
-      cohens_kappa: metricsRow?.cohens_kappa || 0,
-      accuracy: metricsRow?.accuracy || 0,
+      f1_score: metricsRow?.f1_score ?? 0,
+      precision: metricsRow?.precision ?? 0,
+      recall: metricsRow?.recall ?? 0,
+      cohens_kappa: metricsRow?.cohens_kappa ?? 0,
+      accuracy: metricsRow?.accuracy ?? 0,
       confusion_matrix: {
-        true_positives: metricsRow?.true_positives || 0,
-        true_negatives: metricsRow?.true_negatives || 0,
-        false_positives: metricsRow?.false_positives || 0,
-        false_negatives: metricsRow?.false_negatives || 0,
+        true_positives: metricsRow?.true_positives ?? 0,
+        true_negatives: metricsRow?.true_negatives ?? 0,
+        false_positives: metricsRow?.false_positives ?? 0,
+        false_negatives: metricsRow?.false_negatives ?? 0,
       },
     };
 

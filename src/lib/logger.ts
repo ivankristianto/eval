@@ -62,6 +62,10 @@ export interface LogEntry {
 export class Logger {
   private context: string;
 
+  /**
+   * Creates a new logger instance with a specific context
+   * @param context - The context or module name for log entries
+   */
   constructor(context: string) {
     this.context = context;
   }

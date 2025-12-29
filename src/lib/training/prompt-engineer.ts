@@ -85,8 +85,20 @@ export async function refineJudgePrompt(
     // Call Prompt Engineer Model
     const response = await callModel(promptEngineerModelId, systemPrompt);
 
+    // Check for null/empty/undefined response
+    if (!response || typeof response !== 'string') {
+      return {
+        improved_prompt: null,
+        error: 'LLM returned empty or invalid response',
+      };
+    }
+
     // Parse JSON response
-    let parsedResponse: any;
+    let parsedResponse: {
+      improved_prompt?: string | null;
+      rationale?: string;
+      expected_impact?: string;
+    };
     try {
       parsedResponse = JSON.parse(response);
     } catch (parseError) {
@@ -98,9 +110,9 @@ export async function refineJudgePrompt(
 
     // Extract fields from response
     return {
-      improved_prompt: parsedResponse.improved_prompt || null,
-      rationale: parsedResponse.rationale,
-      expected_impact: parsedResponse.expected_impact,
+      improved_prompt: parsedResponse?.improved_prompt || null,
+      rationale: parsedResponse?.rationale,
+      expected_impact: parsedResponse?.expected_impact,
     };
   } catch (error) {
     return {
@@ -251,8 +263,23 @@ export async function refineBothPromptsFromHumanFeedback(
     // Call Prompt Engineer Model
     const response = await callModel(promptEngineerModelId, systemPrompt);
 
+    // Check for null/empty/undefined response
+    if (!response || typeof response !== 'string') {
+      return {
+        refined_task_prompt: null,
+        refined_judge_prompt: null,
+        error: 'LLM returned empty or invalid response',
+      };
+    }
+
     // Parse JSON response
-    let parsedResponse: any;
+    let parsedResponse: {
+      refined_task_prompt?: string | null;
+      refined_judge_prompt?: string | null;
+      task_rationale?: string;
+      judge_rationale?: string;
+      expected_impact?: string;
+    };
     try {
       parsedResponse = JSON.parse(response);
     } catch (parseError) {
@@ -265,11 +292,11 @@ export async function refineBothPromptsFromHumanFeedback(
 
     // Extract fields from response
     return {
-      refined_task_prompt: parsedResponse.refined_task_prompt || null,
-      refined_judge_prompt: parsedResponse.refined_judge_prompt || null,
-      task_rationale: parsedResponse.task_rationale,
-      judge_rationale: parsedResponse.judge_rationale,
-      expected_impact: parsedResponse.expected_impact,
+      refined_task_prompt: parsedResponse?.refined_task_prompt || null,
+      refined_judge_prompt: parsedResponse?.refined_judge_prompt || null,
+      task_rationale: parsedResponse?.task_rationale,
+      judge_rationale: parsedResponse?.judge_rationale,
+      expected_impact: parsedResponse?.expected_impact,
     };
   } catch (error) {
     return {
@@ -405,8 +432,23 @@ export async function refineBothPromptsFromFailureAnalysis(
     // Call Prompt Engineer Model
     const response = await callModel(promptEngineerModelId, systemPrompt);
 
+    // Check for null/empty/undefined response
+    if (!response || typeof response !== 'string') {
+      return {
+        refined_task_prompt: null,
+        refined_judge_prompt: null,
+        error: 'LLM returned empty or invalid response',
+      };
+    }
+
     // Parse JSON response
-    let parsedResponse: any;
+    let parsedResponse: {
+      refined_task_prompt?: string | null;
+      refined_judge_prompt?: string | null;
+      task_rationale?: string;
+      judge_rationale?: string;
+      expected_impact?: string;
+    };
     try {
       parsedResponse = JSON.parse(response);
     } catch (parseError) {
@@ -419,11 +461,11 @@ export async function refineBothPromptsFromFailureAnalysis(
 
     // Extract fields from response
     return {
-      refined_task_prompt: parsedResponse.refined_task_prompt || null,
-      refined_judge_prompt: parsedResponse.refined_judge_prompt || null,
-      task_rationale: parsedResponse.task_rationale,
-      judge_rationale: parsedResponse.judge_rationale,
-      expected_impact: parsedResponse.expected_impact,
+      refined_task_prompt: parsedResponse?.refined_task_prompt || null,
+      refined_judge_prompt: parsedResponse?.refined_judge_prompt || null,
+      task_rationale: parsedResponse?.task_rationale,
+      judge_rationale: parsedResponse?.judge_rationale,
+      expected_impact: parsedResponse?.expected_impact,
     };
   } catch (error) {
     return {
