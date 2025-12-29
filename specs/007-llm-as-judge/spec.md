@@ -159,6 +159,18 @@ A researcher can pause an ongoing training session and resume it later without l
 - **EC-005**: 100% accuracy iteration (all identical feedback) → Training continues normally if F1 < target. Prompt refinement may have minimal failures to analyze; system handles empty FP/FN sets gracefully.
 - **EC-006**: Timezone differences for timestamps → All timestamps stored in UTC (ISO 8601 with Z suffix). UI converts to user's local timezone for display using JavaScript `toLocaleString()`.
 - **EC-007**: CSV upload interruption → Partial uploads rejected. System validates complete file receipt before parsing; returns error if stream interrupted mid-file.
+- **EC-008**: Contradictory human feedback across iterations (T125) → Each iteration's metrics are calculated independently using only that iteration's human reviews. No cross-iteration comparison or consistency enforcement. Human feedback may evolve as reviewer understanding improves across iterations—this is expected behavior. The system treats each iteration as an independent training cycle.
+- **EC-009**: 0-byte and non-CSV file uploads (T126) → System MUST reject:
+  - Files <10 bytes with error: "File is empty or corrupted"
+  - Files without .csv extension with error: "Only CSV files are accepted"
+  - Files that fail CSV parsing with error showing first parse error
+  - Valid CSV with 0 data rows (header only) with error: "CSV must contain at least 10 data rows"
+- **EC-010**: Empty input fields in CSV (T127) → System MUST reject CSV rows where `input` OR `expected_output` fields are:
+  - Empty strings (`""`)
+  - Whitespace-only (e.g., `"   "`, `"\t\t"`, `"\n"`)
+  - Null values
+  Error message: "Row {N}: input and expected_output must be non-empty"
+- **EC-011**: Timestamp timezone handling (T128) → All timestamps stored in UTC (ISO 8601 format with `Z` suffix: `datetime('now', 'utc')`). UI displays in user's local timezone using JavaScript `toLocaleString()`. This ensures consistent sorting across timezones.
 
 ## Requirements *(mandatory)*
 
@@ -226,12 +238,48 @@ The training system operates in **two distinct phases** with different workflows
 - **FR-015** (Training Loop): See [Two-Phase Training Process](#two-phase-training-process) above.
   - **Iteration 1**: Blocks until mandatory human review complete and refined prompts accepted.
   - **Iteration 2+**: Fully automatic until F1 ≥ target OR max_iterations reached. No user intervention.
-- **FR-016**: System MUST store both Task Prompt and Judge Prompt versions for **significant changes only**. Significant changes are defined as text modifications that remain after whitespace normalization (collapsing multiple spaces, trimming leading/trailing whitespace, normalizing line endings to \n). Purely formatting changes (indentation, spacing) do NOT create new versions. Each iteration must be tagged with the specific prompt versions used. Examples:
-  - **SIGNIFICANT**: "Evaluate correctness" → "Evaluate correctness and completeness"
-  - **NOT SIGNIFICANT**: "Evaluate correctness" → "  Evaluate  correctness\n"
+- **FR-016**: System MUST store both Task Prompt and Judge Prompt versions for **significant changes only**. Significant changes are defined as **text modifications that remain after whitespace normalization**. Whitespace normalization includes:
+  - Collapsing multiple consecutive whitespace characters to single spaces
+  - Trimming leading and trailing whitespace
+  - Normalizing line endings to `\n`
+  - Removing tabs and replacing with spaces
+
+  Purely formatting changes (indentation, spacing, line breaks) do NOT create new versions.
+
+  **Examples**:
+  - **SIGNIFICANT**: `"Evaluate correctness"` → `"Evaluate correctness and completeness"`
+  - **NOT SIGNIFICANT**: `"Evaluate correctness"` → `"  Evaluate  correctness\n"`
+
+  Each iteration must be tagged with the specific prompt versions used.
+
 - **FR-017**: System MUST track which iteration achieved the best F1 score and allow users to export the best-performing Task Prompt and Judge Prompt combination.
-- **FR-018**: System MUST handle API rate limits and failures gracefully during model calls using automatic retry with exponential backoff (maximum 3 retries), notifying the user if all retries are exhausted.
-- **FR-019**: System MUST provide an API interface for all core functionality (create persona, upload data, start/pause/resume training, retrieve metrics, export best prompts).
+
+- **FR-018** (API Retry with Exponential Backoff): System MUST handle API rate limits and failures gracefully during model calls using automatic retry with exponential backoff:
+  - **Initial delay**: 1000ms (1 second)
+  - **Backoff formula**: `delay = min(initial_delay * 2^(attempt-1), max_delay)`
+  - **Maximum delay**: 4000ms (4 seconds)
+  - **Maximum retries**: 3 attempts (total 4 attempts including initial)
+  - **Retry sequence**: Attempt 1 (immediate) → 1000ms → 2000ms → 4000ms
+  - **Total timeout**: ~7 seconds maximum per API call before giving up
+  - **Notification**: User informed if all retries are exhausted with clear error message
+
+- **FR-019** (Loading States): System MUST display loading indicators during async operations with perceived latency targets:
+  - **"Start Training" → first decision appears**: Display progress indicator showing "Generating outputs..." → "Evaluating with judge..."
+  - **CSV upload**: Show progress bar during file upload with percentage complete; validate complete file receipt before parsing
+  - **Metrics calculation**: Show "Calculating metrics..." spinner during post-feedback metrics computation (typically <2 seconds)
+  - **Prompt refinement API**: Show "Refining prompts..." indicator during LLM-based prompt generation
+  - **Perceived latency target**: All operations should display loading state if expected duration >500ms
+  - **Loading state timeout**: If operation exceeds 30 seconds, show "Still working..." message with estimated remaining time
+
+- **FR-020** (Zero-State UI): System MUST display helpful empty state messages when no data exists on major pages:
+  - **Personas List (no personas)**: Display empty state with illustration/icon, heading "No Judge Personas Yet", description "Create your first judge persona to start training AI evaluators", and "Create New Persona" primary action button
+  - **Training Data Tab (no pairs uploaded)**: Display empty state with heading "No Training Data", description "Upload a CSV file with input/output pairs to begin training", "Upload CSV" button, and link to CSV format documentation
+  - **Training Progress (no iterations)**: Display empty state with heading "Training Not Started", description "Upload training data, then start your first iteration", "Go to Training Data" button (if no data), or "Start Training" button (if data exists)
+  - **Metrics Dashboard (no metrics)**: Display empty state with heading "No Metrics Available", description "Complete at least one iteration to see performance metrics"
+  - **Judge Prompts History (no versions)**: Display empty state with heading "No Prompt History", description "Prompt versions will appear here after iterations with refinements"
+  - **Empty State Component**: Reusable EmptyState component with props: `{title, description, actionLabel?, actionHref?, iconName?}`
+
+- **FR-021**: System MUST provide an API interface for all core functionality (create persona, upload data, start/pause/resume training, retrieve metrics, export best prompts).
 
 ### Key Entities
 

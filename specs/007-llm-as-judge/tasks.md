@@ -1,7 +1,7 @@
 # Implementation Tasks: LLM-as-a-Judge System
 
-**Branch**: `007-llm-as-judge` | **Date**: 2025-12-26 | **Total Tasks**: 136
-**Implementation Strategy**: Test-first (TDD). Phase 1 (MVP) focuses on User Stories 1-3; Phases 2-4 add P2 and P3 features. Phase 11 addresses technical debt and specification gaps.
+**Branch**: `007-llm-as-judge` | **Date**: 2025-12-26 | **Total Tasks**: 152 (includes Phase 12)
+**Implementation Strategy**: Test-first (TDD). Phase 1 (MVP) focuses on User Stories 1-3; Phases 2-4 add P2 and P3 features. Phase 11 addresses technical debt. Phase 12 improves UX for async metrics calculation.
 
 **Note**: Each task is independently actionable. Tasks marked [P] can execute in parallel with other [P] tasks in the same phase (no file conflicts, no blocking dependencies).
 
@@ -1118,7 +1118,7 @@ _End-to-end integration tests and MVP validation against spec_
 
 ### Full E2E Test Suite
 
-- [ ] T109 [P] Create comprehensive E2E test tests/e2e/full-mvp.test.ts covering:
+- [x] T109 [P] Create comprehensive E2E test tests/e2e/full-mvp.test.ts covering:
   - Create persona (P1 story 1)
   - Upload training data (P1 story 2)
   - Start training and complete full iteration (P1 story 3)
@@ -1128,7 +1128,7 @@ _End-to-end integration tests and MVP validation against spec_
   - View metrics dashboard (P2 story 5)
   - Pause and resume training (P3 story 6)
 
-- [ ] T110 [P] Create performance test tests/e2e/performance.test.ts validating:
+- [x] T110 [P] Create performance test tests/e2e/performance.test.ts validating:
   - Dashboard renders in <2 seconds (SC-006)
   - Human can review 50 decisions in <10 minutes (SC-008, measured as API response time)
   - No timeout on 200-pair batch (SC-007)
@@ -1143,12 +1143,12 @@ _End-to-end integration tests and MVP validation against spec_
 
 ### Spec Compliance Checklist
 
-- [ ] T111 Validate spec acceptance criteria for User Story 1 (persona creation)
-- [ ] T112 Validate spec acceptance criteria for User Story 2 (CSV upload)
-- [ ] T113 Validate spec acceptance criteria for User Story 3 (training iteration)
-- [ ] T114 Validate spec acceptance criteria for User Story 4 (prompt refinement)
-- [ ] T115 Validate spec acceptance criteria for User Story 5 (metrics dashboard)
-- [ ] T116 Validate spec acceptance criteria for User Story 6 (pause/resume)
+- [x] T111 Validate spec acceptance criteria for User Story 1 (persona creation)
+- [x] T112 Validate spec acceptance criteria for User Story 2 (CSV upload)
+- [x] T113 Validate spec acceptance criteria for User Story 3 (training iteration)
+- [x] T114 Validate spec acceptance criteria for User Story 4 (prompt refinement)
+- [x] T115 Validate spec acceptance criteria for User Story 5 (metrics dashboard)
+- [x] T116 Validate spec acceptance criteria for User Story 6 (pause/resume)
 
 **Acceptance Criteria**:
 
@@ -1265,14 +1265,14 @@ _Address gaps identified in mvp-sanity.md checklist verification_
 
 ### Loading States & Status Transitions
 
-- [ ] T117 [P] Document loading state requirements in spec.md or technical specification:
+- [x] T117 [P] Document loading state requirements in spec.md or technical specification:
   - Define loading states for "Start Training" → first judge decision appears
   - Define spinner/progress indicator behavior during CSV upload
   - Define loading states for metrics calculation (post-feedback submission)
   - Define loading states for prompt refinement API calls
   - Add to FR-017 or new FR-018: "System MUST display loading indicators during async operations with <2 second perceived latency"
 
-- [ ] T118 [P] Document persona status state machine in data-model.md:
+- [x] T118 [P] Document persona status state machine in data-model.md:
   - Explicitly define "Draft" → "Training" transition on first iteration start
   - Define "Training" → "Trained" transition when F1 ≥ target_f1_score
   - Define "Training" → "Incomplete" transition on max_iterations reached without convergence
@@ -1297,7 +1297,7 @@ _Address gaps identified in mvp-sanity.md checklist verification_
 
 ### Error Handling Standardization
 
-- [ ] T120 [P] Complete API error response standardization (T088 follow-up):
+- [x] T120 [P] Complete API error response standardization (T088 follow-up):
   - Define standard error response format: `{error: string, code: string, details?: object, timestamp: string}`
   - Document specific error codes for each validation failure:
     - `MODEL_SEPARATION_VIOLATION`: Task/Judge/Engineer models not from different providers
@@ -1310,7 +1310,7 @@ _Address gaps identified in mvp-sanity.md checklist verification_
   - Create src/lib/error-codes.ts with error code constants and factory functions
   - Update all API endpoints to use standardized error format
 
-- [ ] T121 [P] Quantify exponential backoff parameters for FR-016:
+- [x] T121 [P] Quantify exponential backoff parameters for FR-016:
   - Document backoff formula: `delay = min(initial_delay * 2^(attempt-1), max_delay)`
   - Set initial_delay = 1000ms (1 second)
   - Set max_delay = 4000ms (4 seconds)
@@ -1337,7 +1337,7 @@ _Address gaps identified in mvp-sanity.md checklist verification_
 
 ### Prompt Versioning Clarity
 
-- [ ] T123 Define quantifiable criteria for "Significant Prompt Change" (FR-015):
+- [x] T123 Define quantifiable criteria for "Significant Prompt Change" (FR-015):
   - Option 1: Whitespace-normalized string comparison (if different after trim/normalize, it's significant)
   - Option 2: Levenshtein distance threshold (e.g., >10% character changes)
   - Option 3: Semantic embedding similarity threshold (e.g., cosine similarity <0.95)
@@ -1346,7 +1346,7 @@ _Address gaps identified in mvp-sanity.md checklist verification_
   - Update src/lib/prompt-version-manager.ts implementation to match
   - Add tests in tests/unit/prompt-version-manager.test.ts verifying whitespace normalization
 
-- [ ] T124 [P] Update spec.md FR-015 with explicit definition:
+- [x] T124 [P] Update spec.md FR-015 with explicit definition:
   - Replace "significant changes (semantic changes, not formatting)" with:
     "Significant changes are text modifications that remain after whitespace normalization (collapsing multiple spaces, trimming leading/trailing whitespace, normalizing line endings). Purely formatting changes (indentation, spacing) do not create new versions."
   - Add examples:
@@ -1364,13 +1364,13 @@ _Address gaps identified in mvp-sanity.md checklist verification_
 
 ### Edge Case Specifications
 
-- [ ] T125 [P] Document contradictory feedback handling (CHK011):
+- [x] T125 [P] Document contradictory feedback handling (CHK011):
   - Add to spec.md Edge Cases section:
     "When human feedback contradicts across iterations (e.g., same judge decision marked 'agree' in iteration N, 'disagree' in iteration N+1), the system uses iteration-local feedback only. Each iteration's metrics are calculated independently using that iteration's human reviews. Prompt refinement analyzes only the current iteration's failures."
   - Add to Assumption A-007: "Training data is representative of domain; human feedback may evolve as reviewer understanding improves across iterations"
   - No code changes required (existing implementation already iteration-scoped)
 
-- [ ] T126 [P] Document 0-byte and non-CSV file upload handling (CHK012):
+- [x] T126 [P] Document 0-byte and non-CSV file upload handling (CHK012):
   - Update T037 (CSVUploader component) acceptance criteria:
     - Reject files <10 bytes with error: "File is empty or corrupted"
     - Reject files without .csv extension with error: "Only CSV files are accepted"
@@ -1382,13 +1382,13 @@ _Address gaps identified in mvp-sanity.md checklist verification_
     - Non-CSV file (e.g., .txt, .json)
     - Valid CSV with 0 data rows (header only)
 
-- [ ] T127 [P] Clarify empty input field handling (CHK013):
+- [x] T127 [P] Clarify empty input field handling (CHK013):
   - Update FR-004 to explicitly state: "System MUST reject CSV rows where input OR expected_output fields are empty strings, whitespace-only, or null"
   - Add to csv-parser.ts validation: `row.input.trim() === '' || row.expected_output.trim() === ''`
   - Update error message: "Row {N} rejected: input and expected_output must be non-empty"
   - Add tests for: empty string, whitespace-only, tab-only, newline-only fields
 
-- [ ] T128 [P] Document timezone handling for iteration timestamps (CHK014):
+- [x] T128 [P] Document timezone handling for iteration timestamps (CHK014):
   - Update data-model.md to specify: "All timestamps stored in UTC (ISO 8601 format with Z suffix)"
   - Update database schema to use: `created_at TEXT NOT NULL DEFAULT (datetime('now', 'utc'))`
   - Update UI to display timestamps in user's local timezone using JavaScript `toLocaleString()`
@@ -1541,3 +1541,216 @@ _Address gaps identified in mvp-sanity.md checklist verification_
 - ✅ UI/UX patterns consistent with existing modules
 - ✅ Zero-state UI implemented for all major pages
 - ✅ Documentation updated with all clarifications
+
+---
+
+## Phase 12: UX Improvement - Async Metrics Calculation
+
+_Implement async experience for metrics calculation with live progress updates and redirect flow_
+
+**Phase Goal**: When user clicks "Calculate Metrics" button, redirect to metrics page showing "Training in progress" message and update page in real-time as each iteration completes.
+
+**Context**: User Story 5 (Track Training Progress) requires real-time metrics updates. Currently, metrics calculation may block the UI. This phase decouples the calculation from the UI with proper async/await handling and live polling or WebSocket updates.
+
+**Independent Test Criteria**:
+
+- User clicks calculate-metrics-btn on review page
+- User redirected to `/personas/${personaId}/metrics` immediately
+- Page displays "The training in progress" message
+- Page auto-updates when metrics calculation completes
+- If multiple iterations remain, page continues polling and shows progress for next iterations
+- Loading spinner displays while waiting for each iteration
+- No page freezing or blocking during calculation
+- E2E test: trigger metrics calculation → redirect → verify real-time updates
+
+---
+
+### Backend API Enhancement
+
+- [ ] T137 [P] Create test file tests/integration/calculate-metrics-async.test.ts for async metrics calculation:
+  - Test POST /api/personas/{personaId}/iterations/{iteration}/calculate-metrics returns immediately (200 OK)
+  - Test response includes status indicating "in_progress" or "completed"
+  - Test GET /api/personas/{personaId}/iterations/{iteration}/status returns current progress
+  - Test multiple concurrent calls don't interfere
+  - Test API returns 202 Accepted when metrics calculation is queued
+
+- [ ] T138 Create src/pages/api/personas/[id]/iterations/[iteration]/calculate-metrics.ts implementing:
+  - POST endpoint: Accept metrics calculation request, return 202 Accepted immediately (async)
+  - **Do NOT block on calculation completion**
+  - Store calculation state in training_loop_state table with status: "calculating_metrics"
+  - Queue background task to calculate metrics using existing metrics.ts module
+  - Return response with `{status: "in_progress", iteration: number, persona_id: string}`
+  - Error handling: Return 400 for invalid persona/iteration, 409 for duplicate calculation in progress
+
+- [ ] T139 [P] Create test file tests/integration/metrics-status-endpoint.test.ts for status polling:
+  - Test GET /api/personas/{personaId}/iterations/{iteration}/status returns current metrics
+  - Test status includes: f1_score, precision, recall, cohens_kappa, true_positives, false_positives, etc.
+  - Test status updates as calculation progresses
+  - Test completed status is persistent (doesn't reset on multiple GETs)
+
+- [ ] T140 Create src/pages/api/personas/[id]/iterations/[iteration]/status.ts implementing:
+  - GET endpoint: Return current metrics calculation status
+  - If calculation in progress: Return `{status: "calculating", progress_percent: number, message: "The training in progress"}`
+  - If calculation complete: Return `{status: "completed", metrics: IterationMetrics, duration_ms: number}`
+  - If calculation failed: Return `{status: "error", message: string}`
+
+---
+
+### Frontend UI Components
+
+- [ ] T141 [P] Create test file tests/e2e/async-metrics-calculation.test.ts for end-to-end async flow:
+  - Navigate to human review page for iteration 1
+  - Complete human review
+  - Click "Calculate Metrics" button
+  - Verify redirect to /personas/{personaId}/metrics
+  - Verify "The training in progress" message appears
+  - Verify loading spinner visible
+  - Wait for metrics to complete and verify update
+  - Verify F1 score, precision, recall, Cohen's Kappa display correctly
+
+- [ ] T142 Create src/components/MetricsCalculationProgress.astro implementing:
+  - Display "The training in progress" message prominently
+  - Show loading spinner/animated indicator
+  - Display current calculation status (e.g., "Calculating metrics...", "Refining prompts...")
+  - Show estimated time remaining (if available)
+  - Message styling: alert/info box using daisyUI (e.g., alert-info with appropriate coloring)
+  - Props: `status: string, message: string, progressPercent?: number`
+
+- [ ] T143 [P] Create test file tests/unit/metrics-polling-hook.test.ts for client-side polling logic:
+  - Test polling interval correctly waits between API calls
+  - Test stops polling when status is "completed"
+  - Test handles API errors gracefully
+  - Test updates component state when metrics arrive
+  - Test cleanup function clears intervals on unmount
+
+- [ ] T144 Create src/lib/metrics-polling-hook.ts implementing:
+  - **useMetricsPolling(personaId, iteration)**: React/Astro hook for polling metrics status
+  - Initial state: `{status: "calculating", message: "The training in progress"}`
+  - Poll endpoint: GET /api/personas/{personaId}/iterations/{iteration}/status
+  - Poll interval: 1 second initially, back off to 2 seconds if no change
+  - Stop polling when status === "completed" or "error"
+  - Return: `{status, metrics, isLoading, error, stopPolling}`
+  - Error handling: Retry up to 3 times before showing error message
+
+---
+
+### Page Integration
+
+- [ ] T145 [P] Update src/pages/personas/[id]/review/[iteration].astro to implement async metrics:
+  - Find "Calculate Metrics" button (calculate-metrics-btn)
+  - Add click handler that calls POST /api/personas/{personaId}/iterations/{iteration}/calculate-metrics
+  - On response, redirect to `/personas/${personaId}/metrics?iteration=${iteration}`
+  - Do NOT wait for calculation to complete; redirect immediately (202 response handling)
+  - Add loading state while redirect is happening
+  - Keep existing validation and error handling
+
+- [ ] T146 Create/Update src/pages/personas/[id]/metrics.astro implementing:
+  - Accept query parameter: `?iteration={number}` to focus on specific iteration
+  - If iteration is in progress (from calculate-metrics endpoint response):
+    - Display MetricsCalculationProgress component
+    - Use metrics-polling-hook to poll status
+    - On completion, refresh metrics dashboard with new data
+  - If iteration is complete:
+    - Display full metrics dashboard (existing from Phase 7)
+    - Show metrics for specified iteration (or latest if not specified)
+  - If no iterations exist:
+    - Display empty state: "No Metrics Available"
+
+- [ ] T147 [P] Create test file tests/e2e/metrics-redirect-flow.test.ts for redirect and polling:
+  - Navigate to review page
+  - Click "Calculate Metrics" button
+  - Verify redirect to /personas/{personaId}/metrics
+  - Verify URL contains query parameter (if iteration specified)
+  - Verify "The training in progress" message visible
+  - Wait for completion and verify metrics displayed
+  - Test going back to review page and clicking again (already in progress scenario)
+
+---
+
+### Error Handling & Edge Cases
+
+- [ ] T148 [P] Create test file tests/integration/metrics-calculation-errors.test.ts for error scenarios:
+  - Test duplicate calculation request (already in progress): Returns 409 Conflict
+  - Test invalid persona/iteration: Returns 400 Bad Request with error message
+  - Test calculation timeout: Returns 500 with retry message after 30 seconds
+  - Test partial metrics calculation failure: Returns 202 with partial results
+  - Test network failure during polling: Retry with exponential backoff
+
+- [ ] T149 Create error handling in calculate-metrics endpoint:
+  - Add 409 Conflict response if calculation already in progress for same iteration
+  - Add 400 Bad Request for invalid inputs with clear error messages
+  - Add timeout handling (30s max): If exceeds timeout, return 202 with status="timeout"
+  - Log all errors to server console with iteration context
+  - Return error message to client for display in UI
+
+- [ ] T150 Update metrics-polling-hook error handling:
+  - On polling error: Show error message in UI ("Calculation failed, retrying...")
+  - Retry logic: Exponential backoff (1s → 2s → 4s) up to 3 times
+  - After 3 failures: Show error message and stop polling
+  - Add manual "Retry" button for user-initiated retry
+  - Clear error message when retry succeeds
+
+---
+
+### Documentation & Testing
+
+- [ ] T151 [P] Create documentation file docs/METRICS_ASYNC_UX.md explaining:
+  - Architecture: How async metrics calculation works (202 Accepted pattern)
+  - Client-side polling: Interval, backoff, stop conditions
+  - User experience flow: Click button → redirect → see progress → auto-update
+  - Error recovery: What happens on failures, retry behavior
+  - API contract: Request/response format for calculate-metrics endpoint
+  - Testing: How to test async behavior in E2E tests
+
+- [ ] T152 Create comprehensive test summary file tests/e2e/async-metrics-suite.test.ts covering:
+  - Happy path: Calculate metrics → redirect → see progress → completed
+  - Error path: Calculation fails → show error → user retries
+  - Concurrent path: Multiple iterations calculating → show progress for each
+  - Edge case: User navigates away during calculation → polling stops
+  - Edge case: Browser tab closed during calculation → state preserved in backend
+  - Verify no console errors during entire flow
+
+**Acceptance Criteria**:
+
+- User clicks "Calculate Metrics" button and is immediately redirected to metrics page
+- Page displays "The training in progress" message while calculating
+- Page auto-updates when metrics calculation completes (via polling)
+- Multiple iterations update sequentially without user intervention
+- No page freeze or blocking during calculation
+- Errors handled gracefully with retry options
+- API returns 202 Accepted for async operations
+- Polling stops when calculation complete
+- E2E tests verify complete async flow
+- Documentation explains architecture and UX patterns
+
+---
+
+## Phase 12 Summary
+
+**Total Tasks**: 16 (T137-T152)
+**Estimated Effort**: ~2-3 days (depends on WebSocket vs polling decision)
+**Dependencies**: Requires Phase 7 (metrics dashboard), Phase 5 (iteration completion)
+**Priority**: Medium (UX improvement; enhances user experience without blocking core functionality)
+
+**Parallel Execution Opportunities**:
+
+- Backend API tasks (T137, T138, T139, T140) can run in parallel
+- Frontend component tasks (T141, T142, T143, T144) can run in parallel
+- Page integration tasks (T145, T146, T147) can run in parallel once backend is ready
+- Documentation and tests (T151, T152) can run as final phase after implementation
+
+**Success Definition**:
+
+- ✅ Async metrics calculation returns 202 Accepted immediately
+- ✅ User redirected to metrics page within <500ms
+- ✅ "The training in progress" message displays clearly
+- ✅ Page auto-updates every 1-2 seconds via polling
+- ✅ Calculation completion shows metrics without page refresh
+- ✅ Errors handled gracefully with retry mechanism
+- ✅ No console errors or warnings during flow
+- ✅ E2E tests verify complete async workflow
+- ✅ Zero page freezing or blocking during async operations
+
+---
+
+**Next Phase**: Phase 13+ can add WebSocket real-time updates (if polling proves insufficient), advanced progress visualization, or batch metrics calculations for multiple iterations.

@@ -477,3 +477,270 @@ CREATE TABLE IF NOT EXISTS personas (
 ```
 
 Store migrations in `db/migrations/` directory for reproducibility.
+
+---
+
+## State Machine Documentation
+
+### Persona Lifecycle State Machine
+
+The `personas.status` field follows a strict state machine to ensure data integrity and predictable behavior.
+
+**States**: `draft` → `training` → `trained` | `incomplete`
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                         Persona State Machine                        │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  ┌─────────┐                                                        │
+│  │  draft  │  Initial state after creation                          │
+│  └────┬────┘                                                        │
+│       │                                                             │
+│       │  User clicks "Start Training" AND                          │
+│       │  persona has ≥10 training pairs                            │
+│       ▼                                                             │
+│  ┌──────────────────┐                                              │
+│  │   training       │  Active training in progress                 │
+│  │                  │  - Iterations running                         │
+│  │                  │  - Can be paused/resumed                      │
+│  └──────┬───────────┘                                              │
+│         │                                                            │
+│         │  ┌───────────────────────────────────────────────────┐   │
+│         │  │                                                   │   │
+│         │  │  F1 ≥ target_f1_score                             │   │
+│         │  │  OR user stops early after convergence            │   │
+│         ▼  ▼                                                   │   │
+│  ┌──────────────┐   ┌────────────────┐                          │
+│  │   trained    │   │  incomplete    │                          │
+│  │              │   │                │                          │
+│  │  - F1 ≥ 0.80 │   │  - Max iterations│                         │
+│  │  - Best prompt│   │    reached     │                          │
+│  │    exported   │   │  - F1 < target  │                          │
+│  └──────────────┘   │  - Failed       │                          │
+│                     └────────────────┘                          │
+│                                                                   │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+**Valid Transitions**:
+
+| From State | To State | Trigger | Guard Conditions |
+|------------|----------|---------|------------------|
+| `draft` | `training` | User starts training | persona has ≥10 training pairs |
+| `training` | `trained` | Training completed | F1 ≥ target_f1_score OR user accepts early convergence |
+| `training` | `incomplete` | Training stopped | max_iterations reached AND F1 < target_f1_score |
+| `training` | `training` | Pause/Resume | Training session paused then resumed |
+| `trained` | `training` | User re-trains | User explicitly starts new training session |
+| `incomplete` | `training` | User re-trains | User explicitly starts new training session |
+
+**Invalid Transitions** (must be prevented):
+
+| From State | To State | Reason |
+|------------|----------|--------|
+| `draft` | `trained` | Cannot be trained without running iterations |
+| `draft` | `incomplete` | Cannot be incomplete without starting training |
+| `trained` | `draft` | Cannot return to draft after training |
+| `incomplete` | `draft` | Cannot return to draft after training |
+| `trained` | `incomplete` | Cannot transition from terminal state |
+
+**State Transition Validation** (to be implemented in `persona-db.ts`):
+
+```typescript
+/**
+ * Validates if a persona status transition is allowed
+ * @param currentState Current persona status
+ * @param newState Desired new status
+ * @returns true if transition is valid, false otherwise
+ */
+export function isValidPersonaStatusTransition(
+  currentState: PersonaStatus,
+  newState: PersonaStatus
+): boolean {
+  const validTransitions: Record<PersonaStatus, PersonaStatus[]> = {
+    draft: ['training'],
+    training: ['trained', 'incomplete'], // training → training allowed for pause/resume via separate mechanism
+    trained: ['training'], // Can re-train trained personas
+    incomplete: ['training'], // Can re-train incomplete personas
+  };
+
+  return validTransitions[currentState]?.includes(newState) ?? false;
+}
+
+/**
+ * Transitions persona to training state with guard checks
+ * @throws {Error} if transition is invalid or guard conditions fail
+ */
+export function transitionToTraining(personaId: string): void {
+  const persona = getPersona(personaId);
+  if (!isValidPersonaStatusTransition(persona.status, 'training')) {
+    throw new Error(`Cannot transition from ${persona.status} to training`);
+  }
+
+  // Guard: Must have ≥10 training pairs
+  const pairCount = getTrainingPairCount(personaId);
+  if (pairCount < 10) {
+    throw new Error('Persona requires at least 10 training pairs to start training');
+  }
+
+  // Execute transition
+  updatePersonaStatus(personaId, 'training');
+}
+```
+
+**Terminal States**: `trained`, `incomplete` - These are end states. From here, users can only re-train (transition back to `training`).
+
+---
+
+### TrainingIteration State Machine
+
+The `training_iterations.status` field tracks iteration-level state.
+
+**States**: `in_progress` → `completed` | `paused` | `failed`
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                    TrainingIteration State Machine                   │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  ┌─────────────┐                                                    │
+│  │ in_progress │  Iteration actively running                        │
+│  └───┬────┬────┘                                                    │
+│      │    │                                                         │
+│      │    │  ┌───────────────────────────────────────────────┐     │
+│      │    │  │                                               │     │
+│      │    │  │  Completion                Pause              │     │
+│      │    │  │  - All pairs evaluated      - User clicks     │     │
+│      │    │  │  - Metrics calculated       "Pause"           │     │
+│      │    ▼  ▼                         │                      │     │
+│      │  ┌────────┐  ┌──────────┐         │                      │     │
+│      │  │completed│  │  paused  │         │                      │     │
+│      │  └────────┘  └────┬─────┘         │                      │     │
+│      │                    │               │                      │     │
+│      │                    │               │  User clicks         │     │
+│      │                    │               │  "Resume"           │     │
+│      │                    │               └──────────────────────┘     │
+│      │                    │               ▼                              │
+│      │                    │          ┌─────────────┐                    │
+│      │                    │          │ in_progress  │                   │
+│      │                    │          └──────────────┘                   │
+│      │                    │                                                 │
+│      │    API Failure     │                                                 │
+│      └────────────────────┼─────────────────┐                              │
+│                            ▼                 ▼                              │
+│                         ┌────────┐      ┌──────────┐                         │
+│                         │ failed │      │  failed  │                         │
+│                         │        │      │          │                         │
+│                         │- API   │      │- Resume  │                         │
+│                         │  error │      │  error   │                         │
+│                         └────────┘      └──────────┘                         │
+│                                                                   │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+**Valid Transitions**:
+
+| From State | To State | Trigger |
+|------------|----------|---------|
+| `in_progress` | `completed` | All pairs evaluated, metrics calculated |
+| `in_progress` | `paused` | User clicks "Pause" button |
+| `in_progress` | `failed` | Unrecoverable API error (3 retries exhausted) |
+| `paused` | `in_progress` | User clicks "Resume" button |
+| `paused` | `failed` | Resume fails with unrecoverable error |
+
+**Terminal States**: `completed`, `failed`
+
+**State Persistence**:
+
+- `status`: Current iteration state
+- `started_at`: Set when entering `in_progress`
+- `completed_at`: Set when entering `completed` or `failed`
+- `error_message`: Set when entering `failed` state
+
+---
+
+### TrainingLoopState State Machine
+
+The `training_loop_state.status` field tracks overall session state for pause/resume.
+
+**States**: `pending` → `in_progress` → `paused` → `completed` | `failed`
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                    TrainingLoopState State Machine                   │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  ┌─────────┐                                                        │
+│  │ pending │  Session initialized, awaiting first iteration         │
+│  └────┬────┘                                                        │
+│       │                                                             │
+│       │  User starts training                                       │
+│       ▼                                                             │
+│  ┌──────────────────┐                                              │
+│  │   in_progress    │  Training session running                     │
+│  └──────┬───────────┘                                              │
+│         │                                                            │
+│         │  ┌───────────────────────────────────────────────────┐   │
+│         │  │                                                   │   │
+│         ▼  ▼                                                   │   │
+│  ┌────────────┐   ┌──────────┐   ┌──────────┐                   │
+│  │ completed  │   │  paused  │   │  failed  │                   │
+│  │            │   │          │   │          │                   │
+│  │ - F1 target│   │ - User   │   │ - API    │                   │
+│  │   reached  │   │   pause  │   │   error  │                   │
+│  │ - Max iter │   │          │   │          │                   │
+│  └────────────┘   └────┬─────┘   └──────────┘                   │
+│                        │                                            │
+│                        │  Resume                                    │
+│                        └──────────────────┐                          │
+│                                           ▼                          │
+│                                    ┌──────────────────┐             │
+│                                    │   in_progress     │             │
+│                                    └──────────────────┘             │
+│                                                                   │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+**Valid Transitions**:
+
+| From State | To State | Trigger |
+|------------|----------|---------|
+| `pending` | `in_progress` | User starts training loop |
+| `in_progress` | `paused` | User clicks "Pause" button |
+| `in_progress` | `completed` | Convergence achieved OR max iterations reached |
+| `in_progress` | `failed` | Unrecoverable error during training |
+| `paused` | `in_progress` | User clicks "Resume" button |
+
+**State Persistence**:
+
+- `session_id`: Unique identifier for training session
+- `persona_id`: FK to persona being trained
+- `status`: Current session state
+- `current_iteration`: Last completed iteration number
+- `created_at`: Session start timestamp
+- `updated_at`: Last state change timestamp
+- `converged`: Boolean flag if training converged (F1 ≥ target)
+- `awaiting_human_review`: Boolean flag if waiting for iteration 1 human review
+- `error_message`: Error details if status='failed'
+- `pause_reason`: Reason for pause if status='paused'
+
+**Checkpoint Integration**:
+
+TrainingLoopState integrates with `training_loop_checkpoints` table:
+- Checkpoint saved after each iteration completion
+- Checkpoint includes: iteration state, metrics, prompt versions, next iteration number
+- Resume loads latest checkpoint and restores training loop state
+
+---
+
+### Timestamp Handling
+
+All timestamps stored in **UTC** using ISO 8601 format with `Z` suffix:
+- `created_at TEXT NOT NULL DEFAULT (datetime('now', 'utc'))`
+- Display in user's local timezone using JavaScript `toLocaleString()`
+- Ensures consistent sorting across timezones
+
+**Implementation Note**: Database schema uses UTC storage; UI components convert to local time for display using:
+```javascript
+new Date(timestamp).toLocaleString() // Displays in user's local timezone
+```
