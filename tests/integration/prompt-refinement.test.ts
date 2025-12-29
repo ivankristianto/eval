@@ -57,8 +57,8 @@ describe('Prompt Refinement Integration', () => {
         reasoning: 'Semantically correct despite different wording',
       },
     ],
-    current_prompt: 'Evaluate if the response is accurate and helpful',
-    task_description: 'Customer support quality evaluation',
+    judge_prompt: 'Evaluate if the response is accurate and helpful',
+    task_prompt: 'Customer support quality evaluation',
     evaluation_criteria: ['Accuracy', 'Helpfulness', 'Clarity'],
   };
 

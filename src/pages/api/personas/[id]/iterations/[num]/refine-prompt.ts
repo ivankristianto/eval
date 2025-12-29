@@ -138,7 +138,7 @@ export const POST: APIRoute = async ({ params }) => {
         improved_prompt: refinementResult.improved_prompt,
         rationale: refinementResult.rationale,
         expected_impact: refinementResult.expected_impact,
-        current_prompt: failureContext.current_prompt,
+        current_prompt: failureContext.judge_prompt,
         current_metrics: failureContext.current_metrics,
         iteration_number: iterationNumber,
       }),

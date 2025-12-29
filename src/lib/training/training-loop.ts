@@ -20,6 +20,7 @@ import type {
 } from './failure-analysis';
 import { calculateMetrics, buildConfusionMatrix } from '@lib/evaluation/metrics';
 import { calculateIterationMetricsFromGroundTruth } from '@lib/evaluation/metrics-orchestrator';
+import { getSemanticSimilarityScore } from '@lib/evaluation/semanticSimilarity';
 import { TrainingStateError } from './training-errors';
 import { callModel } from '@lib/utils/api-clients';
 import { createLogger } from '@lib/logger';
@@ -56,6 +57,24 @@ export interface IterationResult {
   iterationId: string;
   f1Score: number;
   converged: boolean;
+}
+
+/**
+ * Extract JSON from LLM response, handling markdown code blocks.
+ * LLMs often wrap JSON responses in ```json ... ``` blocks.
+ * @param response - Raw LLM response
+ * @returns Extracted JSON string, or original if no code blocks found
+ */
+function extractJsonFromResponse(response: string): string {
+  // First, try to extract content from markdown code blocks
+  const jsonCodeBlockRegex = /```(?:json)?\s*\n?([\s\S]*?)\n?```/i;
+  const match = response.match(jsonCodeBlockRegex);
+  if (match && match[1]) {
+    return match[1].trim();
+  }
+
+  // If no code blocks found, return the response as-is
+  return response.trim();
 }
 
 /**
@@ -461,7 +480,8 @@ export class IterativeTrainingLoop {
           persona.judge_model_id,
           pair.input,
           taskModelOutput,
-          iteration.judge_prompt_text
+          iteration.judge_prompt_text,
+          pair.expected_output
         );
         judgeDecision = judgeResult.decision;
         judgeReasoning = judgeResult.reasoning;
@@ -585,13 +605,15 @@ export class IterativeTrainingLoop {
    * @param input - Original input
    * @param generatedOutput - Output from task model
    * @param judgePrompt - Judge prompt to guide evaluation
+   * @param expectedOutput - Optional expected output for semantic similarity fallback
    * @returns Judge decision and reasoning
    */
   private async callJudgeModel(
     judgeModelId: string,
     input: string,
     generatedOutput: string,
-    judgePrompt: string
+    judgePrompt: string,
+    expectedOutput?: string
   ): Promise<JudgeDecisionResult> {
     const instruction = `Judge Prompt: ${judgePrompt}
 
@@ -604,11 +626,18 @@ Respond with a JSON object containing:
 {
   "decision": "agree" or "disagree",
   "reasoning": "Brief explanation of your decision (1-2 sentences)"
-}`;
+}
+  
+Important:
+- Format the response strictly as JSON
+- Avoid any additional commentary outside the JSON response
+- Do not use markdown formatting in your response
+`;
 
     try {
       const response = await callModel(judgeModelId, instruction, { temperature: 0.3 });
-      return this.parseJudgeResponse(response);
+      const jsonContent = extractJsonFromResponse(response);
+      return this.parseJudgeResponse(jsonContent, generatedOutput, expectedOutput);
     } catch (error) {
       logger.logLLMError('unknown', judgeModelId, error as Error);
       throw new TrainingStateError(
@@ -619,10 +648,17 @@ Respond with a JSON object containing:
 
   /**
    * Parse the judge model's response to extract decision and reasoning.
+   * Uses semantic similarity as fallback when JSON parsing fails and expected output is provided.
    * @param response - Raw response from judge model
+   * @param generatedOutput - The generated output for semantic similarity fallback
+   * @param expectedOutput - The expected output for semantic similarity fallback
    * @returns Parsed decision and reasoning
    */
-  private parseJudgeResponse(response: string): JudgeDecisionResult {
+  private async parseJudgeResponse(
+    response: string,
+    generatedOutput?: string,
+    expectedOutput?: string
+  ): Promise<JudgeDecisionResult> {
     try {
       // Try to parse as JSON
       const parsed = JSON.parse(response.trim());
@@ -636,7 +672,7 @@ Respond with a JSON object containing:
       // If JSON parsing fails, fall back to text analysis
     }
 
-    // Fallback: analyze the response text
+    // Fallback 1: analyze the response text for decision keywords
     const lowerResponse = response.toLowerCase();
     if (
       lowerResponse.includes('"decision": "agree"') ||
@@ -656,6 +692,20 @@ Respond with a JSON object containing:
       };
     }
 
+    // Fallback 2: use semantic similarity if both generated and expected outputs are available
+    if (generatedOutput && expectedOutput) {
+      try {
+        const similarityResult = await getSemanticSimilarityScore(generatedOutput, expectedOutput);
+        const decision = similarityResult.overallMatch ? 'agree' : 'disagree';
+        return {
+          decision,
+          reasoning: `Semantic similarity fallback (score: ${similarityResult.score}, ${similarityResult.reasoning})`,
+        };
+      } catch (error) {
+        logger.warn('Semantic similarity fallback failed, using default', { error });
+      }
+    }
+
     // Last resort: default to disagree
     return {
       decision: 'disagree',
@@ -669,7 +719,7 @@ Respond with a JSON object containing:
    * @returns Promise that resolves when prompts are refined
    */
   private async refinePrompts(iterationId: string): Promise<void> {
-    // Get persona's current task prompt and prompt engineer model ID
+    // Get persona's prompt engineer model ID and fallback task prompt
     const persona = this.db
       .prepare('SELECT task_prompt, prompt_engineer_model_id FROM personas WHERE id = ?')
       .get(this.personaId) as { task_prompt: string; prompt_engineer_model_id: string } | undefined;
@@ -710,6 +760,15 @@ Respond with a JSON object containing:
     if (!iteration) {
       return;
     }
+
+    // Get current task prompt from task_prompt_versions for this iteration
+    const taskPromptVersion = this.db
+      .prepare(
+        'SELECT prompt_text FROM task_prompt_versions WHERE persona_id = ? AND iteration_number <= ? ORDER BY iteration_number DESC LIMIT 1'
+      )
+      .get(this.personaId, iteration.iteration_number) as { prompt_text: string } | undefined;
+
+    const currentTaskPrompt = taskPromptVersion?.prompt_text || persona.task_prompt;
 
     // Build failure context from ground truth comparison
     // This requires fetching judge decisions with expected outputs
@@ -782,8 +841,8 @@ Respond with a JSON object containing:
         false_positives: falsePositives,
         false_negatives: falseNegatives,
         correct_examples: [], // Could add some correct examples for calibration
-        current_prompt: iteration.judge_prompt_text,
-        task_description: persona.task_prompt,
+        judge_prompt: iteration.judge_prompt_text,
+        task_prompt: currentTaskPrompt,
         evaluation_criteria: [],
       };
 
@@ -794,6 +853,12 @@ Respond with a JSON object containing:
       );
 
       const nextIterationNumber = iteration.iteration_number + 1;
+
+      logger.info('Prompt refinement result', {
+        iterationNumber: nextIterationNumber,
+        refinedTaskPrompt: !!result.refined_task_prompt,
+        refinedJudgePrompt: !!result.refined_judge_prompt,
+      });
 
       if (result.refined_task_prompt) {
         // Store the refined task prompt for the NEXT iteration
@@ -1310,6 +1375,7 @@ Respond with a JSON object containing:
       input: string;
     }> = [];
 
+    // @TODO: We should analyze agreements too for calibration, but for MVP focus on disagreements.
     for (const review of reviews) {
       if (review.human_decision !== review.judge_decision) {
         // Human disagreed with judge - this is feedback for improvement
@@ -1372,6 +1438,13 @@ Respond with a JSON object containing:
         },
         persona.prompt_engineer_model_id
       );
+
+      logger.info('Prompt refinement from human feedback result', {
+        personaId: this.personaId,
+        iterationId,
+        refinedTaskPromptExists: !!result.refined_task_prompt,
+        refinedJudgePromptExists: !!result.refined_judge_prompt,
+      });
 
       if (result.refined_task_prompt) {
         // Store refined task prompt for iteration 2

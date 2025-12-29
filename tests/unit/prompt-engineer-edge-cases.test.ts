@@ -33,8 +33,8 @@ describe('Prompt Engineer Edge Cases', () => {
     false_positives: [],
     false_negatives: [],
     correct_examples: [],
-    current_prompt: 'Evaluate accuracy',
-    task_description: 'Test task',
+    judge_prompt: 'Evaluate accuracy',
+    task_prompt: 'Test task',
     evaluation_criteria: [],
   };
 

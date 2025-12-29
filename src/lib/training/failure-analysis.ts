@@ -48,8 +48,8 @@ export interface FailureAnalysisContext {
   false_positives: FailureExample[];
   false_negatives: FalseNegativeExample[];
   correct_examples: CorrectExample[];
-  current_prompt: string;
-  task_description: string;
+  judge_prompt: string;
+  task_prompt: string;
   evaluation_criteria: string[];
 }
 
@@ -177,14 +177,23 @@ export async function analyzeIterationFailures(
       reasoning: d.judge_reasoning || 'Correct classification',
     }));
 
+  // Get task prompt from task_prompt_versions for this iteration
+  const taskPromptVersion = db
+    .prepare(
+      'SELECT prompt_text FROM task_prompt_versions WHERE persona_id = ? AND iteration_number <= ? ORDER BY iteration_number DESC LIMIT 1'
+    )
+    .get(iteration.persona_id, iteration.iteration_number) as { prompt_text: string } | undefined;
+
+  const taskPrompt = taskPromptVersion?.prompt_text || persona.task_prompt;
+
   return {
     current_metrics: currentMetrics,
     iteration_number: iteration.iteration_number,
     false_positives: falsePositives,
     false_negatives: falseNegatives,
     correct_examples: correctExamples,
-    current_prompt: iteration.judge_prompt_text,
-    task_description: persona.description || persona.name,
+    judge_prompt: iteration.judge_prompt_text,
+    task_prompt: taskPrompt,
     evaluation_criteria: [], // Will be extracted from task_prompt in future enhancement
   };
 }

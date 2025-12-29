@@ -343,8 +343,8 @@ describe('Failure Analysis', () => {
     expect(result.current_metrics.f1_score).toBe(0.8);
     expect(result.current_metrics.cohens_kappa).toBe(0.7);
     expect(result.iteration_number).toBe(1);
-    expect(result.task_description).toBe('Test description');
-    expect(result.current_prompt).toBe('Evaluate if the response is helpful and polite');
+    expect(result.task_prompt).toBeDefined();
+    expect(result.judge_prompt).toBe('Evaluate if the response is helpful and polite');
   });
 
   it('should return empty arrays when no failures exist', async () => {

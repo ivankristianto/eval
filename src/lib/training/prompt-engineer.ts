@@ -5,6 +5,27 @@
 
 import { callModel } from '@lib/utils/api-clients';
 import type { FailureAnalysisContext } from './failure-analysis';
+import { createLogger } from '@lib/logger';
+
+const logger = createLogger('PromptEngineer');
+
+/**
+ * Extract JSON from LLM response, handling markdown code blocks.
+ * LLMs often wrap JSON responses in ```json ... ``` blocks.
+ * @param response - Raw LLM response
+ * @returns Extracted JSON string, or original if no code blocks found
+ */
+function extractJsonFromResponse(response: string): string {
+  // First, try to extract content from markdown code blocks
+  const jsonCodeBlockRegex = /```(?:json)?\s*\n?([\s\S]*?)\n?```/i;
+  const match = response.match(jsonCodeBlockRegex);
+  if (match && match[1]) {
+    return match[1].trim();
+  }
+
+  // If no code blocks found, return the response as-is
+  return response.trim();
+}
 
 /**
  * Result of a prompt refinement process.
@@ -100,7 +121,8 @@ export async function refineJudgePrompt(
       expected_impact?: string;
     };
     try {
-      parsedResponse = JSON.parse(response);
+      const jsonContent = extractJsonFromResponse(response);
+      parsedResponse = JSON.parse(jsonContent);
     } catch (parseError) {
       return {
         improved_prompt: null,
@@ -135,17 +157,17 @@ function buildPromptRefinementContext(context: FailureAnalysisContext): string {
     false_positives,
     false_negatives,
     correct_examples,
-    current_prompt,
-    task_description,
+    judge_prompt,
+    task_prompt,
   } = context;
 
   return `You are an expert prompt engineer tasked with refining a judge prompt for an LLM evaluation system.
 
-## Task Description
-${task_description}
+## Task Prompt (for context)
+"${task_prompt}"
 
 ## Current Judge Prompt (Iteration ${iteration_number})
-"${current_prompt}"
+"${judge_prompt}"
 
 ## Current Performance Metrics
 - Precision: ${current_metrics.precision.toFixed(2)}
@@ -280,15 +302,37 @@ export async function refineBothPromptsFromHumanFeedback(
       judge_rationale?: string;
       expected_impact?: string;
     };
+
     try {
-      parsedResponse = JSON.parse(response);
+      const jsonContent = extractJsonFromResponse(response);
+      parsedResponse = JSON.parse(jsonContent);
     } catch (parseError) {
+      logger.error('refineBothPromptsFromHumanFeedback - JSON parse error', parseError as Error, {
+        iteration_number: context.iteration_number,
+        promptEngineerModelId,
+        response,
+        parseError,
+      });
+
       return {
         refined_task_prompt: null,
         refined_judge_prompt: null,
         error: `Failed to parse LLM response as JSON: ${parseError instanceof Error ? parseError.message : 'Unknown error'}`,
       };
     }
+
+    // Add logger here if needed to log response for debugging
+    logger.info('refineBothPromptsFromHumanFeedback', {
+      iteration: context.iteration_number,
+      promptEngineerModelId,
+      response: {
+        refined_task_prompt: parsedResponse?.refined_task_prompt || null,
+        refined_judge_prompt: parsedResponse?.refined_judge_prompt || null,
+        task_rationale: parsedResponse?.task_rationale,
+        judge_rationale: parsedResponse?.judge_rationale,
+        expected_impact: parsedResponse?.expected_impact,
+      },
+    });
 
     // Extract fields from response
     return {
@@ -411,6 +455,9 @@ Important:
 - Focus on the most impactful changes based on disagreement patterns
 - Ensure prompts are clear and unambiguous for their respective models
 - The goal is to reduce the disagreement rate and improve F1 score
+- Format the response strictly as JSON
+- Avoid any additional commentary outside the JSON response
+- Do not use markdown formatting in your response
 `;
 }
 
@@ -449,15 +496,36 @@ export async function refineBothPromptsFromFailureAnalysis(
       judge_rationale?: string;
       expected_impact?: string;
     };
+
     try {
-      parsedResponse = JSON.parse(response);
+      const jsonContent = extractJsonFromResponse(response);
+      parsedResponse = JSON.parse(jsonContent);
     } catch (parseError) {
+      logger.error('refineBothPromptsFromFailureAnalysis - JSON parse error', parseError as Error, {
+        iteration_number: failureContext.iteration_number,
+        promptEngineerModelId,
+        response,
+        parseError,
+      });
+
       return {
         refined_task_prompt: null,
         refined_judge_prompt: null,
         error: `Failed to parse LLM response as JSON: ${parseError instanceof Error ? parseError.message : 'Unknown error'}`,
       };
     }
+
+    logger.info('refineBothPromptsFromFailureAnalysis', {
+      iteration: failureContext.iteration_number,
+      promptEngineerModelId,
+      response: {
+        refined_task_prompt: parsedResponse?.refined_task_prompt || null,
+        refined_judge_prompt: parsedResponse?.refined_judge_prompt || null,
+        task_rationale: parsedResponse?.task_rationale,
+        judge_rationale: parsedResponse?.judge_rationale,
+        expected_impact: parsedResponse?.expected_impact,
+      },
+    });
 
     // Extract fields from response
     return {
@@ -489,20 +557,17 @@ function buildFailureAnalysisPromptContextForBothPrompts(context: FailureAnalysi
     false_positives,
     false_negatives,
     correct_examples,
-    current_prompt,
-    task_description,
+    judge_prompt,
+    task_prompt,
   } = context;
 
   return `You are an expert prompt engineer tasked with refining both the task prompt and judge prompt for an LLM evaluation system based on failure analysis.
 
-## Task Description
-${task_description}
-
-## Current Task Prompt
-"${task_description}"
+## Current Task Prompt (Iteration ${iteration_number})
+"${task_prompt}"
 
 ## Current Judge Prompt (Iteration ${iteration_number})
-"${current_prompt}"
+"${judge_prompt}"
 
 ## Current Performance Metrics
 - Precision: ${current_metrics.precision.toFixed(2)}
@@ -608,5 +673,8 @@ Important:
 - Ensure prompts are clear and unambiguous for their respective models
 - The task prompt should guide the model to generate outputs that match expected outputs
 - The judge prompt should guide the model to correctly evaluate outputs against expected outputs
+- Format the response strictly as JSON
+- Avoid any additional commentary outside the JSON response
+- Do not use markdown formatting in your response
 `;
 }

@@ -23,67 +23,50 @@
  * @see {@link https://github.com/anthropics/eval-ai-models/tree/main/specs/007-llm-as-judge}
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { getDatabase } from '@lib/db';
+import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, vi } from 'vitest';
+import {
+  getTestDatabase,
+  initializeTestDatabase,
+  cleanTestDatabase,
+  closeTestDatabase,
+  createTestModelConfig,
+} from '../setup';
 import { createPersona, getPersona, updatePersona, listPersonas } from '@lib/db/persona-db';
 
+// Mock getDatabase to return the test database
+vi.mock('@lib/db/db', () => ({
+  getDatabase: () => getTestDatabase(),
+}));
+
 describe('Persona State Machine', () => {
-  let db: ReturnType<typeof getDatabase>;
   let testPersonaIds: string[] = [];
-  let testModelIds: { task: string; judge: string; promptEngineer: string } = {
-    task: 'sm-test-task-model',
-    judge: 'sm-test-judge-model',
-    promptEngineer: 'sm-test-prompt-model',
-  };
+  let testModelIds: { task: string; judge: string; promptEngineer: string };
+
+  beforeAll(() => {
+    initializeTestDatabase();
+  });
+
+  afterAll(() => {
+    closeTestDatabase();
+  });
 
   beforeEach(() => {
-    db = getDatabase();
+    const db = getTestDatabase();
+
+    // Clean test database before each test
+    cleanTestDatabase();
 
     // Create test models for state machine tests (one from each provider)
-    db.prepare(
-      'INSERT OR IGNORE INTO ModelConfiguration (id, provider, model_name, api_key_encrypted, is_active, created_at, updated_at) VALUES (?, ?, ?, ?, 1, ?, ?)'
-    ).run(
-      testModelIds.task,
-      'openai',
-      'gpt-4',
-      'encrypted-key-1',
-      new Date().toISOString(),
-      new Date().toISOString()
-    );
-
-    db.prepare(
-      'INSERT OR IGNORE INTO ModelConfiguration (id, provider, model_name, api_key_encrypted, is_active, created_at, updated_at) VALUES (?, ?, ?, ?, 1, ?, ?)'
-    ).run(
-      testModelIds.judge,
-      'anthropic',
-      'claude-3',
-      'encrypted-key-2',
-      new Date().toISOString(),
-      new Date().toISOString()
-    );
-
-    db.prepare(
-      'INSERT OR IGNORE INTO ModelConfiguration (id, provider, model_name, api_key_encrypted, is_active, created_at, updated_at) VALUES (?, ?, ?, ?, 1, ?, ?)'
-    ).run(
-      testModelIds.promptEngineer,
-      'google',
-      'gemini-pro',
-      'encrypted-key-3',
-      new Date().toISOString(),
-      new Date().toISOString()
-    );
-
-    // Clean up any existing test personas
-    const personas = db
-      .prepare("SELECT id FROM personas WHERE name LIKE 'State Machine Test%'")
-      .all() as { id: string }[];
-    for (const persona of personas) {
-      db.prepare('DELETE FROM training_pairs WHERE persona_id = ?').run(persona.id);
-      db.prepare('DELETE FROM personas WHERE id = ?').run(persona.id);
-    }
+    testModelIds = {
+      task: createTestModelConfig(db, 'openai'),
+      judge: createTestModelConfig(db, 'anthropic'),
+      promptEngineer: createTestModelConfig(db, 'google'),
+    };
   });
 
   afterEach(() => {
+    const db = getTestDatabase();
+
     // Clean up test personas
     for (const id of testPersonaIds) {
       try {
@@ -120,6 +103,7 @@ describe('Persona State Machine', () => {
     });
 
     it('should prevent draft → training transition with <10 training pairs', () => {
+      const db = getTestDatabase();
       const persona = createPersona(
         'State Machine Test - Insufficient Data',
         'Test persona for validation',
@@ -153,6 +137,7 @@ describe('Persona State Machine', () => {
 
   describe('Training → Trained Transition', () => {
     it('should transition from training to trained when F1 ≥ target', () => {
+      const db = getTestDatabase();
       const persona = createPersona(
         'State Machine Test - Training to Trained',
         'Test persona for convergence',
@@ -180,6 +165,7 @@ describe('Persona State Machine', () => {
     });
 
     it('should record best iteration number when transitioning to trained', () => {
+      const db = getTestDatabase();
       const persona = createPersona(
         'State Machine Test - Best Iteration',
         'Test persona for best iteration tracking',
@@ -207,6 +193,7 @@ describe('Persona State Machine', () => {
 
   describe('Training → Incomplete Transition', () => {
     it('should transition from training to incomplete when max iterations reached without convergence', () => {
+      const db = getTestDatabase();
       const persona = createPersona(
         'State Machine Test - Training to Incomplete',
         'Test persona for incomplete training',
@@ -287,6 +274,7 @@ describe('Persona State Machine', () => {
     });
 
     it('should reset iteration tracking when re-training from trained', () => {
+      const db = getTestDatabase();
       const persona = createPersona(
         'State Machine Test - Reset on Re-train',
         'Test persona for iteration reset on re-training',
@@ -413,6 +401,7 @@ describe('Persona State Machine', () => {
 
   describe('Status Persistence to Database', () => {
     it('should persist status changes to database', () => {
+      const db = getTestDatabase();
       const persona = createPersona(
         'State Machine Test - Persistence',
         'Test persona for status persistence',
@@ -522,6 +511,7 @@ describe('Persona State Machine', () => {
 
   describe('Convergence Detection', () => {
     it('should identify convergence when F1 ≥ target_f1_score', () => {
+      const db = getTestDatabase();
       const persona = createPersona(
         'State Machine Test - Convergence',
         'Test persona for convergence detection',
@@ -549,6 +539,7 @@ describe('Persona State Machine', () => {
     });
 
     it('should identify non-convergence when F1 < target_f1_score', () => {
+      const db = getTestDatabase();
       const persona = createPersona(
         'State Machine Test - Non-Convergence',
         'Test persona for non-convergence detection',
@@ -578,6 +569,7 @@ describe('Persona State Machine', () => {
 
   describe('Max Iterations Detection', () => {
     it('should detect when max iterations reached', () => {
+      const db = getTestDatabase();
       const persona = createPersona(
         'State Machine Test - Max Iterations',
         'Test persona for max iterations detection',
@@ -605,6 +597,7 @@ describe('Persona State Machine', () => {
     });
 
     it('should detect when max iterations not reached', () => {
+      const db = getTestDatabase();
       const persona = createPersona(
         'State Machine Test - Below Max Iterations',
         'Test persona for max iterations detection',
@@ -670,6 +663,7 @@ describe('Persona State Machine', () => {
 
   describe('Status Constraints', () => {
     it('should enforce status CHECK constraint in database schema', () => {
+      const db = getTestDatabase();
       // Verify the CHECK constraint exists
       const tableInfo = db
         .prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='personas'")
