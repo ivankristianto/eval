@@ -57,13 +57,23 @@ export const POST: APIRoute = async ({ params, request }) => {
   try {
     // Validate persona ID is provided
     if (!id) {
-      logger.logApiRequest('POST', '/api/personas/[id]/training/pause', 400, Date.now() - startTime);
+      logger.logApiRequest(
+        'POST',
+        '/api/personas/[id]/training/pause',
+        400,
+        Date.now() - startTime
+      );
       return badRequest('Persona ID is required', 'INVALID_REQUEST');
     }
 
     // Validate persona ID is a valid UUID
     if (!isValidUUID(id)) {
-      logger.logApiRequest('POST', `/api/personas/${id}/training/pause`, 400, Date.now() - startTime);
+      logger.logApiRequest(
+        'POST',
+        `/api/personas/${id}/training/pause`,
+        400,
+        Date.now() - startTime
+      );
       return badRequest('Invalid persona ID format. Must be a valid UUID.', 'INVALID_REQUEST');
     }
 
@@ -74,7 +84,12 @@ export const POST: APIRoute = async ({ params, request }) => {
       | PersonaRow
       | undefined;
     if (!persona) {
-      logger.logApiRequest('POST', `/api/personas/${id}/training/pause`, 404, Date.now() - startTime);
+      logger.logApiRequest(
+        'POST',
+        `/api/personas/${id}/training/pause`,
+        404,
+        Date.now() - startTime
+      );
       return notFound('Persona');
     }
 
@@ -91,13 +106,23 @@ export const POST: APIRoute = async ({ params, request }) => {
       .get(id) as (TrainingSessionRow & { pause_reason: string | null }) | undefined;
 
     if (!activeSession) {
-      logger.logApiRequest('POST', `/api/personas/${id}/training/pause`, 400, Date.now() - startTime);
+      logger.logApiRequest(
+        'POST',
+        `/api/personas/${id}/training/pause`,
+        400,
+        Date.now() - startTime
+      );
       return badRequest('No active training session found for this persona', 'NO_ACTIVE_SESSION');
     }
 
     // Idempotency: If already paused, return success without modification
     if (activeSession.status === 'paused') {
-      logger.logApiRequest('POST', `/api/personas/${id}/training/pause`, 200, Date.now() - startTime);
+      logger.logApiRequest(
+        'POST',
+        `/api/personas/${id}/training/pause`,
+        200,
+        Date.now() - startTime
+      );
       return new Response(
         JSON.stringify({
           session_id: activeSession.session_id,
@@ -117,13 +142,23 @@ export const POST: APIRoute = async ({ params, request }) => {
       if (body.reason !== undefined && body.reason !== null) {
         // Validate pause reason is a string
         if (typeof body.reason !== 'string') {
-          logger.logApiRequest('POST', `/api/personas/${id}/training/pause`, 400, Date.now() - startTime);
+          logger.logApiRequest(
+            'POST',
+            `/api/personas/${id}/training/pause`,
+            400,
+            Date.now() - startTime
+          );
           return badRequest('Pause reason must be a string', 'INVALID_REQUEST');
         }
 
         // Validate pause reason length
         if (body.reason.length > 500) {
-          logger.logApiRequest('POST', `/api/personas/${id}/training/pause`, 400, Date.now() - startTime);
+          logger.logApiRequest(
+            'POST',
+            `/api/personas/${id}/training/pause`,
+            400,
+            Date.now() - startTime
+          );
           return badRequest('Pause reason must not exceed 500 characters', 'INVALID_REQUEST');
         }
 

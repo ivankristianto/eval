@@ -13,6 +13,10 @@ import type { APIRoute } from 'astro';
 import { getDatabase } from '@lib/db';
 import { storePromptVersion } from '@lib/training/prompt-version-manager';
 import { IterativeTrainingLoop } from '@lib/training/training-loop';
+import { badRequest, notFound, createErrorResponse } from '@lib/api-error-handler';
+import { createLogger } from '@lib/logger';
+
+const logger = createLogger('API:Training:AcceptPrompt');
 
 /**
  * POST /api/personas/[id]/iterations/[num]/accept-prompt
@@ -26,28 +30,29 @@ import { IterativeTrainingLoop } from '@lib/training/training-loop';
  * @returns {Promise<Response>}
  */
 export const POST: APIRoute = async ({ params, request }) => {
-  try {
-    const { id, num } = params;
+  const startTime = Date.now();
+  const { id, num } = params;
 
+  try {
     if (!id || !num) {
-      return new Response(
-        JSON.stringify({
-          error: 'INVALID_REQUEST',
-          message: 'Persona ID and iteration number are required',
-        }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      logger.logApiRequest(
+        'POST',
+        '/api/personas/[id]/iterations/[num]/accept-prompt',
+        400,
+        Date.now() - startTime
       );
+      return badRequest('Persona ID and iteration number are required', 'INVALID_REQUEST');
     }
 
     const iterationNumber = parseInt(num, 10);
     if (isNaN(iterationNumber)) {
-      return new Response(
-        JSON.stringify({
-          error: 'INVALID_REQUEST',
-          message: 'Iteration number must be a valid integer',
-        }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      logger.logApiRequest(
+        'POST',
+        `/api/personas/${id}/iterations/${num}/accept-prompt`,
+        400,
+        Date.now() - startTime
       );
+      return badRequest('Iteration number must be a valid integer', 'INVALID_REQUEST');
     }
 
     const db = getDatabase();
@@ -55,13 +60,13 @@ export const POST: APIRoute = async ({ params, request }) => {
     // Verify persona exists first
     const persona = db.prepare('SELECT * FROM personas WHERE id = ?').get(id) as any;
     if (!persona) {
-      return new Response(
-        JSON.stringify({
-          error: 'NOT_FOUND',
-          message: 'Persona not found',
-        }),
-        { status: 404, headers: { 'Content-Type': 'application/json' } }
+      logger.logApiRequest(
+        'POST',
+        `/api/personas/${id}/iterations/${num}/accept-prompt`,
+        404,
+        Date.now() - startTime
       );
+      return notFound('Persona');
     }
 
     // Get iteration to verify it exists
@@ -70,13 +75,13 @@ export const POST: APIRoute = async ({ params, request }) => {
       .get(id, iterationNumber) as any;
 
     if (!iteration) {
-      return new Response(
-        JSON.stringify({
-          error: 'NOT_FOUND',
-          message: `Iteration ${iterationNumber} not found for persona`,
-        }),
-        { status: 404, headers: { 'Content-Type': 'application/json' } }
+      logger.logApiRequest(
+        'POST',
+        `/api/personas/${id}/iterations/${num}/accept-prompt`,
+        404,
+        Date.now() - startTime
       );
+      return notFound('Iteration');
     }
 
     // ITERATION 1: Special workflow - calculate metrics from human reviews, refine prompts, continue to iteration 2
@@ -94,12 +99,15 @@ export const POST: APIRoute = async ({ params, request }) => {
         .get(iteration.id) as { count: number };
 
       if (decisionsWithoutReview.count > 0) {
-        return new Response(
-          JSON.stringify({
-            error: 'INCOMPLETE_REVIEWS',
-            message: `${decisionsWithoutReview.count} judge decisions have not been reviewed. All decisions must be reviewed before accepting prompts.`,
-          }),
-          { status: 400, headers: { 'Content-Type': 'application/json' } }
+        logger.logApiRequest(
+          'POST',
+          `/api/personas/${id}/iterations/1/accept-prompt`,
+          400,
+          Date.now() - startTime
+        );
+        return badRequest(
+          `${decisionsWithoutReview.count} judge decisions have not been reviewed. All decisions must be reviewed before accepting prompts.`,
+          'TRAINING_STATE_ERROR'
         );
       }
 
@@ -113,17 +121,26 @@ export const POST: APIRoute = async ({ params, request }) => {
         .get(id) as { session_id: string } | undefined;
 
       if (!state) {
-        return new Response(
-          JSON.stringify({
-            error: 'NO_ACTIVE_SESSION',
-            message: 'No training session awaiting human review found for this persona',
-          }),
-          { status: 400, headers: { 'Content-Type': 'application/json' } }
+        logger.logApiRequest(
+          'POST',
+          `/api/personas/${id}/iterations/1/accept-prompt`,
+          400,
+          Date.now() - startTime
+        );
+        return badRequest(
+          'No training session awaiting human review found for this persona',
+          'TRAINING_STATE_ERROR'
         );
       }
 
       // Create training loop instance and accept prompts
       const loop = new IterativeTrainingLoop(state.session_id, id, db);
+
+      logger.info('Accepting iteration 1 prompts and continuing training', {
+        personaId: id,
+        iterationId: iteration.id,
+        sessionId: state.session_id,
+      });
 
       // This will:
       // 1. Calculate metrics from human votes
@@ -137,12 +154,28 @@ export const POST: APIRoute = async ({ params, request }) => {
         .get(state.session_id) as { status: string; current_iteration: number } | undefined;
 
       const latestIteration = db
-        .prepare('SELECT iteration_number, status FROM training_iterations WHERE persona_id = ? ORDER BY iteration_number DESC LIMIT 1')
+        .prepare(
+          'SELECT iteration_number, status FROM training_iterations WHERE persona_id = ? ORDER BY iteration_number DESC LIMIT 1'
+        )
         .get(id) as { iteration_number: number; status: string } | undefined;
+
+      logger.info('Iteration 1 accept-prompt complete, training continued', {
+        personaId: id,
+        finalState: finalState?.status,
+        currentIteration: finalState?.current_iteration,
+        latestIteration: latestIteration?.iteration_number,
+      });
+      logger.logApiRequest(
+        'POST',
+        `/api/personas/${id}/iterations/1/accept-prompt`,
+        200,
+        Date.now() - startTime
+      );
 
       return new Response(
         JSON.stringify({
-          message: 'Iteration 1 human review complete. Metrics calculated, prompts refined, and training continued.',
+          message:
+            'Iteration 1 human review complete. Metrics calculated, prompts refined, and training continued.',
           iteration_number: 1,
           training_status: finalState?.status || 'unknown',
           current_iteration: finalState?.current_iteration,
@@ -160,24 +193,24 @@ export const POST: APIRoute = async ({ params, request }) => {
 
     // Validate required fields
     if (!prompt_text) {
-      return new Response(
-        JSON.stringify({
-          error: 'INVALID_REQUEST',
-          message: 'prompt_text is required',
-        }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      logger.logApiRequest(
+        'POST',
+        `/api/personas/${id}/iterations/${num}/accept-prompt`,
+        400,
+        Date.now() - startTime
       );
+      return badRequest('prompt_text is required', 'INVALID_REQUEST');
     }
 
     // Validate reason
     if (reason !== 'ai-generated' && reason !== 'manual-edit') {
-      return new Response(
-        JSON.stringify({
-          error: 'INVALID_REQUEST',
-          message: 'reason must be either "ai-generated" or "manual-edit"',
-        }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      logger.logApiRequest(
+        'POST',
+        `/api/personas/${id}/iterations/${num}/accept-prompt`,
+        400,
+        Date.now() - startTime
       );
+      return badRequest('reason must be either "ai-generated" or "manual-edit"', 'INVALID_REQUEST');
     }
 
     // Determine created_by based on reason
@@ -199,14 +232,35 @@ export const POST: APIRoute = async ({ params, request }) => {
     );
 
     if (!versionId) {
+      logger.logApiRequest(
+        'POST',
+        `/api/personas/${id}/iterations/${num}/accept-prompt`,
+        200,
+        Date.now() - startTime
+      );
       return new Response(
         JSON.stringify({
           error: 'DUPLICATE_PROMPT',
+          code: 'DUPLICATE_PROMPT',
           message: 'This prompt is identical to the previous version and was not stored',
         }),
         { status: 200, headers: { 'Content-Type': 'application/json' } }
       );
     }
+
+    logger.info('Prompt version stored', {
+      personaId: id,
+      iterationNumber,
+      versionId,
+      createdBy,
+      reason,
+    });
+    logger.logApiRequest(
+      'POST',
+      `/api/personas/${id}/iterations/${num}/accept-prompt`,
+      201,
+      Date.now() - startTime
+    );
 
     return new Response(
       JSON.stringify({
@@ -220,13 +274,11 @@ export const POST: APIRoute = async ({ params, request }) => {
       { status: 201, headers: { 'Content-Type': 'application/json' } }
     );
   } catch (error) {
-    console.error('POST /api/personas/[id]/iterations/[num]/accept-prompt error:', error);
-    return new Response(
-      JSON.stringify({
-        error: 'INTERNAL_ERROR',
-        message: error instanceof Error ? error.message : 'Internal server error',
-      }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    logger.logApiError(
+      'POST',
+      `/api/personas/${id}/iterations/${num}/accept-prompt`,
+      error as Error
     );
+    return createErrorResponse(error);
   }
 };

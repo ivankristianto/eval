@@ -10,6 +10,10 @@ import { getDatabase } from '@lib/db';
 import { calculateIterationMetricsFromGroundTruth } from '@lib/evaluation/metrics-orchestrator';
 import type { JudgeResult } from '@lib/training/training-loop';
 import { IterativeTrainingLoop } from '@lib/training/training-loop';
+import { badRequest, notFound, createErrorResponse } from '@lib/api-error-handler';
+import { createLogger } from '@lib/logger';
+
+const logger = createLogger('API:Training:CalculateMetrics');
 
 /**
  * POST /api/personas/[id]/iterations/[num]/calculate-metrics
@@ -21,42 +25,43 @@ import { IterativeTrainingLoop } from '@lib/training/training-loop';
  * @returns {Promise<Response>}
  */
 export const POST: APIRoute = async ({ params, request }) => {
-  try {
-    const { id, num } = params;
+  const startTime = Date.now();
+  const { id, num } = params;
 
+  try {
     if (!id || !num) {
-      return new Response(
-        JSON.stringify({
-          error: 'INVALID_REQUEST',
-          message: 'Persona ID and iteration number are required',
-        }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      logger.logApiRequest(
+        'POST',
+        '/api/personas/[id]/iterations/[num]/calculate-metrics',
+        400,
+        Date.now() - startTime
       );
+      return badRequest('Persona ID and iteration number are required', 'INVALID_REQUEST');
     }
 
     const iterationNumber = parseInt(num, 10);
     if (isNaN(iterationNumber)) {
-      return new Response(
-        JSON.stringify({
-          error: 'INVALID_REQUEST',
-          message: 'Iteration number must be a valid integer',
-        }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      logger.logApiRequest(
+        'POST',
+        `/api/personas/${id}/iterations/${num}/calculate-metrics`,
+        400,
+        Date.now() - startTime
       );
+      return badRequest('Iteration number must be a valid integer', 'INVALID_REQUEST');
     }
 
     const db = getDatabase();
 
     // Verify persona exists
-    const persona = db.prepare('SELECT * FROM personas WHERE id = ?').get(id) as any;
+    const persona = db.prepare('SELECT * FROM personas WHERE id = ?').get(id);
     if (!persona) {
-      return new Response(
-        JSON.stringify({
-          error: 'NOT_FOUND',
-          message: 'Persona not found',
-        }),
-        { status: 404, headers: { 'Content-Type': 'application/json' } }
+      logger.logApiRequest(
+        'POST',
+        `/api/personas/${id}/iterations/${num}/calculate-metrics`,
+        404,
+        Date.now() - startTime
       );
+      return notFound('Persona');
     }
 
     // Get iteration
@@ -65,13 +70,13 @@ export const POST: APIRoute = async ({ params, request }) => {
       .get(id, iterationNumber) as any;
 
     if (!iteration) {
-      return new Response(
-        JSON.stringify({
-          error: 'NOT_FOUND',
-          message: `Iteration ${iterationNumber} not found for persona`,
-        }),
-        { status: 404, headers: { 'Content-Type': 'application/json' } }
+      logger.logApiRequest(
+        'POST',
+        `/api/personas/${id}/iterations/${num}/calculate-metrics`,
+        404,
+        Date.now() - startTime
       );
+      return notFound('Iteration');
     }
 
     // ITERATION 1 SPECIAL HANDLING: Calculate metrics, refine prompts, and continue to iteration 2+
@@ -86,14 +91,23 @@ export const POST: APIRoute = async ({ params, request }) => {
         .get(id) as { session_id: string } | undefined;
 
       if (!state) {
-        return new Response(
-          JSON.stringify({
-            error: 'NO_ACTIVE_SESSION',
-            message: 'No training session awaiting human review found for this persona',
-          }),
-          { status: 400, headers: { 'Content-Type': 'application/json' } }
+        logger.logApiRequest(
+          'POST',
+          `/api/personas/${id}/iterations/1/calculate-metrics`,
+          400,
+          Date.now() - startTime
+        );
+        return badRequest(
+          'No training session awaiting human review found for this persona',
+          'NO_ACTIVE_SESSION'
         );
       }
+
+      logger.info('Calculating iteration 1 metrics from human reviews and continuing training', {
+        personaId: id,
+        iterationId: iteration.id,
+        sessionId: state.session_id,
+      });
 
       // Create training loop instance and continue training
       const loop = new IterativeTrainingLoop(state.session_id, id, db);
@@ -110,7 +124,9 @@ export const POST: APIRoute = async ({ params, request }) => {
         .get(state.session_id) as { status: string; current_iteration: number } | undefined;
 
       const latestIteration = db
-        .prepare('SELECT iteration_number, status FROM training_iterations WHERE persona_id = ? ORDER BY iteration_number DESC LIMIT 1')
+        .prepare(
+          'SELECT iteration_number, status FROM training_iterations WHERE persona_id = ? ORDER BY iteration_number DESC LIMIT 1'
+        )
         .get(id) as { iteration_number: number; status: string } | undefined;
 
       // Get the calculated metrics
@@ -118,22 +134,39 @@ export const POST: APIRoute = async ({ params, request }) => {
         .prepare('SELECT * FROM iteration_metrics WHERE iteration_id = ?')
         .get(iteration.id) as any;
 
+      logger.info('Iteration 1 metrics calculated and training continued', {
+        personaId: id,
+        finalState: finalState?.status,
+        currentIteration: finalState?.current_iteration,
+        latestIteration: latestIteration?.iteration_number,
+        f1Score: metricsRow?.f1_score,
+      });
+      logger.logApiRequest(
+        'POST',
+        `/api/personas/${id}/iterations/1/calculate-metrics`,
+        200,
+        Date.now() - startTime
+      );
+
       return new Response(
         JSON.stringify({
-          message: 'Iteration 1 complete. Metrics calculated, prompts refined, and training continued.',
-          metrics: metricsRow ? {
-            f1_score: metricsRow.f1_score,
-            precision: metricsRow.precision,
-            recall: metricsRow.recall,
-            cohens_kappa: metricsRow.cohens_kappa,
-            accuracy: metricsRow.accuracy,
-            confusion_matrix: {
-              true_positives: metricsRow.true_positives,
-              true_negatives: metricsRow.true_negatives,
-              false_positives: metricsRow.false_positives,
-              false_negatives: metricsRow.false_negatives,
-            },
-          } : null,
+          message:
+            'Iteration 1 complete. Metrics calculated, prompts refined, and training continued.',
+          metrics: metricsRow
+            ? {
+                f1_score: metricsRow.f1_score,
+                precision: metricsRow.precision,
+                recall: metricsRow.recall,
+                cohens_kappa: metricsRow.cohens_kappa,
+                accuracy: metricsRow.accuracy,
+                confusion_matrix: {
+                  true_positives: metricsRow.true_positives,
+                  true_negatives: metricsRow.true_negatives,
+                  false_positives: metricsRow.false_positives,
+                  false_negatives: metricsRow.false_negatives,
+                },
+              }
+            : null,
           iteration: {
             id: iteration.id,
             iteration_number: 1,
@@ -170,7 +203,7 @@ export const POST: APIRoute = async ({ params, request }) => {
 
     if (existingMetrics) {
       // Metrics already exist, use them instead of recalculating
-      console.info('Metrics already calculated, using existing', {
+      logger.info('Metrics already calculated, using existing', {
         personaId: id,
         iterationNumber,
         metricsId: existingMetrics.id,
@@ -199,13 +232,27 @@ export const POST: APIRoute = async ({ params, request }) => {
 
       if (useAutomaticCalculation) {
         // AUTOMATIC: Calculate metrics from ground truth (no human review required)
+        logger.info('Calculating iteration metrics from ground truth', {
+          personaId: id,
+          iterationNumber,
+        });
+
         try {
           const result = calculateIterationMetricsFromGroundTruth(iteration.id, db);
           metrics = result.metrics;
+
+          logger.info('Ground truth metrics calculated successfully', {
+            personaId: id,
+            iterationNumber,
+            f1Score: metrics.f1_score,
+          });
         } catch (error) {
-          // If automatic calculation fails, fall back to manual mode check
           const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-          console.warn('Automatic metrics calculation failed:', errorMessage);
+          logger.warn('Automatic metrics calculation failed', {
+            personaId: id,
+            iterationNumber,
+            error: errorMessage,
+          });
           throw error;
         }
       } else {
@@ -224,13 +271,16 @@ export const POST: APIRoute = async ({ params, request }) => {
           .get(iteration.id) as { count: number };
 
         if (reviewedDecisions.count < totalDecisions.count) {
-          return new Response(
-            JSON.stringify({
-              error: 'INCOMPLETE_REVIEWS',
-              message: `Only ${reviewedDecisions.count} of ${totalDecisions.count} decisions have been reviewed`,
-              hint: 'Use automatic=true for ground-truth based metrics calculation',
-            }),
-            { status: 400, headers: { 'Content-Type': 'application/json' } }
+          logger.logApiRequest(
+            'POST',
+            `/api/personas/${id}/iterations/${num}/calculate-metrics`,
+            400,
+            Date.now() - startTime
+          );
+          return badRequest(
+            `Only ${reviewedDecisions.count} of ${totalDecisions.count} decisions have been reviewed`,
+            'INCOMPLETE_REVIEWS',
+            { hint: 'Use automatic=true for ground-truth based metrics calculation' }
           );
         }
 
@@ -247,9 +297,14 @@ export const POST: APIRoute = async ({ params, request }) => {
           .all(iteration.id) as JudgeResult[];
 
         // Import IterativeTrainingLoop for metrics calculation
-        const { IterativeTrainingLoop } = await import('@lib/training/training-loop');
         const trainingLoop = new IterativeTrainingLoop('', id, db);
         metrics = await trainingLoop.calculateMetricsInWorker(judgeResults);
+
+        logger.info('Human review metrics calculated successfully', {
+          personaId: id,
+          iterationNumber,
+          f1Score: metrics.f1_score,
+        });
       }
     }
 
@@ -261,11 +316,26 @@ export const POST: APIRoute = async ({ params, request }) => {
     );
 
     // Update persona best scores if this iteration is better
-    if (persona.best_f1_score === null || metrics.f1_score > persona.best_f1_score) {
+    const personaRecord = persona as any;
+    if (personaRecord.best_f1_score === null || metrics.f1_score > personaRecord.best_f1_score) {
       db.prepare(
         'UPDATE personas SET best_f1_score = ?, best_f1_iteration = ?, updated_at = ? WHERE id = ?'
       ).run(metrics.f1_score, iterationNumber, new Date().toISOString(), id);
+
+      logger.info('New best F1 score achieved', {
+        personaId: id,
+        iterationNumber,
+        previousBest: personaRecord.best_f1_score,
+        newBest: metrics.f1_score,
+      });
     }
+
+    logger.logApiRequest(
+      'POST',
+      `/api/personas/${id}/iterations/${num}/calculate-metrics`,
+      200,
+      Date.now() - startTime
+    );
 
     return new Response(
       JSON.stringify({
@@ -280,13 +350,11 @@ export const POST: APIRoute = async ({ params, request }) => {
       { status: 200, headers: { 'Content-Type': 'application/json' } }
     );
   } catch (error) {
-    console.error('POST /api/personas/[id]/iterations/[num]/calculate-metrics error:', error);
-    return new Response(
-      JSON.stringify({
-        error: 'INTERNAL_ERROR',
-        message: error instanceof Error ? error.message : 'Internal server error',
-      }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    logger.logApiError(
+      'POST',
+      `/api/personas/${id}/iterations/${num}/calculate-metrics`,
+      error as Error
     );
+    return createErrorResponse(error);
   }
 };

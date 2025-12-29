@@ -118,7 +118,7 @@ export function internalError(message: string, details?: unknown): Response {
  * @returns Wrapped handler with error handling
  */
 export function withErrorHandling<T extends APIRoute>(handler: T): T {
-  return (async function(...args: unknown[]) {
+  return async function (...args: unknown[]) {
     try {
       // @ts-expect-error - Dynamic spread of tuple type
       return await handler(...(args as Parameters<T>));
@@ -129,7 +129,7 @@ export function withErrorHandling<T extends APIRoute>(handler: T): T {
       // Return standardized error response
       return createErrorResponse(error);
     }
-  }) as T;
+  } as T;
 }
 
 /**
@@ -137,9 +137,7 @@ export function withErrorHandling<T extends APIRoute>(handler: T): T {
  * @param request - The API request object
  * @returns Parsed JSON body or throws ValidationError
  */
-export async function parseJsonBody<T = unknown>(
-  request: Request
-): Promise<T> {
+export async function parseJsonBody<T = unknown>(request: Request): Promise<T> {
   try {
     return await request.json();
   } catch (error) {

@@ -56,7 +56,12 @@ describe('Failure Analysis', () => {
     personaId = persona.id;
 
     // Create test iteration using fixture
-    const iteration = createTestIteration(db, personaId, 1, 'Evaluate if the response is helpful and polite');
+    const iteration = createTestIteration(
+      db,
+      personaId,
+      1,
+      'Evaluate if the response is helpful and polite'
+    );
     iterationId = iteration.id;
 
     // Update iteration status to completed with full evaluation counts

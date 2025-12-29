@@ -23,7 +23,12 @@ export const GET: APIRoute = async ({ params }) => {
 
   try {
     if (!id) {
-      logger.logApiRequest('GET', '/api/personas/[id]/training/status', 400, Date.now() - startTime);
+      logger.logApiRequest(
+        'GET',
+        '/api/personas/[id]/training/status',
+        400,
+        Date.now() - startTime
+      );
       return badRequest('Persona ID is required', 'INVALID_REQUEST');
     }
 
@@ -32,7 +37,12 @@ export const GET: APIRoute = async ({ params }) => {
     // Verify persona exists
     const persona = db.prepare('SELECT * FROM personas WHERE id = ?').get(id);
     if (!persona) {
-      logger.logApiRequest('GET', `/api/personas/${id}/training/status`, 404, Date.now() - startTime);
+      logger.logApiRequest(
+        'GET',
+        `/api/personas/${id}/training/status`,
+        404,
+        Date.now() - startTime
+      );
       return notFound('Persona');
     }
 

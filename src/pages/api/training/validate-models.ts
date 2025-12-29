@@ -8,6 +8,10 @@ import {
   getModelsByProvider,
   suggestModelCombinations,
 } from '@lib/validation/model-separation-validator';
+import { badRequest, createErrorResponse } from '@lib/api-error-handler';
+import { createLogger } from '@lib/logger';
+
+const logger = createLogger('API:Training:ValidateModels');
 
 /**
  * POST /api/training/validate-models
@@ -17,6 +21,8 @@ import {
  * @returns {Promise<Response>}
  */
 export const POST: APIRoute = async ({ request }) => {
+  const startTime = Date.now();
+
   try {
     const body = await request.json();
 
@@ -24,16 +30,10 @@ export const POST: APIRoute = async ({ request }) => {
 
     // Validate required fields
     if (!task_model_id || !judge_model_id || !prompt_engineer_model_id) {
-      return new Response(
-        JSON.stringify({
-          error: 'INVALID_INPUT',
-          message:
-            'All model IDs are required: task_model_id, judge_model_id, prompt_engineer_model_id',
-        }),
-        {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        }
+      logger.logApiRequest('POST', '/api/training/validate-models', 400, Date.now() - startTime);
+      return badRequest(
+        'All model IDs are required: task_model_id, judge_model_id, prompt_engineer_model_id',
+        'INVALID_INPUT'
       );
     }
 
@@ -42,6 +42,8 @@ export const POST: APIRoute = async ({ request }) => {
       judge_model_id,
       prompt_engineer_model_id
     );
+
+    logger.logApiRequest('POST', '/api/training/validate-models', 200, Date.now() - startTime);
 
     return new Response(
       JSON.stringify({
@@ -56,17 +58,8 @@ export const POST: APIRoute = async ({ request }) => {
       }
     );
   } catch (error) {
-    console.error('POST /api/training/validate-models error:', error);
-    return new Response(
-      JSON.stringify({
-        error: 'INTERNAL_ERROR',
-        message: error instanceof Error ? error.message : 'Internal server error',
-      }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
+    logger.logApiError('POST', '/api/training/validate-models', error as Error);
+    return createErrorResponse(error);
   }
 };
 
@@ -78,6 +71,8 @@ export const POST: APIRoute = async ({ request }) => {
  * @returns {Promise<Response>}
  */
 export const GET: APIRoute = async ({ url }) => {
+  const startTime = Date.now();
+
   try {
     const action = url.searchParams.get('action');
     const provider = url.searchParams.get('provider');
@@ -85,6 +80,7 @@ export const GET: APIRoute = async ({ url }) => {
     // Get available providers
     if (action === 'providers') {
       const providers = getAvailableProviders();
+      logger.logApiRequest('GET', '/api/training/validate-models', 200, Date.now() - startTime);
       return new Response(JSON.stringify({ providers }), {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
@@ -94,6 +90,7 @@ export const GET: APIRoute = async ({ url }) => {
     // Get models by provider
     if (action === 'models' && provider) {
       const models = getModelsByProvider(provider);
+      logger.logApiRequest('GET', '/api/training/validate-models', 200, Date.now() - startTime);
       return new Response(JSON.stringify({ models }), {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
@@ -103,6 +100,7 @@ export const GET: APIRoute = async ({ url }) => {
     // Get suggested model combinations
     if (action === 'suggestions') {
       const suggestions = suggestModelCombinations();
+      logger.logApiRequest('GET', '/api/training/validate-models', 200, Date.now() - startTime);
       return new Response(JSON.stringify({ suggestions }), {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
@@ -112,6 +110,8 @@ export const GET: APIRoute = async ({ url }) => {
     // Default: return all data
     const providers = getAvailableProviders();
     const suggestions = suggestModelCombinations();
+
+    logger.logApiRequest('GET', '/api/training/validate-models', 200, Date.now() - startTime);
 
     return new Response(
       JSON.stringify({
@@ -124,16 +124,7 @@ export const GET: APIRoute = async ({ url }) => {
       }
     );
   } catch (error) {
-    console.error('GET /api/training/validate-models error:', error);
-    return new Response(
-      JSON.stringify({
-        error: 'INTERNAL_ERROR',
-        message: error instanceof Error ? error.message : 'Internal server error',
-      }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
+    logger.logApiError('GET', '/api/training/validate-models', error as Error);
+    return createErrorResponse(error);
   }
 };

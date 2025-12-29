@@ -37,7 +37,9 @@ test.describe('Human Review Workflow', () => {
       await expect(page.locator('text=100% required')).toBeVisible();
     });
 
-    test('should display decision review interface with all required elements', async ({ page }) => {
+    test('should display decision review interface with all required elements', async ({
+      page,
+    }) => {
       if (!personaId) test.skip();
 
       await page.goto(`/personas/${personaId}/review/${iterationNumber}`);
@@ -56,7 +58,9 @@ test.describe('Human Review Workflow', () => {
       await expect(page.locator('text=decisions reviewed')).toBeVisible();
     });
 
-    test('should display input, expected_output, suggested_output, and judge reasoning', async ({ page }) => {
+    test('should display input, expected_output, suggested_output, and judge reasoning', async ({
+      page,
+    }) => {
       if (!personaId) test.skip();
 
       await page.goto(`/personas/${personaId}/review/${iterationNumber}`);
@@ -124,7 +128,9 @@ test.describe('Human Review Workflow', () => {
       expect(updatedProgress).not.toBe(initialProgress);
     });
 
-    test('should show "Generate Refined Prompt" button when 100% complete (iteration 1 only)', async ({ page }) => {
+    test('should show "Generate Refined Prompt" button when 100% complete (iteration 1 only)', async ({
+      page,
+    }) => {
       if (!personaId) test.skip();
 
       // This test assumes all decisions for iteration 1 have been reviewed
@@ -141,7 +147,9 @@ test.describe('Human Review Workflow', () => {
       }
     });
 
-    test('should block navigation to other pages until iteration 1 review is complete', async ({ page }) => {
+    test('should block navigation to other pages until iteration 1 review is complete', async ({
+      page,
+    }) => {
       if (!personaId) test.skip();
 
       await page.goto(`/personas/${personaId}/review/${iterationNumber}`);
@@ -199,7 +207,9 @@ test.describe('Human Review Workflow', () => {
       expect(page.url()).toContain(`/personas/${personaId}`);
     });
 
-    test('should display both automatic metrics and human validation side-by-side', async ({ page }) => {
+    test('should display both automatic metrics and human validation side-by-side', async ({
+      page,
+    }) => {
       if (!personaId || iteration2PlusNumber < 2) test.skip();
 
       await page.goto(`/personas/${personaId}/review/${iteration2PlusNumber}`);

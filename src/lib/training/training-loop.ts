@@ -175,7 +175,9 @@ export class IterativeTrainingLoop {
             .run('awaiting_human_review', result.iterationId);
 
           this.db
-            .prepare('UPDATE training_loop_state SET status = ?, updated_at = ? WHERE session_id = ?')
+            .prepare(
+              'UPDATE training_loop_state SET status = ?, updated_at = ? WHERE session_id = ?'
+            )
             .run('awaiting_human_review', new Date().toISOString(), this.sessionId);
 
           // Update persona status
@@ -184,10 +186,13 @@ export class IterativeTrainingLoop {
             .run('awaiting_human_review', new Date().toISOString(), this.personaId);
 
           // STOP - wait for human to call acceptPromptsAndContinue()
-          logger.info('Iteration 1 complete. Awaiting human review and prompt acceptance before continuing.', {
-            personaId: this.personaId,
-            iterationId: result.iterationId,
-          });
+          logger.info(
+            'Iteration 1 complete. Awaiting human review and prompt acceptance before continuing.',
+            {
+              personaId: this.personaId,
+              iterationId: result.iterationId,
+            }
+          );
           awaitingHumanReview = true;
           break;
         }
@@ -225,7 +230,10 @@ export class IterativeTrainingLoop {
       // (awaiting_human_review status is already set in the iteration 1 block)
       if (!awaitingHumanReview) {
         const finalStateStatus = this.isPaused ? 'paused' : converged ? 'completed' : 'completed';
-        logger.info('Updating final state', { sessionId: this.sessionId, status: finalStateStatus });
+        logger.info('Updating final state', {
+          sessionId: this.sessionId,
+          status: finalStateStatus,
+        });
         this.db
           .prepare('UPDATE training_loop_state SET status = ?, updated_at = ? WHERE session_id = ?')
           .run(finalStateStatus, new Date().toISOString(), this.sessionId);
@@ -237,7 +245,9 @@ export class IterativeTrainingLoop {
             .run('incomplete', new Date().toISOString(), this.personaId);
         }
       } else {
-        logger.info('Skipping final state update - awaiting human review', { sessionId: this.sessionId });
+        logger.info('Skipping final state update - awaiting human review', {
+          sessionId: this.sessionId,
+        });
       }
     } catch (error) {
       // Log error and update state
@@ -327,7 +337,12 @@ export class IterativeTrainingLoop {
         recall: 0,
         cohens_kappa: 0,
         accuracy: 0,
-        confusion_matrix: { true_positives: 0, true_negatives: 0, false_positives: 0, false_negatives: 0 },
+        confusion_matrix: {
+          true_positives: 0,
+          true_negatives: 0,
+          false_positives: 0,
+          false_negatives: 0,
+        },
       });
       this.storeJudgePromptVersion(iterationNumber, judgePromptText, 'ai', {
         f1_score: 0,
@@ -335,7 +350,12 @@ export class IterativeTrainingLoop {
         recall: 0,
         cohens_kappa: 0,
         accuracy: 0,
-        confusion_matrix: { true_positives: 0, true_negatives: 0, false_positives: 0, false_negatives: 0 },
+        confusion_matrix: {
+          true_positives: 0,
+          true_negatives: 0,
+          false_positives: 0,
+          false_negatives: 0,
+        },
       });
 
       return {
@@ -1067,7 +1087,9 @@ Respond with a JSON object containing:
     }
 
     if (iteration.iteration_number !== 1) {
-      throw new TrainingStateError(`This method is only for iteration 1, got iteration ${iteration.iteration_number}`);
+      throw new TrainingStateError(
+        `This method is only for iteration 1, got iteration ${iteration.iteration_number}`
+      );
     }
 
     // Verify all decisions have human reviews

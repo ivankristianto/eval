@@ -26,7 +26,12 @@ export const POST: APIRoute = async ({ params }) => {
 
   try {
     if (!id) {
-      logger.logApiRequest('POST', `/api/personas/[id]/training/start`, 400, Date.now() - startTime);
+      logger.logApiRequest(
+        'POST',
+        `/api/personas/[id]/training/start`,
+        400,
+        Date.now() - startTime
+      );
       return badRequest('Persona ID is required', 'INVALID_REQUEST');
     }
 
@@ -35,7 +40,12 @@ export const POST: APIRoute = async ({ params }) => {
     // Verify persona exists
     const persona = db.prepare('SELECT * FROM personas WHERE id = ?').get(id) as any;
     if (!persona) {
-      logger.logApiRequest('POST', `/api/personas/${id}/training/start`, 404, Date.now() - startTime);
+      logger.logApiRequest(
+        'POST',
+        `/api/personas/${id}/training/start`,
+        404,
+        Date.now() - startTime
+      );
       return notFound('Persona');
     }
 
@@ -52,7 +62,12 @@ export const POST: APIRoute = async ({ params }) => {
       .get(id) as { session_id: string; status: string; current_iteration: number } | undefined;
 
     if (existingSession) {
-      logger.logApiRequest('POST', `/api/personas/${id}/training/start`, 409, Date.now() - startTime);
+      logger.logApiRequest(
+        'POST',
+        `/api/personas/${id}/training/start`,
+        409,
+        Date.now() - startTime
+      );
       return new Response(
         JSON.stringify({
           error: 'TRAINING_ALREADY_ACTIVE',
@@ -74,7 +89,12 @@ export const POST: APIRoute = async ({ params }) => {
       .get(id) as { count: number };
 
     if (pairCount.count < 10) {
-      logger.logApiRequest('POST', `/api/personas/${id}/training/start`, 400, Date.now() - startTime);
+      logger.logApiRequest(
+        'POST',
+        `/api/personas/${id}/training/start`,
+        400,
+        Date.now() - startTime
+      );
       return badRequest(
         `Persona requires at least 10 training pairs. Current count: ${pairCount.count}`,
         'INSUFFICIENT_DATA'
@@ -82,9 +102,11 @@ export const POST: APIRoute = async ({ params }) => {
     }
 
     // Update persona status to training (iteration will be set by execute())
-    db.prepare(
-      'UPDATE personas SET status = ?, updated_at = ? WHERE id = ?'
-    ).run('training', new Date().toISOString(), id);
+    db.prepare('UPDATE personas SET status = ?, updated_at = ? WHERE id = ?').run(
+      'training',
+      new Date().toISOString(),
+      id
+    );
 
     // Create session and start training loop
     const sessionId = uuidv4();
@@ -106,7 +128,9 @@ export const POST: APIRoute = async ({ params }) => {
          ORDER BY iteration_number DESC
          LIMIT 1`
       )
-      .get(id) as { id: string; iteration_number: number; status: string; started_at: string } | undefined;
+      .get(id) as
+      | { id: string; iteration_number: number; status: string; started_at: string }
+      | undefined;
 
     // Get the training loop state to return current status
     const loopState = db

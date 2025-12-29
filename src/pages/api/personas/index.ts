@@ -74,7 +74,11 @@ export const GET: APIRoute = async ({ url }) => {
     // Validate status parameter if provided
     if (status && !['draft', 'training', 'trained', 'incomplete'].includes(status)) {
       logger.logApiRequest('GET', '/api/personas', 400, Date.now() - startTime);
-      return badRequest('Invalid status filter', 'INVALID_PARAMETER', 'Status must be one of: draft, training, trained, incomplete');
+      return badRequest(
+        'Invalid status filter',
+        'INVALID_PARAMETER',
+        'Status must be one of: draft, training, trained, incomplete'
+      );
     }
 
     const personas = listPersonas(status || undefined);

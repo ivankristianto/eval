@@ -27,7 +27,7 @@ test.describe('Two-Phase Training Workflow', () => {
       const modelsData = await modelsResponse.json();
 
       // Handle different response formats
-      const models = Array.isArray(modelsData) ? modelsData : (modelsData.models || []);
+      const models = Array.isArray(modelsData) ? modelsData : modelsData.models || [];
 
       // Find three different providers
       const providers = new Map();
@@ -210,7 +210,10 @@ test.describe('Two-Phase Training Workflow', () => {
       expect(status.current_iteration).toBe(1);
     });
 
-    test('should redirect to mandatory review page after iteration 1 completes', async ({ page, request }) => {
+    test('should redirect to mandatory review page after iteration 1 completes', async ({
+      page,
+      request,
+    }) => {
       if (!personaId) test.skip();
 
       // Poll for iteration 1 completion
@@ -243,7 +246,9 @@ test.describe('Two-Phase Training Workflow', () => {
       if (!personaId) test.skip();
 
       // Get decisions for iteration 1
-      const decisionsResponse = await request.get(`/api/personas/${personaId}/iterations/1/decisions`);
+      const decisionsResponse = await request.get(
+        `/api/personas/${personaId}/iterations/1/decisions`
+      );
       const decisions = await decisionsResponse.json();
 
       expect(decisions.length).toBeGreaterThan(0);
@@ -252,11 +257,16 @@ test.describe('Two-Phase Training Workflow', () => {
       expect(decisions[0]).toHaveProperty('judge_reasoning');
     });
 
-    test('should allow human to provide Agree/Disagree feedback with reasoning', async ({ page, request }) => {
+    test('should allow human to provide Agree/Disagree feedback with reasoning', async ({
+      page,
+      request,
+    }) => {
       if (!personaId) test.skip();
 
       // Get decisions for iteration 1
-      const decisionsResponse = await request.get(`/api/personas/${personaId}/iterations/1/decisions`);
+      const decisionsResponse = await request.get(
+        `/api/personas/${personaId}/iterations/1/decisions`
+      );
       const decisions = await decisionsResponse.json();
 
       if (decisions.length > 0) {
@@ -281,11 +291,16 @@ test.describe('Two-Phase Training Workflow', () => {
       }
     });
 
-    test('should require 100% completion before allowing prompt refinement', async ({ page, request }) => {
+    test('should require 100% completion before allowing prompt refinement', async ({
+      page,
+      request,
+    }) => {
       if (!personaId) test.skip();
 
       // Get decisions for iteration 1
-      const decisionsResponse = await request.get(`/api/personas/${personaId}/iterations/1/decisions`);
+      const decisionsResponse = await request.get(
+        `/api/personas/${personaId}/iterations/1/decisions`
+      );
       const decisions = await decisionsResponse.json();
 
       // Submit feedback for all remaining decisions
@@ -312,7 +327,9 @@ test.describe('Two-Phase Training Workflow', () => {
       await expect(page.locator('button:has-text("Generate Refined Prompt")')).toBeVisible();
     });
 
-    test('should generate refined prompt from human feedback (iteration 1)', async ({ request }) => {
+    test('should generate refined prompt from human feedback (iteration 1)', async ({
+      request,
+    }) => {
       if (!personaId) test.skip();
 
       // Call the refine prompt API
@@ -353,7 +370,10 @@ test.describe('Two-Phase Training Workflow', () => {
   });
 
   test.describe('Phase 2: Iterations 2+ FULLY AUTOMATED', () => {
-    test('should automatically run iteration 2 after accepting refined prompt', async ({ page, request }) => {
+    test('should automatically run iteration 2 after accepting refined prompt', async ({
+      page,
+      request,
+    }) => {
       if (!personaId) test.skip();
 
       // Wait a moment for iteration 2 to start
@@ -367,7 +387,9 @@ test.describe('Two-Phase Training Workflow', () => {
       expect(status.current_iteration).toBeGreaterThanOrEqual(2);
     });
 
-    test('should calculate metrics AUTOMATICALLY from ground truth (iterations 2+)', async ({ request }) => {
+    test('should calculate metrics AUTOMATICALLY from ground truth (iterations 2+)', async ({
+      request,
+    }) => {
       if (!personaId) test.skip();
 
       // Wait for iteration 2 to complete
@@ -379,7 +401,10 @@ test.describe('Two-Phase Training Workflow', () => {
         const status = await statusResponse.json();
 
         // Check if iteration 2 is complete
-        if (status.current_iteration > 2 || (status.current_iteration === 2 && status.latest_f1_score !== null)) {
+        if (
+          status.current_iteration > 2 ||
+          (status.current_iteration === 2 && status.latest_f1_score !== null)
+        ) {
           iteration2Complete = true;
           break;
         }
@@ -403,7 +428,9 @@ test.describe('Two-Phase Training Workflow', () => {
       expect(metrics).toHaveProperty('false_negatives');
     });
 
-    test('should automatically refine BOTH task and judge prompts using LLM (iterations 2+)', async ({ request }) => {
+    test('should automatically refine BOTH task and judge prompts using LLM (iterations 2+)', async ({
+      request,
+    }) => {
       if (!personaId) test.skip();
 
       // Check prompt versions for iteration 2
@@ -419,7 +446,10 @@ test.describe('Two-Phase Training Workflow', () => {
       }
     });
 
-    test('should continue automatic iterations until convergence or max iterations', async ({ page, request }) => {
+    test('should continue automatic iterations until convergence or max iterations', async ({
+      page,
+      request,
+    }) => {
       if (!personaId) test.skip();
 
       // Poll for training completion or convergence

@@ -11,6 +11,10 @@ import {
 } from '@lib/db';
 import { startEvaluation } from '@lib/evaluation/evaluator';
 import { validateModelIds } from '@lib/validation/validators';
+import { badRequest, notFound, createErrorResponse } from '@lib/api-error-handler';
+import { createLogger } from '@lib/logger';
+
+const logger = createLogger('API:Templates:Run');
 
 /**
  * POST /api/templates/:id/run
@@ -22,35 +26,20 @@ import { validateModelIds } from '@lib/validation/validators';
  * @returns {Promise<Response>}
  */
 export const POST: APIRoute = async ({ params, request }) => {
-  try {
-    const { id } = params;
+  const startTime = Date.now();
+  const { id } = params;
 
+  try {
     if (!id) {
-      return new Response(
-        JSON.stringify({
-          error: 'INVALID_INPUT',
-          message: 'Template ID is required',
-        }),
-        {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+      logger.logApiRequest('POST', '/api/templates/:id/run', 400, Date.now() - startTime);
+      return badRequest('Template ID is required', 'INVALID_INPUT');
     }
 
     const template = getTemplateById(id);
 
     if (!template) {
-      return new Response(
-        JSON.stringify({
-          error: 'TEMPLATE_NOT_FOUND',
-          message: 'Template does not exist',
-        }),
-        {
-          status: 404,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+      logger.logApiRequest('POST', `/api/templates/${id}/run`, 404, Date.now() - startTime);
+      return notFound('Template');
     }
 
     // Check for model override in request body
@@ -60,17 +49,10 @@ export const POST: APIRoute = async ({ params, request }) => {
       if (body.model_ids && Array.isArray(body.model_ids)) {
         const validation = validateModelIds(body.model_ids);
         if (!validation.valid) {
-          return new Response(
-            JSON.stringify({
-              error: 'INVALID_MODEL_OVERRIDE',
-              message: 'At least one model must be selected',
-              field: 'model_ids',
-            }),
-            {
-              status: 400,
-              headers: { 'Content-Type': 'application/json' },
-            }
-          );
+          logger.logApiRequest('POST', `/api/templates/${id}/run`, 400, Date.now() - startTime);
+          return badRequest('At least one model must be selected', 'INVALID_MODEL_OVERRIDE', {
+            field: 'model_ids',
+          });
         }
         modelIds = body.model_ids;
       }
@@ -83,17 +65,11 @@ export const POST: APIRoute = async ({ params, request }) => {
     for (const modelId of modelIds) {
       const model = getModelById(modelId);
       if (!model || !model.is_active) {
-        return new Response(
-          JSON.stringify({
-            error: 'MODEL_INACTIVE',
-            message: 'Model is not active or does not exist',
-            details: { model_id: modelId, reason: 'not_found_or_inactive' },
-          }),
-          {
-            status: 400,
-            headers: { 'Content-Type': 'application/json' },
-          }
-        );
+        logger.logApiRequest('POST', `/api/templates/${id}/run`, 400, Date.now() - startTime);
+        return badRequest('Model is not active or does not exist', 'MODEL_INACTIVE', {
+          model_id: modelId,
+          reason: 'not_found_or_inactive',
+        });
       }
       models.push({
         id: model.id,
@@ -101,6 +77,12 @@ export const POST: APIRoute = async ({ params, request }) => {
         provider: model.provider,
       });
     }
+
+    logger.info('Running evaluation from template', {
+      templateId: id,
+      templateName: template.name,
+      modelCount: models.length,
+    });
 
     // Create evaluation record with template reference
     const evaluation = insertEvaluation(
@@ -133,6 +115,12 @@ export const POST: APIRoute = async ({ params, request }) => {
       temperature: template.temperature,
     });
 
+    logger.info('Evaluation started from template', {
+      evaluationId: evaluation.id,
+      templateId: id,
+    });
+    logger.logApiRequest('POST', `/api/templates/${id}/run`, 201, Date.now() - startTime);
+
     return new Response(
       JSON.stringify({
         evaluation_id: evaluation.id,
@@ -151,16 +139,7 @@ export const POST: APIRoute = async ({ params, request }) => {
       }
     );
   } catch (error) {
-    console.error('POST /api/templates/:id/run error:', error);
-    return new Response(
-      JSON.stringify({
-        error: 'INTERNAL_ERROR',
-        message: error instanceof Error ? error.message : 'Internal server error',
-      }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
+    logger.logApiError('POST', `/api/templates/${id}/run`, error as Error);
+    return createErrorResponse(error);
   }
 };

@@ -57,13 +57,23 @@ export const POST: APIRoute = async ({ params }) => {
   try {
     // Validate persona ID is provided
     if (!id) {
-      logger.logApiRequest('POST', '/api/personas/[id]/training/resume', 400, Date.now() - startTime);
+      logger.logApiRequest(
+        'POST',
+        '/api/personas/[id]/training/resume',
+        400,
+        Date.now() - startTime
+      );
       return badRequest('Persona ID is required', 'INVALID_REQUEST');
     }
 
     // Validate persona ID is a valid UUID
     if (!isValidUUID(id)) {
-      logger.logApiRequest('POST', `/api/personas/${id}/training/resume`, 400, Date.now() - startTime);
+      logger.logApiRequest(
+        'POST',
+        `/api/personas/${id}/training/resume`,
+        400,
+        Date.now() - startTime
+      );
       return badRequest('Invalid persona ID format. Must be a valid UUID.', 'INVALID_REQUEST');
     }
 
@@ -74,7 +84,12 @@ export const POST: APIRoute = async ({ params }) => {
       | PersonaRow
       | undefined;
     if (!persona) {
-      logger.logApiRequest('POST', `/api/personas/${id}/training/resume`, 404, Date.now() - startTime);
+      logger.logApiRequest(
+        'POST',
+        `/api/personas/${id}/training/resume`,
+        404,
+        Date.now() - startTime
+      );
       return notFound('Persona');
     }
 
@@ -157,7 +172,12 @@ export const POST: APIRoute = async ({ params }) => {
     } catch (error) {
       if (error instanceof Error && error.message === 'ALREADY_RESUMED') {
         // Idempotency: Return success if already resumed
-        logger.logApiRequest('POST', `/api/personas/${id}/training/resume`, 200, Date.now() - startTime);
+        logger.logApiRequest(
+          'POST',
+          `/api/personas/${id}/training/resume`,
+          200,
+          Date.now() - startTime
+        );
         return new Response(
           JSON.stringify({
             session_id: pausedSession!.session_id,
@@ -169,18 +189,36 @@ export const POST: APIRoute = async ({ params }) => {
         );
       }
       if (error instanceof Error && error.message === 'AWAITING_HUMAN_REVIEW') {
-        logger.logApiRequest('POST', `/api/personas/${id}/training/resume`, 400, Date.now() - startTime);
+        logger.logApiRequest(
+          'POST',
+          `/api/personas/${id}/training/resume`,
+          400,
+          Date.now() - startTime
+        );
         return badRequest(
           'Iteration 1 is awaiting human review. Use the accept-prompt endpoint to continue.',
           'TRAINING_STATE_ERROR'
         );
       }
       if (error instanceof Error && error.message === 'NO_PAUSED_SESSION') {
-        logger.logApiRequest('POST', `/api/personas/${id}/training/resume`, 400, Date.now() - startTime);
-        return badRequest('No paused training session found for this persona', 'TRAINING_STATE_ERROR');
+        logger.logApiRequest(
+          'POST',
+          `/api/personas/${id}/training/resume`,
+          400,
+          Date.now() - startTime
+        );
+        return badRequest(
+          'No paused training session found for this persona',
+          'TRAINING_STATE_ERROR'
+        );
       }
       if (error instanceof Error && error.message === 'NO_SESSION') {
-        logger.logApiRequest('POST', `/api/personas/${id}/training/resume`, 404, Date.now() - startTime);
+        logger.logApiRequest(
+          'POST',
+          `/api/personas/${id}/training/resume`,
+          404,
+          Date.now() - startTime
+        );
         return notFound('Training session');
       }
       throw error;
@@ -222,12 +260,15 @@ export const POST: APIRoute = async ({ params }) => {
           .get(id) as { prompt_text: string } | undefined;
 
         // Get task prompt from persona if judge prompt not found
-        const personaFull = db
-          .prepare('SELECT task_prompt FROM personas WHERE id = ?')
-          .get(id) as { task_prompt: string } | undefined;
+        const personaFull = db.prepare('SELECT task_prompt FROM personas WHERE id = ?').get(id) as
+          | { task_prompt: string }
+          | undefined;
 
         const currentPrompt =
-          judgePrompt?.prompt_text || personaFull?.task_prompt || iteration.judge_prompt_text || 'Initial judge prompt';
+          judgePrompt?.prompt_text ||
+          personaFull?.task_prompt ||
+          iteration.judge_prompt_text ||
+          'Initial judge prompt';
 
         // Build checkpoint data with proper defaults
         const checkpointData = {
@@ -280,7 +321,9 @@ export const POST: APIRoute = async ({ params }) => {
              AND iteration_number = ?`
           ).run(id, pausedSession!.current_iteration);
 
-          return internalError('Checkpoint data validation failed. Please check your training data and try again.');
+          return internalError(
+            'Checkpoint data validation failed. Please check your training data and try again.'
+          );
         }
 
         // Save checkpoint
@@ -301,12 +344,16 @@ export const POST: APIRoute = async ({ params }) => {
            AND iteration_number = ?`
         ).run(id, pausedSession!.current_iteration);
 
-        return internalError('Could not find or create checkpoint. Iteration data may be missing. State has been preserved.');
+        return internalError(
+          'Could not find or create checkpoint. Iteration data may be missing. State has been preserved.'
+        );
       }
     }
 
     // Verify checkpoint integrity (only verify if we loaded from database, not if we just created)
-    const isCheckpointValid = checkpoint ? true : stateManager.verifyCheckpointIntegrity(checkpointSessionId);
+    const isCheckpointValid = checkpoint
+      ? true
+      : stateManager.verifyCheckpointIntegrity(checkpointSessionId);
     if (!isCheckpointValid) {
       // Rollback state if checkpoint is invalid
       db.prepare(
@@ -338,7 +385,12 @@ export const POST: APIRoute = async ({ params }) => {
       f1Score: checkpoint.metricsSnapshot.f1_score,
       evaluatedCount: checkpoint.evaluatedResultCount,
     });
-    logger.logApiRequest('POST', `/api/personas/${id}/training/resume`, 200, Date.now() - startTime);
+    logger.logApiRequest(
+      'POST',
+      `/api/personas/${id}/training/resume`,
+      200,
+      Date.now() - startTime
+    );
 
     return new Response(
       JSON.stringify({

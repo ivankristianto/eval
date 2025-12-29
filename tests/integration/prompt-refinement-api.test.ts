@@ -139,7 +139,8 @@ describe.skip('Prompt Refinement API Integration', () => {
     vi.mocked(callModel).mockResolvedValue(JSON.stringify(mockLLMResponse));
 
     // Import the API handler (we'll create this)
-    const { POST } = await import('../../src/pages/api/personas/[id]/iterations/[num]/refine-prompt.ts');
+    const { POST } =
+      await import('../../src/pages/api/personas/[id]/iterations/[num]/refine-prompt.ts');
 
     const request = new Request('http://localhost/api/personas/test/iterations/2/refine-prompt', {
       method: 'POST',
@@ -161,7 +162,8 @@ describe.skip('Prompt Refinement API Integration', () => {
   it('should handle LLM failure gracefully', async () => {
     vi.mocked(callModel).mockRejectedValue(new Error('API rate limit'));
 
-    const { POST } = await import('../../src/pages/api/personas/[id]/iterations/[num]/refine-prompt.ts');
+    const { POST } =
+      await import('../../src/pages/api/personas/[id]/iterations/[num]/refine-prompt.ts');
 
     const request = new Request('http://localhost/api/personas/test/iterations/2/refine-prompt', {
       method: 'POST',
@@ -180,7 +182,8 @@ describe.skip('Prompt Refinement API Integration', () => {
   });
 
   it('should accept and store refined prompt', async () => {
-    const { POST } = await import('../../src/pages/api/personas/[id]/iterations/[num]/accept-prompt.ts');
+    const { POST } =
+      await import('../../src/pages/api/personas/[id]/iterations/[num]/accept-prompt.ts');
 
     const requestBody = {
       prompt_text: 'New improved prompt',
@@ -212,7 +215,8 @@ describe.skip('Prompt Refinement API Integration', () => {
   });
 
   it('should validate iteration exists before refining', async () => {
-    const { POST } = await import('../../src/pages/api/personas/[id]/iterations/[num]/refine-prompt.ts');
+    const { POST } =
+      await import('../../src/pages/api/personas/[id]/iterations/[num]/refine-prompt.ts');
 
     const request = new Request('http://localhost/api/personas/test/iterations/999/refine-prompt', {
       method: 'POST',
@@ -232,7 +236,8 @@ describe.skip('Prompt Refinement API Integration', () => {
   it('should validate persona exists before accepting prompt', async () => {
     const fakePersonaId = uuidv4();
 
-    const { POST } = await import('../../src/pages/api/personas/[id]/iterations/[num]/accept-prompt.ts');
+    const { POST } =
+      await import('../../src/pages/api/personas/[id]/iterations/[num]/accept-prompt.ts');
 
     const requestBody = {
       prompt_text: 'Test prompt',
@@ -257,7 +262,8 @@ describe.skip('Prompt Refinement API Integration', () => {
   });
 
   it('should require prompt_text when accepting', async () => {
-    const { POST } = await import('../../src/pages/api/personas/[id]/iterations/[num]/accept-prompt.ts');
+    const { POST } =
+      await import('../../src/pages/api/personas/[id]/iterations/[num]/accept-prompt.ts');
 
     const requestBody = {
       reason: 'ai-generated',
@@ -282,7 +288,8 @@ describe.skip('Prompt Refinement API Integration', () => {
   });
 
   it('should validate reason is either ai-generated or manual-edit', async () => {
-    const { POST } = await import('../../src/pages/api/personas/[id]/iterations/[num]/accept-prompt.ts');
+    const { POST } =
+      await import('../../src/pages/api/personas/[id]/iterations/[num]/accept-prompt.ts');
 
     const requestBody = {
       prompt_text: 'Test prompt',

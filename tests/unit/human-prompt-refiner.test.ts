@@ -23,18 +23,17 @@ import {
 
 // Mock the api-clients module
 vi.mock('@lib/utils/api-clients', () => ({
-  callModel: vi.fn(
-    () =>
-      Promise.resolve(
-        JSON.stringify({
-          improved_prompt:
-            'Evaluate the response for accuracy, completeness, and tone. Consider the full context of the customer query.',
-          rationale:
-            'Added criteria for completeness and tone based on human feedback about vague responses',
-          expected_impact:
-            'Expected to improve agreement rate by addressing the systematic leniency issue',
-        })
-      )
+  callModel: vi.fn(() =>
+    Promise.resolve(
+      JSON.stringify({
+        improved_prompt:
+          'Evaluate the response for accuracy, completeness, and tone. Consider the full context of the customer query.',
+        rationale:
+          'Added criteria for completeness and tone based on human feedback about vague responses',
+        expected_impact:
+          'Expected to improve agreement rate by addressing the systematic leniency issue',
+      })
+    )
   ),
 }));
 
@@ -186,7 +185,13 @@ describe('Human-Driven Prompt Refiner', () => {
       const pairId3 = uuidv4();
       db.prepare(
         'INSERT INTO training_pairs (id, persona_id, input, expected_output, created_at) VALUES (?, ?, ?, ?, ?)'
-      ).run(pairId3, personaId, 'Is shipping free?', 'Yes, free shipping on orders over $50', new Date().toISOString());
+      ).run(
+        pairId3,
+        personaId,
+        'Is shipping free?',
+        'Yes, free shipping on orders over $50',
+        new Date().toISOString()
+      );
 
       const decisionId3 = uuidv4();
       db.prepare(
@@ -370,7 +375,9 @@ describe('Human-Driven Prompt Refiner', () => {
       expect(analysis.suggestedImprovements).toBeDefined();
       expect(analysis.suggestedImprovements.length).toBeGreaterThan(0);
       // Should suggest being stricter
-      expect(analysis.suggestedImprovements.some((i) => i.toLowerCase().includes('stricter'))).toBe(true);
+      expect(analysis.suggestedImprovements.some((i) => i.toLowerCase().includes('stricter'))).toBe(
+        true
+      );
     });
 
     it('should require 100% human review completion for iteration 1', async () => {
@@ -502,7 +509,11 @@ describe('Human-Driven Prompt Refiner', () => {
       const currentPrompt = 'Evaluate if the response is helpful and polite';
 
       // Refine prompt
-      const result = await refineJudgePromptFromHumanFeedback(currentPrompt, analysis, modelEngineerId);
+      const result = await refineJudgePromptFromHumanFeedback(
+        currentPrompt,
+        analysis,
+        modelEngineerId
+      );
 
       expect(result).toBeDefined();
       expect(result.refined_prompt).toBeDefined();
@@ -547,7 +558,11 @@ describe('Human-Driven Prompt Refiner', () => {
       ).run(reviewId, decisionId, 'agree', 1.0, 'Good', new Date().toISOString());
 
       const analysis = analyzeHumanFeedback(iterationId, db);
-      const result = await refineJudgePromptFromHumanFeedback('Original prompt', analysis, modelEngineerId);
+      const result = await refineJudgePromptFromHumanFeedback(
+        'Original prompt',
+        analysis,
+        modelEngineerId
+      );
 
       expect(result.refined_prompt).toBeNull();
       expect(result.rationale).toContain('LLM call failed');
@@ -584,9 +599,23 @@ describe('Human-Driven Prompt Refiner', () => {
     });
 
     it('should create unique ID for each version', () => {
-      const versionId1 = storeHumanRefinedPromptVersion(personaId, 1, 'Prompt 1', 'Rationale 1', 'human', db);
+      const versionId1 = storeHumanRefinedPromptVersion(
+        personaId,
+        1,
+        'Prompt 1',
+        'Rationale 1',
+        'human',
+        db
+      );
 
-      const versionId2 = storeHumanRefinedPromptVersion(personaId, 2, 'Prompt 2', 'Rationale 2', 'human', db);
+      const versionId2 = storeHumanRefinedPromptVersion(
+        personaId,
+        2,
+        'Prompt 2',
+        'Rationale 2',
+        'human',
+        db
+      );
 
       expect(versionId1).not.toBe(versionId2);
     });

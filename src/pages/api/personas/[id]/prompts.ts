@@ -4,6 +4,10 @@
 import type { APIRoute } from 'astro';
 import { getDatabase } from '@lib/db';
 import type { JudgePromptVersion } from '@src-types/training';
+import { badRequest, notFound, createErrorResponse } from '@lib/api-error-handler';
+import { createLogger } from '@lib/logger';
+
+const logger = createLogger('API:Personas:Prompts');
 
 // GET /api/personas/[id]/prompts - Get all judge prompt versions for a persona
 /**
@@ -15,20 +19,13 @@ import type { JudgePromptVersion } from '@src-types/training';
  * @returns {Promise<Response>}
  */
 export const GET: APIRoute = async ({ params }) => {
-  try {
-    const { id } = params;
+  const startTime = Date.now();
+  const { id } = params;
 
+  try {
     if (!id) {
-      return new Response(
-        JSON.stringify({
-          error: 'INVALID_REQUEST',
-          message: 'Persona ID is required',
-        }),
-        {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+      logger.logApiRequest('GET', '/api/personas/[id]/prompts', 400, Date.now() - startTime);
+      return badRequest('Persona ID is required', 'INVALID_REQUEST');
     }
 
     const db = getDatabase();
@@ -36,16 +33,8 @@ export const GET: APIRoute = async ({ params }) => {
     // Verify persona exists
     const persona = db.prepare('SELECT id FROM personas WHERE id = ?').get(id);
     if (!persona) {
-      return new Response(
-        JSON.stringify({
-          error: 'NOT_FOUND',
-          message: 'Persona not found',
-        }),
-        {
-          status: 404,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+      logger.logApiRequest('GET', `/api/personas/${id}/prompts`, 404, Date.now() - startTime);
+      return notFound('Persona');
     }
 
     // Fetch all prompt versions sorted by iteration (newest first)
@@ -67,6 +56,8 @@ export const GET: APIRoute = async ({ params }) => {
       )
       .all(id) as JudgePromptVersion[];
 
+    logger.logApiRequest('GET', `/api/personas/${id}/prompts`, 200, Date.now() - startTime);
+
     return new Response(
       JSON.stringify({
         prompts,
@@ -78,16 +69,7 @@ export const GET: APIRoute = async ({ params }) => {
       }
     );
   } catch (error) {
-    console.error('GET /api/personas/[id]/prompts error:', error);
-    return new Response(
-      JSON.stringify({
-        error: 'INTERNAL_ERROR',
-        message: error instanceof Error ? error.message : 'Internal server error',
-      }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
+    logger.logApiError('GET', `/api/personas/${id}/prompts`, error as Error);
+    return createErrorResponse(error);
   }
 };

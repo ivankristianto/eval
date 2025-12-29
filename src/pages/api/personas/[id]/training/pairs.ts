@@ -8,6 +8,10 @@
 import type { APIRoute } from 'astro';
 import { getPersona } from '@lib/db/persona-db';
 import { getDatabase } from '@lib/db';
+import { badRequest, notFound, createErrorResponse } from '@lib/api-error-handler';
+import { createLogger } from '@lib/logger';
+
+const logger = createLogger('API:Training:Pairs');
 
 /**
  * GET /api/personas/[id]/training/pairs
@@ -24,36 +28,25 @@ import { getDatabase } from '@lib/db';
  * @returns {Promise<Response>}
  */
 export const GET: APIRoute = async ({ params }) => {
-  try {
-    const { id } = params;
+  const startTime = Date.now();
+  const { id } = params;
 
+  try {
     if (!id) {
-      return new Response(
-        JSON.stringify({
-          error: 'INVALID_INPUT',
-          message: 'Persona ID is required',
-        }),
-        {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+      logger.logApiRequest('GET', '/api/personas/[id]/training/pairs', 400, Date.now() - startTime);
+      return badRequest('Persona ID is required', 'INVALID_INPUT');
     }
 
     // Verify persona exists
     const persona = getPersona(id);
     if (!persona) {
-      return new Response(
-        JSON.stringify({
-          error: 'PERSONA_NOT_FOUND',
-          message: 'Persona does not exist',
-          persona_id: id,
-        }),
-        {
-          status: 404,
-          headers: { 'Content-Type': 'application/json' },
-        }
+      logger.logApiRequest(
+        'GET',
+        `/api/personas/${id}/training/pairs`,
+        404,
+        Date.now() - startTime
       );
+      return notFound('Persona');
     }
 
     // Retrieve training pairs
@@ -72,6 +65,8 @@ export const GET: APIRoute = async ({ params }) => {
       )
       .all(id);
 
+    logger.logApiRequest('GET', `/api/personas/${id}/training/pairs`, 200, Date.now() - startTime);
+
     return new Response(
       JSON.stringify({
         persona_id: id,
@@ -84,17 +79,7 @@ export const GET: APIRoute = async ({ params }) => {
       }
     );
   } catch (error) {
-    console.error('GET /api/personas/[id]/training/pairs error:', error);
-
-    return new Response(
-      JSON.stringify({
-        error: 'INTERNAL_ERROR',
-        message: error instanceof Error ? error.message : 'Internal server error',
-      }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
+    logger.logApiError('GET', `/api/personas/${id}/training/pairs`, error as Error);
+    return createErrorResponse(error);
   }
 };

@@ -74,7 +74,9 @@ describe('Prompt Engineer Edge Cases', () => {
   });
 
   it('should handle response with HTML instead of JSON', async () => {
-    (callModel as ReturnType<typeof vi.fn>).mockResolvedValue('<html><body>Error 500</body></html>');
+    (callModel as ReturnType<typeof vi.fn>).mockResolvedValue(
+      '<html><body>Error 500</body></html>'
+    );
 
     const result = await refineJudgePrompt(baseContext, 'model-1');
 
@@ -83,7 +85,9 @@ describe('Prompt Engineer Edge Cases', () => {
   });
 
   it('should handle response with JSON-like but invalid JSON', async () => {
-    (callModel as ReturnType<typeof vi.fn>).mockResolvedValue('{ "improved_prompt": "test", invalid }');
+    (callModel as ReturnType<typeof vi.fn>).mockResolvedValue(
+      '{ "improved_prompt": "test", invalid }'
+    );
 
     const result = await refineJudgePrompt(baseContext, 'model-1');
 
@@ -137,7 +141,9 @@ describe('Prompt Engineer Edge Cases', () => {
   });
 
   it('should handle network timeout error', async () => {
-    (callModel as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('ETIMEDOUT: Connection timed out'));
+    (callModel as ReturnType<typeof vi.fn>).mockRejectedValue(
+      new Error('ETIMEDOUT: Connection timed out')
+    );
 
     const result = await refineJudgePrompt(baseContext, 'model-1');
 

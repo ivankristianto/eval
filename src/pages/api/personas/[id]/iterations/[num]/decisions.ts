@@ -5,6 +5,10 @@
 
 import type { APIRoute } from 'astro';
 import { getDatabase } from '@lib/db';
+import { badRequest, notFound, createErrorResponse } from '@lib/api-error-handler';
+import { createLogger } from '@lib/logger';
+
+const logger = createLogger('API:Training:Decisions');
 
 /**
  * GET /api/personas/[id]/iterations/[num]/decisions
@@ -15,28 +19,29 @@ import { getDatabase } from '@lib/db';
  * @returns {Promise<Response>}
  */
 export const GET: APIRoute = async ({ params }) => {
-  try {
-    const { id, num } = params;
+  const startTime = Date.now();
+  const { id, num } = params;
 
+  try {
     if (!id || !num) {
-      return new Response(
-        JSON.stringify({
-          error: 'INVALID_REQUEST',
-          message: 'Persona ID and iteration number are required',
-        }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      logger.logApiRequest(
+        'GET',
+        '/api/personas/[id]/iterations/[num]/decisions',
+        400,
+        Date.now() - startTime
       );
+      return badRequest('Persona ID and iteration number are required', 'INVALID_REQUEST');
     }
 
     const iterationNumber = parseInt(num, 10);
     if (isNaN(iterationNumber)) {
-      return new Response(
-        JSON.stringify({
-          error: 'INVALID_REQUEST',
-          message: 'Iteration number must be a valid integer',
-        }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      logger.logApiRequest(
+        'GET',
+        `/api/personas/${id}/iterations/${num}/decisions`,
+        400,
+        Date.now() - startTime
       );
+      return badRequest('Iteration number must be a valid integer', 'INVALID_REQUEST');
     }
 
     const db = getDatabase();
@@ -44,13 +49,13 @@ export const GET: APIRoute = async ({ params }) => {
     // Verify persona exists
     const persona = db.prepare('SELECT * FROM personas WHERE id = ?').get(id);
     if (!persona) {
-      return new Response(
-        JSON.stringify({
-          error: 'NOT_FOUND',
-          message: 'Persona not found',
-        }),
-        { status: 404, headers: { 'Content-Type': 'application/json' } }
+      logger.logApiRequest(
+        'GET',
+        `/api/personas/${id}/iterations/${num}/decisions`,
+        404,
+        Date.now() - startTime
       );
+      return notFound('Persona');
     }
 
     // Get iteration
@@ -59,13 +64,13 @@ export const GET: APIRoute = async ({ params }) => {
       .get(id, iterationNumber) as any;
 
     if (!iteration) {
-      return new Response(
-        JSON.stringify({
-          error: 'NOT_FOUND',
-          message: `Iteration ${iterationNumber} not found for persona`,
-        }),
-        { status: 404, headers: { 'Content-Type': 'application/json' } }
+      logger.logApiRequest(
+        'GET',
+        `/api/personas/${id}/iterations/${num}/decisions`,
+        404,
+        Date.now() - startTime
       );
+      return notFound('Iteration');
     }
 
     // Fetch all judge decisions with training pair info and human review status
@@ -126,6 +131,13 @@ export const GET: APIRoute = async ({ params }) => {
     const reviewedCount = formattedDecisions.filter((d) => d.human_review !== null).length;
     const totalCount = formattedDecisions.length;
 
+    logger.logApiRequest(
+      'GET',
+      `/api/personas/${id}/iterations/${num}/decisions`,
+      200,
+      Date.now() - startTime
+    );
+
     return new Response(
       JSON.stringify({
         iteration: {
@@ -143,13 +155,7 @@ export const GET: APIRoute = async ({ params }) => {
       { status: 200, headers: { 'Content-Type': 'application/json' } }
     );
   } catch (error) {
-    console.error('GET /api/personas/[id]/iterations/[num]/decisions error:', error);
-    return new Response(
-      JSON.stringify({
-        error: 'INTERNAL_ERROR',
-        message: error instanceof Error ? error.message : 'Internal server error',
-      }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
-    );
+    logger.logApiError('GET', `/api/personas/${id}/iterations/${num}/decisions`, error as Error);
+    return createErrorResponse(error);
   }
 };

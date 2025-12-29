@@ -8,18 +8,21 @@ import type { APIRoute } from 'astro';
 import { getDatabase } from '@lib/db';
 import { getPersonaMetricsHistory } from '@lib/evaluation/metrics-orchestrator';
 import type { Persona, TrainingIteration } from '@src-types/training';
+import { badRequest, notFound, createErrorResponse } from '@lib/api-error-handler';
+import { createLogger } from '@lib/logger';
+
+const logger = createLogger('API:Personas:Dashboard');
 
 /**
- *
+ * GET /api/personas/[id]/dashboard
  */
 export const GET: APIRoute = async ({ params }) => {
+  const startTime = Date.now();
   const { id } = params;
 
   if (!id) {
-    return new Response(JSON.stringify({ error: 'Persona ID is required' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    logger.logApiRequest('GET', '/api/personas/[id]/dashboard', 400, Date.now() - startTime);
+    return badRequest('Persona ID is required', 'INVALID_INPUT');
   }
 
   try {
@@ -31,10 +34,8 @@ export const GET: APIRoute = async ({ params }) => {
       | undefined;
 
     if (!persona) {
-      return new Response(JSON.stringify({ error: 'Persona not found' }), {
-        status: 404,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      logger.logApiRequest('GET', `/api/personas/${id}/dashboard`, 404, Date.now() - startTime);
+      return notFound('Persona');
     }
 
     // Fetch all iterations with metrics
@@ -99,21 +100,14 @@ export const GET: APIRoute = async ({ params }) => {
       current_iteration_status: currentIterationStatus,
     };
 
+    logger.logApiRequest('GET', `/api/personas/${id}/dashboard`, 200, Date.now() - startTime);
+
     return new Response(JSON.stringify(dashboardData), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });
   } catch (error) {
-    console.error('Dashboard API error:', error);
-    return new Response(
-      JSON.stringify({
-        error: 'Failed to fetch dashboard data',
-        details: error instanceof Error ? error.message : 'Unknown error',
-      }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
+    logger.logApiError('GET', `/api/personas/${id}/dashboard`, error as Error);
+    return createErrorResponse(error);
   }
 };

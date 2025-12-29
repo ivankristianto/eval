@@ -24,7 +24,8 @@
       "Bash(xargs:*)",
       "Bash(find:*)",
       "Bash(npm run test:e2e:clean:*)",
-      "Bash(npm run test:e2e:*)"
+      "Bash(npm run test:e2e:*)",
+      "Bash(npm run format:check:*)"
     ]
   },
   "gitAttribution": false

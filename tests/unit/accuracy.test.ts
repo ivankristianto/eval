@@ -122,7 +122,9 @@ describe('semanticSimilarity', () => {
 
   it('returns 0 when scoring fails', async () => {
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
-    (getSemanticSimilarityScore as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error('API failure'));
+    (getSemanticSimilarityScore as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+      new Error('API failure')
+    );
 
     const result = await accuracy.semanticSimilarity('A', 'B');
 

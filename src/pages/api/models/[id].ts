@@ -11,6 +11,10 @@ import {
 } from '@lib/db';
 import { ClientFactory } from '@lib/utils/api-clients';
 import { validateApiKeyFormat } from '@lib/validation/validators';
+import { badRequest, notFound, createErrorResponse } from '@lib/api-error-handler';
+import { createLogger } from '@lib/logger';
+
+const logger = createLogger('API:Models:ById');
 
 /**
  * GET /api/models/:id
@@ -20,37 +24,23 @@ import { validateApiKeyFormat } from '@lib/validation/validators';
  * @returns {Promise<Response>}
  */
 export const GET: APIRoute = async ({ params }) => {
-  try {
-    const { id } = params;
+  const startTime = Date.now();
+  const { id } = params;
 
+  try {
     if (!id) {
-      return new Response(
-        JSON.stringify({
-          error: 'INVALID_INPUT',
-          message: 'Model ID is required',
-        }),
-        {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+      logger.logApiRequest('GET', '/api/models/:id', 400, Date.now() - startTime);
+      return badRequest('Model ID is required', 'INVALID_INPUT');
     }
 
     const model = getModelById(id);
 
     if (!model) {
-      return new Response(
-        JSON.stringify({
-          error: 'MODEL_NOT_FOUND',
-          message: 'Model does not exist',
-          model_id: id,
-        }),
-        {
-          status: 404,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+      logger.logApiRequest('GET', `/api/models/${id}`, 404, Date.now() - startTime);
+      return notFound('Model');
     }
+
+    logger.logApiRequest('GET', `/api/models/${id}`, 200, Date.now() - startTime);
 
     return new Response(
       JSON.stringify({
@@ -69,17 +59,8 @@ export const GET: APIRoute = async ({ params }) => {
       }
     );
   } catch (error) {
-    console.error('GET /api/models/:id error:', error);
-    return new Response(
-      JSON.stringify({
-        error: 'INTERNAL_ERROR',
-        message: error instanceof Error ? error.message : 'Internal server error',
-      }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
+    logger.logApiError('GET', `/api/models/${id}`, error as Error);
+    return createErrorResponse(error);
   }
 };
 
@@ -93,35 +74,20 @@ export const GET: APIRoute = async ({ params }) => {
  * @returns {Promise<Response>}
  */
 export const PATCH: APIRoute = async ({ params, request }) => {
-  try {
-    const { id } = params;
+  const startTime = Date.now();
+  const { id } = params;
 
+  try {
     if (!id) {
-      return new Response(
-        JSON.stringify({
-          error: 'INVALID_INPUT',
-          message: 'Model ID is required',
-        }),
-        {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+      logger.logApiRequest('PATCH', '/api/models/:id', 400, Date.now() - startTime);
+      return badRequest('Model ID is required', 'INVALID_INPUT');
     }
 
     const model = getModelById(id);
 
     if (!model) {
-      return new Response(
-        JSON.stringify({
-          error: 'MODEL_NOT_FOUND',
-          message: 'Model does not exist',
-        }),
-        {
-          status: 404,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+      logger.logApiRequest('PATCH', `/api/models/${id}`, 404, Date.now() - startTime);
+      return notFound('Model');
     }
 
     const body = await request.json();
@@ -129,17 +95,10 @@ export const PATCH: APIRoute = async ({ params, request }) => {
 
     // Check if trying to disable model with active evaluations
     if (is_active === false && hasActiveEvaluations(id)) {
-      return new Response(
-        JSON.stringify({
-          error: 'CANNOT_UPDATE',
-          message: 'Cannot disable model with active evaluations',
-          model_id: id,
-        }),
-        {
-          status: 409,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+      logger.logApiRequest('PATCH', `/api/models/${id}`, 409, Date.now() - startTime);
+      return badRequest('Cannot disable model with active evaluations', 'CANNOT_UPDATE', {
+        model_id: id,
+      });
     }
 
     // Validate and test new API key if provided
@@ -147,18 +106,23 @@ export const PATCH: APIRoute = async ({ params, request }) => {
     let errorMessage: string | undefined;
 
     if (api_key) {
+      logger.info('Testing new API key for model', { modelId: id, provider: model.provider });
+
       const apiKeyValidation = validateApiKeyFormat(api_key, model.provider);
       if (!apiKeyValidation.valid) {
-        return new Response(JSON.stringify(apiKeyValidation.error), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        });
+        logger.logApiRequest('PATCH', `/api/models/${id}`, 400, Date.now() - startTime);
+        return badRequest(
+          apiKeyValidation.error?.message || 'Invalid API key format',
+          'VALIDATION_ERROR',
+          apiKeyValidation.error
+        );
       }
 
       const isValid = await ClientFactory.testConnection(model.provider, api_key, model.model_name);
       if (!isValid) {
         validationStatus = 'invalid';
         errorMessage = 'API key validation failed';
+        logger.warn('API key validation failed for model', { modelId: id });
       }
     }
 
@@ -171,17 +135,16 @@ export const PATCH: APIRoute = async ({ params, request }) => {
     const updated = updateModel(id, updates);
 
     if (!updated) {
-      return new Response(
-        JSON.stringify({
-          error: 'UPDATE_FAILED',
-          message: 'Failed to update model',
-        }),
-        {
-          status: 500,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+      logger.logApiRequest('PATCH', `/api/models/${id}`, 500, Date.now() - startTime);
+      return badRequest('Failed to update model', 'UPDATE_FAILED');
     }
+
+    logger.info('Model configuration updated', {
+      modelId: id,
+      updates: Object.keys(updates),
+      validationStatus,
+    });
+    logger.logApiRequest('PATCH', `/api/models/${id}`, 200, Date.now() - startTime);
 
     return new Response(
       JSON.stringify({
@@ -199,17 +162,8 @@ export const PATCH: APIRoute = async ({ params, request }) => {
       }
     );
   } catch (error) {
-    console.error('PATCH /api/models/:id error:', error);
-    return new Response(
-      JSON.stringify({
-        error: 'INTERNAL_ERROR',
-        message: error instanceof Error ? error.message : 'Internal server error',
-      }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
+    logger.logApiError('PATCH', `/api/models/${id}`, error as Error);
+    return createErrorResponse(error);
   }
 };
 
@@ -222,50 +176,32 @@ export const PATCH: APIRoute = async ({ params, request }) => {
  * @returns {Promise<Response>}
  */
 export const DELETE: APIRoute = async ({ params }) => {
-  try {
-    const { id } = params;
+  const startTime = Date.now();
+  const { id } = params;
 
+  try {
     if (!id) {
-      return new Response(
-        JSON.stringify({
-          error: 'INVALID_INPUT',
-          message: 'Model ID is required',
-        }),
-        {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+      logger.logApiRequest('DELETE', '/api/models/:id', 400, Date.now() - startTime);
+      return badRequest('Model ID is required', 'INVALID_INPUT');
     }
 
     const model = getModelById(id);
 
     if (!model) {
-      return new Response(
-        JSON.stringify({
-          error: 'MODEL_NOT_FOUND',
-          message: 'Model does not exist',
-        }),
-        {
-          status: 404,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+      logger.logApiRequest('DELETE', `/api/models/${id}`, 404, Date.now() - startTime);
+      return notFound('Model');
     }
 
     // Check if model has evaluation results
     const usageCount = getModelUsageCount(id);
     if (usageCount > 0) {
-      return new Response(
-        JSON.stringify({
-          error: 'CANNOT_DELETE',
-          message: `Cannot delete model with existing evaluation results (${usageCount} evaluations)`,
+      logger.logApiRequest('DELETE', `/api/models/${id}`, 409, Date.now() - startTime);
+      return badRequest(
+        `Cannot delete model with existing evaluation results (${usageCount} evaluations)`,
+        'CANNOT_DELETE',
+        {
           model_id: id,
           result_count: usageCount,
-        }),
-        {
-          status: 409,
-          headers: { 'Content-Type': 'application/json' },
         }
       );
     }
@@ -273,17 +209,12 @@ export const DELETE: APIRoute = async ({ params }) => {
     const deleted = deleteModel(id);
 
     if (!deleted) {
-      return new Response(
-        JSON.stringify({
-          error: 'DELETE_FAILED',
-          message: 'Failed to delete model',
-        }),
-        {
-          status: 500,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+      logger.logApiRequest('DELETE', `/api/models/${id}`, 500, Date.now() - startTime);
+      return badRequest('Failed to delete model', 'DELETE_FAILED');
     }
+
+    logger.info('Model configuration deleted', { modelId: id });
+    logger.logApiRequest('DELETE', `/api/models/${id}`, 200, Date.now() - startTime);
 
     return new Response(
       JSON.stringify({
@@ -296,16 +227,7 @@ export const DELETE: APIRoute = async ({ params }) => {
       }
     );
   } catch (error) {
-    console.error('DELETE /api/models/:id error:', error);
-    return new Response(
-      JSON.stringify({
-        error: 'INTERNAL_ERROR',
-        message: error instanceof Error ? error.message : 'Internal server error',
-      }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
+    logger.logApiError('DELETE', `/api/models/${id}`, error as Error);
+    return createErrorResponse(error);
   }
 };

@@ -6,6 +6,10 @@
 import type { APIRoute } from 'astro';
 import { getDatabase } from '@lib/db';
 import { getPromptDiff } from '@lib/training/prompt-version-manager';
+import { badRequest, notFound, createErrorResponse } from '@lib/api-error-handler';
+import { createLogger } from '@lib/logger';
+
+const logger = createLogger('API:JudgePrompts:Diff');
 
 /**
  * GET /api/judge-prompts/diff
@@ -15,18 +19,15 @@ import { getPromptDiff } from '@lib/training/prompt-version-manager';
  * @returns {Promise<Response>}
  */
 export const GET: APIRoute = async ({ url }) => {
+  const startTime = Date.now();
+
   try {
     const version1Id = url.searchParams.get('version1');
     const version2Id = url.searchParams.get('version2');
 
     if (!version1Id || !version2Id) {
-      return new Response(
-        JSON.stringify({
-          error: 'INVALID_REQUEST',
-          message: 'version1 and version2 query parameters are required',
-        }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
-      );
+      logger.logApiRequest('GET', '/api/judge-prompts/diff', 400, Date.now() - startTime);
+      return badRequest('version1 and version2 query parameters are required', 'INVALID_REQUEST');
     }
 
     const db = getDatabase();
@@ -34,29 +35,20 @@ export const GET: APIRoute = async ({ url }) => {
     // Get diff
     const diff = await getPromptDiff(version1Id, version2Id, db);
 
+    logger.logApiRequest('GET', '/api/judge-prompts/diff', 200, Date.now() - startTime);
+
     return new Response(JSON.stringify(diff), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });
   } catch (error) {
-    console.error('GET /api/judge-prompts/diff error:', error);
+    logger.logApiError('GET', '/api/judge-prompts/diff', error as Error);
 
     if (error instanceof Error && error.message.includes('Version not found')) {
-      return new Response(
-        JSON.stringify({
-          error: 'NOT_FOUND',
-          message: error.message,
-        }),
-        { status: 404, headers: { 'Content-Type': 'application/json' } }
-      );
+      logger.logApiRequest('GET', '/api/judge-prompts/diff', 404, Date.now() - startTime);
+      return badRequest(error.message, 'NOT_FOUND');
     }
 
-    return new Response(
-      JSON.stringify({
-        error: 'INTERNAL_ERROR',
-        message: error instanceof Error ? error.message : 'Internal server error',
-      }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
-    );
+    return createErrorResponse(error);
   }
 };

@@ -10,6 +10,10 @@ import { getPersona } from '@lib/db/persona-db';
 import { parseCSV } from '@lib/utils/csv-parser';
 import { getDatabase } from '@lib/db';
 import { randomUUID } from 'crypto';
+import { badRequest, notFound, createErrorResponse } from '@lib/api-error-handler';
+import { createLogger } from '@lib/logger';
+
+const logger = createLogger('API:Training:Upload');
 
 /**
  * POST /api/personas/[id]/training/upload
@@ -30,36 +34,30 @@ import { randomUUID } from 'crypto';
  * @returns {Promise<Response>}
  */
 export const POST: APIRoute = async ({ params, request }) => {
-  try {
-    const { id } = params;
+  const startTime = Date.now();
+  const { id } = params;
 
+  try {
     if (!id) {
-      return new Response(
-        JSON.stringify({
-          error: 'INVALID_INPUT',
-          message: 'Persona ID is required',
-        }),
-        {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        }
+      logger.logApiRequest(
+        'POST',
+        '/api/personas/[id]/training/upload',
+        400,
+        Date.now() - startTime
       );
+      return badRequest('Persona ID is required', 'INVALID_INPUT');
     }
 
     // Verify persona exists
     const persona = getPersona(id);
     if (!persona) {
-      return new Response(
-        JSON.stringify({
-          error: 'PERSONA_NOT_FOUND',
-          message: 'Persona does not exist',
-          persona_id: id,
-        }),
-        {
-          status: 404,
-          headers: { 'Content-Type': 'application/json' },
-        }
+      logger.logApiRequest(
+        'POST',
+        `/api/personas/${id}/training/upload`,
+        404,
+        Date.now() - startTime
       );
+      return notFound('Persona');
     }
 
     // Parse multipart form data
@@ -73,15 +71,15 @@ export const POST: APIRoute = async ({ params, request }) => {
       const file = formData.get('file') as File | null;
 
       if (!file) {
-        return new Response(
-          JSON.stringify({
-            error: 'INVALID_INPUT',
-            message: 'No file provided. Expected multipart/form-data with "file" field.',
-          }),
-          {
-            status: 400,
-            headers: { 'Content-Type': 'application/json' },
-          }
+        logger.logApiRequest(
+          'POST',
+          `/api/personas/${id}/training/upload`,
+          400,
+          Date.now() - startTime
+        );
+        return badRequest(
+          'No file provided. Expected multipart/form-data with "file" field.',
+          'INVALID_INPUT'
         );
       }
 
@@ -92,15 +90,15 @@ export const POST: APIRoute = async ({ params, request }) => {
       fileContent = body.csv || body.content || '';
 
       if (!fileContent) {
-        return new Response(
-          JSON.stringify({
-            error: 'INVALID_INPUT',
-            message: 'No CSV content provided. Expected "csv" or "content" field in JSON body.',
-          }),
-          {
-            status: 400,
-            headers: { 'Content-Type': 'application/json' },
-          }
+        logger.logApiRequest(
+          'POST',
+          `/api/personas/${id}/training/upload`,
+          400,
+          Date.now() - startTime
+        );
+        return badRequest(
+          'No CSV content provided. Expected "csv" or "content" field in JSON body.',
+          'INVALID_INPUT'
         );
       }
     } else {
@@ -112,17 +110,13 @@ export const POST: APIRoute = async ({ params, request }) => {
     const { rows, errors } = parseCSV(fileContent);
 
     if (errors.length > 0) {
-      return new Response(
-        JSON.stringify({
-          error: 'VALIDATION_ERROR',
-          message: 'CSV validation failed',
-          details: errors,
-        }),
-        {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        }
+      logger.logApiRequest(
+        'POST',
+        `/api/personas/${id}/training/upload`,
+        400,
+        Date.now() - startTime
       );
+      return badRequest('CSV validation failed', 'CSV_VALIDATION_ERROR', errors);
     }
 
     // Insert training pairs in transaction
@@ -152,6 +146,17 @@ export const POST: APIRoute = async ({ params, request }) => {
         )
         .all(id);
 
+      logger.info('Training pairs uploaded', {
+        personaId: id,
+        count: pairs.length,
+      });
+      logger.logApiRequest(
+        'POST',
+        `/api/personas/${id}/training/upload`,
+        201,
+        Date.now() - startTime
+      );
+
       return new Response(
         JSON.stringify({
           count: pairs.length,
@@ -164,32 +169,11 @@ export const POST: APIRoute = async ({ params, request }) => {
         }
       );
     } catch (dbError) {
-      console.error('Database error during training pair insertion:', dbError);
-
-      return new Response(
-        JSON.stringify({
-          error: 'DATABASE_ERROR',
-          message: 'Failed to insert training pairs',
-          details: dbError instanceof Error ? dbError.message : 'Unknown database error',
-        }),
-        {
-          status: 500,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+      logger.logApiError('POST', `/api/personas/${id}/training/upload`, dbError as Error);
+      return createErrorResponse(dbError);
     }
   } catch (error) {
-    console.error('POST /api/personas/[id]/training/upload error:', error);
-
-    return new Response(
-      JSON.stringify({
-        error: 'INTERNAL_ERROR',
-        message: error instanceof Error ? error.message : 'Internal server error',
-      }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
+    logger.logApiError('POST', `/api/personas/${id}/training/upload`, error as Error);
+    return createErrorResponse(error);
   }
 };

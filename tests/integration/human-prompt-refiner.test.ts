@@ -237,7 +237,9 @@ describe('Human-Driven Prompt Refiner Integration', () => {
       expect(refinementResult.rationale).toContain('too lenient');
       expect(refinementResult.rationale).toContain('too strict');
       expect(refinementResult.expected_impact).toContain('agreement rate');
-      expect(refinementResult.original_prompt).toBe('Evaluate if the response is accurate and helpful');
+      expect(refinementResult.original_prompt).toBe(
+        'Evaluate if the response is accurate and helpful'
+      );
       expect(refinementResult.analysis).toBe(analysis);
 
       // Step 3: Store refined prompt version
@@ -318,8 +320,10 @@ describe('Human-Driven Prompt Refiner Integration', () => {
       const mockLLMResponse = {
         improved_prompt:
           'Evaluate customer support responses for accuracy, completeness, and helpfulness. Maintain the current high standards.',
-        rationale: 'With 100% agreement, the current prompt is working well. Minor adjustments for consistency.',
-        expected_impact: 'Expect to maintain high agreement rate in iteration 2 with continued human review.',
+        rationale:
+          'With 100% agreement, the current prompt is working well. Minor adjustments for consistency.',
+        expected_impact:
+          'Expect to maintain high agreement rate in iteration 2 with continued human review.',
       };
 
       vi.mocked(callModel).mockResolvedValue(JSON.stringify(mockLLMResponse));
@@ -458,7 +462,11 @@ describe('Human-Driven Prompt Refiner Integration', () => {
       // Mock LLM failure
       vi.mocked(callModel).mockRejectedValue(new Error('API timeout'));
 
-      const result = await refineJudgePromptFromHumanFeedback('Original prompt', analysis, modelEngineerId);
+      const result = await refineJudgePromptFromHumanFeedback(
+        'Original prompt',
+        analysis,
+        modelEngineerId
+      );
 
       expect(result.refined_prompt).toBeNull();
       expect(result.rationale).toContain('LLM call failed');
@@ -511,7 +519,11 @@ describe('Human-Driven Prompt Refiner Integration', () => {
       };
       vi.mocked(callModel).mockResolvedValue(JSON.stringify(mockResponse));
 
-      const result = await refineJudgePromptFromHumanFeedback('Original', analysis, modelEngineerId);
+      const result = await refineJudgePromptFromHumanFeedback(
+        'Original',
+        analysis,
+        modelEngineerId
+      );
 
       // Store version
       const versionId1 = storeHumanRefinedPromptVersion(
@@ -525,7 +537,9 @@ describe('Human-Driven Prompt Refiner Integration', () => {
 
       // Verify history (includes initial prompt from fixture at iteration 0)
       const history = db
-        .prepare('SELECT * FROM judge_prompt_versions WHERE persona_id = ? ORDER BY iteration_number ASC')
+        .prepare(
+          'SELECT * FROM judge_prompt_versions WHERE persona_id = ? ORDER BY iteration_number ASC'
+        )
         .all(personaId) as any[];
 
       expect(history).toHaveLength(2);

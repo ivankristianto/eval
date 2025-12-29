@@ -10,6 +10,10 @@ import {
   validateTemperature,
 } from '@lib/validation/validators';
 import type { RubricType } from '@lib/utils/types';
+import { badRequest, createErrorResponse } from '@lib/api-error-handler';
+import { createLogger } from '@lib/logger';
+
+const logger = createLogger('API:Evaluate');
 
 /**
  * POST /api/evaluate
@@ -20,16 +24,20 @@ import type { RubricType } from '@lib/utils/types';
  * @returns {Promise<Response>}
  */
 export const POST: APIRoute = async ({ request }) => {
+  const startTime = Date.now();
+
   try {
     const body = await request.json();
 
     // Validate input
     const validation = validateCreateEvaluation(body);
     if (!validation.valid) {
-      return new Response(JSON.stringify(validation.error), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      logger.logApiRequest('POST', '/api/evaluate', 400, Date.now() - startTime);
+      return badRequest(
+        validation.error?.message || 'Invalid evaluation data',
+        'VALIDATION_ERROR',
+        validation.error
+      );
     }
 
     const {
@@ -45,19 +53,23 @@ export const POST: APIRoute = async ({ request }) => {
     // Validate system prompt if provided
     const systemPromptValidation = validateSystemPrompt(system_prompt);
     if (!systemPromptValidation.valid) {
-      return new Response(JSON.stringify(systemPromptValidation.error), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      logger.logApiRequest('POST', '/api/evaluate', 400, Date.now() - startTime);
+      return badRequest(
+        systemPromptValidation.error?.message || 'Invalid system prompt',
+        'VALIDATION_ERROR',
+        systemPromptValidation.error
+      );
     }
 
     // Validate temperature if provided
     const temperatureValidation = validateTemperature(temperature);
     if (!temperatureValidation.valid) {
-      return new Response(JSON.stringify(temperatureValidation.error), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      logger.logApiRequest('POST', '/api/evaluate', 400, Date.now() - startTime);
+      return badRequest(
+        temperatureValidation.error?.message || 'Invalid temperature',
+        'VALIDATION_ERROR',
+        temperatureValidation.error
+      );
     }
 
     // Validate all models exist and are active
@@ -65,30 +77,18 @@ export const POST: APIRoute = async ({ request }) => {
     for (const modelId of model_ids) {
       const model = getModelById(modelId);
       if (!model) {
-        return new Response(
-          JSON.stringify({
-            error: 'MODEL_INACTIVE',
-            message: 'Model is not active or does not exist',
-            details: { model_id: modelId, reason: 'not_found_or_inactive' },
-          }),
-          {
-            status: 400,
-            headers: { 'Content-Type': 'application/json' },
-          }
-        );
+        logger.logApiRequest('POST', '/api/evaluate', 400, Date.now() - startTime);
+        return badRequest('Model is not active or does not exist', 'MODEL_INACTIVE', {
+          model_id: modelId,
+          reason: 'not_found_or_inactive',
+        });
       }
       if (!model.is_active) {
-        return new Response(
-          JSON.stringify({
-            error: 'MODEL_INACTIVE',
-            message: 'Model is not active or does not exist',
-            details: { model_id: modelId, reason: 'not_found_or_inactive' },
-          }),
-          {
-            status: 400,
-            headers: { 'Content-Type': 'application/json' },
-          }
-        );
+        logger.logApiRequest('POST', '/api/evaluate', 400, Date.now() - startTime);
+        return badRequest('Model is not active or does not exist', 'MODEL_INACTIVE', {
+          model_id: modelId,
+          reason: 'not_found_or_inactive',
+        });
       }
       models.push({
         id: model.id,
@@ -96,6 +96,11 @@ export const POST: APIRoute = async ({ request }) => {
         provider: model.provider,
       });
     }
+
+    logger.info('Creating evaluation', {
+      modelCount: models.length,
+      rubricType: rubric_type,
+    });
 
     // Create evaluation record
     const evaluation = insertEvaluation(
@@ -125,6 +130,12 @@ export const POST: APIRoute = async ({ request }) => {
       temperature,
     });
 
+    logger.info('Evaluation started', {
+      evaluationId: evaluation.id,
+      modelIds: model_ids,
+    });
+    logger.logApiRequest('POST', '/api/evaluate', 201, Date.now() - startTime);
+
     return new Response(
       JSON.stringify({
         evaluation_id: evaluation.id,
@@ -142,16 +153,7 @@ export const POST: APIRoute = async ({ request }) => {
       }
     );
   } catch (error) {
-    console.error('POST /api/evaluate error:', error);
-    return new Response(
-      JSON.stringify({
-        error: 'INTERNAL_ERROR',
-        message: error instanceof Error ? error.message : 'Internal server error',
-      }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
+    logger.logApiError('POST', '/api/evaluate', error as Error);
+    return createErrorResponse(error);
   }
 };

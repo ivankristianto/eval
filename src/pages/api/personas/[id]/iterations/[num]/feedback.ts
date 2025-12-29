@@ -6,6 +6,10 @@
 import type { APIRoute } from 'astro';
 import { getDatabase } from '@lib/db';
 import { v4 as uuidv4 } from 'uuid';
+import { badRequest, notFound, createErrorResponse } from '@lib/api-error-handler';
+import { createLogger } from '@lib/logger';
+
+const logger = createLogger('API:Training:Feedback');
 
 /**
  * POST /api/personas/[id]/iterations/[num]/feedback
@@ -17,28 +21,29 @@ import { v4 as uuidv4 } from 'uuid';
  * @returns {Promise<Response>}
  */
 export const POST: APIRoute = async ({ params, request }) => {
-  try {
-    const { id, num } = params;
+  const startTime = Date.now();
+  const { id, num } = params;
 
+  try {
     if (!id || !num) {
-      return new Response(
-        JSON.stringify({
-          error: 'INVALID_REQUEST',
-          message: 'Persona ID and iteration number are required',
-        }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      logger.logApiRequest(
+        'POST',
+        '/api/personas/[id]/iterations/[num]/feedback',
+        400,
+        Date.now() - startTime
       );
+      return badRequest('Persona ID and iteration number are required', 'INVALID_REQUEST');
     }
 
     const iterationNumber = parseInt(num, 10);
     if (isNaN(iterationNumber)) {
-      return new Response(
-        JSON.stringify({
-          error: 'INVALID_REQUEST',
-          message: 'Iteration number must be a valid integer',
-        }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      logger.logApiRequest(
+        'POST',
+        `/api/personas/${id}/iterations/${num}/feedback`,
+        400,
+        Date.now() - startTime
       );
+      return badRequest('Iteration number must be a valid integer', 'INVALID_REQUEST');
     }
 
     // Parse request body
@@ -47,36 +52,39 @@ export const POST: APIRoute = async ({ params, request }) => {
 
     // Validate required fields
     if (!decision_id || !human_decision) {
-      return new Response(
-        JSON.stringify({
-          error: 'INVALID_REQUEST',
-          message: 'decision_id and human_decision are required',
-        }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      logger.logApiRequest(
+        'POST',
+        `/api/personas/${id}/iterations/${num}/feedback`,
+        400,
+        Date.now() - startTime
       );
+      return badRequest('decision_id and human_decision are required', 'INVALID_REQUEST');
     }
 
     // Validate human_decision value
     if (human_decision !== 'agree' && human_decision !== 'disagree') {
-      return new Response(
-        JSON.stringify({
-          error: 'INVALID_REQUEST',
-          message: 'human_decision must be "agree" or "disagree"',
-        }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      logger.logApiRequest(
+        'POST',
+        `/api/personas/${id}/iterations/${num}/feedback`,
+        400,
+        Date.now() - startTime
       );
+      return badRequest('human_decision must be "agree" or "disagree"', 'INVALID_REQUEST');
     }
 
     // Validate confidence if provided
     if (human_confidence !== undefined) {
       const confidence = parseFloat(human_confidence);
       if (isNaN(confidence) || confidence < 0 || confidence > 1) {
-        return new Response(
-          JSON.stringify({
-            error: 'INVALID_REQUEST',
-            message: 'human_confidence must be a number between 0.0 and 1.0',
-          }),
-          { status: 400, headers: { 'Content-Type': 'application/json' } }
+        logger.logApiRequest(
+          'POST',
+          `/api/personas/${id}/iterations/${num}/feedback`,
+          400,
+          Date.now() - startTime
+        );
+        return badRequest(
+          'human_confidence must be a number between 0.0 and 1.0',
+          'INVALID_REQUEST'
         );
       }
     }
@@ -86,13 +94,13 @@ export const POST: APIRoute = async ({ params, request }) => {
     // Verify persona exists
     const persona = db.prepare('SELECT * FROM personas WHERE id = ?').get(id);
     if (!persona) {
-      return new Response(
-        JSON.stringify({
-          error: 'NOT_FOUND',
-          message: 'Persona not found',
-        }),
-        { status: 404, headers: { 'Content-Type': 'application/json' } }
+      logger.logApiRequest(
+        'POST',
+        `/api/personas/${id}/iterations/${num}/feedback`,
+        404,
+        Date.now() - startTime
       );
+      return notFound('Persona');
     }
 
     // Get iteration
@@ -101,13 +109,13 @@ export const POST: APIRoute = async ({ params, request }) => {
       .get(id, iterationNumber) as any;
 
     if (!iteration) {
-      return new Response(
-        JSON.stringify({
-          error: 'NOT_FOUND',
-          message: `Iteration ${iterationNumber} not found for persona`,
-        }),
-        { status: 404, headers: { 'Content-Type': 'application/json' } }
+      logger.logApiRequest(
+        'POST',
+        `/api/personas/${id}/iterations/${num}/feedback`,
+        404,
+        Date.now() - startTime
       );
+      return notFound('Iteration');
     }
 
     // Verify decision belongs to this iteration
@@ -116,19 +124,19 @@ export const POST: APIRoute = async ({ params, request }) => {
       .get(decision_id, iteration.id) as any;
 
     if (!decision) {
-      return new Response(
-        JSON.stringify({
-          error: 'NOT_FOUND',
-          message: 'Judge decision not found for this iteration',
-        }),
-        { status: 404, headers: { 'Content-Type': 'application/json' } }
+      logger.logApiRequest(
+        'POST',
+        `/api/personas/${id}/iterations/${num}/feedback`,
+        404,
+        Date.now() - startTime
       );
+      return notFound('Judge decision');
     }
 
     // Check if review already exists (prevent duplicate reviews)
     const existingReview = db
       .prepare('SELECT id FROM human_reviews WHERE judge_decision_id = ?')
-      .get(decision_id);
+      .get(decision_id) as { id: string } | undefined;
 
     if (existingReview) {
       // Update existing review
@@ -139,6 +147,19 @@ export const POST: APIRoute = async ({ params, request }) => {
         WHERE judge_decision_id = ?
       `
       ).run(human_decision, human_confidence || null, notes || null, decision_id);
+
+      logger.info('Human review updated', {
+        personaId: id,
+        iterationNumber,
+        reviewId: existingReview.id,
+        humanDecision: human_decision,
+      });
+      logger.logApiRequest(
+        'POST',
+        `/api/personas/${id}/iterations/${num}/feedback`,
+        200,
+        Date.now() - startTime
+      );
 
       return new Response(
         JSON.stringify({
@@ -183,6 +204,19 @@ export const POST: APIRoute = async ({ params, request }) => {
     `
     ).run(iteration.id, iteration.id);
 
+    logger.info('Human review created', {
+      personaId: id,
+      iterationNumber,
+      reviewId,
+      humanDecision: human_decision,
+    });
+    logger.logApiRequest(
+      'POST',
+      `/api/personas/${id}/iterations/${num}/feedback`,
+      201,
+      Date.now() - startTime
+    );
+
     return new Response(
       JSON.stringify({
         id: reviewId,
@@ -195,13 +229,7 @@ export const POST: APIRoute = async ({ params, request }) => {
       { status: 201, headers: { 'Content-Type': 'application/json' } }
     );
   } catch (error) {
-    console.error('POST /api/personas/[id]/iterations/[num]/feedback error:', error);
-    return new Response(
-      JSON.stringify({
-        error: 'INTERNAL_ERROR',
-        message: error instanceof Error ? error.message : 'Internal server error',
-      }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
-    );
+    logger.logApiError('POST', `/api/personas/${id}/iterations/${num}/feedback`, error as Error);
+    return createErrorResponse(error);
   }
 };

@@ -67,7 +67,9 @@ describe('Prompt Version Manager', () => {
     expect(versionId).toBeDefined();
 
     // Verify stored
-    const stored = db.prepare('SELECT * FROM judge_prompt_versions WHERE id = ?').get(versionId) as any;
+    const stored = db
+      .prepare('SELECT * FROM judge_prompt_versions WHERE id = ?')
+      .get(versionId) as any;
 
     expect(stored).toBeDefined();
     expect(stored.persona_id).toBe(personaId);
@@ -90,7 +92,9 @@ describe('Prompt Version Manager', () => {
 
     // Verify only 2 versions exist: initial (iteration 0) + first stored (iteration 1)
     // The duplicate at iteration 2 should not be stored
-    const versions = db.prepare('SELECT * FROM judge_prompt_versions WHERE persona_id = ?').all(personaId);
+    const versions = db
+      .prepare('SELECT * FROM judge_prompt_versions WHERE persona_id = ?')
+      .all(personaId);
 
     expect(versions).toHaveLength(2);
   });
@@ -105,7 +109,9 @@ describe('Prompt Version Manager', () => {
     expect(_id2).toBeDefined();
 
     // Should have 3 versions: initial (iteration 0) + two stored (iterations 1 and 2)
-    const versions = db.prepare('SELECT * FROM judge_prompt_versions WHERE persona_id = ?').all(personaId);
+    const versions = db
+      .prepare('SELECT * FROM judge_prompt_versions WHERE persona_id = ?')
+      .all(personaId);
 
     expect(versions).toHaveLength(3);
   });

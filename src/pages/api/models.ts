@@ -6,6 +6,10 @@ import { insertModel, getModels, getModelUsageCount } from '@lib/db';
 import { ClientFactory } from '@lib/utils/api-clients';
 import { validateCreateModel, validateProvider } from '@lib/validation/validators';
 import type { Provider } from '@lib/utils/types';
+import { badRequest, internalError, createErrorResponse } from '@lib/api-error-handler';
+import { createLogger } from '@lib/logger';
+
+const logger = createLogger('API:Models');
 
 /**
  * POST /api/models
@@ -16,39 +20,47 @@ import type { Provider } from '@lib/utils/types';
  * @returns {Promise<Response>}
  */
 export const POST: APIRoute = async ({ request }) => {
+  const startTime = Date.now();
+
   try {
     const body = await request.json();
 
     // Validate input
     const validation = validateCreateModel(body);
     if (!validation.valid) {
-      return new Response(JSON.stringify(validation.error), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      logger.logApiRequest('POST', '/api/models', 400, Date.now() - startTime);
+      return badRequest(
+        validation.error?.message || 'Invalid model data',
+        'VALIDATION_ERROR',
+        validation.error
+      );
     }
 
     const { provider, model_name, api_key, notes } = body;
+
+    logger.info('Creating new model configuration', { provider, model_name });
 
     // Test API key with provider
     const isValid = await ClientFactory.testConnection(provider, api_key, model_name);
 
     if (!isValid) {
-      return new Response(
-        JSON.stringify({
-          error: 'API_KEY_AUTHENTICATION_FAILED',
-          message: 'API key rejected by provider',
-          details: { provider, provider_message: 'Invalid authentication credentials' },
-        }),
-        {
-          status: 401,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+      logger.logApiRequest('POST', '/api/models', 401, Date.now() - startTime);
+      return internalError('API key rejected by provider', {
+        code: 'API_KEY_AUTHENTICATION_FAILED',
+        provider,
+        provider_message: 'Invalid authentication credentials',
+      });
     }
 
     // Create model
     const model = insertModel(provider, model_name, api_key, notes);
+
+    logger.info('Model configuration created', {
+      modelId: model.id,
+      provider,
+      model_name,
+    });
+    logger.logApiRequest('POST', '/api/models', 201, Date.now() - startTime);
 
     return new Response(
       JSON.stringify({
@@ -65,17 +77,8 @@ export const POST: APIRoute = async ({ request }) => {
       }
     );
   } catch (error) {
-    console.error('POST /api/models error:', error);
-    return new Response(
-      JSON.stringify({
-        error: 'INTERNAL_ERROR',
-        message: error instanceof Error ? error.message : 'Internal server error',
-      }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
+    logger.logApiError('POST', '/api/models', error as Error);
+    return createErrorResponse(error);
   }
 };
 
@@ -88,6 +91,8 @@ export const POST: APIRoute = async ({ request }) => {
  * @returns {Promise<Response>}
  */
 export const GET: APIRoute = async ({ url }) => {
+  const startTime = Date.now();
+
   try {
     const activeOnly = url.searchParams.get('active_only') === 'true';
     const provider = url.searchParams.get('provider') as Provider | null;
@@ -96,10 +101,12 @@ export const GET: APIRoute = async ({ url }) => {
     if (provider) {
       const providerValidation = validateProvider(provider);
       if (!providerValidation.valid) {
-        return new Response(JSON.stringify(providerValidation.error), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        });
+        logger.logApiRequest('GET', '/api/models', 400, Date.now() - startTime);
+        return badRequest(
+          providerValidation.error?.message || 'Invalid provider',
+          'VALIDATION_ERROR',
+          providerValidation.error
+        );
       }
     }
 
@@ -116,21 +123,14 @@ export const GET: APIRoute = async ({ url }) => {
       usage_count: getModelUsageCount(model.id),
     }));
 
+    logger.logApiRequest('GET', '/api/models', 200, Date.now() - startTime);
+
     return new Response(JSON.stringify({ models: modelsWithUsage }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });
   } catch (error) {
-    console.error('GET /api/models error:', error);
-    return new Response(
-      JSON.stringify({
-        error: 'INTERNAL_ERROR',
-        message: error instanceof Error ? error.message : 'Internal server error',
-      }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
+    logger.logApiError('GET', '/api/models', error as Error);
+    return createErrorResponse(error);
   }
 };

@@ -69,7 +69,12 @@ export class Logger {
   /**
    * Create a log entry
    */
-  private log(level: LogLevel, message: string, data?: Record<string, unknown>, error?: Error): void {
+  private log(
+    level: LogLevel,
+    message: string,
+    data?: Record<string, unknown>,
+    error?: Error
+  ): void {
     // Skip logging if level is below minimum
     if (!shouldLog(level)) {
       return;
@@ -171,15 +176,8 @@ export class Logger {
   /**
    * Log API request
    */
-  logApiRequest(
-    method: string,
-    path: string,
-    statusCode?: number,
-    durationMs?: number
-  ): void {
-    const message = statusCode
-      ? `API ${method} ${path} - ${statusCode}`
-      : `API ${method} ${path}`;
+  logApiRequest(method: string, path: string, statusCode?: number, durationMs?: number): void {
+    const message = statusCode ? `API ${method} ${path} - ${statusCode}` : `API ${method} ${path}`;
 
     this.info(message, {
       method,
@@ -192,12 +190,7 @@ export class Logger {
   /**
    * Log API error
    */
-  logApiError(
-    method: string,
-    path: string,
-    error: Error,
-    statusCode?: number
-  ): void {
+  logApiError(method: string, path: string, error: Error, statusCode?: number): void {
     this.error(`API ${method} ${path} failed`, error, {
       method,
       path,
@@ -228,7 +221,12 @@ export class Logger {
   /**
    * Log LLM API call
    */
-  logLLMCall(provider: string, model: string, promptTokens: number, completionTokens: number): void {
+  logLLMCall(
+    provider: string,
+    model: string,
+    promptTokens: number,
+    completionTokens: number
+  ): void {
     this.info('LLM API call', {
       provider,
       model,

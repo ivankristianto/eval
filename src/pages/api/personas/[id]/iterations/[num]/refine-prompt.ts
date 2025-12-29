@@ -7,6 +7,10 @@ import type { APIRoute } from 'astro';
 import { getDatabase } from '@lib/db';
 import { analyzeIterationFailures } from '@lib/training/failure-analysis';
 import { refineJudgePrompt } from '@lib/training/prompt-engineer';
+import { badRequest, notFound, internalError, createErrorResponse } from '@lib/api-error-handler';
+import { createLogger } from '@lib/logger';
+
+const logger = createLogger('API:Training:RefinePrompt');
 
 /**
  * POST /api/personas/[id]/iterations/[num]/refine-prompt
@@ -17,42 +21,43 @@ import { refineJudgePrompt } from '@lib/training/prompt-engineer';
  * @returns {Promise<Response>}
  */
 export const POST: APIRoute = async ({ params }) => {
-  try {
-    const { id, num } = params;
+  const startTime = Date.now();
+  const { id, num } = params;
 
+  try {
     if (!id || !num) {
-      return new Response(
-        JSON.stringify({
-          error: 'INVALID_REQUEST',
-          message: 'Persona ID and iteration number are required',
-        }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      logger.logApiRequest(
+        'POST',
+        '/api/personas/[id]/iterations/[num]/refine-prompt',
+        400,
+        Date.now() - startTime
       );
+      return badRequest('Persona ID and iteration number are required', 'INVALID_REQUEST');
     }
 
     const iterationNumber = parseInt(num, 10);
     if (isNaN(iterationNumber)) {
-      return new Response(
-        JSON.stringify({
-          error: 'INVALID_REQUEST',
-          message: 'Iteration number must be a valid integer',
-        }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      logger.logApiRequest(
+        'POST',
+        `/api/personas/${id}/iterations/${num}/refine-prompt`,
+        400,
+        Date.now() - startTime
       );
+      return badRequest('Iteration number must be a valid integer', 'INVALID_REQUEST');
     }
 
     const db = getDatabase();
 
     // Verify persona exists
-    const persona = db.prepare('SELECT * FROM personas WHERE id = ?').get(id) as any;
+    const persona = db.prepare('SELECT * FROM personas WHERE id = ?').get(id);
     if (!persona) {
-      return new Response(
-        JSON.stringify({
-          error: 'NOT_FOUND',
-          message: 'Persona not found',
-        }),
-        { status: 404, headers: { 'Content-Type': 'application/json' } }
+      logger.logApiRequest(
+        'POST',
+        `/api/personas/${id}/iterations/${num}/refine-prompt`,
+        404,
+        Date.now() - startTime
       );
+      return notFound('Persona');
     }
 
     // Get iteration
@@ -61,25 +66,34 @@ export const POST: APIRoute = async ({ params }) => {
       .get(id, iterationNumber) as any;
 
     if (!iteration) {
-      return new Response(
-        JSON.stringify({
-          error: 'NOT_FOUND',
-          message: `Iteration ${iterationNumber} not found for persona`,
-        }),
-        { status: 404, headers: { 'Content-Type': 'application/json' } }
+      logger.logApiRequest(
+        'POST',
+        `/api/personas/${id}/iterations/${num}/refine-prompt`,
+        404,
+        Date.now() - startTime
       );
+      return notFound('Iteration');
     }
 
     // Verify iteration is completed
     if (iteration.status !== 'completed') {
-      return new Response(
-        JSON.stringify({
-          error: 'INVALID_STATE',
-          message: `Cannot refine prompt for iteration with status: ${iteration.status}. Iteration must be completed.`,
-        }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      logger.logApiRequest(
+        'POST',
+        `/api/personas/${id}/iterations/${num}/refine-prompt`,
+        400,
+        Date.now() - startTime
+      );
+      return badRequest(
+        `Cannot refine prompt for iteration with status: ${iteration.status}. Iteration must be completed.`,
+        'INVALID_STATE'
       );
     }
+
+    logger.info('Starting AI-powered prompt refinement', {
+      personaId: id,
+      iterationNumber,
+      iterationId: iteration.id,
+    });
 
     // Analyze iteration failures
     const failureContext = await analyzeIterationFailures(iteration.id, db);
@@ -87,20 +101,35 @@ export const POST: APIRoute = async ({ params }) => {
     // Call prompt engineer to refine prompt
     const refinementResult = await refineJudgePrompt(
       failureContext,
-      persona.prompt_engineer_model_id
+      (persona as any).prompt_engineer_model_id
     );
 
     // If LLM failed, return error
     if (refinementResult.error || !refinementResult.improved_prompt) {
-      return new Response(
-        JSON.stringify({
-          error: 'REFINEMENT_FAILED',
-          message: refinementResult.error || 'Failed to generate improved prompt',
-          fallback_to_manual: true,
-        }),
-        { status: 500, headers: { 'Content-Type': 'application/json' } }
+      logger.logApiRequest(
+        'POST',
+        `/api/personas/${id}/iterations/${num}/refine-prompt`,
+        500,
+        Date.now() - startTime
       );
+      return internalError(refinementResult.error || 'Failed to generate improved prompt', {
+        code: 'REFINEMENT_FAILED',
+        fallback_to_manual: true,
+      });
     }
+
+    logger.info('AI-powered prompt refinement successful', {
+      personaId: id,
+      iterationNumber,
+      hasRationale: !!refinementResult.rationale,
+      hasExpectedImpact: !!refinementResult.expected_impact,
+    });
+    logger.logApiRequest(
+      'POST',
+      `/api/personas/${id}/iterations/${num}/refine-prompt`,
+      200,
+      Date.now() - startTime
+    );
 
     // Return refined prompt for user review
     return new Response(
@@ -115,13 +144,11 @@ export const POST: APIRoute = async ({ params }) => {
       { status: 200, headers: { 'Content-Type': 'application/json' } }
     );
   } catch (error) {
-    console.error('POST /api/personas/[id]/iterations/[num]/refine-prompt error:', error);
-    return new Response(
-      JSON.stringify({
-        error: 'INTERNAL_ERROR',
-        message: error instanceof Error ? error.message : 'Internal server error',
-      }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    logger.logApiError(
+      'POST',
+      `/api/personas/${id}/iterations/${num}/refine-prompt`,
+      error as Error
     );
+    return createErrorResponse(error);
   }
 };
