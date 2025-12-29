@@ -7,6 +7,7 @@
 
 import type { APIRoute } from 'astro';
 import { getDatabase } from '@lib/db';
+import type { TrainingIteration, Persona } from '@src-types/training';
 import { calculateIterationMetricsFromGroundTruth } from '@lib/evaluation/metrics-orchestrator';
 import type { JudgeResult } from '@lib/training/training-loop';
 import { IterativeTrainingLoop } from '@lib/training/training-loop';
@@ -67,7 +68,7 @@ export const POST: APIRoute = async ({ params, request }) => {
     // Get iteration
     const iteration = db
       .prepare('SELECT * FROM training_iterations WHERE persona_id = ? AND iteration_number = ?')
-      .get(id, iterationNumber) as any;
+      .get(id, iterationNumber) as TrainingIteration | undefined;
 
     if (!iteration) {
       logger.logApiRequest(
@@ -132,7 +133,18 @@ export const POST: APIRoute = async ({ params, request }) => {
       // Get the calculated metrics
       const metricsRow = db
         .prepare('SELECT * FROM iteration_metrics WHERE iteration_id = ?')
-        .get(iteration.id) as any;
+        .get(iteration.id) as {
+        id: string;
+        f1_score: number | null;
+        precision: number | null;
+        recall: number | null;
+        cohens_kappa: number | null;
+        accuracy: number | null;
+        true_positives: number | null;
+        true_negatives: number | null;
+        false_positives: number | null;
+        false_negatives: number | null;
+      } | undefined;
 
       logger.info('Iteration 1 metrics calculated and training continued', {
         personaId: id,
@@ -154,16 +166,16 @@ export const POST: APIRoute = async ({ params, request }) => {
             'Iteration 1 complete. Metrics calculated, prompts refined, and training continued.',
           metrics: metricsRow
             ? {
-                f1_score: metricsRow.f1_score,
-                precision: metricsRow.precision,
-                recall: metricsRow.recall,
-                cohens_kappa: metricsRow.cohens_kappa,
-                accuracy: metricsRow.accuracy,
+                f1_score: metricsRow.f1_score ?? 0,
+                precision: metricsRow.precision ?? 0,
+                recall: metricsRow.recall ?? 0,
+                cohens_kappa: metricsRow.cohens_kappa ?? 0,
+                accuracy: metricsRow.accuracy ?? 0,
                 confusion_matrix: {
-                  true_positives: metricsRow.true_positives,
-                  true_negatives: metricsRow.true_negatives,
-                  false_positives: metricsRow.false_positives,
-                  false_negatives: metricsRow.false_negatives,
+                  true_positives: metricsRow.true_positives ?? 0,
+                  true_negatives: metricsRow.true_negatives ?? 0,
+                  false_positives: metricsRow.false_positives ?? 0,
+                  false_negatives: metricsRow.false_negatives ?? 0,
                 },
               }
             : null,
@@ -185,7 +197,18 @@ export const POST: APIRoute = async ({ params, request }) => {
     // Check if metrics already calculated
     const existingMetrics = db
       .prepare('SELECT * FROM iteration_metrics WHERE iteration_id = ?')
-      .get(iteration.id) as any;
+      .get(iteration.id) as {
+      id: string;
+      f1_score: number | null;
+      precision: number | null;
+      recall: number | null;
+      cohens_kappa: number | null;
+      accuracy: number | null;
+      true_positives: number;
+      true_negatives: number;
+      false_positives: number;
+      false_negatives: number;
+    } | undefined;
 
     let metrics: {
       f1_score: number;
@@ -210,11 +233,11 @@ export const POST: APIRoute = async ({ params, request }) => {
       });
 
       metrics = {
-        f1_score: existingMetrics.f1_score,
-        precision: existingMetrics.precision,
-        recall: existingMetrics.recall,
-        cohens_kappa: existingMetrics.cohens_kappa,
-        accuracy: existingMetrics.accuracy,
+        f1_score: existingMetrics.f1_score ?? 0,
+        precision: existingMetrics.precision ?? 0,
+        recall: existingMetrics.recall ?? 0,
+        cohens_kappa: existingMetrics.cohens_kappa ?? 0,
+        accuracy: existingMetrics.accuracy ?? 0,
         confusion_matrix: {
           true_positives: existingMetrics.true_positives,
           true_negatives: existingMetrics.true_negatives,
@@ -316,7 +339,7 @@ export const POST: APIRoute = async ({ params, request }) => {
     );
 
     // Update persona best scores if this iteration is better
-    const personaRecord = persona as any;
+    const personaRecord = persona as Persona;
     if (personaRecord.best_f1_score === null || metrics.f1_score > personaRecord.best_f1_score) {
       db.prepare(
         'UPDATE personas SET best_f1_score = ?, best_f1_iteration = ?, updated_at = ? WHERE id = ?'
@@ -328,6 +351,96 @@ export const POST: APIRoute = async ({ params, request }) => {
         previousBest: personaRecord.best_f1_score,
         newBest: metrics.f1_score,
       });
+    }
+
+    // ITERATIONS 2+: Refine prompts and continue training automatically
+    if (iterationNumber >= 2) {
+      // Check if converged (F1 >= 0.95 or reached max iterations)
+      const maxIterations = personaRecord.max_iterations || 10;
+      const converged = metrics.f1_score >= 0.95 || iterationNumber >= maxIterations;
+
+      if (converged) {
+        logger.info('Training converged', {
+          personaId: id,
+          iterationNumber,
+          f1Score: metrics.f1_score,
+        });
+
+        // Update persona status to trained
+        db.prepare('UPDATE personas SET status = ?, updated_at = ? WHERE id = ?').run(
+          'trained',
+          new Date().toISOString(),
+          id
+        );
+
+        // Update training loop state
+        db.prepare(
+          'UPDATE training_loop_state SET status = ?, updated_at = ? WHERE persona_id = ?'
+        ).run('completed', new Date().toISOString(), id);
+      } else {
+        // Not converged - continue training loop which will refine prompts automatically
+        logger.info('Continuing training loop to refine prompts and start next iteration', {
+          personaId: id,
+          iterationNumber,
+          f1Score: metrics.f1_score,
+        });
+
+        // Get or create training loop session
+        let state = db
+          .prepare('SELECT session_id FROM training_loop_state WHERE persona_id = ?')
+          .get(id) as { session_id: string } | undefined;
+
+        if (!state) {
+          // Create new training loop state
+          const sessionId = `session_${id}_${Date.now()}`;
+          db.prepare(
+            'INSERT INTO training_loop_state (session_id, persona_id, status, current_iteration, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)'
+          ).run(
+            sessionId,
+            id,
+            'in_progress',
+            iterationNumber,
+            new Date().toISOString(),
+            new Date().toISOString()
+          );
+          state = { session_id: sessionId };
+        }
+
+        // Update training loop state to in_progress
+        db.prepare(
+          'UPDATE training_loop_state SET status = ?, updated_at = ? WHERE session_id = ?'
+        ).run('in_progress', new Date().toISOString(), state.session_id);
+
+        // Update persona status to training
+        db.prepare('UPDATE personas SET status = ?, updated_at = ? WHERE id = ?').run(
+          'training',
+          new Date().toISOString(),
+          id
+        );
+
+        // Create training loop and execute - this will refine prompts and continue to next iteration
+        const loop = new IterativeTrainingLoop(state.session_id, id, db);
+
+        // Run the training loop in background without blocking
+        setImmediate(async () => {
+          try {
+            await loop.execute([]);
+            logger.info('Training loop completed', {
+              personaId: id,
+              sessionId: state.session_id,
+            });
+          } catch (error) {
+            logger.error('Training loop error', error instanceof Error ? error : undefined, {
+              sessionId: state.session_id,
+            });
+          }
+        });
+
+        logger.info('Training loop started in background', {
+          personaId: id,
+          sessionId: state.session_id,
+        });
+      }
     }
 
     logger.logApiRequest(

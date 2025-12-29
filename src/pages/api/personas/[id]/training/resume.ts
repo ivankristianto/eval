@@ -5,8 +5,8 @@
 
 import type { APIRoute } from 'astro';
 import { getDatabase } from '@lib/db';
+import type { TrainingIteration } from '@src-types/training';
 import { TrainingStateManager } from '@lib/training/training-state';
-import { IterativeTrainingLoop } from '@lib/training/training-loop';
 import { badRequest, notFound, internalError, createErrorResponse } from '@lib/api-error-handler';
 import { createLogger } from '@lib/logger';
 
@@ -239,13 +239,23 @@ export const POST: APIRoute = async ({ params }) => {
       // Get current iteration data
       const iteration = db
         .prepare('SELECT * FROM training_iterations WHERE persona_id = ? AND iteration_number = ?')
-        .get(id, pausedSession!.current_iteration) as any;
+        .get(id, pausedSession!.current_iteration) as TrainingIteration | undefined;
 
       if (iteration) {
         // Get current metrics if available
         const metrics = db
           .prepare('SELECT * FROM iteration_metrics WHERE iteration_id = ?')
-          .get(iteration.id) as any;
+          .get(iteration.id) as {
+          precision: number | null;
+          recall: number | null;
+          f1_score: number | null;
+          cohens_kappa: number | null;
+          accuracy: number | null;
+          true_positives: number | null;
+          true_negatives: number | null;
+          false_positives: number | null;
+          false_negatives: number | null;
+        } | undefined;
 
         // Get evaluated decision IDs
         const evaluatedDecisions = db
@@ -274,17 +284,17 @@ export const POST: APIRoute = async ({ params }) => {
         const checkpointData = {
           iterationNumber: pausedSession!.current_iteration,
           evaluatedResultCount: evaluatedDecisions.length,
-          metricsSnapshot: metrics || {
-            f1_score: 0,
-            precision: 0,
-            recall: 0,
-            accuracy: 0,
-            cohens_kappa: 0,
+          metricsSnapshot: {
+            f1_score: metrics?.f1_score ?? 0,
+            precision: metrics?.precision ?? 0,
+            recall: metrics?.recall ?? 0,
+            accuracy: metrics?.accuracy ?? 0,
+            cohens_kappa: metrics?.cohens_kappa ?? 0,
             confusion_matrix: {
-              true_positives: 0,
-              true_negatives: 0,
-              false_positives: 0,
-              false_negatives: 0,
+              true_positives: metrics?.true_positives ?? 0,
+              true_negatives: metrics?.true_negatives ?? 0,
+              false_positives: metrics?.false_positives ?? 0,
+              false_negatives: metrics?.false_negatives ?? 0,
             },
           },
           evaluatedResultIds: evaluatedDecisions.map((d) => d.id),
@@ -351,7 +361,7 @@ export const POST: APIRoute = async ({ params }) => {
     }
 
     // Verify checkpoint integrity (only verify if we loaded from database, not if we just created)
-    const isCheckpointValid = checkpoint
+    const isCheckpointValid = checkpoint !== null
       ? true
       : stateManager.verifyCheckpointIntegrity(checkpointSessionId);
     if (!isCheckpointValid) {
@@ -382,8 +392,8 @@ export const POST: APIRoute = async ({ params }) => {
       personaId: id,
       sessionId: checkpointSessionId,
       iterationNumber: pausedSession!.current_iteration,
-      f1Score: checkpoint.metricsSnapshot.f1_score,
-      evaluatedCount: checkpoint.evaluatedResultCount,
+      f1Score: checkpoint?.metricsSnapshot.f1_score ?? 0,
+      evaluatedCount: checkpoint?.evaluatedResultCount ?? 0,
     });
     logger.logApiRequest(
       'POST',
@@ -398,9 +408,9 @@ export const POST: APIRoute = async ({ params }) => {
         status: 'in_progress',
         iteration_number: pausedSession!.current_iteration,
         checkpoint: {
-          iteration_number: checkpoint.iterationNumber,
-          evaluated_result_count: checkpoint.evaluatedResultCount,
-          f1_score: checkpoint.metricsSnapshot.f1_score,
+          iteration_number: checkpoint?.iterationNumber ?? 0,
+          evaluated_result_count: checkpoint?.evaluatedResultCount ?? 0,
+          f1_score: checkpoint?.metricsSnapshot.f1_score ?? 0,
         },
         message: 'Training resumed successfully',
       }),

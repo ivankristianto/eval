@@ -11,6 +11,7 @@
 
 import type { APIRoute } from 'astro';
 import { getDatabase } from '@lib/db';
+import type { Persona, TrainingIteration } from '@src-types/training';
 import { storePromptVersion } from '@lib/training/prompt-version-manager';
 import { IterativeTrainingLoop } from '@lib/training/training-loop';
 import { badRequest, notFound, createErrorResponse } from '@lib/api-error-handler';
@@ -58,7 +59,7 @@ export const POST: APIRoute = async ({ params, request }) => {
     const db = getDatabase();
 
     // Verify persona exists first
-    const persona = db.prepare('SELECT * FROM personas WHERE id = ?').get(id) as any;
+    const persona = db.prepare('SELECT * FROM personas WHERE id = ?').get(id) as Persona | undefined;
     if (!persona) {
       logger.logApiRequest(
         'POST',
@@ -72,7 +73,7 @@ export const POST: APIRoute = async ({ params, request }) => {
     // Get iteration to verify it exists
     const iteration = db
       .prepare('SELECT * FROM training_iterations WHERE persona_id = ? AND iteration_number = ?')
-      .get(id, iterationNumber) as any;
+      .get(id, iterationNumber) as TrainingIteration | undefined;
 
     if (!iteration) {
       logger.logApiRequest(

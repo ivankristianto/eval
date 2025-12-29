@@ -5,8 +5,9 @@
 
 import type { APIRoute } from 'astro';
 import { getDatabase } from '@lib/db';
+import type { TrainingIteration, Persona } from '@src-types/training';
 import { TrainingStateManager } from '@lib/training/training-state';
-import { badRequest, notFound, internalError, createErrorResponse } from '@lib/api-error-handler';
+import { badRequest, notFound, createErrorResponse } from '@lib/api-error-handler';
 import { createLogger } from '@lib/logger';
 
 const logger = createLogger('API:Training:Pause');
@@ -178,13 +179,23 @@ export const POST: APIRoute = async ({ params, request }) => {
     // Get current iteration data for checkpoint
     const iteration = db
       .prepare('SELECT * FROM training_iterations WHERE persona_id = ? AND iteration_number = ?')
-      .get(id, activeSession.current_iteration) as any;
+      .get(id, activeSession.current_iteration) as TrainingIteration | undefined;
 
     if (iteration) {
       // Get current metrics if available
       const metrics = db
         .prepare('SELECT * FROM iteration_metrics WHERE iteration_id = ?')
-        .get(iteration.id) as any;
+        .get(iteration.id) as {
+        precision: number | null;
+        recall: number | null;
+        f1_score: number | null;
+        cohens_kappa: number | null;
+        accuracy: number | null;
+        true_positives: number;
+        true_negatives: number;
+        false_positives: number;
+        false_negatives: number;
+      } | undefined;
 
       // Get evaluated decision IDs
       const evaluatedDecisions = db
@@ -199,13 +210,25 @@ export const POST: APIRoute = async ({ params, request }) => {
         .get(id) as { prompt_text: string } | undefined;
 
       const currentPrompt =
-        judgePrompt?.prompt_text || (persona as any).task_prompt || 'No prompt available';
+        judgePrompt?.prompt_text || (persona as Persona).task_prompt || 'No prompt available';
 
       // Build checkpoint data
       const checkpointData = {
         iterationNumber: activeSession.current_iteration,
         evaluatedResultCount: evaluatedDecisions.length,
-        metricsSnapshot: metrics || {
+        metricsSnapshot: metrics ? {
+          f1_score: metrics.f1_score ?? 0,
+          precision: metrics.precision ?? 0,
+          recall: metrics.recall ?? 0,
+          accuracy: metrics.accuracy ?? 0,
+          cohens_kappa: metrics.cohens_kappa ?? 0,
+          confusion_matrix: {
+            true_positives: metrics.true_positives,
+            true_negatives: metrics.true_negatives,
+            false_positives: metrics.false_positives,
+            false_negatives: metrics.false_negatives,
+          },
+        } : {
           f1_score: 0,
           precision: 0,
           recall: 0,

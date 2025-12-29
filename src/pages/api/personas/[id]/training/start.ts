@@ -5,6 +5,7 @@
 
 import type { APIRoute } from 'astro';
 import { getDatabase } from '@lib/db';
+import type { Persona } from '@src-types/training';
 import { IterativeTrainingLoop } from '@lib/training/training-loop';
 import { v4 as uuidv4 } from 'uuid';
 import { badRequest, notFound, createErrorResponse } from '@lib/api-error-handler';
@@ -38,7 +39,7 @@ export const POST: APIRoute = async ({ params }) => {
     const db = getDatabase();
 
     // Verify persona exists
-    const persona = db.prepare('SELECT * FROM personas WHERE id = ?').get(id) as any;
+    const persona = db.prepare('SELECT * FROM personas WHERE id = ?').get(id) as Persona | undefined;
     if (!persona) {
       logger.logApiRequest(
         'POST',

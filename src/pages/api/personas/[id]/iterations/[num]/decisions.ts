@@ -5,6 +5,7 @@
 
 import type { APIRoute } from 'astro';
 import { getDatabase } from '@lib/db';
+import type { TrainingIteration } from '@src-types/training';
 import { badRequest, notFound, createErrorResponse } from '@lib/api-error-handler';
 import { createLogger } from '@lib/logger';
 
@@ -61,7 +62,7 @@ export const GET: APIRoute = async ({ params }) => {
     // Get iteration
     const iteration = db
       .prepare('SELECT * FROM training_iterations WHERE persona_id = ? AND iteration_number = ?')
-      .get(id, iterationNumber) as any;
+      .get(id, iterationNumber) as TrainingIteration | undefined;
 
     if (!iteration) {
       logger.logApiRequest(
@@ -99,7 +100,22 @@ export const GET: APIRoute = async ({ params }) => {
         ORDER BY tp.created_at ASC
       `
       )
-      .all(iteration.id) as any[];
+      .all(iteration.id) as Array<{
+        decision_id: string;
+        review_id: string | null;
+        training_pair_id: string;
+        input: string;
+        expected_output: string;
+        generated_output: string;
+        judge_decision: 'agree' | 'disagree';
+        judge_confidence: number | null;
+        judge_reasoning: string | null;
+        decision_created_at: string;
+        human_decision: 'agree' | 'disagree' | null;
+        human_confidence: number | null;
+        human_notes: string | null;
+        review_created_at: string | null;
+      }>;
 
     // Format response
     const formattedDecisions = decisions.map((d) => ({
@@ -116,13 +132,13 @@ export const GET: APIRoute = async ({ params }) => {
         reasoning: d.judge_reasoning,
         created_at: d.decision_created_at,
       },
-      human_review: d.review_id
+      human_review: d.review_id !== null
         ? {
             id: d.review_id,
-            decision: d.human_decision,
+            decision: d.human_decision as 'agree' | 'disagree',
             confidence: d.human_confidence,
             notes: d.human_notes,
-            created_at: d.review_created_at,
+            created_at: d.review_created_at ?? d.decision_created_at,
           }
         : null,
     }));

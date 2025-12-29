@@ -5,6 +5,7 @@
 
 import type { APIRoute } from 'astro';
 import { getDatabase } from '@lib/db';
+import type { TrainingIteration } from '@src-types/training';
 import { badRequest, notFound, createErrorResponse } from '@lib/api-error-handler';
 import { createLogger } from '@lib/logger';
 
@@ -75,48 +76,92 @@ export const GET: APIRoute = async ({ params }) => {
         LIMIT 1
       `
       )
-      .get(id) as any;
+      .get(id) as (TrainingIteration & {
+        f1_score?: number;
+        precision?: number;
+        recall?: number;
+        cohens_kappa?: number;
+        accuracy?: number;
+        true_positives?: number;
+        true_negatives?: number;
+        false_positives?: number;
+        false_negatives?: number;
+      }) | undefined;
 
     // Get training loop state if active
     const loopState = db
       .prepare(
         'SELECT * FROM training_loop_state WHERE persona_id = ? ORDER BY updated_at DESC LIMIT 1'
       )
-      .get(id) as any;
+      .get(id) as {
+      session_id: string;
+      persona_id: string;
+      status: string;
+      current_iteration: number;
+      task_results_evaluated: number;
+    } | undefined;
 
     // Build response
-    const response: any = {
+    const response: {
+      persona_id: string;
+      latest_iteration: typeof latestIteration | null;
+      training_loop_state: typeof loopState | null;
+      metrics?: {
+        f1_score: number;
+        precision: number;
+        recall: number;
+        cohens_kappa: number;
+        accuracy: number;
+        confusion_matrix: {
+          true_positives: number;
+          true_negatives: number;
+          false_positives: number;
+          false_negatives: number;
+        };
+      };
+    } = {
       persona_id: id,
-      current_iteration: latestIteration || null,
+      latest_iteration: latestIteration || null,
       training_loop_state: loopState || null,
     };
 
     // Add metrics if available
     if (latestIteration?.f1_score !== undefined) {
-      response.current_iteration.metrics = {
-        f1_score: latestIteration.f1_score,
-        precision: latestIteration.precision,
-        recall: latestIteration.recall,
-        cohens_kappa: latestIteration.cohens_kappa,
-        accuracy: latestIteration.accuracy,
+      response.metrics = {
+        f1_score: latestIteration.f1_score ?? 0,
+        precision: latestIteration.precision ?? 0,
+        recall: latestIteration.recall ?? 0,
+        cohens_kappa: latestIteration.cohens_kappa ?? 0,
+        accuracy: latestIteration.accuracy ?? 0,
         confusion_matrix: {
-          true_positives: latestIteration.true_positives,
-          true_negatives: latestIteration.true_negatives,
-          false_positives: latestIteration.false_positives,
-          false_negatives: latestIteration.false_negatives,
+          true_positives: latestIteration.true_positives ?? 0,
+          true_negatives: latestIteration.true_negatives ?? 0,
+          false_positives: latestIteration.false_positives ?? 0,
+          false_negatives: latestIteration.false_negatives ?? 0,
         },
       };
 
-      // Remove redundant fields
-      delete response.current_iteration.f1_score;
-      delete response.current_iteration.precision;
-      delete response.current_iteration.recall;
-      delete response.current_iteration.cohens_kappa;
-      delete response.current_iteration.accuracy;
-      delete response.current_iteration.true_positives;
-      delete response.current_iteration.true_negatives;
-      delete response.current_iteration.false_positives;
-      delete response.current_iteration.false_negatives;
+      // Remove redundant fields from latestIteration
+      const iterationData = latestIteration as typeof latestIteration & {
+        f1_score?: number;
+        precision?: number;
+        recall?: number;
+        cohens_kappa?: number;
+        accuracy?: number;
+        true_positives?: number;
+        true_negatives?: number;
+        false_positives?: number;
+        false_negatives?: number;
+      };
+      delete iterationData.f1_score;
+      delete iterationData.precision;
+      delete iterationData.recall;
+      delete iterationData.cohens_kappa;
+      delete iterationData.accuracy;
+      delete iterationData.true_positives;
+      delete iterationData.true_negatives;
+      delete iterationData.false_positives;
+      delete iterationData.false_negatives;
     }
 
     logger.logApiRequest('GET', `/api/personas/${id}/training/status`, 200, Date.now() - startTime);

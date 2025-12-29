@@ -5,6 +5,7 @@
 
 import type { APIRoute } from 'astro';
 import { getDatabase } from '@lib/db';
+import type { TrainingIteration } from '@src-types/training';
 import { v4 as uuidv4 } from 'uuid';
 import { badRequest, notFound, createErrorResponse } from '@lib/api-error-handler';
 import { createLogger } from '@lib/logger';
@@ -106,7 +107,7 @@ export const POST: APIRoute = async ({ params, request }) => {
     // Get iteration
     const iteration = db
       .prepare('SELECT * FROM training_iterations WHERE persona_id = ? AND iteration_number = ?')
-      .get(id, iterationNumber) as any;
+      .get(id, iterationNumber) as TrainingIteration | undefined;
 
     if (!iteration) {
       logger.logApiRequest(
@@ -121,7 +122,10 @@ export const POST: APIRoute = async ({ params, request }) => {
     // Verify decision belongs to this iteration
     const decision = db
       .prepare('SELECT * FROM judge_decisions WHERE id = ? AND iteration_id = ?')
-      .get(decision_id, iteration.id) as any;
+      .get(decision_id, iteration.id) as {
+      id: string;
+      iteration_id: string;
+    } | undefined;
 
     if (!decision) {
       logger.logApiRequest(
@@ -163,7 +167,7 @@ export const POST: APIRoute = async ({ params, request }) => {
 
       return new Response(
         JSON.stringify({
-          id: (existingReview as any).id,
+          id: existingReview.id,
           decision_id,
           human_decision,
           human_confidence: human_confidence || null,

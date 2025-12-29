@@ -5,6 +5,7 @@
 
 import type { APIRoute } from 'astro';
 import { getDatabase } from '@lib/db';
+import type { TrainingIteration, Persona } from '@src-types/training';
 import { analyzeIterationFailures } from '@lib/training/failure-analysis';
 import { refineJudgePrompt } from '@lib/training/prompt-engineer';
 import { badRequest, notFound, internalError, createErrorResponse } from '@lib/api-error-handler';
@@ -63,7 +64,7 @@ export const POST: APIRoute = async ({ params }) => {
     // Get iteration
     const iteration = db
       .prepare('SELECT * FROM training_iterations WHERE persona_id = ? AND iteration_number = ?')
-      .get(id, iterationNumber) as any;
+      .get(id, iterationNumber) as TrainingIteration | undefined;
 
     if (!iteration) {
       logger.logApiRequest(
@@ -101,7 +102,7 @@ export const POST: APIRoute = async ({ params }) => {
     // Call prompt engineer to refine prompt
     const refinementResult = await refineJudgePrompt(
       failureContext,
-      (persona as any).prompt_engineer_model_id
+      (persona as Persona).prompt_engineer_model_id
     );
 
     // If LLM failed, return error
