@@ -227,7 +227,7 @@ _User can create a new persona with task description, initial judge prompt, and 
 
 ### UI Pages
 
-- [ ] T025 [P] Create test file tests/e2e/persona-creation.test.ts for end-to-end persona creation
+- [x] T025 [P] Create test file tests/e2e/persona-creation.test.ts for end-to-end persona creation
 
 - [x] T026 Create src/pages/personas.astro implementing:
   - Display list of all personas as cards (PersonaCard component)
@@ -258,7 +258,7 @@ _User can create a new persona with task description, initial judge prompt, and 
 
 ### Integration & E2E Tests
 
-- [ ] T029 Create end-to-end test tests/e2e/persona-creation.test.ts covering:
+- [x] T029 Create end-to-end test tests/e2e/persona-creation.test.ts covering:
   - Navigate to personas list
   - Click "Create New Persona"
   - Fill form with valid inputs (task name, description, select models)
@@ -351,7 +351,7 @@ _User can upload CSV file with input/expected_output pairs and view imported dat
 
 ### UI Components & Pages
 
-- [ ] T036 [P] Create test file tests/e2e/training-data-upload.test.ts for upload workflow
+- [x] T036 [P] Create test file tests/e2e/training-data-upload.test.ts for upload workflow
 
 - [x] T037 Create src/components/CSVUploader.astro implementing:
   - Drag-drop zone for CSV file
@@ -478,7 +478,7 @@ _System runs TWO-PHASE training: (1) Iteration 1 with mandatory human review and
 
 ### Human Review Interface (REQUIRED for Iteration 1, OPTIONAL for Iterations 2+)
 
-- [ ] T047 [P] Create test file tests/e2e/human-review.test.ts for MANDATORY iteration 1 review workflow and OPTIONAL iteration 2+ validation
+- [x] T047 [P] Create test file tests/e2e/human-review.test.ts for MANDATORY iteration 1 review workflow and OPTIONAL iteration 2+ validation
 
 - [x] T048 Create src/pages/api/personas/[id]/iterations/[num]/decisions.ts implementing:
   - GET /api/personas/[id]/iterations/[num]/decisions: Fetch all judge decisions for human review
@@ -623,7 +623,7 @@ _System runs TWO-PHASE training: (1) Iteration 1 with mandatory human review and
 
 ### Integration & E2E Tests
 
-- [ ] T060 Create end-to-end test tests/e2e/two-phase-training.test.ts covering:
+- [x] T060 Create end-to-end test tests/e2e/two-phase-training.test.ts covering:
   - Create persona and upload training data (prerequisites)
   - Click "Start Training" button
   - **Iteration 1**: Wait for iteration 1 to complete, verify user is redirected to mandatory review page
@@ -848,13 +848,13 @@ _Dashboard displays real-time metrics and convergence status_
 
 ### Dashboard Data API
 
-- [X] T074 [P] Create test file tests/integration/dashboard-api.test.ts
+- [x] T074 [P] Create test file tests/integration/dashboard-api.test.ts
 
-- [X] T075 Create src/pages/api/personas/[id]/dashboard.ts implementing:
+- [x] T075 Create src/pages/api/personas/[id]/dashboard.ts implementing:
   - GET /api/personas/[id]/dashboard: Fetch all data for dashboard
   - Return: {persona, iterations: [{iteration_num, metrics, timestamp}], convergence_achieved, current_iteration_status}
 
-- [X] T076 Create src/pages/api/personas/[id]/metrics.ts implementing:
+- [x] T076 Create src/pages/api/personas/[id]/metrics.ts implementing:
   - GET /api/personas/[id]/metrics: Fetch just metrics data for chart
   - Return: Array<{iteration, f1_score, precision, recall, cohens_kappa, timestamp}>
 
@@ -869,16 +869,16 @@ _Dashboard displays real-time metrics and convergence status_
 
 ### UI Dashboard Component
 
-- [X] T077 Create src/components/TrainingDashboard.astro implementing:
+- [x] T077 Create src/components/TrainingDashboard.astro implementing:
   - Metric cards: F1 Score (primary), Precision, Recall, Cohen's Kappa (with trend arrows)
   - Line chart: F1 and Cohen's Kappa trends over iterations
   - Convergence indicator: "Target F1 (0.80) achieved in iteration X"
   - Current iteration status: "Iteration 5/20 in progress" or "Iteration 3/20 awaiting review"
   - Confusion matrix visualization for latest iteration
 
-- [X] T078 Create src/components/MetricsChart.astro for line chart (F1/Kappa over iterations)
+- [x] T078 Create src/components/MetricsChart.astro for line chart (F1/Kappa over iterations)
 
-- [X] T079 Create src/pages/personas/[id]/training/index.astro (update existing to include dashboard)
+- [x] T079 Create src/pages/personas/[id]/training/index.astro (update existing to include dashboard)
   - Embed TrainingDashboard component
   - Auto-refresh metrics every 5 seconds (or use WebSocket)
 
@@ -939,16 +939,16 @@ _User can pause training and resume later without data loss_
 
 ### Pause/Resume API
 
-- [X] T082 [P] Create test file tests/integration/pause-resume.test.ts for pause/resume flow
+- [x] T082 [P] Create test file tests/integration/pause-resume.test.ts for pause/resume flow
 
-- [X] T083 Create src/pages/api/personas/[id]/training/pause.ts implementing:
+- [x] T083 Create src/pages/api/personas/[id]/training/pause.ts implementing:
   - POST /api/personas/[id]/training/pause: Pause current training
   - Set training_loop_state.status = 'paused'
   - Stop further iteration processing
   - Save checkpoint
   - Return 200 with pause confirmation
 
-- [X] T084 Create src/pages/api/personas/[id]/training/resume.ts implementing:
+- [x] T084 Create src/pages/api/personas/[id]/training/resume.ts implementing:
   - POST /api/personas/[id]/training/resume: Resume paused training
   - Fetch checkpoint via TrainingStateManager.resume()
   - Verify data integrity
@@ -967,7 +967,7 @@ _User can pause training and resume later without data loss_
 
 ### UI Controls
 
-- [X] T085 Update src/pages/personas/[id]/index.astro (training-progress tab):
+- [x] T085 Update src/pages/personas/[id]/index.astro (training-progress tab):
   - Add "Pause Training" button (if training in progress)
   - Add "Resume Training" button (if training paused)
   - Show pause reason in status display

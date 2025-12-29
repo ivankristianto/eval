@@ -23,7 +23,8 @@
       "Bash(node -e:*)",
       "Bash(xargs:*)",
       "Bash(find:*)",
-      "Bash(npm run test:e2e:clean:*)"
+      "Bash(npm run test:e2e:clean:*)",
+      "Bash(npm run test:e2e:*)"
     ]
   },
   "gitAttribution": false
