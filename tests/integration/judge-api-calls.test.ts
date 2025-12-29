@@ -129,14 +129,20 @@ describe('Judge API Integration', () => {
       // Verify stored in database
       const stored = db
         .prepare('SELECT * FROM judge_decisions WHERE id = ?')
-        .get(decisionId) as any;
+        .get(decisionId) as {
+          iteration_id: string;
+          training_pair_id: string;
+          judge_decision: string;
+          judge_confidence: number | null;
+          judge_reasoning: string;
+        } | undefined;
 
       expect(stored).toBeDefined();
-      expect(stored.iteration_id).toBe('iteration-1');
-      expect(stored.training_pair_id).toBe('pair-1');
-      expect(stored.judge_decision).toBe('agree');
-      expect(stored.judge_confidence).toBe(0.95);
-      expect(stored.judge_reasoning).toBe('The answer is correct');
+      expect(stored!.iteration_id).toBe('iteration-1');
+      expect(stored!.training_pair_id).toBe('pair-1');
+      expect(stored!.judge_decision).toBe('agree');
+      expect(stored!.judge_confidence).toBe(0.95);
+      expect(stored!.judge_reasoning).toBe('The answer is correct');
     });
 
     it('should handle missing confidence value', () => {
@@ -147,10 +153,13 @@ describe('Judge API Integration', () => {
 
       const stored = db
         .prepare('SELECT * FROM judge_decisions WHERE id = ?')
-        .get(decisionId) as any;
+        .get(decisionId) as {
+          judge_decision: string;
+          judge_confidence: number | null;
+        } | undefined;
 
-      expect(stored.judge_decision).toBe('disagree');
-      expect(stored.judge_confidence).toBeNull();
+      expect(stored!.judge_decision).toBe('disagree');
+      expect(stored!.judge_confidence).toBeNull();
     });
 
     it('should allow null result_id when not provided', () => {
@@ -169,9 +178,12 @@ describe('Judge API Integration', () => {
 
       const stored = db
         .prepare('SELECT * FROM judge_decisions WHERE id = ?')
-        .get(decisionId) as any;
+        .get(decisionId) as {
+          result_id: string | null;
+        } | undefined;
 
-      expect(stored.result_id).toBeNull();
+      expect(stored).toBeDefined();
+      expect(stored!.result_id).toBeNull();
     });
   });
 
@@ -193,11 +205,14 @@ describe('Judge API Integration', () => {
       // Verify
       const stored = db
         .prepare('SELECT * FROM judge_decisions WHERE id = ?')
-        .get(decisionId) as any;
+        .get(decisionId) as {
+          judge_decision: string;
+          judge_reasoning: string;
+        } | undefined;
 
       expect(stored).toBeDefined();
-      expect(stored.judge_decision).toBe(result.decision);
-      expect(stored.judge_reasoning).toBe(result.reasoning);
+      expect(stored!.judge_decision).toBe(result.decision);
+      expect(stored!.judge_reasoning).toBe(result.reasoning);
     });
   });
 });

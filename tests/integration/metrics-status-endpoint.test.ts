@@ -5,8 +5,10 @@
  * Verifies status responses for different calculation states
  */
 
-import { describe, it, expect, beforeEach, vi, beforeAll, afterAll } from 'vitest';
-import type { Database } from 'better-sqlite3';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import type { APIContext } from 'astro';
+
+type StatusEndpointContext = APIContext<{ id: string; num: string }, Record<string, string | undefined>>;
 
 // Mock database module
 const mockDb = {
@@ -48,7 +50,7 @@ describe('GET /api/personas/{id}/iterations/{iteration}/status', () => {
       const response = await GET({
         params: { id: '', num: '1' },
         request: new Request('http://localhost/api/personas//iterations/1/status'),
-      } as any);
+      } as unknown as StatusEndpointContext);
 
       expect(response.status).toBe(400);
       const body = await response.json();
@@ -59,7 +61,7 @@ describe('GET /api/personas/{id}/iterations/{iteration}/status', () => {
       const response = await GET({
         params: { id: 'persona-1', num: 'abc' },
         request: new Request('http://localhost/api/personas/persona-1/iterations/abc/status'),
-      } as any);
+      } as unknown as StatusEndpointContext);
 
       expect(response.status).toBe(400);
       const body = await response.json();
@@ -76,7 +78,7 @@ describe('GET /api/personas/{id}/iterations/{iteration}/status', () => {
       const response = await GET({
         params: { id: 'persona-1', num: '1' },
         request: new Request('http://localhost/api/personas/persona-1/iterations/1/status'),
-      } as any);
+      } as unknown as StatusEndpointContext);
 
       expect(response.status).toBe(404);
       const body = await response.json();
@@ -96,7 +98,7 @@ describe('GET /api/personas/{id}/iterations/{iteration}/status', () => {
       const response = await GET({
         params: { id: 'persona-1', num: '1' },
         request: new Request('http://localhost/api/personas/persona-1/iterations/1/status'),
-      } as any);
+      } as unknown as StatusEndpointContext);
 
       expect(response.status).toBe(404);
       const body = await response.json();
@@ -143,7 +145,7 @@ describe('GET /api/personas/{id}/iterations/{iteration}/status', () => {
       const response = await GET({
         params: { id: 'persona-1', num: '1' },
         request: new Request('http://localhost/api/personas/persona-1/iterations/1/status'),
-      } as any);
+      } as unknown as StatusEndpointContext);
 
       expect(response.status).toBe(200);
       const body = await response.json();
@@ -188,7 +190,7 @@ describe('GET /api/personas/{id}/iterations/{iteration}/status', () => {
       const response = await GET({
         params: { id: 'persona-1', num: '1' },
         request: new Request('http://localhost/api/personas/persona-1/iterations/1/status'),
-      } as any);
+      } as unknown as StatusEndpointContext);
 
       expect(response.status).toBe(200);
       const body = await response.json();
@@ -228,7 +230,7 @@ describe('GET /api/personas/{id}/iterations/{iteration}/status', () => {
       const response = await GET({
         params: { id: 'persona-1', num: '1' },
         request: new Request('http://localhost/api/personas/persona-1/iterations/1/status'),
-      } as any);
+      } as unknown as StatusEndpointContext);
 
       expect(response.status).toBe(200);
       const body = await response.json();
@@ -264,7 +266,7 @@ describe('GET /api/personas/{id}/iterations/{iteration}/status', () => {
       const response = await GET({
         params: { id: 'persona-1', num: '1' },
         request: new Request('http://localhost/api/personas/persona-1/iterations/1/status'),
-      } as any);
+      } as unknown as StatusEndpointContext);
 
       expect(response.status).toBe(200);
       const body = await response.json();
@@ -324,7 +326,7 @@ describe('GET /api/personas/{id}/iterations/{iteration}/status', () => {
       const response = await GET({
         params: { id: 'persona-1', num: '2' },
         request: new Request('http://localhost/api/personas/persona-1/iterations/2/status'),
-      } as any);
+      } as unknown as StatusEndpointContext);
 
       expect(response.status).toBe(200);
       const body = await response.json();
@@ -335,7 +337,7 @@ describe('GET /api/personas/{id}/iterations/{iteration}/status', () => {
       const response2 = await GET({
         params: { id: 'persona-1', num: '2' },
         request: new Request('http://localhost/api/personas/persona-1/iterations/2/status'),
-      } as any);
+      } as unknown as StatusEndpointContext);
 
       expect(response2.status).toBe(200);
       const body2 = await response2.json();

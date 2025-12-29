@@ -52,11 +52,11 @@ describe('Prompt Engineer Edge Cases', () => {
     const result = await refineJudgePrompt(baseContext, 'model-1');
 
     expect(result.improved_prompt).toBeNull();
-    expect(result.error).toContain('Failed to parse');
+    expect(result.error).toContain('empty or invalid');
   });
 
   it('should handle null response from LLM', async () => {
-    (callModel as ReturnType<typeof vi.fn>).mockResolvedValue(null as any);
+    (callModel as ReturnType<typeof vi.fn>).mockResolvedValue(null as unknown as string);
 
     const result = await refineJudgePrompt(baseContext, 'model-1');
 

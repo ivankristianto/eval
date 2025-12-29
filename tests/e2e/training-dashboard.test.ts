@@ -153,7 +153,7 @@ test.describe('Training Dashboard', () => {
 
         // Check for metrics cards (F1, Precision, Recall, Cohen's Kappa)
         const metricCards = page.locator('.card-body:has-text("F1 Score")');
-        const cardCount = await metricCards.count();
+        await metricCards.count();
 
         // If training data exists, cards should be present
         // If no data, may show "No Training Data Yet" message instead
@@ -341,7 +341,7 @@ test.describe('Training Dashboard', () => {
           const response = await page.request.get(`/api/personas/${persona.id}/dashboard`);
           const data = await response.json();
 
-          const iterationWithMetrics = data.iterations.find((i: any) => i.f1_score !== null);
+          const iterationWithMetrics = data.iterations.find((i: { f1_score: number | null }) => i.f1_score !== null);
 
           if (iterationWithMetrics) {
             await page.goto(`/personas/${persona.id}/metrics`);
@@ -371,7 +371,7 @@ test.describe('Training Dashboard', () => {
           const response = await page.request.get(`/api/personas/${persona.id}/dashboard`);
           const data = await response.json();
 
-          const iterationWithMetrics = data.iterations.find((i: any) => i.f1_score !== null);
+          const iterationWithMetrics = data.iterations.find((i: { f1_score: number | null }) => i.f1_score !== null);
 
           if (iterationWithMetrics) {
             await page.goto(`/personas/${persona.id}/metrics`);
@@ -381,7 +381,7 @@ test.describe('Training Dashboard', () => {
 
             // Check for confusion matrix (should exist as a card)
             const confusionMatrixCard = page.locator('.card:has(h3:has-text("Confusion Matrix"))');
-            const cardCount = await confusionMatrixCard.count();
+            await confusionMatrixCard.count();
 
             // May be displayed inline or in a card
             const hasCohenKappa = (await page.locator("text=Cohen's Kappa").count()) > 0;
@@ -405,7 +405,7 @@ test.describe('Training Dashboard', () => {
           const response = await page.request.get(`/api/personas/${persona.id}/dashboard`);
           const data = await response.json();
 
-          const iterationWithMetrics = data.iterations.find((i: any) => i.f1_score !== null);
+          const iterationWithMetrics = data.iterations.find((i: { f1_score: number | null }) => i.f1_score !== null);
 
           if (iterationWithMetrics) {
             await page.goto(`/personas/${persona.id}/metrics`);
@@ -508,7 +508,7 @@ test.describe('Training Dashboard', () => {
 
           // Current iteration should match iterations count or be one less
           if (data.iterations.length > 0) {
-            const maxIterationNum = Math.max(...data.iterations.map((i: any) => i.iteration_num));
+            const maxIterationNum = Math.max(...data.iterations.map((i: { iteration_num: number }) => i.iteration_num));
             expect(data.persona.current_iteration).toBeGreaterThanOrEqual(maxIterationNum);
           }
         }

@@ -51,7 +51,12 @@ describe('Judge Prompts API Integration', () => {
         .prepare(
           'SELECT * FROM judge_prompt_versions WHERE persona_id = ? ORDER BY iteration_number DESC'
         )
-        .all(persona.id) as any[];
+        .all(persona.id) as Array<{
+          persona_id: string;
+          iteration_number: number;
+          created_by: string;
+          prompt_text: string;
+        }>;
 
       expect(prompts).toHaveLength(1);
       expect(prompts[0]).toMatchObject({
@@ -104,7 +109,10 @@ describe('Judge Prompts API Integration', () => {
         .prepare(
           'SELECT * FROM judge_prompt_versions WHERE persona_id = ? ORDER BY iteration_number DESC'
         )
-        .all(persona.id) as any[];
+        .all(persona.id) as Array<{
+          iteration_number: number;
+          created_by: string;
+        }>;
 
       expect(prompts).toHaveLength(3);
 
@@ -145,7 +153,9 @@ describe('Judge Prompts API Integration', () => {
         .prepare(
           'SELECT * FROM judge_prompt_versions WHERE persona_id = ? AND iteration_number = 1'
         )
-        .all(persona.id) as any[];
+        .all(persona.id) as Array<{
+          improvement_rationale: string;
+        }>;
 
       expect(prompts).toHaveLength(1);
       expect(prompts[0].improvement_rationale).toBe(rationale);
@@ -159,7 +169,9 @@ describe('Judge Prompts API Integration', () => {
         .prepare(
           'SELECT * FROM judge_prompt_versions WHERE persona_id = ? AND iteration_number = 0'
         )
-        .all(persona.id) as any[];
+        .all(persona.id) as Array<{
+          improvement_rationale: string | null;
+        }>;
 
       expect(prompts).toHaveLength(1);
       // Initial prompt should have a rationale explaining it's the initial version
@@ -172,7 +184,9 @@ describe('Judge Prompts API Integration', () => {
 
       const prompts = db
         .prepare('SELECT * FROM judge_prompt_versions WHERE persona_id = ?')
-        .all(persona.id) as any[];
+        .all(persona.id) as Array<{
+          created_at: string;
+        }>;
 
       expect(prompts).toHaveLength(1);
       expect(prompts[0].created_at).toBeTruthy();

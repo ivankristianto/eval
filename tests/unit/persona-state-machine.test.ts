@@ -29,10 +29,8 @@ import {
   createPersona,
   getPersona,
   updatePersona,
-  deletePersona,
   listPersonas,
 } from '@lib/db/persona-db';
-import type { Persona } from '@src-types/training';
 
 describe('Persona State Machine', () => {
   let db: ReturnType<typeof getDatabase>;

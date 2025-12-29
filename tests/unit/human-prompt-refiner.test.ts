@@ -6,6 +6,17 @@
 import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest';
 import type { Database } from 'better-sqlite3';
 import { v4 as uuidv4 } from 'uuid';
+
+/** Type for judge_prompt_versions database record */
+interface JudgePromptVersionRecord {
+  id: string;
+  persona_id: string;
+  iteration_number: number;
+  prompt_text: string;
+  improvement_rationale: string;
+  created_by: string;
+  created_at: string;
+}
 import {
   analyzeHumanFeedback,
   refineJudgePromptFromHumanFeedback,
@@ -588,14 +599,14 @@ describe('Human-Driven Prompt Refiner', () => {
       // Verify the record was created
       const record = db
         .prepare('SELECT * FROM judge_prompt_versions WHERE id = ?')
-        .get(versionId) as any;
+        .get(versionId) as JudgePromptVersionRecord | undefined;
 
       expect(record).toBeDefined();
-      expect(record.persona_id).toBe(personaId);
-      expect(record.iteration_number).toBe(1);
-      expect(record.prompt_text).toBe(refinedPrompt);
-      expect(record.improvement_rationale).toBe(rationale);
-      expect(record.created_by).toBe('human');
+      expect(record!.persona_id).toBe(personaId);
+      expect(record!.iteration_number).toBe(1);
+      expect(record!.prompt_text).toBe(refinedPrompt);
+      expect(record!.improvement_rationale).toBe(rationale);
+      expect(record!.created_by).toBe('human');
     });
 
     it('should create unique ID for each version', () => {

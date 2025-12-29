@@ -4,10 +4,11 @@
  * Tests client-side polling logic for metrics status tracking
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi, beforeAll, afterAll, type Mock } from 'vitest';
+import type { MetricsStatus } from '../../src/lib/metrics-polling-hook';
 
 describe('MetricsPollingController', () => {
-  let mockFetch: any;
+  let mockFetch: Mock;
   let originalFetch: typeof fetch;
 
   beforeAll(() => {
@@ -226,7 +227,7 @@ describe('MetricsPollingController', () => {
     it('should notify listeners on status update', async () => {
       const { MetricsPollingController } = await import('../../src/lib/metrics-polling-hook');
 
-      const mockStatus: any = {
+      const mockStatus: Partial<MetricsStatus> = {
         status: 'calculating',
         iteration: 1,
         persona_id: 'persona-1',
@@ -246,17 +247,17 @@ describe('MetricsPollingController', () => {
       const listener = vi.fn();
       const unsubscribe = controller.addListener(listener);
 
-      controller.start();
-      await vi.advanceTimersByTimeAsync(150);
+      controller.start(); // Immediate poll happens here
+      await vi.advanceTimersByTimeAsync(150); // Then another poll at 100ms
 
       expect(listener).toHaveBeenCalledWith(mockStatus);
-      expect(listener).toHaveBeenCalledTimes(1);
+      expect(listener).toHaveBeenCalledTimes(2); // Immediate + after 100ms
 
       unsubscribe();
       await vi.advanceTimersByTimeAsync(150);
 
       // Should not be called again after unsubscribe
-      expect(listener).toHaveBeenCalledTimes(1);
+      expect(listener).toHaveBeenCalledTimes(2);
     });
   });
 
@@ -282,11 +283,10 @@ describe('MetricsPollingController', () => {
 
       controller.start();
 
-      // First call fails
-      await vi.advanceTimersByTimeAsync(150);
+      // Immediate first call fails
       expect(mockFetch).toHaveBeenCalledTimes(1);
 
-      // Retry with backoff (200ms)
+      // Retry with backoff (200ms due to exponential backoff: 100ms * 2)
       await vi.advanceTimersByTimeAsync(250);
       expect(mockFetch).toHaveBeenCalledTimes(2);
 
@@ -308,8 +308,8 @@ describe('MetricsPollingController', () => {
       const onError = vi.fn();
       controller.addListener(() => {});
 
-      // Override onError
-      (controller as any).options.onError = onError;
+      // Override onError using type assertion (accessing private property for testing)
+      (controller as unknown as { options: { onError: typeof onError } }).options.onError = onError;
 
       controller.start();
 
@@ -340,23 +340,22 @@ describe('MetricsPollingController', () => {
 
       controller.start();
 
-      // First call (0ms)
-      await vi.advanceTimersByTimeAsync(50);
+      // First call (immediate, fails)
       expect(mockFetch).toHaveBeenCalledTimes(1);
 
-      // First retry (100ms)
-      await vi.advanceTimersByTimeAsync(150);
+      // First retry with backoff (100ms * 2 = 200ms)
+      await vi.advanceTimersByTimeAsync(250);
       expect(mockFetch).toHaveBeenCalledTimes(2);
 
-      // Second retry with backoff (200ms)
-      await vi.advanceTimersByTimeAsync(250);
+      // Second retry with backoff (200ms * 2 = 400ms, so another 400ms after the 200ms retry)
+      await vi.advanceTimersByTimeAsync(450);
       expect(mockFetch).toHaveBeenCalledTimes(3);
 
-      // Third retry with backoff (400ms)
-      await vi.advanceTimersByTimeAsync(500);
+      // Third retry with backoff (400ms * 2 = 800ms, so another 800ms after the 400ms retry)
+      await vi.advanceTimersByTimeAsync(850);
       expect(mockFetch).toHaveBeenCalledTimes(4);
 
-      // Fourth retry with backoff (800ms)
+      // Fourth retry with backoff (800ms is max, so another 800ms)
       await vi.advanceTimersByTimeAsync(900);
       expect(mockFetch).toHaveBeenCalledTimes(5);
     });
@@ -397,7 +396,7 @@ describe('MetricsPollingController', () => {
 });
 
 describe('useMetricsPolling Hook', () => {
-  let mockFetch: any;
+  let mockFetch: Mock;
   let originalFetch: typeof fetch;
 
   beforeAll(() => {

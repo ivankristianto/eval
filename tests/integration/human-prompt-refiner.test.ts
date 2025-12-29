@@ -203,7 +203,7 @@ describe('Human-Driven Prompt Refiner Integration', () => {
           decisionId,
           testCase.human,
           1.0,
-          (testCase as any).note || 'Correct assessment',
+          (testCase as { note?: string }).note || 'Correct assessment',
           new Date().toISOString()
         );
       }
@@ -257,14 +257,21 @@ describe('Human-Driven Prompt Refiner Integration', () => {
       // Verify the stored version
       const storedVersion = db
         .prepare('SELECT * FROM judge_prompt_versions WHERE id = ?')
-        .get(versionId) as any;
+        .get(versionId) as {
+          id: string;
+          persona_id: string;
+          iteration_number: number;
+          prompt_text: string;
+          improvement_rationale: string | null;
+          created_by: string;
+        } | undefined;
 
       expect(storedVersion).toBeDefined();
-      expect(storedVersion.persona_id).toBe(personaId);
-      expect(storedVersion.iteration_number).toBe(1);
-      expect(storedVersion.prompt_text).toBe(refinementResult.refined_prompt);
-      expect(storedVersion.improvement_rationale).toBe(refinementResult.rationale);
-      expect(storedVersion.created_by).toBe('human');
+      expect(storedVersion!.persona_id).toBe(personaId);
+      expect(storedVersion!.iteration_number).toBe(1);
+      expect(storedVersion!.prompt_text).toBe(refinementResult.refined_prompt);
+      expect(storedVersion!.improvement_rationale).toBe(refinementResult.rationale);
+      expect(storedVersion!.created_by).toBe('human');
 
       // Verify LLM was called with human feedback analysis
       expect(callModel).toHaveBeenCalledOnce();
@@ -540,7 +547,12 @@ describe('Human-Driven Prompt Refiner Integration', () => {
         .prepare(
           'SELECT * FROM judge_prompt_versions WHERE persona_id = ? ORDER BY iteration_number ASC'
         )
-        .all(personaId) as any[];
+        .all(personaId) as Array<{
+          id: string;
+          iteration_number: number;
+          created_by: string;
+          prompt_text: string;
+        }>;
 
       expect(history).toHaveLength(2);
       expect(history[0].iteration_number).toBe(0);

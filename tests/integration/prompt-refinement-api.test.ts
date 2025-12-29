@@ -6,6 +6,15 @@
 import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest';
 import type { Database } from 'better-sqlite3';
 import { v4 as uuidv4 } from 'uuid';
+
+/** Type for judge_prompt_versions database record */
+interface JudgePromptVersionRecord {
+  id: string;
+  persona_id: string;
+  iteration_number: number;
+  prompt_text: string;
+  created_by: string;
+}
 import {
   getTestDatabase,
   initializeTestDatabase,
@@ -149,7 +158,7 @@ describe.skip('Prompt Refinement API Integration', () => {
     const response = await POST({
       params: { id: personaId, num: '2' },
       request,
-    } as any);
+    } as unknown as Parameters<typeof POST>[0]); // ASTRO_API_CONTEXT requires many unused props
 
     expect(response.status).toBe(200);
 
@@ -172,7 +181,7 @@ describe.skip('Prompt Refinement API Integration', () => {
     const response = await POST({
       params: { id: personaId, num: '2' },
       request,
-    } as any);
+    } as unknown as Parameters<typeof POST>[0]); // ASTRO_API_CONTEXT requires many unused props
 
     expect(response.status).toBe(500);
 
@@ -199,19 +208,19 @@ describe.skip('Prompt Refinement API Integration', () => {
     const response = await POST({
       params: { id: personaId, num: '2' },
       request,
-    } as any);
+    } as unknown as Parameters<typeof POST>[0]); // ASTRO_API_CONTEXT requires many unused props
 
     expect(response.status).toBe(201);
 
     // Verify version was stored
     const versions = db
       .prepare('SELECT * FROM judge_prompt_versions WHERE persona_id = ?')
-      .all(personaId) as any[];
+      .all(personaId) as JudgePromptVersionRecord[];
 
     expect(versions).toHaveLength(1);
-    expect(versions[0].prompt_text).toBe('New improved prompt');
-    expect(versions[0].created_by).toBe('ai');
-    expect(versions[0].iteration_number).toBe(2);
+    expect(versions[0]!.prompt_text).toBe('New improved prompt');
+    expect(versions[0]!.created_by).toBe('ai');
+    expect(versions[0]!.iteration_number).toBe(2);
   });
 
   it('should validate iteration exists before refining', async () => {
@@ -225,7 +234,7 @@ describe.skip('Prompt Refinement API Integration', () => {
     const response = await POST({
       params: { id: personaId, num: '999' },
       request,
-    } as any);
+    } as unknown as Parameters<typeof POST>[0]); // ASTRO_API_CONTEXT requires many unused props
 
     expect(response.status).toBe(404);
 
@@ -253,7 +262,7 @@ describe.skip('Prompt Refinement API Integration', () => {
     const response = await POST({
       params: { id: fakePersonaId, num: '2' },
       request,
-    } as any);
+    } as unknown as Parameters<typeof POST>[0]); // ASTRO_API_CONTEXT requires many unused props
 
     expect(response.status).toBe(404);
 
@@ -279,7 +288,7 @@ describe.skip('Prompt Refinement API Integration', () => {
     const response = await POST({
       params: { id: personaId, num: '2' },
       request,
-    } as any);
+    } as unknown as Parameters<typeof POST>[0]); // ASTRO_API_CONTEXT requires many unused props
 
     expect(response.status).toBe(400);
 
@@ -305,7 +314,7 @@ describe.skip('Prompt Refinement API Integration', () => {
     const response = await POST({
       params: { id: personaId, num: '2' },
       request,
-    } as any);
+    } as unknown as Parameters<typeof POST>[0]); // ASTRO_API_CONTEXT requires many unused props
 
     expect(response.status).toBe(400);
 

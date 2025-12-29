@@ -11,6 +11,17 @@ import {
   getPromptDiff,
 } from '@lib/training/prompt-version-manager';
 import { v4 as uuidv4 } from 'uuid';
+
+/** Type for judge_prompt_versions database record */
+interface JudgePromptVersionRecord {
+  id: string;
+  persona_id: string;
+  iteration_number: number;
+  prompt_text: string;
+  improvement_rationale: string;
+  created_by: string;
+  created_at: string;
+}
 import {
   getTestDatabase,
   initializeTestDatabase,
@@ -69,14 +80,14 @@ describe('Prompt Version Manager', () => {
     // Verify stored
     const stored = db
       .prepare('SELECT * FROM judge_prompt_versions WHERE id = ?')
-      .get(versionId) as any;
+      .get(versionId) as JudgePromptVersionRecord | undefined;
 
     expect(stored).toBeDefined();
-    expect(stored.persona_id).toBe(personaId);
-    expect(stored.iteration_number).toBe(1);
-    expect(stored.prompt_text).toBe(promptText);
-    expect(stored.improvement_rationale).toBe(rationale);
-    expect(stored.created_by).toBe('human');
+    expect(stored!.persona_id).toBe(personaId);
+    expect(stored!.iteration_number).toBe(1);
+    expect(stored!.prompt_text).toBe(promptText);
+    expect(stored!.improvement_rationale).toBe(rationale);
+    expect(stored!.created_by).toBe('human');
   });
 
   it('should not store duplicate identical prompt', async () => {

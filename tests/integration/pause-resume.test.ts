@@ -10,6 +10,23 @@ import { TrainingStateManager } from '@lib/training/training-state';
 import { IterativeTrainingLoop } from '@lib/training/training-loop';
 import crypto from 'crypto';
 
+/** Type for training_loop_state database record */
+interface TrainingLoopStateRecord {
+  session_id: string;
+  status: string;
+  pause_reason: string | null;
+}
+
+/** Type for training_loop_checkpoints database record */
+interface TrainingCheckpointRecord {
+  session_id: string;
+  iteration_number: number;
+  evaluated_result_count: number;
+  metrics_snapshot: string;
+  current_prompt: string;
+  evaluated_result_ids: string;
+}
+
 describe('Pause/Resume Training Integration', () => {
   let db: Database.Database;
   let personaId: string;
@@ -130,11 +147,11 @@ describe('Pause/Resume Training Integration', () => {
     // Verify state was updated to 'paused'
     const state = db
       .prepare('SELECT * FROM training_loop_state WHERE session_id = ?')
-      .get(sessionId) as any;
+      .get(sessionId) as TrainingLoopStateRecord | undefined;
 
     expect(state).toBeDefined();
-    expect(state.status).toBe('paused');
-    expect(state.pause_reason).toBe('User requested pause');
+    expect(state!.status).toBe('paused');
+    expect(state!.pause_reason).toBe('User requested pause');
   });
 
   it('should persist checkpoint to database', () => {
@@ -165,20 +182,20 @@ describe('Pause/Resume Training Integration', () => {
       .prepare(
         'SELECT * FROM training_loop_checkpoints WHERE session_id = ? AND iteration_number = ?'
       )
-      .get(sessionId, 2) as any;
+      .get(sessionId, 2) as TrainingCheckpointRecord | undefined;
 
     expect(savedCheckpoint).toBeDefined();
-    expect(savedCheckpoint.iteration_number).toBe(2);
-    expect(savedCheckpoint.evaluated_result_count).toBe(10);
-    expect(savedCheckpoint.current_prompt).toBe('Improved judge prompt for iteration 2...');
+    expect(savedCheckpoint!.iteration_number).toBe(2);
+    expect(savedCheckpoint!.evaluated_result_count).toBe(10);
+    expect(savedCheckpoint!.current_prompt).toBe('Improved judge prompt for iteration 2...');
 
     // Verify JSON fields
-    const metricsSnapshot = JSON.parse(savedCheckpoint.metrics_snapshot);
+    const metricsSnapshot = JSON.parse(savedCheckpoint!.metrics_snapshot);
     expect(metricsSnapshot.f1_score).toBe(0.82);
     expect(metricsSnapshot.precision).toBe(0.85);
     expect(metricsSnapshot.confusion_matrix.true_positives).toBe(8);
 
-    const evaluatedResultIds = JSON.parse(savedCheckpoint.evaluated_result_ids);
+    const evaluatedResultIds = JSON.parse(savedCheckpoint!.evaluated_result_ids);
     expect(evaluatedResultIds).toHaveLength(10);
     expect(evaluatedResultIds[0]).toBe('result-1');
   });
@@ -336,10 +353,10 @@ describe('Pause/Resume Training Integration', () => {
     // Verify initial paused state
     const pausedState = db
       .prepare('SELECT * FROM training_loop_state WHERE session_id = ?')
-      .get(testSessionId) as any;
+      .get(testSessionId) as TrainingLoopStateRecord | undefined;
 
-    expect(pausedState.status).toBe('paused');
-    expect(pausedState.pause_reason).toBe('User requested pause via UI');
+    expect(pausedState!.status).toBe('paused');
+    expect(pausedState!.pause_reason).toBe('User requested pause via UI');
 
     // Resume training - this will start from iteration 2
     await trainingLoop.resume();
@@ -348,13 +365,14 @@ describe('Pause/Resume Training Integration', () => {
     // Since iteration 1 is already completed, it should start iteration 2 and then complete
     const resumedState = db
       .prepare('SELECT * FROM training_loop_state WHERE session_id = ?')
-      .get(testSessionId) as any;
+      .get(testSessionId) as TrainingLoopStateRecord | undefined;
 
     // After resume with iteration 1 completed, the loop should run iteration 2
     // Iteration 2+ completes automatically, so status should be completed (if target met) or in_progress (if still running)
     // Since we don't have real training data, it will likely fail but set status appropriately
-    expect(resumedState.status).not.toBe('paused');
-    expect(resumedState.pause_reason).toBeNull();
+    expect(resumedState).toBeDefined();
+    expect(resumedState!.status).not.toBe('paused');
+    expect(resumedState!.pause_reason).toBeNull();
   });
 
   it('should return null when resuming non-existent session', () => {
@@ -665,10 +683,10 @@ describe('Pause/Resume Training Integration', () => {
       // Get initial state
       const firstState = db
         .prepare('SELECT * FROM training_loop_state WHERE session_id = ?')
-        .get(sessionId) as any;
+        .get(sessionId) as TrainingLoopStateRecord | undefined;
 
-      expect(firstState.status).toBe('paused');
-      expect(firstState.pause_reason).toBe('First pause');
+      expect(firstState!.status).toBe('paused');
+      expect(firstState!.pause_reason).toBe('First pause');
 
       // Note: The current implementation throws an error on duplicate pause
       // If we want idempotency at the TrainingStateManager level, we would need

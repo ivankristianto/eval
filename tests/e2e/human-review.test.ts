@@ -178,7 +178,7 @@ test.describe('Human Review Workflow', () => {
         const iterResponse = await request.get(`/api/personas/${personaId}/iterations`);
         const iterations = await iterResponse.json();
 
-        const laterIteration = iterations.find((i: any) => i.iteration_number >= 2);
+        const laterIteration = iterations.find((i: { iteration_number: number }) => i.iteration_number >= 2);
         if (laterIteration) {
           iteration2PlusNumber = laterIteration.iteration_number;
         }

@@ -194,7 +194,19 @@ test.describe('Metrics Redirect Flow E2E', () => {
 });
 
 // Helper function to generate mock API responses
-function getMockApiResponse(url: string): { status: number; body: any } {
+function getMockApiResponse(url: string): {
+  status: number;
+  body: {
+    status?: string;
+    iteration?: number;
+    persona_id?: string;
+    message?: string;
+    started_at?: string;
+    metrics?: { f1_score: number };
+    error?: string;
+    code?: string;
+  };
+} {
   if (url.includes('/api/personas/test-persona-1/iterations/1/calculate-metrics')) {
     // Return 202 Accepted for calculate-metrics
     return {
@@ -218,7 +230,6 @@ function getMockApiResponse(url: string): { status: number; body: any } {
         iteration: 1,
         persona_id: 'test-persona-1',
         message: 'The training in progress',
-        progress_percent: 45,
       },
     };
   }

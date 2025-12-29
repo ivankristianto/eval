@@ -6,7 +6,7 @@
 import { test, expect } from '@playwright/test';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { writeFileSync, unlinkSync } from 'fs';
+import { writeFileSync } from 'fs';
 import { rm } from 'fs/promises';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -79,7 +79,7 @@ test.describe('Two-Phase Training Workflow', () => {
   });
 
   test.describe('Prerequisites: Create Persona and Upload Training Data', () => {
-    test('should create a new persona for testing', async ({ page, request }) => {
+    test('should create a new persona for testing', async ({ page, request: _request }) => {
       // Skip if we already found a suitable persona
       if (personaId) {
         test.skip();
@@ -305,7 +305,7 @@ test.describe('Two-Phase Training Workflow', () => {
 
       // Submit feedback for all remaining decisions
       for (const decision of decisions) {
-        const existingFeedback = await request.get(
+        await request.get(
           `/api/personas/${personaId}/iterations/1/feedback`
         );
 
@@ -371,7 +371,6 @@ test.describe('Two-Phase Training Workflow', () => {
 
   test.describe('Phase 2: Iterations 2+ FULLY AUTOMATED', () => {
     test('should automatically run iteration 2 after accepting refined prompt', async ({
-      page,
       request,
     }) => {
       if (!personaId) test.skip();
@@ -437,7 +436,7 @@ test.describe('Two-Phase Training Workflow', () => {
       const iterationsResponse = await request.get(`/api/personas/${personaId}/iterations`);
       const iterations = await iterationsResponse.json();
 
-      const iteration2 = iterations.find((i: any) => i.iteration_number === 2);
+      const iteration2 = iterations.find((i: { iteration_number: number }) => i.iteration_number === 2);
 
       if (iteration2) {
         // Should have both task_prompt_version_id and judge_prompt_version_id
@@ -447,15 +446,14 @@ test.describe('Two-Phase Training Workflow', () => {
     });
 
     test('should continue automatic iterations until convergence or max iterations', async ({
-      page,
       request,
     }) => {
       if (!personaId) test.skip();
 
       // Poll for training completion or convergence
       let maxAttempts = 300; // 5 minutes max
-      let trainingComplete = false;
-      let finalStatus = null;
+      let _trainingComplete = false;
+      let _finalStatus = null;
 
       for (let i = 0; i < maxAttempts; i++) {
         const statusResponse = await request.get(`/api/personas/${personaId}/training/status`);
@@ -463,8 +461,8 @@ test.describe('Two-Phase Training Workflow', () => {
 
         // Check if training is complete
         if (status.training_status === 'completed' || status.convergence_achieved) {
-          trainingComplete = true;
-          finalStatus = status;
+          _trainingComplete = true;
+          _finalStatus = status;
           break;
         }
 
@@ -523,7 +521,7 @@ test.describe('Two-Phase Training Workflow', () => {
       const iterations = await iterationsResponse.json();
 
       // Find iterations 2+
-      const laterIterations = iterations.filter((i: any) => i.iteration_number >= 2);
+      const laterIterations = iterations.filter((i: { iteration_number: number }) => i.iteration_number >= 2);
 
       for (const iteration of laterIterations) {
         const metricsResponse = await request.get(

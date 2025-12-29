@@ -364,14 +364,12 @@ test.describe('Full MVP E2E Test', () => {
 
       // Wait for iteration 2 to start
       let maxAttempts = 60;
-      let iteration2Started = false;
 
       for (let i = 0; i < maxAttempts; i++) {
         const statusResponse = await request.get(`/api/personas/${personaId}/training/status`);
         const status = await statusResponse.json();
 
         if (status.current_iteration >= 2) {
-          iteration2Started = true;
           break;
         }
 
@@ -384,7 +382,7 @@ test.describe('Full MVP E2E Test', () => {
   });
 
   test.describe('US5: Track Training Progress and Metrics', () => {
-    test('should display metrics dashboard', async ({ page, request }) => {
+    test('should display metrics dashboard', async ({ page, request: _request }) => {
       if (!personaId) {
         test.skip();
         return;
@@ -526,7 +524,7 @@ test.describe('Full MVP E2E Test', () => {
       const personaResponse = await request.get(`/api/personas/${personaId}`);
       expect(personaResponse.status()).toBe(200);
 
-      const persona = await personaResponse.json();
+      await personaResponse.json();
 
       // Verify training data exists
       const pairsResponse = await request.get(`/api/personas/${personaId}/training/pairs`);

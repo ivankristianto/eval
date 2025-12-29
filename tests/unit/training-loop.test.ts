@@ -8,6 +8,13 @@ import { IterativeTrainingLoop } from '@lib/training/training-loop';
 import { getTestDatabase, initializeTestDatabase, cleanTestDatabase } from '../setup';
 import { v4 as uuidv4 } from 'uuid';
 
+/** Type for training_loop_state database record */
+interface TrainingLoopStateRecord {
+  session_id: string;
+  status: string;
+  pause_reason: string | null;
+}
+
 describe('IterativeTrainingLoop', () => {
   let db: ReturnType<typeof getTestDatabase>;
 
@@ -200,9 +207,10 @@ describe('IterativeTrainingLoop', () => {
 
       const state = db
         .prepare('SELECT * FROM training_loop_state WHERE session_id = ?')
-        .get(sessionId) as any;
-      expect(state.status).toBe('paused');
-      expect(state.pause_reason).toBe('User requested pause');
+        .get(sessionId) as TrainingLoopStateRecord | undefined;
+      expect(state).toBeDefined();
+      expect(state!.status).toBe('paused');
+      expect(state!.pause_reason).toBe('User requested pause');
     });
 
     it('should throw error if session not found', async () => {
@@ -241,14 +249,14 @@ describe('IterativeTrainingLoop', () => {
       const loop = new IterativeTrainingLoop(sessionId, personaId, db);
 
       // Mock judge results
-      const judgeResults = [
+      const judgeResults: Array<{ judge_decision: 'agree' | 'disagree'; human_decision: 'agree' | 'disagree' }> = [
         { judge_decision: 'agree', human_decision: 'agree' },
         { judge_decision: 'agree', human_decision: 'disagree' },
         { judge_decision: 'disagree', human_decision: 'agree' },
         { judge_decision: 'disagree', human_decision: 'disagree' },
       ];
 
-      const metrics = await loop.calculateMetricsInWorker(judgeResults as any);
+      const metrics = await loop.calculateMetricsInWorker(judgeResults);
 
       expect(metrics).toHaveProperty('precision');
       expect(metrics).toHaveProperty('recall');

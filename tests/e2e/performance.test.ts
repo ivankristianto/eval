@@ -71,7 +71,7 @@ test.describe('Performance Tests', () => {
         if (personas.length > 0) {
           personaId = personas[0].id;
         }
-      } catch (error) {
+      } catch {
         test.skip();
         return;
       }
@@ -290,7 +290,7 @@ test.describe('Performance Tests', () => {
             }
           }
         }
-      } catch (error) {
+      } catch {
         test.skip();
         return;
       }
@@ -378,7 +378,7 @@ test.describe('Performance Tests', () => {
   });
 
   test.describe('Additional Performance Benchmarks', () => {
-    test('should load persona list page quickly', async ({ page, request }) => {
+    test('should load persona list page quickly', async ({ page, request: _request }) => {
       const startTime = Date.now();
       await page.goto('/personas');
       const loadTime = Date.now() - startTime;
@@ -389,7 +389,7 @@ test.describe('Performance Tests', () => {
       expect(loadTime).toBeLessThan(2000);
     });
 
-    test('should load persona detail page quickly', async ({ page, request }) => {
+    test('should load persona detail page quickly', async ({ page, request: _request }) => {
       if (!personaId) {
         test.skip();
         return;

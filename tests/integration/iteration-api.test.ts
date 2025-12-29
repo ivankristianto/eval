@@ -91,12 +91,16 @@ describe('Training Iteration API', () => {
       // Verify iteration created
       const iteration = db
         .prepare('SELECT * FROM training_iterations WHERE id = ?')
-        .get(iterationId) as any;
+        .get(iterationId) as {
+          persona_id: string;
+          iteration_number: number;
+          status: string;
+        } | undefined;
 
       expect(iteration).toBeDefined();
-      expect(iteration.persona_id).toBe('persona-1');
-      expect(iteration.iteration_number).toBe(1);
-      expect(iteration.status).toBe('in_progress');
+      expect(iteration!.persona_id).toBe('persona-1');
+      expect(iteration!.iteration_number).toBe(1);
+      expect(iteration!.status).toBe('in_progress');
     });
 
     it('should create training_loop_state record', () => {
@@ -126,11 +130,14 @@ describe('Training Iteration API', () => {
 
       const state = db
         .prepare('SELECT * FROM training_loop_state WHERE session_id = ?')
-        .get(sessionId) as any;
+        .get(sessionId) as {
+          status: string;
+          total_iterations: number;
+        } | undefined;
 
       expect(state).toBeDefined();
-      expect(state.status).toBe('in_progress');
-      expect(state.total_iterations).toBe(5);
+      expect(state!.status).toBe('in_progress');
+      expect(state!.total_iterations).toBe(5);
     });
 
     it('should increment iteration number for subsequent iterations', () => {
@@ -174,9 +181,12 @@ describe('Training Iteration API', () => {
 
       const iteration2 = db
         .prepare('SELECT * FROM training_iterations WHERE id = ?')
-        .get(iteration2Id) as any;
+        .get(iteration2Id) as {
+          iteration_number: number;
+        } | undefined;
 
-      expect(iteration2.iteration_number).toBe(2);
+      expect(iteration2).toBeDefined();
+      expect(iteration2!.iteration_number).toBe(2);
     });
 
     it('should return 400 if persona has no training pairs', () => {
@@ -262,13 +272,18 @@ describe('Training Iteration API', () => {
           LIMIT 1
         `
         )
-        .get('persona-1') as any;
+        .get('persona-1') as {
+          iteration_number: number;
+          status: string;
+          f1_score: number;
+          pairs_reviewed_by_human: number;
+        } | undefined;
 
       expect(status).toBeDefined();
-      expect(status.iteration_number).toBe(1);
-      expect(status.status).toBe('completed');
-      expect(status.f1_score).toBeCloseTo(0.94);
-      expect(status.pairs_reviewed_by_human).toBe(10);
+      expect(status!.iteration_number).toBe(1);
+      expect(status!.status).toBe('completed');
+      expect(status!.f1_score).toBeCloseTo(0.94);
+      expect(status!.pairs_reviewed_by_human).toBe(10);
     });
 
     it('should return in_progress status for ongoing iteration', () => {
@@ -294,11 +309,17 @@ describe('Training Iteration API', () => {
 
       const status = db
         .prepare('SELECT * FROM training_iterations WHERE id = ?')
-        .get(iterationId) as any;
+        .get(iterationId) as {
+          iteration_number: number;
+          status: string;
+          pairs_reviewed_by_human: number;
+          total_pairs_evaluated: number;
+        } | undefined;
 
-      expect(status.status).toBe('in_progress');
-      expect(status.pairs_reviewed_by_human).toBe(5);
-      expect(status.total_pairs_evaluated).toBe(10);
+      expect(status).toBeDefined();
+      expect(status!.status).toBe('in_progress');
+      expect(status!.pairs_reviewed_by_human).toBe(5);
+      expect(status!.total_pairs_evaluated).toBe(10);
     });
 
     it('should return null if no iterations exist', () => {

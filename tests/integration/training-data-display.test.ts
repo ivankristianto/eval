@@ -7,6 +7,20 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import Database from 'better-sqlite3';
 import { randomUUID } from 'crypto';
 
+/** Type for training_pairs database row */
+interface TrainingPairRow {
+  id: string;
+  persona_id: string;
+  input: string;
+  expected_output: string;
+  created_at: string;
+}
+
+/** Type for COUNT query result */
+interface CountRow {
+  count: number;
+}
+
 // Test database setup
 const TEST_DB_PATH = ':memory:';
 let db: Database.Database;
@@ -186,11 +200,11 @@ describe('Training Data Display', () => {
 
       const pairs = db
         .prepare('SELECT input FROM training_pairs WHERE persona_id = ? ORDER BY created_at ASC')
-        .all(personaId);
+        .all(personaId) as TrainingPairRow[];
 
-      expect((pairs[0] as any).input).toBe('Q1');
-      expect((pairs[1] as any).input).toBe('Q2');
-      expect((pairs[2] as any).input).toBe('Q3');
+      expect(pairs[0]!.input).toBe('Q1');
+      expect(pairs[1]!.input).toBe('Q2');
+      expect(pairs[2]!.input).toBe('Q3');
     });
   });
 
@@ -234,7 +248,8 @@ describe('Training Data Display', () => {
         .all(personaId, `%${searchTerm}%`);
 
       expect(pairs.length).toBeGreaterThanOrEqual(2); // "What is TypeScript?" and "Define TypeScript generics"
-      expect(pairs.every((p: any) => p.input.toLowerCase().includes(searchTerm))).toBe(true);
+      const searchTermLower = searchTerm.toLowerCase();
+      expect(pairs.every((p) => (p as TrainingPairRow).input.toLowerCase().includes(searchTermLower))).toBe(true);
     });
 
     it('should return all pairs when search is empty', () => {
@@ -294,9 +309,9 @@ describe('Training Data Display', () => {
 
       const count = db
         .prepare('SELECT COUNT(*) as count FROM training_pairs WHERE persona_id = ?')
-        .get(personaId);
+        .get(personaId) as CountRow | undefined;
 
-      expect((count as any).count).toBe(50);
+      expect(count!.count).toBe(50);
     });
 
     it('should reflect updated count after deletion', () => {
@@ -311,16 +326,16 @@ describe('Training Data Display', () => {
 
       let count = db
         .prepare('SELECT COUNT(*) as count FROM training_pairs WHERE persona_id = ?')
-        .get(personaId);
-      expect((count as any).count).toBe(20);
+        .get(personaId) as CountRow | undefined;
+      expect(count!.count).toBe(20);
 
       // Delete all pairs
       db.prepare('DELETE FROM training_pairs WHERE persona_id = ?').run(personaId);
 
       count = db
         .prepare('SELECT COUNT(*) as count FROM training_pairs WHERE persona_id = ?')
-        .get(personaId);
-      expect((count as any).count).toBe(0);
+        .get(personaId) as CountRow | undefined;
+      expect(count!.count).toBe(0);
     });
   });
 
@@ -337,9 +352,9 @@ describe('Training Data Display', () => {
 
       const count = db
         .prepare('SELECT COUNT(*) as count FROM training_pairs WHERE persona_id = ?')
-        .get(personaId);
+        .get(personaId) as CountRow | undefined;
 
-      expect((count as any).count).toBeGreaterThanOrEqual(10);
+      expect(count!.count).toBeGreaterThanOrEqual(10);
       // Page should show "Start Training" button
     });
 
@@ -355,9 +370,9 @@ describe('Training Data Display', () => {
 
       const count = db
         .prepare('SELECT COUNT(*) as count FROM training_pairs WHERE persona_id = ?')
-        .get(personaId);
+        .get(personaId) as CountRow | undefined;
 
-      expect((count as any).count).toBeLessThan(10);
+      expect(count!.count).toBeLessThan(10);
       // Page should NOT show "Start Training" button
     });
   });
@@ -385,10 +400,10 @@ describe('Training Data Display', () => {
 
       const pairs = db
         .prepare('SELECT * FROM training_pairs WHERE persona_id = ? ORDER BY created_at ASC')
-        .all(personaId);
+        .all(personaId) as TrainingPairRow[];
 
-      expect((pairs[0] as any).input).toContain('\n');
-      expect((pairs[0] as any).expected_output).toContain('\n');
+      expect(pairs[0]!.input).toContain('\n');
+      expect(pairs[0]!.expected_output).toContain('\n');
       // Page should render with whitespace-pre-wrap to preserve newlines
     });
 
@@ -414,10 +429,10 @@ describe('Training Data Display', () => {
 
       const pairs = db
         .prepare('SELECT * FROM training_pairs WHERE persona_id = ? ORDER BY created_at ASC')
-        .all(personaId);
+        .all(personaId) as TrainingPairRow[];
 
-      expect((pairs[0] as any).input).toBe('Question with émojis 🎉 and 中文');
-      expect((pairs[0] as any).expected_output).toBe('Answer with special chars: <>&"');
+      expect(pairs[0]!.input).toBe('Question with émojis 🎉 and 中文');
+      expect(pairs[0]!.expected_output).toBe('Answer with special chars: <>&"');
     });
   });
 });

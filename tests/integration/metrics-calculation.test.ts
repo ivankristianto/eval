@@ -238,14 +238,20 @@ describe('Metrics Calculation Integration', () => {
       // Verify stored in database
       const storedMetrics = db
         .prepare('SELECT * FROM iteration_metrics WHERE iteration_id = ?')
-        .get('iteration-1') as any;
+        .get('iteration-1') as {
+          iteration_id: string;
+          f1_score: number;
+          precision: number;
+          recall: number;
+          cohens_kappa: number;
+        } | undefined;
 
       expect(storedMetrics).toBeDefined();
-      expect(storedMetrics.iteration_id).toBe('iteration-1');
-      expect(storedMetrics).toHaveProperty('f1_score');
-      expect(storedMetrics).toHaveProperty('precision');
-      expect(storedMetrics).toHaveProperty('recall');
-      expect(storedMetrics).toHaveProperty('cohens_kappa');
+      expect(storedMetrics!.iteration_id).toBe('iteration-1');
+      expect(storedMetrics!).toHaveProperty('f1_score');
+      expect(storedMetrics!).toHaveProperty('precision');
+      expect(storedMetrics!).toHaveProperty('recall');
+      expect(storedMetrics!).toHaveProperty('cohens_kappa');
     });
 
     it('should update persona best_f1_score if improved', () => {
@@ -279,10 +285,13 @@ describe('Metrics Calculation Integration', () => {
       calculateIterationMetrics('iteration-1', db);
 
       // Verify persona updated
-      const persona = db.prepare('SELECT * FROM personas WHERE id = ?').get('persona-1') as any;
+      const persona = db.prepare('SELECT * FROM personas WHERE id = ?').get('persona-1') as {
+        best_f1_score: number | null;
+        best_f1_iteration: number | null;
+      } | undefined;
 
-      expect(persona.best_f1_score).toBeDefined();
-      expect(persona.best_f1_iteration).toBe(1);
+      expect(persona!.best_f1_score).toBeDefined();
+      expect(persona!.best_f1_iteration).toBe(1);
     });
   });
 });
