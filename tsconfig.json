@@ -18,6 +18,7 @@
     "paths": {
       "@lib/*": ["src/lib/*"],
       "@components/*": ["src/components/*"],
+      "@layouts/*": ["src/layouts/*"],
       "@src-types/*": ["src/types/*"]
     },
     "types": ["node", "better-sqlite3"]
