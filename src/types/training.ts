@@ -11,7 +11,12 @@ export type PersonaStatus = 'draft' | 'training' | 'trained' | 'incomplete';
 /**
  * Training iteration status
  */
-export type IterationStatus = 'in_progress' | 'paused' | 'completed' | 'failed';
+export type IterationStatus =
+  | 'in_progress'
+  | 'calculating_metrics'
+  | 'paused'
+  | 'completed'
+  | 'failed';
 
 /**
  * Training loop session status
