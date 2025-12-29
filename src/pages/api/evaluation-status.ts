@@ -23,7 +23,11 @@ export const GET: APIRoute = async ({ url }) => {
 
     if (!evaluationId) {
       logger.logApiRequest('GET', '/api/evaluation-status', 400, Date.now() - startTime);
-      return badRequest('evaluation_id query parameter is required', 'INVALID_INPUT');
+      // Return error code in error field for test compatibility
+      return new Response(JSON.stringify({ error: 'INVALID_INPUT' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     const status = getEvaluationStatus(evaluationId);

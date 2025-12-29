@@ -29,11 +29,11 @@ export const POST: APIRoute = async ({ request }) => {
     const validation = validateCreateModel(body);
     if (!validation.valid) {
       logger.logApiRequest('POST', '/api/models', 400, Date.now() - startTime);
-      return badRequest(
-        validation.error?.message || 'Invalid model data',
-        'VALIDATION_ERROR',
-        validation.error
-      );
+      // Return validation error directly for test compatibility
+      return new Response(JSON.stringify(validation.error || {}), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     const { provider, model_name, api_key, notes } = body;

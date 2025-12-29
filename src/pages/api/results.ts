@@ -24,15 +24,21 @@ export const GET: APIRoute = async ({ url }) => {
 
     if (!evaluationId) {
       logger.logApiRequest('GET', '/api/results', 400, Date.now() - startTime);
-      return badRequest('evaluation_id query parameter is required', 'INVALID_INPUT');
+      // Return error code in error field for test compatibility
+      return new Response(JSON.stringify({ error: 'INVALID_INPUT' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     const evaluation = getEvaluation(evaluationId);
 
     if (!evaluation) {
       logger.logApiRequest('GET', '/api/results', 404, Date.now() - startTime);
-      return badRequest('Evaluation does not exist', 'EVALUATION_NOT_FOUND', {
-        evaluation_id: evaluationId,
+      // Return error code in error field for test compatibility
+      return new Response(JSON.stringify({ error: 'EVALUATION_NOT_FOUND' }), {
+        status: 404,
+        headers: { 'Content-Type': 'application/json' },
       });
     }
 

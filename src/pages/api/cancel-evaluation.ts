@@ -4,7 +4,7 @@
 import type { APIRoute } from 'astro';
 import { getEvaluation } from '@lib/db';
 import { cancelEvaluation } from '@lib/evaluation/evaluator';
-import { badRequest, createErrorResponse } from '@lib/api-error-handler';
+import { badRequest, conflict, createErrorResponse } from '@lib/api-error-handler';
 import { createLogger } from '@lib/logger';
 
 const logger = createLogger('API:CancelEvaluation');
@@ -39,8 +39,10 @@ export const POST: APIRoute = async ({ request }) => {
 
     if (evaluation.status === 'completed' || evaluation.status === 'failed') {
       logger.logApiRequest('POST', '/api/cancel-evaluation', 409, Date.now() - startTime);
-      return badRequest('Evaluation already completed', 'CANNOT_CANCEL', {
-        status: evaluation.status,
+      // Return error code in error field and status at top level for test compatibility
+      return new Response(JSON.stringify({ error: 'CANNOT_CANCEL', status: evaluation.status }), {
+        status: 409,
+        headers: { 'Content-Type': 'application/json' },
       });
     }
 

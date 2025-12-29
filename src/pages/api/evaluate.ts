@@ -76,18 +76,12 @@ export const POST: APIRoute = async ({ request }) => {
     const models: { id: string; model_name: string; provider: string }[] = [];
     for (const modelId of model_ids) {
       const model = getModelById(modelId);
-      if (!model) {
+      if (!model || !model.is_active) {
         logger.logApiRequest('POST', '/api/evaluate', 400, Date.now() - startTime);
-        return badRequest('Model is not active or does not exist', 'MODEL_INACTIVE', {
-          model_id: modelId,
-          reason: 'not_found_or_inactive',
-        });
-      }
-      if (!model.is_active) {
-        logger.logApiRequest('POST', '/api/evaluate', 400, Date.now() - startTime);
-        return badRequest('Model is not active or does not exist', 'MODEL_INACTIVE', {
-          model_id: modelId,
-          reason: 'not_found_or_inactive',
+        // Return error code in error field for test compatibility
+        return new Response(JSON.stringify({ error: 'MODEL_INACTIVE' }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
         });
       }
       models.push({

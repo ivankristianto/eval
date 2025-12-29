@@ -11,7 +11,7 @@ import {
 } from '@lib/db';
 import { ClientFactory } from '@lib/utils/api-clients';
 import { validateApiKeyFormat } from '@lib/validation/validators';
-import { badRequest, notFound, createErrorResponse } from '@lib/api-error-handler';
+import { badRequest, notFound, conflict, createErrorResponse } from '@lib/api-error-handler';
 import { createLogger } from '@lib/logger';
 
 const logger = createLogger('API:Models:ById');
@@ -96,8 +96,10 @@ export const PATCH: APIRoute = async ({ params, request }) => {
     // Check if trying to disable model with active evaluations
     if (is_active === false && hasActiveEvaluations(id)) {
       logger.logApiRequest('PATCH', `/api/models/${id}`, 409, Date.now() - startTime);
-      return badRequest('Cannot disable model with active evaluations', 'CANNOT_UPDATE', {
-        model_id: id,
+      // Return error code in error field and model_id at top level for test compatibility
+      return new Response(JSON.stringify({ error: 'CANNOT_UPDATE', model_id: id }), {
+        status: 409,
+        headers: { 'Content-Type': 'application/json' },
       });
     }
 
@@ -196,14 +198,11 @@ export const DELETE: APIRoute = async ({ params }) => {
     const usageCount = getModelUsageCount(id);
     if (usageCount > 0) {
       logger.logApiRequest('DELETE', `/api/models/${id}`, 409, Date.now() - startTime);
-      return badRequest(
-        `Cannot delete model with existing evaluation results (${usageCount} evaluations)`,
-        'CANNOT_DELETE',
-        {
-          model_id: id,
-          result_count: usageCount,
-        }
-      );
+      // Return error code in error field and model_id at top level for test compatibility
+      return new Response(JSON.stringify({ error: 'CANNOT_DELETE', model_id: id }), {
+        status: 409,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     const deleted = deleteModel(id);

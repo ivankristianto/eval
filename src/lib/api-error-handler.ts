@@ -92,6 +92,27 @@ export function notFound(resource = 'Resource'): Response {
 }
 
 /**
+ * Create a 409 Conflict response
+ * @param message - Error message
+ * @param code - Error code (default: CONFLICT)
+ * @param details - Optional additional details
+ * @returns Response with 409 status
+ */
+export function conflict(message: string, code = 'CONFLICT', details?: unknown): Response {
+  return new Response(
+    JSON.stringify({
+      error: message,
+      code,
+      details,
+    }),
+    {
+      status: 409,
+      headers: { 'Content-Type': 'application/json' },
+    }
+  );
+}
+
+/**
  * Create a 500 Internal Server Error response
  * @param message - Error message
  * @param details - Optional additional details
