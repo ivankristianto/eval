@@ -1,204 +1,108 @@
 ---
 /**
- * ConfusionMatrix component for visualizing binary classification results
+ * ConfusionMatrix Component
  *
- * @param matrix - ConfusionMatrix object with TP, TN, FP, FN counts
- * @param showLabels - Whether to show axis labels (default: true)
+ * Displays a 2x2 confusion matrix visualization for metrics display.
+ * Shows True Positives, True Negatives, False Positives, and False Negatives.
+ *
+ * @param truePositives - Count of true positives
+ * @param trueNegatives - Count of true negatives
+ * @param falsePositives - Count of false positives (Type I errors)
+ * @param falseNegatives - Count of false negatives (Type II errors)
  */
-import type { ConfusionMatrix as ConfusionMatrixType } from '@src-types/training';
 
 export interface Props {
-  matrix: ConfusionMatrixType;
-  showLabels?: boolean;
+  truePositives: number;
+  trueNegatives: number;
+  falsePositives: number;
+  falseNegatives: number;
 }
 
-const { matrix, showLabels = true } = Astro.props;
+const { truePositives, trueNegatives, falsePositives, falseNegatives } = Astro.props;
 
-// Calculate total and percentages
-const total =
-  matrix.true_positives + matrix.true_negatives + matrix.false_positives + matrix.false_negatives;
-
-/**
- * Calculates percentage of a value relative to the total count.
- * @param value - Individual count value
- * @returns Formatted percentage string
- */
-function getPercentage(value: number): string {
-  if (total === 0) return '0.0';
-  return ((value / total) * 100).toFixed(1);
-}
-
-/**
- * Determines cell color intensity based on its contribution to the total.
- * @param value - Cell count value
- * @param isCorrect - Whether this cell represents a correct prediction
- * @returns DaisyUI background and text color classes
- */
-function getCellColor(value: number, isCorrect: boolean): string {
-  if (total === 0) return 'bg-base-300';
-
-  const percentage = (value / total) * 100;
-
-  if (isCorrect) {
-    // Green shades for correct predictions (TP, TN)
-    if (percentage >= 40) return 'bg-success text-success-content';
-    if (percentage >= 20) return 'bg-success/70 text-success-content';
-    if (percentage >= 10) return 'bg-success/50';
-    return 'bg-success/30';
-  } else {
-    // Red shades for incorrect predictions (FP, FN)
-    if (percentage >= 40) return 'bg-error text-error-content';
-    if (percentage >= 20) return 'bg-error/70 text-error-content';
-    if (percentage >= 10) return 'bg-error/50';
-    return 'bg-error/30';
-  }
-}
+const total = truePositives + trueNegatives + falsePositives + falseNegatives;
+const accuracy = total > 0 ? (((truePositives + trueNegatives) / total) * 100).toFixed(1) : '0';
 ---
 
-<div class="card bg-base-200 shadow-md">
-  <div class="card-body">
-    <h3 class="card-title text-lg mb-4">Confusion Matrix</h3>
+<div class="confusion-matrix-container">
+  <div class="overflow-x-auto">
+    <table class="confusion-matrix table table-bordered w-full max-w-md mx-auto">
+      <thead>
+        <tr>
+          <th class="text-center bg-base-200 align-middle" colspan="2" rowspan="2"></th>
+          <th class="text-center bg-base-200" colspan="2">Predicted</th>
+        </tr>
+        <tr>
+          <th class="text-center bg-success/20">Agree (Positive)</th>
+          <th class="text-center bg-error/20">Disagree (Negative)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th class="text-center bg-success/20 align-middle" rowspan="2">Actual</th>
+          <th class="text-center bg-success/20 align-middle">Correct (Positive)</th>
+          <td class="text-center bg-success/30 p-6 align-middle">
+            <div class="text-3xl font-bold">{truePositives}</div>
+            <div class="text-xs text-base-content/60">True Positives</div>
+            <div class="text-xs mt-1">(TP)</div>
+          </td>
+          <td class="text-center bg-warning/30 p-6 align-middle">
+            <div class="text-3xl font-bold">{falseNegatives}</div>
+            <div class="text-xs text-base-content/60">False Negatives</div>
+            <div class="text-xs mt-1">(FN)</div>
+          </td>
+        </tr>
+        <tr>
+          <th class="text-center bg-error/20">Incorrect (Negative)</th>
+          <td class="text-center bg-warning/30 p-6 align-middle">
+            <div class="text-3xl font-bold">{falsePositives}</div>
+            <div class="text-xs text-base-content/60">False Positives</div>
+            <div class="text-xs mt-1">(FP)</div>
+          </td>
+          <td class="text-center bg-error/30 p-6 align-middle">
+            <div class="text-3xl font-bold">{trueNegatives}</div>
+            <div class="text-xs text-base-content/60">True Negatives</div>
+            <div class="text-xs mt-1">(TN)</div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 
-    <div class="overflow-x-auto">
-      <div class="inline-block min-w-full">
-        <!-- Matrix Grid -->
-        <div class="grid grid-cols-[auto_1fr_1fr] gap-2">
-          <!-- Top left corner (empty) -->
-          <div></div>
+  <!-- Legend -->
+  <div class="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+    <div class="flex items-center gap-2">
+      <div class="w-4 h-4 bg-success/30 rounded"></div>
+      <span><strong>TP:</strong> Judge agreed when output was correct</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <div class="w-4 h-4 bg-error/30 rounded"></div>
+      <span><strong>TN:</strong> Judge disagreed when output was wrong</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <div class="w-4 h-4 bg-warning/30 rounded"></div>
+      <span><strong>FP:</strong> Judge agreed when output was wrong (Type I)</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <div class="w-4 h-4 bg-warning/30 rounded"></div>
+      <span><strong>FN:</strong> Judge disagreed when output was correct (Type II)</span>
+    </div>
+  </div>
 
-          <!-- Column headers: Predicted -->
-          {
-            showLabels && (
-              <>
-                <div class="text-center font-semibold text-sm pb-2 border-b-2 border-base-content/20">
-                  <div class="text-xs text-base-content/60 uppercase tracking-wide mb-1">
-                    Predicted
-                  </div>
-                  <div>Agree</div>
-                </div>
-                <div class="text-center font-semibold text-sm pb-2 border-b-2 border-base-content/20">
-                  <div class="text-xs text-base-content/60 uppercase tracking-wide mb-1">
-                    Predicted
-                  </div>
-                  <div>Disagree</div>
-                </div>
-              </>
-            )
-          }
-
-          <!-- Row 1: Actual Agree -->
-          {
-            showLabels && (
-              <div class="flex items-center justify-end pr-4 font-semibold text-sm border-r-2 border-base-content/20">
-                <div class="text-right">
-                  <div class="text-xs text-base-content/60 uppercase tracking-wide mb-1">
-                    Actual
-                  </div>
-                  <div>Agree</div>
-                </div>
-              </div>
-            )
-          }
-
-          <!-- True Positive (TP) -->
-          <div class={`p-4 rounded-lg ${getCellColor(matrix.true_positives, true)}`}>
-            <div class="text-center">
-              <div class="text-xs font-semibold uppercase tracking-wide mb-1 opacity-80">
-                True Positive
-              </div>
-              <div class="text-3xl font-bold font-mono">{matrix.true_positives}</div>
-              <div class="text-xs mt-1 opacity-70">
-                {getPercentage(matrix.true_positives)}%
-              </div>
-            </div>
-          </div>
-
-          <!-- False Negative (FN) -->
-          <div class={`p-4 rounded-lg ${getCellColor(matrix.false_negatives, false)}`}>
-            <div class="text-center">
-              <div class="text-xs font-semibold uppercase tracking-wide mb-1 opacity-80">
-                False Negative
-              </div>
-              <div class="text-3xl font-bold font-mono">{matrix.false_negatives}</div>
-              <div class="text-xs mt-1 opacity-70">
-                {getPercentage(matrix.false_negatives)}%
-              </div>
-            </div>
-          </div>
-
-          <!-- Row 2: Actual Disagree -->
-          {
-            showLabels && (
-              <div class="flex items-center justify-end pr-4 font-semibold text-sm border-r-2 border-base-content/20">
-                <div class="text-right">
-                  <div class="text-xs text-base-content/60 uppercase tracking-wide mb-1">
-                    Actual
-                  </div>
-                  <div>Disagree</div>
-                </div>
-              </div>
-            )
-          }
-
-          <!-- False Positive (FP) -->
-          <div class={`p-4 rounded-lg ${getCellColor(matrix.false_positives, false)}`}>
-            <div class="text-center">
-              <div class="text-xs font-semibold uppercase tracking-wide mb-1 opacity-80">
-                False Positive
-              </div>
-              <div class="text-3xl font-bold font-mono">{matrix.false_positives}</div>
-              <div class="text-xs mt-1 opacity-70">
-                {getPercentage(matrix.false_positives)}%
-              </div>
-            </div>
-          </div>
-
-          <!-- True Negative (TN) -->
-          <div class={`p-4 rounded-lg ${getCellColor(matrix.true_negatives, true)}`}>
-            <div class="text-center">
-              <div class="text-xs font-semibold uppercase tracking-wide mb-1 opacity-80">
-                True Negative
-              </div>
-              <div class="text-3xl font-bold font-mono">{matrix.true_negatives}</div>
-              <div class="text-xs mt-1 opacity-70">
-                {getPercentage(matrix.true_negatives)}%
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Legend -->
-        <div class="mt-6 pt-4 border-t border-base-content/10">
-          <div class="text-xs text-base-content/60 uppercase tracking-wide mb-2">
-            Understanding the Matrix
-          </div>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-            <div class="flex items-start gap-2">
-              <div class="w-4 h-4 rounded bg-success mt-0.5"></div>
-              <div>
-                <span class="font-semibold">True Positive (TP):</span> Judge agreed, Human agreed
-              </div>
-            </div>
-            <div class="flex items-start gap-2">
-              <div class="w-4 h-4 rounded bg-success mt-0.5"></div>
-              <div>
-                <span class="font-semibold">True Negative (TN):</span> Judge disagreed, Human disagreed
-              </div>
-            </div>
-            <div class="flex items-start gap-2">
-              <div class="w-4 h-4 rounded bg-error mt-0.5"></div>
-              <div>
-                <span class="font-semibold">False Positive (FP):</span> Judge agreed, Human disagreed
-              </div>
-            </div>
-            <div class="flex items-start gap-2">
-              <div class="w-4 h-4 rounded bg-error mt-0.5"></div>
-              <div>
-                <span class="font-semibold">False Negative (FN):</span> Judge disagreed, Human agreed
-              </div>
-            </div>
-          </div>
-        </div>
+  <!-- Summary Stats -->
+  <div class="mt-4 p-4 bg-base-200 rounded-lg">
+    <div class="flex flex-wrap gap-6 text-sm">
+      <div>
+        <span class="text-base-content/60">Total Evaluations:</span>
+        <span class="font-semibold ml-2">{total}</span>
+      </div>
+      <div>
+        <span class="text-base-content/60">Correct Predictions:</span>
+        <span class="font-semibold ml-2 text-success">{truePositives + trueNegatives}</span>
+      </div>
+      <div>
+        <span class="text-base-content/60">Accuracy:</span>
+        <span class="font-semibold ml-2">{accuracy}%</span>
       </div>
     </div>
   </div>

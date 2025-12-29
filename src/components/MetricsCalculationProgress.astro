@@ -1,0 +1,180 @@
+---
+/**
+ * MetricsCalculationProgress Component
+ *
+ * Displays progress and status during async metrics calculation.
+ * Shows "The training in progress" message with loading spinner.
+ *
+ * @param status - Current status: "calculating" | "completed" | "error"
+ * @param message - Status message to display
+ * @param progressPercent - Optional progress percentage (0-100)
+ * @param iteration - Current iteration number
+ * @param personaId - Persona ID for API calls
+ */
+
+export interface Props {
+  status: 'calculating' | 'completed' | 'error';
+  message?: string;
+  progressPercent?: number;
+  iteration: number;
+  personaId: string;
+}
+
+const {
+  status,
+  message = 'The training in progress',
+  progressPercent = 0,
+  iteration,
+  personaId,
+} = Astro.props;
+---
+
+<div class="w-full">
+  {
+    status === 'calculating' && (
+      <div class="alert alert-info shadow-lg animate-pulse mb-4">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-6 w-6 shrink-0 stroke-current"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+        </svg>
+        <div>
+          <h3 class="font-bold text-lg">{message}</h3>
+          <p class="text-sm opacity-80">Calculating metrics for iteration {iteration}...</p>
+          {progressPercent !== undefined && progressPercent > 0 && (
+            <div class="mt-2">
+              <progress class="progress progress-info w-full" value={progressPercent} max="100" />
+              <span class="text-xs">{progressPercent}% complete</span>
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  {
+    status === 'completed' && (
+      <div class="alert alert-success shadow-lg mb-4">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-6 w-6 shrink-0 stroke-current"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+        </svg>
+        <div>
+          <h3 class="font-bold text-lg">Metrics Calculated</h3>
+          <p class="text-sm">Iteration {iteration} metrics are ready for viewing.</p>
+        </div>
+        <div class="flex-none">
+          <a
+            href={`/personas/${personaId}/metrics?iteration=${iteration}`}
+            class="btn btn-sm btn-primary"
+          >
+            View Metrics
+          </a>
+        </div>
+      </div>
+    )
+  }
+
+  {
+    status === 'error' && (
+      <div class="alert alert-error shadow-lg mb-4">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-6 w-6 shrink-0 stroke-current"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+        </svg>
+        <div>
+          <h3 class="font-bold text-lg">Calculation Failed</h3>
+          <p class="text-sm">{message || 'An error occurred during metrics calculation.'}</p>
+        </div>
+        <div class="flex-none">
+          <button
+            class="btn btn-sm btn-outline btn-error retry-calculation"
+            data-persona-id={personaId}
+            data-iteration={iteration}
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    )
+  }
+</div>
+
+<script>
+  /**
+   * Handle retry button clicks for failed calculations
+   */
+  function setupRetryHandlers() {
+    const retryButtons = document.querySelectorAll('.retry-calculation');
+
+    retryButtons.forEach((button) => {
+      button.addEventListener('click', async (e) => {
+        const target = e.currentTarget as HTMLButtonElement;
+        const personaId = target.dataset.personaId;
+        const iteration = target.dataset.iteration;
+
+        if (!personaId || !iteration) return;
+
+        // Disable button during retry
+        target.disabled = true;
+        target.textContent = 'Retrying...';
+
+        try {
+          const response = await fetch(
+            `/api/personas/${personaId}/iterations/${iteration}/calculate-metrics`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+            }
+          );
+
+          if (response.ok) {
+            // Reload the page to show new status
+            window.location.reload();
+          } else {
+            throw new Error('Retry failed');
+          }
+        } catch {
+          target.disabled = false;
+          target.textContent = 'Retry';
+          alert('Failed to retry calculation. Please try again.');
+        }
+      });
+    });
+  }
+
+  // Initialize when DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupRetryHandlers);
+  } else {
+    setupRetryHandlers();
+  }
+</script>

@@ -7,7 +7,15 @@
  * @param format - Display format: "percentage" | "number" | "raw"
  * @param description - Optional tooltip description
  * @param trend - Optional trend indicator: "up" | "down" | "stable"
+ * @param higherIsBetter - For metrics where higher is better (F1, precision, recall), use true.
+ *                        For metrics where lower is better (error rate), use false.
+ *                        Defaults to true. Controls trend color logic.
  * @param variant - Color variant: "primary" | "success" | "warning" | "error" | "info"
+ *
+ * Trend Color Logic:
+ * - When higherIsBetter=true (default): up=green (good), down=red (bad)
+ * - When higherIsBetter=false: up=red (bad), down=green (good)
+ * - stable: always gray (neutral)
  */
 
 export interface Props {
@@ -16,6 +24,7 @@ export interface Props {
   format?: 'percentage' | 'number' | 'raw';
   description?: string;
   trend?: 'up' | 'down' | 'stable';
+  higherIsBetter?: boolean;
   variant?: 'primary' | 'success' | 'warning' | 'error' | 'info';
 }
 
@@ -25,6 +34,7 @@ const {
   format = 'percentage',
   description,
   trend,
+  higherIsBetter = true,
   variant = 'primary',
 } = Astro.props;
 
@@ -63,19 +73,26 @@ function getVariantClass(v: string): string {
 }
 
 // Get trend icon and color
-function getTrendIcon(t?: string): { icon: string; color: string } | null {
+function getTrendIcon(
+  t?: string,
+  higherBetter: boolean = true
+): { icon: string; color: string } | null {
   if (!t) return null;
 
   switch (t) {
     case 'up':
+      // When higher is better (F1, precision, recall), up is good (green)
+      // When lower is better (error rate), up is bad (red)
       return {
         icon: 'M5 15l7-7 7 7',
-        color: 'text-success',
+        color: higherBetter ? 'text-success' : 'text-error',
       };
     case 'down':
+      // When higher is better (F1, precision, recall), down is bad (red)
+      // When lower is better (error rate), down is good (green)
       return {
         icon: 'M19 9l-7 7-7-7',
-        color: 'text-error',
+        color: higherBetter ? 'text-error' : 'text-success',
       };
     case 'stable':
       return {
@@ -89,7 +106,7 @@ function getTrendIcon(t?: string): { icon: string; color: string } | null {
 
 const formattedValue = formatValue(value, format);
 const variantClass = getVariantClass(variant);
-const trendInfo = getTrendIcon(trend);
+const trendInfo = getTrendIcon(trend, higherIsBetter);
 ---
 
 <div class="card bg-base-200 shadow-md">
