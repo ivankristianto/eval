@@ -1,6 +1,9 @@
 /**
  * GET /api/personas/[id]/training/status
  * Get current training status for a persona
+ *
+ * Supports SSE streaming when `?stream=true` query parameter is provided.
+ * The SSE stream sends updates when the training state changes.
  */
 
 import type { APIRoute } from 'astro';
@@ -12,13 +15,53 @@ import { createLogger } from '@lib/logger';
 const logger = createLogger('API:Training:Status');
 
 /**
+ * SSE event data for training status updates
+ */
+interface TrainingStatusEvent {
+  type: 'status_update' | 'iteration_complete' | 'metrics_ready' | 'error';
+  data: {
+    persona_id: string;
+    latest_iteration: {
+      id: string;
+      iteration_number: number;
+      status: string;
+      total_pairs_evaluated?: number;
+      pairs_reviewed_by_human?: number;
+      started_at?: string;
+      completed_at?: string;
+      error_message?: string;
+    } | null;
+    training_loop_state: {
+      session_id: string;
+      status: string;
+      current_iteration: number;
+    } | null;
+    metrics?: {
+      f1_score: number;
+      precision: number;
+      recall: number;
+      cohens_kappa: number;
+      accuracy: number;
+      confusion_matrix: {
+        true_positives: number;
+        true_negatives: number;
+        false_positives: number;
+        false_negatives: number;
+      };
+    };
+    timestamp: string;
+  };
+}
+
+/**
  * GET /api/personas/[id]/training/status
  * Retrieves current training status, metrics, and loop state for a persona.
  * @param root0
  * @param root0.params
+ * @param root0.request
  * @returns {Promise<Response>}
  */
-export const GET: APIRoute = async ({ params }) => {
+export const GET: APIRoute = async ({ params, request }) => {
   const startTime = Date.now();
   const { id } = params;
 
@@ -170,6 +213,15 @@ export const GET: APIRoute = async ({ params }) => {
 
     logger.logApiRequest('GET', `/api/personas/${id}/training/status`, 200, Date.now() - startTime);
 
+    // Check if SSE streaming is requested
+    const url = new URL(request.url);
+    const useSSE = url.searchParams.get('stream') === 'true';
+
+    if (useSSE) {
+      // Return SSE stream
+      return createSSEStream(id, db, response);
+    }
+
     return new Response(JSON.stringify(response), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
@@ -179,3 +231,275 @@ export const GET: APIRoute = async ({ params }) => {
     return createErrorResponse(error);
   }
 };
+
+/**
+ * Create an SSE stream for training status updates
+ * @param personaId - The persona ID to monitor
+ * @param db - The database instance
+ * @param initialResponse - The initial response data
+ * @returns {Response} SSE stream response
+ */
+function createSSEStream(
+  personaId: string,
+  db: ReturnType<typeof getDatabase>,
+  initialResponse: {
+    persona_id: string;
+    latest_iteration?: {
+      id: string;
+      iteration_number: number;
+      status: string;
+      total_pairs_evaluated?: number;
+      pairs_reviewed_by_human?: number;
+      started_at?: string | null;
+      completed_at?: string | null;
+      error_message?: string | null;
+    } | null;
+    training_loop_state?: {
+      session_id: string;
+      status: string;
+      current_iteration: number;
+    } | null;
+    metrics?: {
+      f1_score: number;
+      precision: number;
+      recall: number;
+      cohens_kappa: number;
+      accuracy: number;
+      confusion_matrix: {
+        true_positives: number;
+        true_negatives: number;
+        false_positives: number;
+        false_negatives: number;
+      };
+    } | null;
+  }
+): Response {
+  const encoder = new TextEncoder();
+  let pollInterval: ReturnType<typeof setInterval> | null = null;
+  let isClosed = false;
+
+  /**
+   * Send SSE event to client
+   */
+  const sendEvent = (type: TrainingStatusEvent['type'], data: TrainingStatusEvent['data']) => {
+    if (isClosed) return;
+
+    const event: TrainingStatusEvent = { type, data };
+    const eventData = `data: ${JSON.stringify(event)}\n\n`;
+    return encoder.encode(eventData);
+  };
+
+  /**
+   * Fetch current training status from database
+   */
+  const fetchCurrentStatus = (): TrainingStatusEvent['data'] => {
+    const latestIteration = db
+      .prepare(
+        `
+        SELECT
+          ti.id,
+          ti.iteration_number,
+          ti.status,
+          ti.total_pairs_evaluated,
+          ti.pairs_reviewed_by_human,
+          ti.started_at,
+          ti.completed_at,
+          ti.error_message
+        FROM training_iterations ti
+        WHERE ti.persona_id = ?
+        ORDER BY ti.iteration_number DESC
+        LIMIT 1
+      `
+      )
+      .get(personaId) as
+      | {
+          id: string;
+          iteration_number: number;
+          status: string;
+          total_pairs_evaluated?: number;
+          pairs_reviewed_by_human?: number;
+          started_at: string;
+          completed_at?: string;
+          error_message?: string;
+        }
+      | undefined;
+
+    const loopState = db
+      .prepare(
+        'SELECT session_id, status, current_iteration FROM training_loop_state WHERE persona_id = ? ORDER BY updated_at DESC LIMIT 1'
+      )
+      .get(personaId) as
+      | {
+          session_id: string;
+          status: string;
+          current_iteration: number;
+        }
+      | undefined;
+
+    let metrics: TrainingStatusEvent['data']['metrics'] | undefined;
+
+    // Only fetch metrics if iteration is completed
+    if (latestIteration?.status === 'completed' && latestIteration.id) {
+      const metricsRow = db
+        .prepare('SELECT * FROM iteration_metrics WHERE iteration_id = ?')
+        .get(latestIteration.id) as
+        | {
+            f1_score: number;
+            precision: number;
+            recall: number;
+            cohens_kappa: number;
+            accuracy: number;
+            true_positives: number;
+            true_negatives: number;
+            false_positives: number;
+            false_negatives: number;
+          }
+        | undefined;
+
+      if (metricsRow) {
+        metrics = {
+          f1_score: metricsRow.f1_score ?? 0,
+          precision: metricsRow.precision ?? 0,
+          recall: metricsRow.recall ?? 0,
+          cohens_kappa: metricsRow.cohens_kappa ?? 0,
+          accuracy: metricsRow.accuracy ?? 0,
+          confusion_matrix: {
+            true_positives: metricsRow.true_positives,
+            true_negatives: metricsRow.true_negatives,
+            false_positives: metricsRow.false_positives,
+            false_negatives: metricsRow.false_negatives,
+          },
+        };
+      }
+    }
+
+    return {
+      persona_id: personaId,
+      latest_iteration: latestIteration || null,
+      training_loop_state: loopState || null,
+      metrics,
+      timestamp: new Date().toISOString(),
+    };
+  };
+
+  /**
+   * Create the readable stream for SSE
+   */
+  const stream = new ReadableStream({
+    start(controller) {
+      // Send initial status immediately
+      const initialData = {
+        ...initialResponse,
+        timestamp: new Date().toISOString(),
+      };
+      controller.enqueue(
+        encoder.encode(`data: ${JSON.stringify({ type: 'status_update', data: initialData })}\n\n`)
+      );
+
+      // Check if iteration is already completed on connection start
+      // This handles the case where user connects after training already finished
+      const initialIterationStatus = initialResponse.latest_iteration?.status || null;
+      const initialHasMetrics = !!initialResponse.metrics;
+
+      if (initialIterationStatus === 'completed') {
+        controller.enqueue(
+          sendEvent('iteration_complete', initialData as TrainingStatusEvent['data'])
+        );
+      }
+
+      if (initialHasMetrics && initialResponse.metrics) {
+        controller.enqueue(sendEvent('metrics_ready', initialData as TrainingStatusEvent['data']));
+      }
+
+      // Poll for status changes every 2 seconds
+      let lastStatus = initialIterationStatus;
+      let lastIterationNumber = initialResponse.latest_iteration?.iteration_number || 0;
+      let hadMetrics = initialHasMetrics;
+
+      pollInterval = setInterval(() => {
+        if (isClosed) {
+          if (pollInterval) clearInterval(pollInterval);
+          return;
+        }
+
+        try {
+          const currentData = fetchCurrentStatus();
+          const currentStatus = currentData.latest_iteration?.status || null;
+          const currentIterationNumber = currentData.latest_iteration?.iteration_number || 0;
+          const hasMetrics = !!currentData.metrics;
+
+          // Check if status changed
+          if (currentStatus !== lastStatus) {
+            lastStatus = currentStatus;
+            controller.enqueue(sendEvent('status_update', currentData));
+
+            // If iteration completed, send iteration_complete event
+            if (currentStatus === 'completed') {
+              controller.enqueue(sendEvent('iteration_complete', currentData));
+            }
+          }
+
+          // Check if new iteration started
+          if (currentIterationNumber > lastIterationNumber) {
+            lastIterationNumber = currentIterationNumber;
+            controller.enqueue(sendEvent('status_update', currentData));
+          }
+
+          // Check if metrics became available
+          if (hasMetrics && !hadMetrics) {
+            hadMetrics = true;
+            if (currentData.metrics) {
+              controller.enqueue(sendEvent('metrics_ready', currentData));
+            }
+          }
+
+          // Stop polling if training is completed
+          if (
+            currentData.training_loop_state?.status === 'completed' ||
+            currentData.latest_iteration?.status === 'failed'
+          ) {
+            if (pollInterval) clearInterval(pollInterval);
+            // Send final status update
+            controller.enqueue(sendEvent('status_update', currentData));
+            // Close stream after a short delay
+            setTimeout(() => {
+              if (!isClosed) {
+                controller.close();
+                isClosed = true;
+              }
+            }, 1000);
+          }
+        } catch (error) {
+          logger.error('SSE polling error', error instanceof Error ? error : undefined);
+          controller.enqueue(
+            sendEvent('error', {
+              persona_id: personaId,
+              latest_iteration: null,
+              training_loop_state: null,
+              timestamp: new Date().toISOString(),
+            })
+          );
+          if (pollInterval) clearInterval(pollInterval);
+          controller.close();
+          isClosed = true;
+        }
+      }, 2000);
+    },
+
+    cancel() {
+      isClosed = true;
+      if (pollInterval) {
+        clearInterval(pollInterval);
+      }
+    },
+  });
+
+  return new Response(stream, {
+    headers: {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      Connection: 'keep-alive',
+      'Access-Control-Allow-Origin': '*',
+    },
+  });
+}

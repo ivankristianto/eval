@@ -110,88 +110,75 @@ export const POST: APIRoute = async ({ params, request }) => {
         sessionId: state.session_id,
       });
 
-      // Create training loop instance and continue training
-      const loop = new IterativeTrainingLoop(state.session_id, id, db);
+      // Update iteration status to in_progress (metrics calculation is part of iteration)
+      db.prepare('UPDATE training_iterations SET status = ? WHERE id = ?').run(
+        'in_progress',
+        iteration.id
+      );
 
-      // This will:
-      // 1. Calculate metrics from human votes
-      // 2. Refine both prompts using LLM based on human feedback
-      // 3. Continue to iteration 2+ automatically
-      await loop.acceptPromptsAndContinue(iteration.id);
+      // Update training loop state to in_progress
+      db.prepare(
+        'UPDATE training_loop_state SET status = ?, updated_at = ? WHERE session_id = ?'
+      ).run('in_progress', new Date().toISOString(), state.session_id);
 
-      // Get final state after training continues
-      const finalState = db
-        .prepare('SELECT status, current_iteration FROM training_loop_state WHERE session_id = ?')
-        .get(state.session_id) as { status: string; current_iteration: number } | undefined;
+      // Create training loop instance and continue training IN BACKGROUND
+      // This allows the API to return immediately while training runs asynchronously
+      setImmediate(async () => {
+        const loop = new IterativeTrainingLoop(state.session_id, id, db);
+        try {
+          // This will:
+          // 1. Calculate metrics from human votes
+          // 2. Refine both prompts using LLM based on human feedback
+          // 3. Continue to iteration 2+ automatically
+          await loop.acceptPromptsAndContinue(iteration.id);
 
-      const latestIteration = db
-        .prepare(
-          'SELECT iteration_number, status FROM training_iterations WHERE persona_id = ? ORDER BY iteration_number DESC LIMIT 1'
-        )
-        .get(id) as { iteration_number: number; status: string } | undefined;
+          logger.info('Background training completed', {
+            personaId: id,
+            iterationId: iteration.id,
+            sessionId: state.session_id,
+          });
+        } catch (error) {
+          logger.error('Background training failed', error instanceof Error ? error : undefined, {
+            personaId: id,
+            iterationId: iteration.id,
+            sessionId: state.session_id,
+          });
 
-      // Get the calculated metrics
-      const metricsRow = db
-        .prepare('SELECT * FROM iteration_metrics WHERE iteration_id = ?')
-        .get(iteration.id) as
-        | {
-            id: string;
-            f1_score: number | null;
-            precision: number | null;
-            recall: number | null;
-            cohens_kappa: number | null;
-            accuracy: number | null;
-            true_positives: number | null;
-            true_negatives: number | null;
-            false_positives: number | null;
-            false_negatives: number | null;
-          }
-        | undefined;
+          // Update status to failed on error
+          db.prepare(
+            'UPDATE training_iterations SET status = ?, error_message = ? WHERE id = ?'
+          ).run('failed', error instanceof Error ? error.message : 'Unknown error', iteration.id);
 
-      logger.info('Iteration 1 metrics calculated and training continued', {
-        personaId: id,
-        finalState: finalState?.status,
-        currentIteration: finalState?.current_iteration,
-        latestIteration: latestIteration?.iteration_number,
-        f1Score: metricsRow?.f1_score,
+          db.prepare(
+            'UPDATE training_loop_state SET status = ?, error_message = ?, updated_at = ? WHERE session_id = ?'
+          ).run(
+            'failed',
+            error instanceof Error ? error.message : 'Unknown error',
+            new Date().toISOString(),
+            state.session_id
+          );
+        }
       });
+
       logger.logApiRequest(
         'POST',
         `/api/personas/${id}/iterations/1/calculate-metrics`,
-        200,
+        202,
         Date.now() - startTime
       );
 
+      // Return immediately with 202 Accepted - client should poll/SSE for progress
       return new Response(
         JSON.stringify({
-          message:
-            'Iteration 1 complete. Metrics calculated, prompts refined, and training continued.',
-          metrics: metricsRow
-            ? {
-                f1_score: metricsRow.f1_score ?? 0,
-                precision: metricsRow.precision ?? 0,
-                recall: metricsRow.recall ?? 0,
-                cohens_kappa: metricsRow.cohens_kappa ?? 0,
-                accuracy: metricsRow.accuracy ?? 0,
-                confusion_matrix: {
-                  true_positives: metricsRow.true_positives ?? 0,
-                  true_negatives: metricsRow.true_negatives ?? 0,
-                  false_positives: metricsRow.false_positives ?? 0,
-                  false_negatives: metricsRow.false_negatives ?? 0,
-                },
-              }
-            : null,
+          message: 'Metrics calculation started. Training is continuing in the background.',
           iteration: {
             id: iteration.id,
             iteration_number: 1,
-            status: 'completed',
+            status: 'in_progress',
           },
-          training_status: finalState?.status || 'unknown',
-          current_iteration: finalState?.current_iteration,
-          latest_iteration: latestIteration?.iteration_number,
-          latest_iteration_status: latestIteration?.status,
+          training_status: 'in_progress',
         }),
-        { status: 200, headers: { 'Content-Type': 'application/json' } }
+        { status: 202, headers: { 'Content-Type': 'application/json' } }
       );
     }
 
