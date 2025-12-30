@@ -598,14 +598,15 @@ if (currentTab === 'prompts') {
           method: 'POST',
         });
 
+        const result = await response.json();
         if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.message || 'Failed to start training');
+          throw new Error(result.message || 'Failed to start training');
         }
 
-        addToast('Training started successfully', 'success');
-        // Redirect to metrics page
-        window.location.href = `/personas/${personaId}/metrics`;
+        addToast(result.message || 'Training started successfully', 'success');
+        // Redirect to review page for the iteration
+        const iterationNumber = result.iteration?.iteration_number || 1;
+        window.location.href = `/personas/${personaId}/review/${iterationNumber}`;
       } catch (error) {
         console.error('Failed to start training:', error);
         addToast(
