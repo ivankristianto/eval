@@ -826,19 +826,25 @@ export class IterativeTrainingLoop {
 
       if (result.refined_task_prompt) {
         // Store the refined task prompt for the NEXT iteration
-        this.storeTaskPromptVersion(nextIterationNumber, result.refined_task_prompt, 'ai', {
-          f1_score: iteration.f1_score ?? 0,
-          precision: iteration.precision ?? 0,
-          recall: iteration.recall ?? 0,
-          accuracy: iteration.accuracy ?? 0,
-          cohens_kappa: iteration.cohens_kappa ?? 0,
-          confusion_matrix: {
-            true_positives: iteration.true_positives ?? 0,
-            true_negatives: iteration.true_negatives ?? 0,
-            false_positives: iteration.false_positives ?? 0,
-            false_negatives: iteration.false_negatives ?? 0,
+        this.storeTaskPromptVersion(
+          nextIterationNumber,
+          result.refined_task_prompt,
+          'ai',
+          {
+            f1_score: iteration.f1_score ?? 0,
+            precision: iteration.precision ?? 0,
+            recall: iteration.recall ?? 0,
+            accuracy: iteration.accuracy ?? 0,
+            cohens_kappa: iteration.cohens_kappa ?? 0,
+            confusion_matrix: {
+              true_positives: iteration.true_positives ?? 0,
+              true_negatives: iteration.true_negatives ?? 0,
+              false_positives: iteration.false_positives ?? 0,
+              false_negatives: iteration.false_negatives ?? 0,
+            },
           },
-        });
+          result.task_rationale
+        );
 
         logger.info('Refined task prompt', {
           iterationNumber: nextIterationNumber,
@@ -863,19 +869,25 @@ export class IterativeTrainingLoop {
 
       if (result.refined_judge_prompt) {
         // Store the refined judge prompt for the NEXT iteration
-        this.storeJudgePromptVersion(nextIterationNumber, result.refined_judge_prompt, 'ai', {
-          f1_score: iteration.f1_score ?? 0,
-          precision: iteration.precision ?? 0,
-          recall: iteration.recall ?? 0,
-          accuracy: iteration.accuracy ?? 0,
-          cohens_kappa: iteration.cohens_kappa ?? 0,
-          confusion_matrix: {
-            true_positives: iteration.true_positives ?? 0,
-            true_negatives: iteration.true_negatives ?? 0,
-            false_positives: iteration.false_positives ?? 0,
-            false_negatives: iteration.false_negatives ?? 0,
+        this.storeJudgePromptVersion(
+          nextIterationNumber,
+          result.refined_judge_prompt,
+          'ai',
+          {
+            f1_score: iteration.f1_score ?? 0,
+            precision: iteration.precision ?? 0,
+            recall: iteration.recall ?? 0,
+            accuracy: iteration.accuracy ?? 0,
+            cohens_kappa: iteration.cohens_kappa ?? 0,
+            confusion_matrix: {
+              true_positives: iteration.true_positives ?? 0,
+              true_negatives: iteration.true_negatives ?? 0,
+              false_positives: iteration.false_positives ?? 0,
+              false_negatives: iteration.false_negatives ?? 0,
+            },
           },
-        });
+          result.judge_rationale
+        );
 
         logger.info('Refined judge prompt', {
           iterationNumber: nextIterationNumber,
@@ -952,12 +964,14 @@ export class IterativeTrainingLoop {
    * @param promptText - The prompt text to store
    * @param createdBy - Who created this version (human/ai)
    * @param metrics - The metrics for this iteration
+   * @param rationale - Optional improvement rationale from prompt refinement
    */
   private storeTaskPromptVersion(
     iterationNumber: number,
     promptText: string,
     createdBy: 'human' | 'ai',
-    metrics: MetricsResult
+    metrics: MetricsResult,
+    rationale?: string
   ): void {
     // Check if a version already exists for this iteration
     const existing = this.db
@@ -968,6 +982,10 @@ export class IterativeTrainingLoop {
       // Don't create duplicate versions
       return;
     }
+
+    // Combine rationale with metrics summary
+    const metricsSummary = `F1 Score: ${metrics.f1_score.toFixed(3)}, Precision: ${metrics.precision.toFixed(3)}, Recall: ${metrics.recall.toFixed(3)}`;
+    const improvementRationale = rationale ? `${rationale} (${metricsSummary})` : metricsSummary;
 
     // Create new task prompt version
     this.db
@@ -983,7 +1001,7 @@ export class IterativeTrainingLoop {
         this.personaId,
         iterationNumber,
         promptText,
-        `F1 Score: ${metrics.f1_score.toFixed(3)}, Precision: ${metrics.precision.toFixed(3)}, Recall: ${metrics.recall.toFixed(3)}`,
+        improvementRationale,
         createdBy,
         new Date().toISOString()
       );
@@ -995,12 +1013,14 @@ export class IterativeTrainingLoop {
    * @param promptText - The prompt text to store
    * @param createdBy - Who created this version (human/ai)
    * @param metrics - The metrics for this iteration
+   * @param rationale - Optional improvement rationale from prompt refinement
    */
   private storeJudgePromptVersion(
     iterationNumber: number,
     promptText: string,
     createdBy: 'human' | 'ai',
-    metrics: MetricsResult
+    metrics: MetricsResult,
+    rationale?: string
   ): void {
     // Check if a version already exists for this iteration
     const existing = this.db
@@ -1011,6 +1031,10 @@ export class IterativeTrainingLoop {
       // Don't create duplicate versions
       return;
     }
+
+    // Combine rationale with metrics summary
+    const metricsSummary = `F1 Score: ${metrics.f1_score.toFixed(3)}, Precision: ${metrics.precision.toFixed(3)}, Recall: ${metrics.recall.toFixed(3)}`;
+    const improvementRationale = rationale ? `${rationale} (${metricsSummary})` : metricsSummary;
 
     // Create new judge prompt version
     this.db
@@ -1026,7 +1050,7 @@ export class IterativeTrainingLoop {
         this.personaId,
         iterationNumber,
         promptText,
-        `F1 Score: ${metrics.f1_score.toFixed(3)}, Precision: ${metrics.precision.toFixed(3)}, Recall: ${metrics.recall.toFixed(3)}`,
+        improvementRationale,
         createdBy,
         new Date().toISOString()
       );
@@ -1412,7 +1436,7 @@ export class IterativeTrainingLoop {
 
       if (result.refined_task_prompt) {
         // Store refined task prompt for iteration 2
-        this.storeTaskPromptVersion(2, result.refined_task_prompt, 'ai', metrics);
+        this.storeTaskPromptVersion(2, result.refined_task_prompt, 'ai', metrics, result.task_rationale);
         logger.info('Refined task prompt for iteration 2', {
           personaId: this.personaId,
           rationale: result.task_rationale,
@@ -1421,7 +1445,7 @@ export class IterativeTrainingLoop {
 
       if (result.refined_judge_prompt) {
         // Store refined judge prompt for iteration 2
-        this.storeJudgePromptVersion(2, result.refined_judge_prompt, 'ai', metrics);
+        this.storeJudgePromptVersion(2, result.refined_judge_prompt, 'ai', metrics, result.judge_rationale);
         logger.info('Refined judge prompt for iteration 2', {
           personaId: this.personaId,
           rationale: result.judge_rationale,
