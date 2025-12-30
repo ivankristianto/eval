@@ -162,29 +162,6 @@ export const GET: APIRoute = async ({ params, request: _request }) => {
         break;
       }
 
-      case 'calculating_metrics': {
-        // Calculate progress percentage if we have total pairs
-        let progressPercent = 0;
-        if (iterationRecord.task_results_evaluated && iterationRecord.task_results_evaluated > 0) {
-          // Estimate progress based on pairs evaluated
-          const trainingPairs = db
-            .prepare('SELECT COUNT(*) as count FROM training_pairs WHERE persona_id = ?')
-            .get(id) as { count: number };
-          const totalPairs = trainingPairs?.count || 0;
-          if (totalPairs > 0) {
-            progressPercent = Math.min(
-              100,
-              Math.round((iterationRecord.task_results_evaluated / totalPairs) * 100)
-            );
-          }
-        }
-
-        response.status = 'calculating';
-        response.message = 'The training in progress';
-        response.progress_percent = progressPercent;
-        break;
-      }
-
       case 'completed': {
         // Get calculated metrics
         const metrics = db
