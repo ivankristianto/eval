@@ -296,6 +296,13 @@ Important:
 - The improved_prompt should be a complete, standalone prompt (not a diff)
 - Focus on the most impactful changes based on failure patterns
 - Ensure the prompt is clear and unambiguous for the judge model
+- Both refined prompts should be complete, standalone prompts (not diffs)
+- Focus on the most impactful changes based on disagreement patterns
+- Ensure prompts are clear and unambiguous for their respective models
+- The goal is to reduce the disagreement rate and improve F1 score
+- Format the response strictly as JSON
+- Avoid any additional commentary outside the JSON response
+- Do not use markdown formatting in your response
 `;
 }
 
