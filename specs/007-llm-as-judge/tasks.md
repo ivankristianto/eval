@@ -459,7 +459,7 @@ _System runs TWO-PHASE training: (1) Iteration 1 with mandatory human review and
 - [x] T045 Create src/lib/judge-evaluator.ts implementing:
   - evaluateOutput(input, correctOutput, suggestedOutput, judgePrompt, judgeModel) → JudgeDecisionResult
   - Call judge model with formatted prompt
-  - Parse JSON response: {decision: "agree"|"disagree", confidence: 0.0-1.0, reasoning: string}
+  - Parse JSON response: {decision: "agree"|"disagree", reasoning: string}
   - Handle parsing errors gracefully
   - Store decision to database
 
@@ -1745,14 +1745,14 @@ _Implement async experience for metrics calculation with live progress updates a
 
 **Files Created**:
 
-| Category | Files |
-|----------|-------|
+| Category      | Files                                                                                                                         |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------- |
 | API Endpoints | `src/pages/api/personas/[id]/iterations/[num]/calculate-metrics.ts`, `src/pages/api/personas/[id]/iterations/[num]/status.ts` |
-| Components | `src/components/MetricsCalculationProgress.astro`, `src/components/ConfusionMatrix.astro` |
-| Pages | `src/pages/personas/[id]/metrics.astro`, `src/pages/personas/[id]/review/[iteration].astro` |
-| Library | `src/lib/metrics-polling-hook.ts` |
-| Tests | 6 test files (unit, integration, E2E) |
-| Documentation | `docs/METRICS_ASYNC_UX.md` |
+| Components    | `src/components/MetricsCalculationProgress.astro`, `src/components/ConfusionMatrix.astro`                                     |
+| Pages         | `src/pages/personas/[id]/metrics.astro`, `src/pages/personas/[id]/review/[iteration].astro`                                   |
+| Library       | `src/lib/metrics-polling-hook.ts`                                                                                             |
+| Tests         | 6 test files (unit, integration, E2E)                                                                                         |
+| Documentation | `docs/METRICS_ASYNC_UX.md`                                                                                                    |
 
 **Key Features Implemented**:
 

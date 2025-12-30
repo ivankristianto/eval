@@ -19,14 +19,12 @@ export interface DecisionData {
   judge: {
     generated_output: string;
     decision: JudgeDecisionType;
-    confidence: number | null;
     reasoning: string | null;
     created_at: string;
   };
   human_review: {
     id: string;
     decision: HumanDecisionType;
-    confidence: number | null;
     notes: string | null;
     created_at: string;
   } | null;
@@ -53,7 +51,6 @@ function getDecisionVariant(judgeDecision: JudgeDecisionType): 'success' | 'erro
 const hasReview = decision.human_review !== null;
 const humanDecision = decision.human_review?.decision;
 const humanNotes = decision.human_review?.notes;
-const humanConfidence = decision.human_review?.confidence;
 ---
 
 <div class="card bg-base-200 shadow-lg" data-decision-id={decision.decision_id}>
@@ -100,17 +97,6 @@ const humanConfidence = decision.human_review?.confidence;
           {decision.judge.decision}
         </Badge>
       </div>
-
-      {
-        decision.judge.confidence !== null && (
-          <div>
-            <div class="text-xs text-base-content/60 uppercase tracking-wide mb-1">Confidence</div>
-            <div class="font-mono text-lg font-semibold">
-              {(decision.judge.confidence * 100).toFixed(0)}%
-            </div>
-          </div>
-        )
-      }
     </div>
 
     <!-- Judge Reasoning -->
@@ -165,25 +151,6 @@ const humanConfidence = decision.human_review?.confidence;
 
             <div>
               <label class="label">
-                <span class="label-text">Confidence (Optional)</span>
-              </label>
-              <input
-                type="range"
-                min="0"
-                max="100"
-                value="50"
-                class="range range-sm"
-                name="confidence"
-              />
-              <div class="w-full flex justify-between text-xs px-2 mt-1">
-                <span>0%</span>
-                <span class="confidence-value">50%</span>
-                <span>100%</span>
-              </div>
-            </div>
-
-            <div>
-              <label class="label">
                 <span class="label-text">Notes (Optional)</span>
               </label>
               <textarea
@@ -223,23 +190,10 @@ const humanConfidence = decision.human_review?.confidence;
             </Badge>
           </div>
 
-          <div class="grid grid-cols-2 gap-4 mb-4">
-            {humanConfidence !== null && (
-              <div>
-                <div class="text-xs text-base-content/60 uppercase tracking-wide mb-1">
-                  Your Confidence
-                </div>
-                <div class="font-mono text-lg font-semibold">
-                  {(humanConfidence * 100).toFixed(0)}%
-                </div>
-              </div>
-            )}
-
-            <div>
-              <div class="text-xs text-base-content/60 uppercase tracking-wide mb-1">Reviewed</div>
-              <div class="text-sm">
-                {new Date(decision.human_review!.created_at).toLocaleString()}
-              </div>
+          <div class="mb-4">
+            <div class="text-xs text-base-content/60 uppercase tracking-wide mb-1">Reviewed</div>
+            <div class="text-sm">
+              {new Date(decision.human_review!.created_at).toLocaleString()}
             </div>
           </div>
 
@@ -255,20 +209,6 @@ const humanConfidence = decision.human_review?.confidence;
 </div>
 
 <script>
-  // Handle confidence slider value display
-  document.querySelectorAll('.range').forEach((slider) => {
-    const updateValue = () => {
-      const value = (slider as HTMLInputElement).value;
-      const valueDisplay = slider.parentElement?.querySelector('.confidence-value');
-      if (valueDisplay) {
-        valueDisplay.textContent = `${value}%`;
-      }
-    };
-
-    slider.addEventListener('input', updateValue);
-    updateValue();
-  });
-
   // Handle form submissions
   document.querySelectorAll('.human-review-form').forEach((form) => {
     form.addEventListener('submit', async (e) => {
@@ -282,7 +222,6 @@ const humanConfidence = decision.human_review?.confidence;
       // Get form data
       const formData = new FormData(form as HTMLFormElement);
       const humanDecision = formData.get(`decision-${decisionId}`) as string;
-      const confidence = parseFloat(formData.get('confidence') as string) / 100;
       const notes = formData.get('notes') as string;
 
       // Disable button during submission
@@ -298,7 +237,6 @@ const humanConfidence = decision.human_review?.confidence;
             body: JSON.stringify({
               decision_id: decisionId,
               human_decision: humanDecision,
-              human_confidence: confidence,
               notes: notes || null,
             }),
           }

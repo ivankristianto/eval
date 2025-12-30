@@ -65,13 +65,11 @@ const decisions = db
        jd.id,
        jd.generated_output,
        jd.judge_decision,
-       jd.judge_confidence,
        jd.judge_reasoning,
        tp.input,
        tp.expected_output,
        hr.id as review_id,
        hr.human_decision,
-       hr.human_confidence,
        hr.human_notes,
        hr.created_at as review_created_at
      FROM judge_decisions jd
@@ -101,14 +99,12 @@ const formattedDecisions = decisions.map((d) => ({
   judge: {
     generated_output: d.generated_output,
     decision: d.judge_decision,
-    confidence: d.judge_confidence,
     reasoning: d.judge_reasoning,
   },
   human_review: d.review_id
     ? {
         id: d.review_id,
         decision: d.human_decision,
-        confidence: d.human_confidence,
         notes: d.human_notes,
         created_at: d.review_created_at,
       }

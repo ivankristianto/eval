@@ -100,8 +100,8 @@ describe('Metrics Calculation Integration', () => {
       const decisionStmt = db.prepare(`
         INSERT INTO judge_decisions
         (id, iteration_id, training_pair_id, generated_output, judge_decision,
-         judge_confidence, judge_reasoning, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+         judge_reasoning, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
       `);
 
       decisionStmt.run(
@@ -110,7 +110,6 @@ describe('Metrics Calculation Integration', () => {
         pair1,
         'Output 1',
         'agree',
-        0.9,
         'Good',
         new Date().toISOString()
       );
@@ -120,7 +119,6 @@ describe('Metrics Calculation Integration', () => {
         pair2,
         'Output 2',
         'agree',
-        0.8,
         'Good',
         new Date().toISOString()
       );
@@ -130,7 +128,6 @@ describe('Metrics Calculation Integration', () => {
         pair3,
         'Bad output',
         'disagree',
-        0.7,
         'Bad',
         new Date().toISOString()
       );
@@ -140,7 +137,6 @@ describe('Metrics Calculation Integration', () => {
         pair4,
         'Bad output',
         'disagree',
-        0.6,
         'Bad',
         new Date().toISOString()
       );

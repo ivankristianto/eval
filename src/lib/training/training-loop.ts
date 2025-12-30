@@ -444,7 +444,6 @@ export class IterativeTrainingLoop {
       let taskModelOutput: string;
       let judgeDecision: 'agree' | 'disagree';
       let judgeReasoning: string;
-      let judgeConfidence: number;
 
       if (MOCK_JUDGE_MODE) {
         // Use mock data for development (reduces token costs)
@@ -452,7 +451,6 @@ export class IterativeTrainingLoop {
         taskModelOutput = mockResult.taskModelOutput;
         judgeDecision = mockResult.judgeDecision;
         judgeReasoning = mockResult.judgeReasoning;
-        judgeConfidence = mockResult.judgeConfidence;
       } else {
         // Use real LLM calls for production
         // Step 1: Call task model to generate output
@@ -472,7 +470,6 @@ export class IterativeTrainingLoop {
         );
         judgeDecision = judgeResult.decision;
         judgeReasoning = judgeResult.reasoning;
-        judgeConfidence = 0.85; // Default confidence for LLM-based judge
       }
 
       // Store judge decision
@@ -481,8 +478,8 @@ export class IterativeTrainingLoop {
         .prepare(
           `INSERT INTO judge_decisions
            (id, iteration_id, training_pair_id, generated_output, judge_decision,
-            judge_confidence, judge_reasoning, created_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+            judge_reasoning, created_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?)`
         )
         .run(
           decisionId,
@@ -490,7 +487,6 @@ export class IterativeTrainingLoop {
           pair.id,
           taskModelOutput,
           judgeDecision,
-          judgeConfidence,
           judgeReasoning,
           new Date().toISOString()
         );
@@ -511,7 +507,6 @@ export class IterativeTrainingLoop {
     taskModelOutput: string;
     judgeDecision: 'agree' | 'disagree';
     judgeReasoning: string;
-    judgeConfidence: number;
   }> {
     const rand = Math.random();
     let taskModelOutput: string;
@@ -557,7 +552,6 @@ export class IterativeTrainingLoop {
       taskModelOutput,
       judgeDecision: mockDecision,
       judgeReasoning: mockReasoning,
-      judgeConfidence: 0.7 + Math.random() * 0.3, // 0.7 to 1.0
     };
   }
 

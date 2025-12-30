@@ -10,7 +10,6 @@ import type { Database } from 'better-sqlite3';
  */
 export interface JudgeDecisionResult {
   decision: 'agree' | 'disagree';
-  confidence?: number;
   reasoning: string;
 }
 
@@ -19,13 +18,12 @@ export interface JudgeDecisionResult {
  */
 export interface JudgeResponseParsed {
   decision: 'agree' | 'disagree';
-  confidence?: number;
   reasoning: string;
 }
 
 /**
  * Parse judge model response from JSON.
- * Expected format: {decision: "agree"|"disagree", confidence: 0.0-1.0, reasoning: string}
+ * Expected format: {decision: "agree"|"disagree", reasoning: string}
  * @param response - Raw string response from the judge model
  * @returns Parsed judge response object
  * @throws Error if response is invalid JSON or missing required fields
@@ -43,15 +41,8 @@ export function parseJudgeResponse(response: string): JudgeResponseParsed {
       throw new Error(`Invalid judge decision: ${parsed.decision}. Must be "agree" or "disagree"`);
     }
 
-    // Clamp confidence to valid range if provided
-    let confidence: number | undefined = parsed.confidence;
-    if (confidence !== undefined) {
-      confidence = Math.max(0.0, Math.min(1.0, confidence));
-    }
-
     return {
       decision: parsed.decision as 'agree' | 'disagree',
-      confidence,
       reasoning: parsed.reasoning || '',
     };
   } catch (error) {
@@ -96,7 +87,6 @@ export async function evaluateOutput(
   // This will be replaced with actual API calls in the full implementation
   return {
     decision: 'agree',
-    confidence: 0.9,
     reasoning: 'Mock evaluation - will be replaced with actual LLM call',
   };
 }
@@ -132,13 +122,11 @@ Evaluate whether the Suggested Output meets the quality and correctness criteria
 
 {
   "decision": "agree" | "disagree",
-  "confidence": 0.0-1.0,
   "reasoning": "Explain your decision"
 }
 
 - Use "agree" if the Suggested Output meets or exceeds the Expected Output quality
 - Use "disagree" if the Suggested Output fails to meet the Expected Output criteria
-- Confidence should be between 0.0 (very uncertain) and 1.0 (very certain)
 - Reasoning should explain your decision clearly`;
 }
 
@@ -166,8 +154,8 @@ export function storeJudgeDecision(
     `
     INSERT INTO judge_decisions
     (id, iteration_id, training_pair_id, result_id, generated_output,
-     judge_decision, judge_confidence, judge_reasoning, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+     judge_decision, judge_reasoning, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `
   ).run(
     id,
@@ -176,7 +164,6 @@ export function storeJudgeDecision(
     resultId || null,
     generatedOutput,
     decision.decision,
-    decision.confidence || null,
     decision.reasoning,
     new Date().toISOString()
   );

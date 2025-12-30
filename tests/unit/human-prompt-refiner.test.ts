@@ -130,15 +130,14 @@ describe('Human-Driven Prompt Refiner', () => {
       const decisionId1 = uuidv4();
       db.prepare(
         `INSERT INTO judge_decisions
-         (id, iteration_id, training_pair_id, generated_output, judge_decision, judge_confidence, judge_reasoning, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+         (id, iteration_id, training_pair_id, generated_output, judge_decision, judge_reasoning, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`
       ).run(
         decisionId1,
         iterationId,
         pairId1,
         'You can reset by clicking the link',
         'agree',
-        0.9,
         'Response is accurate',
         new Date().toISOString()
       );
@@ -146,9 +145,9 @@ describe('Human-Driven Prompt Refiner', () => {
       const reviewId1 = uuidv4();
       db.prepare(
         `INSERT INTO human_reviews
-         (id, judge_decision_id, human_decision, human_confidence, human_notes, created_at)
-         VALUES (?, ?, ?, ?, ?, ?)`
-      ).run(reviewId1, decisionId1, 'agree', 1.0, 'Correct assessment', new Date().toISOString());
+         (id, judge_decision_id, human_decision, human_notes, created_at)
+         VALUES (?, ?, ?, ?, ?)`
+      ).run(reviewId1, decisionId1, 'agree', 'Correct assessment', new Date().toISOString());
 
       // Case 2: Judge says "agree", human says "disagree" (false positive - too lenient)
       const pairId2 = uuidv4();
@@ -165,15 +164,14 @@ describe('Human-Driven Prompt Refiner', () => {
       const decisionId2 = uuidv4();
       db.prepare(
         `INSERT INTO judge_decisions
-         (id, iteration_id, training_pair_id, generated_output, judge_decision, judge_confidence, judge_reasoning, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+         (id, iteration_id, training_pair_id, generated_output, judge_decision, judge_reasoning, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`
       ).run(
         decisionId2,
         iterationId,
         pairId2,
         'We have returns',
         'agree',
-        0.8,
         'Response addresses the question',
         new Date().toISOString()
       );
@@ -181,13 +179,12 @@ describe('Human-Driven Prompt Refiner', () => {
       const reviewId2 = uuidv4();
       db.prepare(
         `INSERT INTO human_reviews
-         (id, judge_decision_id, human_decision, human_confidence, human_notes, created_at)
-         VALUES (?, ?, ?, ?, ?, ?)`
+         (id, judge_decision_id, human_decision, human_notes, created_at)
+         VALUES (?, ?, ?, ?, ?)`
       ).run(
         reviewId2,
         decisionId2,
         'disagree',
-        0.9,
         'Judge is too lenient - response is incomplete and missing the 30-day timeframe',
         new Date().toISOString()
       );
@@ -207,15 +204,14 @@ describe('Human-Driven Prompt Refiner', () => {
       const decisionId3 = uuidv4();
       db.prepare(
         `INSERT INTO judge_decisions
-         (id, iteration_id, training_pair_id, generated_output, judge_decision, judge_confidence, judge_reasoning, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+         (id, iteration_id, training_pair_id, generated_output, judge_decision, judge_reasoning, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`
       ).run(
         decisionId3,
         iterationId,
         pairId3,
         'Free shipping over $50',
         'disagree',
-        0.7,
         'Response is too brief',
         new Date().toISOString()
       );
@@ -223,13 +219,12 @@ describe('Human-Driven Prompt Refiner', () => {
       const reviewId3 = uuidv4();
       db.prepare(
         `INSERT INTO human_reviews
-         (id, judge_decision_id, human_decision, human_confidence, human_notes, created_at)
-         VALUES (?, ?, ?, ?, ?, ?)`
+         (id, judge_decision_id, human_decision, human_notes, created_at)
+         VALUES (?, ?, ?, ?, ?)`
       ).run(
         reviewId3,
         decisionId3,
         'agree',
-        0.9,
         'Judge is too strict - response correctly conveys the key information',
         new Date().toISOString()
       );
@@ -261,15 +256,14 @@ describe('Human-Driven Prompt Refiner', () => {
         const decisionId = uuidv4();
         db.prepare(
           `INSERT INTO judge_decisions
-           (id, iteration_id, training_pair_id, generated_output, judge_decision, judge_confidence, judge_reasoning, created_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+           (id, iteration_id, training_pair_id, generated_output, judge_decision, judge_reasoning, created_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?)`
         ).run(
           decisionId,
           iterationId,
           pairId,
           `Response ${i}`,
           'disagree',
-          0.7,
           'Insufficient detail',
           new Date().toISOString()
         );
@@ -277,13 +271,12 @@ describe('Human-Driven Prompt Refiner', () => {
         const reviewId = uuidv4();
         db.prepare(
           `INSERT INTO human_reviews
-           (id, judge_decision_id, human_decision, human_confidence, human_notes, created_at)
-           VALUES (?, ?, ?, ?, ?, ?)`
+           (id, judge_decision_id, human_decision, human_notes, created_at)
+           VALUES (?, ?, ?, ?, ?)`
         ).run(
           reviewId,
           decisionId,
           'agree',
-          0.9,
           'Judge is too strict - the response is actually correct',
           new Date().toISOString()
         );
@@ -304,15 +297,14 @@ describe('Human-Driven Prompt Refiner', () => {
       const decisionId = uuidv4();
       db.prepare(
         `INSERT INTO judge_decisions
-         (id, iteration_id, training_pair_id, generated_output, judge_decision, judge_confidence, judge_reasoning, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+         (id, iteration_id, training_pair_id, generated_output, judge_decision, judge_reasoning, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`
       ).run(
         decisionId,
         iterationId,
         pairId,
         '',
         'disagree',
-        0.5,
         'Empty response',
         new Date().toISOString()
       );
@@ -320,13 +312,12 @@ describe('Human-Driven Prompt Refiner', () => {
       const reviewId = uuidv4();
       db.prepare(
         `INSERT INTO human_reviews
-         (id, judge_decision_id, human_decision, human_confidence, human_notes, created_at)
-         VALUES (?, ?, ?, ?, ?, ?)`
+         (id, judge_decision_id, human_decision, human_notes, created_at)
+         VALUES (?, ?, ?, ?, ?)`
       ).run(
         reviewId,
         decisionId,
         'agree',
-        0.9,
         'This is a special edge case - empty response is correct for this query',
         new Date().toISOString()
       );
@@ -353,15 +344,14 @@ describe('Human-Driven Prompt Refiner', () => {
         const decisionId = uuidv4();
         db.prepare(
           `INSERT INTO judge_decisions
-           (id, iteration_id, training_pair_id, generated_output, judge_decision, judge_confidence, judge_reasoning, created_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+           (id, iteration_id, training_pair_id, generated_output, judge_decision, judge_reasoning, created_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?)`
         ).run(
           decisionId,
           iterationId,
           pairId,
           `Response ${i}`,
           'agree',
-          0.8,
           'Response looks good',
           new Date().toISOString()
         );
@@ -369,13 +359,12 @@ describe('Human-Driven Prompt Refiner', () => {
         const reviewId = uuidv4();
         db.prepare(
           `INSERT INTO human_reviews
-           (id, judge_decision_id, human_decision, human_confidence, human_notes, created_at)
-           VALUES (?, ?, ?, ?, ?, ?)`
+           (id, judge_decision_id, human_decision, human_notes, created_at)
+           VALUES (?, ?, ?, ?, ?)`
         ).run(
           reviewId,
           decisionId,
           'disagree',
-          0.9,
           'Judge is too lenient - response is incomplete',
           new Date().toISOString()
         );
@@ -402,15 +391,14 @@ describe('Human-Driven Prompt Refiner', () => {
         const decisionId = uuidv4();
         db.prepare(
           `INSERT INTO judge_decisions
-           (id, iteration_id, training_pair_id, generated_output, judge_decision, judge_confidence, judge_reasoning, created_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+           (id, iteration_id, training_pair_id, generated_output, judge_decision, judge_reasoning, created_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?)`
         ).run(
           decisionId,
           iterationId,
           pairId,
           `Response ${i}`,
           'agree',
-          0.8,
           'Good',
           new Date().toISOString()
         );
@@ -418,9 +406,9 @@ describe('Human-Driven Prompt Refiner', () => {
         const reviewId = uuidv4();
         db.prepare(
           `INSERT INTO human_reviews
-           (id, judge_decision_id, human_decision, human_confidence, human_notes, created_at)
-           VALUES (?, ?, ?, ?, ?, ?)`
-        ).run(reviewId, decisionId, 'agree', 1.0, 'Good', new Date().toISOString());
+           (id, judge_decision_id, human_decision, human_notes, created_at)
+           VALUES (?, ?, ?, ?, ?)`
+        ).run(reviewId, decisionId, 'agree', 'Good', new Date().toISOString());
       }
 
       // Create 5 more decisions WITHOUT reviews (incomplete)
@@ -433,15 +421,14 @@ describe('Human-Driven Prompt Refiner', () => {
         const decisionId = uuidv4();
         db.prepare(
           `INSERT INTO judge_decisions
-           (id, iteration_id, training_pair_id, generated_output, judge_decision, judge_confidence, judge_reasoning, created_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+           (id, iteration_id, training_pair_id, generated_output, judge_decision, judge_reasoning, created_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?)`
         ).run(
           decisionId,
           iterationId,
           pairId,
           `Response ${i}`,
           'agree',
-          0.8,
           'Good',
           new Date().toISOString()
         );
@@ -495,15 +482,14 @@ describe('Human-Driven Prompt Refiner', () => {
       const decisionId = uuidv4();
       db.prepare(
         `INSERT INTO judge_decisions
-         (id, iteration_id, training_pair_id, generated_output, judge_decision, judge_confidence, judge_reasoning, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+         (id, iteration_id, training_pair_id, generated_output, judge_decision, judge_reasoning, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`
       ).run(
         decisionId,
         iterationId,
         pairId,
         'Test response',
         'agree',
-        0.8,
         'Good response',
         new Date().toISOString()
       );
@@ -511,9 +497,9 @@ describe('Human-Driven Prompt Refiner', () => {
       const reviewId = uuidv4();
       db.prepare(
         `INSERT INTO human_reviews
-         (id, judge_decision_id, human_decision, human_confidence, human_notes, created_at)
-         VALUES (?, ?, ?, ?, ?, ?)`
-      ).run(reviewId, decisionId, 'agree', 1.0, 'Correct', new Date().toISOString());
+         (id, judge_decision_id, human_decision, human_notes, created_at)
+         VALUES (?, ?, ?, ?, ?)`
+      ).run(reviewId, decisionId, 'agree', 'Correct', new Date().toISOString());
 
       // Analyze feedback
       const analysis = analyzeHumanFeedback(iterationId, db);
@@ -548,15 +534,14 @@ describe('Human-Driven Prompt Refiner', () => {
       const decisionId = uuidv4();
       db.prepare(
         `INSERT INTO judge_decisions
-         (id, iteration_id, training_pair_id, generated_output, judge_decision, judge_confidence, judge_reasoning, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+         (id, iteration_id, training_pair_id, generated_output, judge_decision, judge_reasoning, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`
       ).run(
         decisionId,
         iterationId,
         pairId,
         'Response',
         'agree',
-        0.8,
         'Good',
         new Date().toISOString()
       );
@@ -564,9 +549,9 @@ describe('Human-Driven Prompt Refiner', () => {
       const reviewId = uuidv4();
       db.prepare(
         `INSERT INTO human_reviews
-         (id, judge_decision_id, human_decision, human_confidence, human_notes, created_at)
-         VALUES (?, ?, ?, ?, ?, ?)`
-      ).run(reviewId, decisionId, 'agree', 1.0, 'Good', new Date().toISOString());
+         (id, judge_decision_id, human_decision, human_notes, created_at)
+         VALUES (?, ?, ?, ?, ?)`
+      ).run(reviewId, decisionId, 'agree', 'Good', new Date().toISOString());
 
       const analysis = analyzeHumanFeedback(iterationId, db);
       const result = await refineJudgePromptFromHumanFeedback(

@@ -15,13 +15,13 @@
 - Q: What are the acceptable bounds on training dataset size? → A: Minimum 10 training pairs, recommended 50 pairs, maximum 200 pairs per training session to balance data quality with cost/scalability.
 - Q: Should the system enforce cost management features (estimation, hard limits, etc.)? → A: No cost controls. Skip cost management features to focus on core training functionality.
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 <!--
   IMPORTANT: User stories should be PRIORITIZED as user journeys ordered by importance.
   Each user story/journey must be INDEPENDENTLY TESTABLE - meaning if you implement just ONE of them,
   you should still have a viable MVP (Minimum Viable Product) that delivers value.
-  
+
   Assign priorities (P1, P2, P3, etc.) to each story, where P1 is the most critical.
   Think of each story as a standalone slice of functionality that can be:
   - Developed independently
@@ -169,10 +169,10 @@ A researcher can pause an ongoing training session and resume it later without l
   - Empty strings (`""`)
   - Whitespace-only (e.g., `"   "`, `"\t\t"`, `"\n"`)
   - Null values
-  Error message: "Row {N}: input and expected_output must be non-empty"
+    Error message: "Row {N}: input and expected_output must be non-empty"
 - **EC-011**: Timestamp timezone handling (T128) → All timestamps stored in UTC (ISO 8601 format with `Z` suffix: `datetime('now', 'utc')`). UI displays in user's local timezone using JavaScript `toLocaleString()`. This ensures consistent sorting across timezones.
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 <!--
   ACTION REQUIRED: The content in this section represents placeholders.
@@ -185,15 +185,16 @@ A researcher can pause an ongoing training session and resume it later without l
 
 The training system operates in **two distinct phases** with different workflows for iteration 1 versus iterations 2+:
 
-| Aspect | Iteration 1 (Human-Guided) | Iterations 2+ (Fully Automated) |
-|--------|---------------------------|--------------------------------|
-| **Human Review** | MANDATORY (100% required) | OPTIONAL (validation only) |
-| **Metrics Ground Truth** | Human Agree/Disagree votes | Automatic: expected_output vs suggested_output |
-| **Prompt Refinement** | Human-driven → LLM-assisted | Fully automatic LLM-driven |
-| **Blocking** | Blocks until review + acceptance complete | No blocking (continuous) |
-| **Correctness Algorithm** | N/A (human provides ground truth) | `is_correct = (suggested_output.trim() === expected_output.trim())` |
+| Aspect                    | Iteration 1 (Human-Guided)                | Iterations 2+ (Fully Automated)                                     |
+| ------------------------- | ----------------------------------------- | ------------------------------------------------------------------- |
+| **Human Review**          | MANDATORY (100% required)                 | OPTIONAL (validation only)                                          |
+| **Metrics Ground Truth**  | Human Agree/Disagree votes                | Automatic: expected_output vs suggested_output                      |
+| **Prompt Refinement**     | Human-driven → LLM-assisted               | Fully automatic LLM-driven                                          |
+| **Blocking**              | Blocks until review + acceptance complete | No blocking (continuous)                                            |
+| **Correctness Algorithm** | N/A (human provides ground truth)         | `is_correct = (suggested_output.trim() === expected_output.trim())` |
 
 **Iteration 1 Workflow** (Human-Guided):
+
 1. Generate outputs using Task Model + current Task Prompt
 2. Judge outputs using Judge Model + current Judge Prompt → decisions (correct/incorrect)
 3. **STOP** - Require 100% human review (Agree/Disagree on all decisions with reasoning)
@@ -204,6 +205,7 @@ The training system operates in **two distinct phases** with different workflows
 8. User accepts → proceed to iteration 2
 
 **Iterations 2+ Workflow** (Fully Automated):
+
 1. Generate outputs using Task Model + current Task Prompt
 2. Judge outputs using Judge Model + current Judge Prompt → decisions (correct/incorrect)
 3. **Automatically** calculate metrics from ground truth (expected_output vs suggested_output via exact match)
@@ -295,14 +297,14 @@ The training system operates in **two distinct phases** with different workflows
 - **TrainingIteration**: Represents a single training cycle with specific prompt versions. Attributes: persona_id, iteration_number, task_prompt_version_id, judge_prompt_version_id, status, started_at, completed_at.
 - **TaskPromptVersion**: Represents a version of the task prompt. Attributes: persona_id, version_number, prompt_text, improvement_rationale, created_by (human/ai), created_at.
 - **JudgePromptVersion**: Represents a version of the judge prompt. Attributes: persona_id, version_number, prompt_text, improvement_rationale, created_by (human/ai), created_at.
-- **JudgeDecision**: Represents the judge's evaluation of a single generated output. Attributes: iteration_id, training_pair_id, suggested_output, judge_decision (correct/incorrect), judge_reasoning, judge_confidence, created_at.
+- **JudgeDecision**: Represents the judge's evaluation of a single generated output. Attributes: iteration_id, training_pair_id, suggested_output, judge_decision (correct/incorrect), judge_reasoning, created_at.
 - **HumanReview** (OPTIONAL): Represents optional human validation feedback. Attributes: judge_decision_id, human_decision (agree/disagree), reviewer_notes, created_at.
   - **Creation Semantics**: HumanReview records are created **ONLY when a user explicitly provides feedback** via the review interface. Records are NEVER auto-created or defaulted.
   - **Storage**: HumanReview is stored separately from automatic metrics and does NOT block training progression.
   - **Semantics**: "agree" means human affirms the judge's assessment was correct; "disagree" means human contradicts the judge's decision. This is separate from ground-truth correctness (which determines TP/TN/FP/FN).
 - **IterationMetrics**: Represents automatically calculated metrics from ground truth comparison. Attributes: iteration_id, f1_score, precision, recall, cohens_kappa, accuracy, true_positives, true_negatives, false_positives, false_negatives, calculated_at. Metrics derived by comparing judge decisions against expected_output (ground truth).
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 <!--
   ACTION REQUIRED: Define measurable success criteria.
@@ -356,6 +358,7 @@ This feature is designed across four implementation phases to deliver value incr
 ### Phase 1: Foundation (MVP)
 
 Core system foundation enabling basic training workflow:
+
 - Persona CRUD (create, read, update, delete) with model selection
 - CSV training data upload and parsing (10-200 pair validation)
 - **Iteration 1 mandatory human review workflow**: output generation → judge evaluation → STOP for mandatory human review → metrics calculation based on human votes → LLM-based refinement of both prompts (Task + Judge) using Prompt Engineer Model
@@ -367,6 +370,7 @@ Core system foundation enabling basic training workflow:
 ### Phase 2: Automation
 
 Fully automated training loop (starting from iteration 2) with AI-assisted improvements:
+
 - Automated training loop execution for iterations 2+ (runs iteratively until F1 ≥0.80 or max iterations)
 - **Iteration 1 prerequisite**: Human review completion and prompt refinement acceptance required before automated loop begins
 - Fully automated AI-assisted refinement of **both** Task Prompt and Judge Prompt using Prompt Engineer Model (iterations 2+ only; no human review required)
@@ -380,6 +384,7 @@ Fully automated training loop (starting from iteration 2) with AI-assisted impro
 ### Phase 3: Polish
 
 Advanced analytics, optimization, and user experience improvements:
+
 - Comprehensive training reports (PDF export, metrics summary, iteration history)
 - Judge prompt version diff viewer showing changes across iterations
 - Persona cloning to create variants from existing trained personas
@@ -391,6 +396,7 @@ Advanced analytics, optimization, and user experience improvements:
 ### Phase 4: Integration
 
 Integration with existing evaluation system and advanced capabilities:
+
 - Integration with existing EvaluationTemplate system to use trained personas as judges
 - A/B testing framework comparing multiple trained personas
 - Continuous improvement mode (retrain personas with new data)

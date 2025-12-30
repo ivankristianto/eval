@@ -103,8 +103,8 @@ describe('Failure Analysis', () => {
       `
       INSERT INTO judge_decisions
       (id, iteration_id, training_pair_id, generated_output, judge_decision,
-       judge_confidence, judge_reasoning, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+       judge_reasoning, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
     `
     ).run(
       decisionId,
@@ -112,7 +112,6 @@ describe('Failure Analysis', () => {
       pairId,
       'You can reset by clicking the link',
       'agree',
-      0.9,
       'Response is accurate and helpful',
       new Date().toISOString()
     );
@@ -122,14 +121,13 @@ describe('Failure Analysis', () => {
     db.prepare(
       `
       INSERT INTO human_reviews
-      (id, judge_decision_id, human_decision, human_confidence, human_notes, created_at)
-      VALUES (?, ?, ?, ?, ?, ?)
+      (id, judge_decision_id, human_decision, human_notes, created_at)
+      VALUES (?, ?, ?, ?, ?)
     `
     ).run(
       reviewId,
       decisionId,
       'disagree',
-      0.8,
       'Response is too vague, should include specific steps',
       new Date().toISOString()
     );
@@ -164,8 +162,8 @@ describe('Failure Analysis', () => {
       `
       INSERT INTO judge_decisions
       (id, iteration_id, training_pair_id, generated_output, judge_decision,
-       judge_confidence, judge_reasoning, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+       judge_reasoning, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
     `
     ).run(
       decisionId,
@@ -173,7 +171,6 @@ describe('Failure Analysis', () => {
       pairId,
       'We offer 30 days money back',
       'disagree',
-      0.7,
       'Response is incomplete, missing details',
       new Date().toISOString()
     );
@@ -183,14 +180,13 @@ describe('Failure Analysis', () => {
     db.prepare(
       `
       INSERT INTO human_reviews
-      (id, judge_decision_id, human_decision, human_confidence, human_notes, created_at)
-      VALUES (?, ?, ?, ?, ?, ?)
+      (id, judge_decision_id, human_decision, human_notes, created_at)
+      VALUES (?, ?, ?, ?, ?)
     `
     ).run(
       reviewId,
       decisionId,
       'agree',
-      0.9,
       'Response is actually correct, judge is too strict',
       new Date().toISOString()
     );
@@ -225,8 +221,8 @@ describe('Failure Analysis', () => {
       `
       INSERT INTO judge_decisions
       (id, iteration_id, training_pair_id, generated_output, judge_decision,
-       judge_confidence, judge_reasoning, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+       judge_reasoning, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
     `
     ).run(
       decisionId,
@@ -234,7 +230,6 @@ describe('Failure Analysis', () => {
       pairId,
       'Free shipping for orders above $50',
       'agree',
-      0.95,
       'Response correctly conveys the information',
       new Date().toISOString()
     );
@@ -244,14 +239,13 @@ describe('Failure Analysis', () => {
     db.prepare(
       `
       INSERT INTO human_reviews
-      (id, judge_decision_id, human_decision, human_confidence, human_notes, created_at)
-      VALUES (?, ?, ?, ?, ?, ?)
+      (id, judge_decision_id, human_decision, human_notes, created_at)
+      VALUES (?, ?, ?, ?, ?)
     `
     ).run(
       reviewId,
       decisionId,
       'agree',
-      1.0,
       'Judge correctly identified this as accurate',
       new Date().toISOString()
     );
@@ -283,8 +277,8 @@ describe('Failure Analysis', () => {
         `
         INSERT INTO judge_decisions
         (id, iteration_id, training_pair_id, generated_output, judge_decision,
-         judge_confidence, judge_reasoning, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+         judge_reasoning, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
       `
       ).run(
         decisionId,
@@ -292,7 +286,6 @@ describe('Failure Analysis', () => {
         pairId,
         `Response ${i}`,
         'agree',
-        0.8,
         'Looks good',
         new Date().toISOString()
       );
@@ -301,10 +294,10 @@ describe('Failure Analysis', () => {
       db.prepare(
         `
         INSERT INTO human_reviews
-        (id, judge_decision_id, human_decision, human_confidence, human_notes, created_at)
-        VALUES (?, ?, ?, ?, ?, ?)
+        (id, judge_decision_id, human_decision, human_notes, created_at)
+        VALUES (?, ?, ?, ?, ?)
       `
-      ).run(reviewId, decisionId, 'disagree', 0.9, 'Not good enough', new Date().toISOString());
+      ).run(reviewId, decisionId, 'disagree', 'Not good enough', new Date().toISOString());
     }
 
     const result = await analyzeIterationFailures(iterationId, db);

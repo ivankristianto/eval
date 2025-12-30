@@ -2294,9 +2294,6 @@ components:
         decision:
           type: string
           enum: [agree, disagree]
-        confidence:
-          type: number
-          nullable: true
         reasoning:
           type: string
           nullable: true
@@ -2312,9 +2309,6 @@ components:
         decision:
           type: string
           enum: [agree, disagree]
-        confidence:
-          type: number
-          nullable: true
         notes:
           type: string
           nullable: true
@@ -2365,8 +2359,6 @@ components:
         human_decision:
           type: string
           enum: [agree, disagree]
-        human_confidence:
-          type: number
         notes:
           type: string
 
@@ -2381,9 +2373,6 @@ components:
         human_decision:
           type: string
           enum: [agree, disagree]
-        human_confidence:
-          type: number
-          nullable: true
         notes:
           type: string
           nullable: true

@@ -127,7 +127,6 @@ export interface JudgeDecision {
   result_id: string | null;
   generated_output: string;
   judge_decision: JudgeDecisionType;
-  judge_confidence: number | null;
   judge_reasoning: string | null;
   created_at: string;
 }
@@ -139,7 +138,6 @@ export interface HumanReview {
   id: string;
   judge_decision_id: string;
   human_decision: HumanDecisionType;
-  human_confidence: number | null;
   human_notes: string | null;
   reviewer_id: string | null;
   created_at: string;
@@ -151,7 +149,6 @@ export interface HumanReview {
 export interface CreateHumanReviewInput {
   judge_decision_id: string;
   human_decision: HumanDecisionType;
-  human_confidence?: number;
   human_notes?: string;
   reviewer_id?: string;
 }

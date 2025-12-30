@@ -49,7 +49,7 @@ export const POST: APIRoute = async ({ params, request }) => {
 
     // Parse request body
     const body = await request.json();
-    const { decision_id, human_decision, human_confidence, notes } = body;
+    const { decision_id, human_decision, notes } = body;
 
     // Validate required fields
     if (!decision_id || !human_decision) {
@@ -71,23 +71,6 @@ export const POST: APIRoute = async ({ params, request }) => {
         Date.now() - startTime
       );
       return badRequest('human_decision must be "agree" or "disagree"', 'INVALID_REQUEST');
-    }
-
-    // Validate confidence if provided
-    if (human_confidence !== undefined) {
-      const confidence = parseFloat(human_confidence);
-      if (isNaN(confidence) || confidence < 0 || confidence > 1) {
-        logger.logApiRequest(
-          'POST',
-          `/api/personas/${id}/iterations/${num}/feedback`,
-          400,
-          Date.now() - startTime
-        );
-        return badRequest(
-          'human_confidence must be a number between 0.0 and 1.0',
-          'INVALID_REQUEST'
-        );
-      }
     }
 
     const db = getDatabase();
@@ -149,10 +132,10 @@ export const POST: APIRoute = async ({ params, request }) => {
       db.prepare(
         `
         UPDATE human_reviews
-        SET human_decision = ?, human_confidence = ?, human_notes = ?
+        SET human_decision = ?, human_notes = ?
         WHERE judge_decision_id = ?
       `
-      ).run(human_decision, human_confidence || null, notes || null, decision_id);
+      ).run(human_decision, notes || null, decision_id);
 
       logger.info('Human review updated', {
         personaId: id,
@@ -172,7 +155,6 @@ export const POST: APIRoute = async ({ params, request }) => {
           id: existingReview.id,
           decision_id,
           human_decision,
-          human_confidence: human_confidence || null,
           notes: notes || null,
           updated: true,
         }),
@@ -185,14 +167,13 @@ export const POST: APIRoute = async ({ params, request }) => {
     db.prepare(
       `
       INSERT INTO human_reviews
-      (id, judge_decision_id, human_decision, human_confidence, human_notes, created_at)
-      VALUES (?, ?, ?, ?, ?, ?)
+      (id, judge_decision_id, human_decision, human_notes, created_at)
+      VALUES (?, ?, ?, ?, ?)
     `
     ).run(
       reviewId,
       decision_id,
       human_decision,
-      human_confidence || null,
       notes || null,
       new Date().toISOString()
     );
@@ -228,7 +209,6 @@ export const POST: APIRoute = async ({ params, request }) => {
         id: reviewId,
         decision_id,
         human_decision,
-        human_confidence: human_confidence || null,
         notes: notes || null,
         created_at: new Date().toISOString(),
       }),

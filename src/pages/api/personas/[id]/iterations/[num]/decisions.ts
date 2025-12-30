@@ -82,7 +82,6 @@ export const GET: APIRoute = async ({ params }) => {
           jd.id as decision_id,
           jd.generated_output,
           jd.judge_decision,
-          jd.judge_confidence,
           jd.judge_reasoning,
           jd.created_at as decision_created_at,
           tp.id as training_pair_id,
@@ -90,7 +89,6 @@ export const GET: APIRoute = async ({ params }) => {
           tp.expected_output,
           hr.id as review_id,
           hr.human_decision,
-          hr.human_confidence,
           hr.human_notes,
           hr.created_at as review_created_at
         FROM judge_decisions jd
@@ -108,11 +106,9 @@ export const GET: APIRoute = async ({ params }) => {
       expected_output: string;
       generated_output: string;
       judge_decision: 'agree' | 'disagree';
-      judge_confidence: number | null;
       judge_reasoning: string | null;
       decision_created_at: string;
       human_decision: 'agree' | 'disagree' | null;
-      human_confidence: number | null;
       human_notes: string | null;
       review_created_at: string | null;
     }>;
@@ -128,7 +124,6 @@ export const GET: APIRoute = async ({ params }) => {
       judge: {
         generated_output: d.generated_output,
         decision: d.judge_decision,
-        confidence: d.judge_confidence,
         reasoning: d.judge_reasoning,
         created_at: d.decision_created_at,
       },
@@ -137,7 +132,6 @@ export const GET: APIRoute = async ({ params }) => {
           ? {
               id: d.review_id,
               decision: d.human_decision as 'agree' | 'disagree',
-              confidence: d.human_confidence,
               notes: d.human_notes,
               created_at: d.review_created_at ?? d.decision_created_at,
             }

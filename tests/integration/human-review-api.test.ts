@@ -87,8 +87,8 @@ describe('Human Review API', () => {
       `
       INSERT INTO judge_decisions
       (id, iteration_id, training_pair_id, generated_output, judge_decision,
-       judge_confidence, judge_reasoning, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+       judge_reasoning, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
     `
     ).run(
       decisionId,
@@ -96,7 +96,6 @@ describe('Human Review API', () => {
       pairId,
       '4',
       'agree',
-      0.95,
       'The answer is correct',
       new Date().toISOString()
     );
@@ -196,16 +195,15 @@ describe('Human Review API', () => {
       db.prepare(
         `
         INSERT INTO human_reviews
-        (id, judge_decision_id, human_decision, human_confidence, human_notes, created_at)
-        VALUES (?, ?, ?, ?, ?, ?)
+        (id, judge_decision_id, human_decision, human_notes, created_at)
+        VALUES (?, ?, ?, ?, ?)
       `
-      ).run(reviewId, decisionId, 'agree', 0.9, 'Looks good', new Date().toISOString());
+      ).run(reviewId, decisionId, 'agree', 'Looks good', new Date().toISOString());
 
       const review = db.prepare('SELECT * FROM human_reviews WHERE id = ?').get(reviewId) as
         | {
             judge_decision_id: string;
             human_decision: string;
-            human_confidence: number | null;
             human_notes: string | null;
           }
         | undefined;
@@ -213,7 +211,6 @@ describe('Human Review API', () => {
       expect(review).toBeDefined();
       expect(review!.judge_decision_id).toBe(decisionId);
       expect(review!.human_decision).toBe('agree');
-      expect(review!.human_confidence).toBe(0.9);
       expect(review!.human_notes).toBe('Looks good');
     });
 

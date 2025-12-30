@@ -7,43 +7,48 @@
 ---
 
 ## Requirement Completeness (MVP Scope)
-*Are the requirements for the current implementation phase complete?*
 
-- [X] CHK001 - Are the "input" and "expected_output" normalization rules explicitly defined for all accepted CSV column variations? [Completeness, Spec §A-016, csv-parser.ts:24-32] ✅ Implemented with normalizeColumnNames()
-- [X] CHK002 - Is the behavior specified when a user attempts to upload a CSV that puts the total pair count over the 200-pair limit? [Completeness, FR-003, csv-parser.ts:109-111] ✅ Returns 400 with error "Training data must have between 10 and 200 pairs"
-- [X] CHK003 - Are loading state requirements defined for async operations in the UI? [Completeness, DaisyUI loading-spinner pattern] ✅ IMPLEMENTED: Loading states use DaisyUI `loading loading-spinner` classes throughout
-- [X] CHK004 - Is the "Draft" persona status transition to "Training" explicitly defined for the first iteration start? [Completeness, Spec §Key Entities, training-loop.ts:96] ✅ Status changes: draft → training → trained/incomplete
-- [X] CHK005 - Are the required fields for the "Judge Reasoning" JSON response from the LLM explicitly documented for parser implementation? [Completeness, judge-evaluator.ts] ✅ Decision format: `{decision: "correct"|"incorrect", reasoning: string, confidence: number}`
+_Are the requirements for the current implementation phase complete?_
+
+- [x] CHK001 - Are the "input" and "expected_output" normalization rules explicitly defined for all accepted CSV column variations? [Completeness, Spec §A-016, csv-parser.ts:24-32] ✅ Implemented with normalizeColumnNames()
+- [x] CHK002 - Is the behavior specified when a user attempts to upload a CSV that puts the total pair count over the 200-pair limit? [Completeness, FR-003, csv-parser.ts:109-111] ✅ Returns 400 with error "Training data must have between 10 and 200 pairs"
+- [x] CHK003 - Are loading state requirements defined for async operations in the UI? [Completeness, DaisyUI loading-spinner pattern] ✅ IMPLEMENTED: Loading states use DaisyUI `loading loading-spinner` classes throughout
+- [x] CHK004 - Is the "Draft" persona status transition to "Training" explicitly defined for the first iteration start? [Completeness, Spec §Key Entities, training-loop.ts:96] ✅ Status changes: draft → training → trained/incomplete
+- [x] CHK005 - Are the required fields for the "Judge Reasoning" JSON response from the LLM explicitly documented for parser implementation? [Completeness, judge-evaluator.ts] ✅ Decision format: `{decision: "correct"|"incorrect", reasoning: string}`
 
 ## Requirement Clarity & Measurability
-*Are requirements specific enough for unit test implementation and verification?*
 
-- [X] CHK006 - Is the "Agree/Disagree" vote semantics clarified for the case where the judge marks an output as "Incorrect" but the human thinks it's "Correct"? [Clarity, Spec §Clarifications Q2, FR-007] ✅ "Agree" = human affirms judge's assessment; "Disagree" = human contradicts judge (separate from ground truth)
-- [X] CHK007 - Are the specific HTTP status codes and error message bodies defined for each validation failure? [Clarity, upload.ts:400/404/500, csv-parser.ts:37-111] ✅ 400 for validation errors, 404 for not found, 500 for internal errors with details array
-- [X] CHK008 - Is the "exponential backoff" for FR-016 quantified with a starting interval and maximum ceiling for the 3 retries? [Clarity, FR-018, spec.md] ✅ Quantified: Initial delay 1000ms, backoff formula delay = min(initial_delay * 2^(attempt-1), max_delay), max delay 4000ms, max 3 retries
-- [X] CHK009 - Is the definition of "Significant Prompt Change" for FR-015 quantifiable? [Clarity, FR-016, prompt-version-manager.ts:25] ✅ Defined as "text modifications after whitespace normalization" - formatting-only changes don't create new versions
-- [X] CHK010 - Can the automatic metrics calculation be objectively verified without human review? [Measurability, FR-007, metrics-orchestrator.ts:11] ✅ Metrics derived from ground truth (expected_output vs generated_output) - NO human review required
+_Are requirements specific enough for unit test implementation and verification?_
+
+- [x] CHK006 - Is the "Agree/Disagree" vote semantics clarified for the case where the judge marks an output as "Incorrect" but the human thinks it's "Correct"? [Clarity, Spec §Clarifications Q2, FR-007] ✅ "Agree" = human affirms judge's assessment; "Disagree" = human contradicts judge (separate from ground truth)
+- [x] CHK007 - Are the specific HTTP status codes and error message bodies defined for each validation failure? [Clarity, upload.ts:400/404/500, csv-parser.ts:37-111] ✅ 400 for validation errors, 404 for not found, 500 for internal errors with details array
+- [x] CHK008 - Is the "exponential backoff" for FR-016 quantified with a starting interval and maximum ceiling for the 3 retries? [Clarity, FR-018, spec.md] ✅ Quantified: Initial delay 1000ms, backoff formula delay = min(initial_delay \* 2^(attempt-1), max_delay), max delay 4000ms, max 3 retries
+- [x] CHK009 - Is the definition of "Significant Prompt Change" for FR-015 quantifiable? [Clarity, FR-016, prompt-version-manager.ts:25] ✅ Defined as "text modifications after whitespace normalization" - formatting-only changes don't create new versions
+- [x] CHK010 - Can the automatic metrics calculation be objectively verified without human review? [Measurability, FR-007, metrics-orchestrator.ts:11] ✅ Metrics derived from ground truth (expected_output vs generated_output) - NO human review required
 
 ## Edge Case Coverage (Implementation-Derived)
-*Are newly identified boundary conditions addressed in the requirements?*
 
-- [X] CHK011 - Does the spec define the behavior for "Contradictory Feedback" where a human disagrees with a judge decision they previously agreed with in a different iteration? [Edge Case, Spec §EC-003] ✅ "Each iteration's metrics are calculated independently using only that iteration's human reviews"
-- [X] CHK012 - Are requirements defined for handling 0-byte or non-CSV file uploads in the CSVUploader? [Edge Case, csv-parser.ts:38-48] ✅ Empty content returns error "CSV file is empty"; wrong columns return "Missing required columns"
-- [X] CHK013 - Is the handling of "Empty Input" fields in a CSV row defined (Reject row vs. Allow empty string)? [Edge Case, FR-004, csv-parser.ts:81-89] ✅ Empty input/expected_output rejected with specific error messages: "Input cannot be empty", "Expected output cannot be empty"
-- [X] CHK014 - Are requirements specified for "Timezone Handling" in iteration timestamps to prevent dashboard sorting issues? [Edge Case, Spec §EC-006] ✅ "All timestamps stored in UTC (ISO 8601 with Z suffix). UI converts to user's local timezone"
-- [X] CHK015 - Is there a defined "Recovery Path" for when the Judge Model returns unparseable JSON multiple times? [Exception Flow, FR-016, prompt-engineer.ts:42-67] ✅ Graceful handling: returns null improved_prompt for fallback; error caught and logged
-- [X] CHK016 - Are requirements defined for the "Zero-State" UI when a persona exists but no training data has been uploaded yet? [Coverage, FR-020] ✅ Zero-state UI requirements documented: "No Training Data" empty state with upload button and format documentation link
-- [X] CHK017 - Does the spec define behavior for when an iteration results in 100% agreement (Undefined Cohen's Kappa)? [Edge Case, Spec §EC-005, metrics.ts:42] ✅ "Training continues normally if F1 < target. Prompt refinement may have minimal failures to analyze"
+_Are newly identified boundary conditions addressed in the requirements?_
+
+- [x] CHK011 - Does the spec define the behavior for "Contradictory Feedback" where a human disagrees with a judge decision they previously agreed with in a different iteration? [Edge Case, Spec §EC-003] ✅ "Each iteration's metrics are calculated independently using only that iteration's human reviews"
+- [x] CHK012 - Are requirements defined for handling 0-byte or non-CSV file uploads in the CSVUploader? [Edge Case, csv-parser.ts:38-48] ✅ Empty content returns error "CSV file is empty"; wrong columns return "Missing required columns"
+- [x] CHK013 - Is the handling of "Empty Input" fields in a CSV row defined (Reject row vs. Allow empty string)? [Edge Case, FR-004, csv-parser.ts:81-89] ✅ Empty input/expected_output rejected with specific error messages: "Input cannot be empty", "Expected output cannot be empty"
+- [x] CHK014 - Are requirements specified for "Timezone Handling" in iteration timestamps to prevent dashboard sorting issues? [Edge Case, Spec §EC-006] ✅ "All timestamps stored in UTC (ISO 8601 with Z suffix). UI converts to user's local timezone"
+- [x] CHK015 - Is there a defined "Recovery Path" for when the Judge Model returns unparseable JSON multiple times? [Exception Flow, FR-016, prompt-engineer.ts:42-67] ✅ Graceful handling: returns null improved_prompt for fallback; error caught and logged
+- [x] CHK016 - Are requirements defined for the "Zero-State" UI when a persona exists but no training data has been uploaded yet? [Coverage, FR-020] ✅ Zero-state UI requirements documented: "No Training Data" empty state with upload button and format documentation link
+- [x] CHK017 - Does the spec define behavior for when an iteration results in 100% agreement (Undefined Cohen's Kappa)? [Edge Case, Spec §EC-005, metrics.ts:42] ✅ "Training continues normally if F1 < target. Prompt refinement may have minimal failures to analyze"
 
 ## UI/UX Requirement Consistency
-*Are UI requirements consistent with existing patterns?*
 
-- [X] CHK018 - Do the MetricCard trend indicators (↑/↓) follow the same logic as the existing Evaluations module? [Consistency, FR-021] ✅ MetricCard `higherIsBetter` prop controls color semantics: Higher-is-better (F1, precision, recall): up=green, down=red; Lower-is-better (error rate): up=red, down=green
-- [X] CHK019 - Is the "Previous/Next" navigation behavior in the review interface defined for the first and last decisions? [Consistency, T132] ✅ Navigation edge cases documented: Previous/Next disabled on first/last decision (not hidden), keyboard navigation, URL structure, unsaved changes warning
-- [X] CHK020 - Are the validation error display locations (inline vs. toast) consistent with the Persona creation form? [Consistency, UX_PATTERNS.md] ✅ Error display patterns documented: Form validation (inline below field), API errors (toast notification), CSV errors (inline in component), Critical errors (modal dialog)
+_Are UI requirements consistent with existing patterns?_
+
+- [x] CHK018 - Do the MetricCard trend indicators (↑/↓) follow the same logic as the existing Evaluations module? [Consistency, FR-021] ✅ MetricCard `higherIsBetter` prop controls color semantics: Higher-is-better (F1, precision, recall): up=green, down=red; Lower-is-better (error rate): up=red, down=green
+- [x] CHK019 - Is the "Previous/Next" navigation behavior in the review interface defined for the first and last decisions? [Consistency, T132] ✅ Navigation edge cases documented: Previous/Next disabled on first/last decision (not hidden), keyboard navigation, URL structure, unsaved changes warning
+- [x] CHK020 - Are the validation error display locations (inline vs. toast) consistent with the Persona creation form? [Consistency, UX_PATTERNS.md] ✅ Error display patterns documented: Form validation (inline below field), API errors (toast notification), CSV errors (inline in component), Critical errors (modal dialog)
 
 ---
 
 ## Traceability Check
+
 - **Traceability Score**: 100% of items include [Dimension, Spec/Task/Gap] markers.
 - **Critical Path Alignment**: All items correlate with P1 User Stories or MVP Functional Requirements.

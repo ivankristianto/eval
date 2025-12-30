@@ -120,7 +120,6 @@ describe('Judge API Integration', () => {
     it('should store judge decision to database', () => {
       const decisionId = storeJudgeDecision(db, 'iteration-1', 'pair-1', '4', {
         decision: 'agree',
-        confidence: 0.95,
         reasoning: 'The answer is correct',
       });
 
@@ -132,7 +131,6 @@ describe('Judge API Integration', () => {
             iteration_id: string;
             training_pair_id: string;
             judge_decision: string;
-            judge_confidence: number | null;
             judge_reasoning: string;
           }
         | undefined;
@@ -141,25 +139,24 @@ describe('Judge API Integration', () => {
       expect(stored!.iteration_id).toBe('iteration-1');
       expect(stored!.training_pair_id).toBe('pair-1');
       expect(stored!.judge_decision).toBe('agree');
-      expect(stored!.judge_confidence).toBe(0.95);
       expect(stored!.judge_reasoning).toBe('The answer is correct');
     });
 
-    it('should handle missing confidence value', () => {
+    it('should handle empty reasoning value', () => {
       const decisionId = storeJudgeDecision(db, 'iteration-1', 'pair-1', 'Incorrect answer', {
         decision: 'disagree',
-        reasoning: 'The answer is wrong',
+        reasoning: '',
       });
 
       const stored = db.prepare('SELECT * FROM judge_decisions WHERE id = ?').get(decisionId) as
         | {
             judge_decision: string;
-            judge_confidence: number | null;
+            judge_reasoning: string;
           }
         | undefined;
 
       expect(stored!.judge_decision).toBe('disagree');
-      expect(stored!.judge_confidence).toBeNull();
+      expect(stored!.judge_reasoning).toBe('');
     });
 
     it('should allow null result_id when not provided', () => {
@@ -170,7 +167,6 @@ describe('Judge API Integration', () => {
         'Test output',
         {
           decision: 'agree',
-          confidence: 0.8,
           reasoning: 'Good output',
         }
         // No result_id provided

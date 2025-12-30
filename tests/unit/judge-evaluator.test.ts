@@ -23,42 +23,36 @@ describe('Judge Evaluator', () => {
     it('should parse valid JSON response with agree decision', () => {
       const response = JSON.stringify({
         decision: 'agree',
-        confidence: 0.95,
         reasoning: 'The output matches the expected result',
       });
 
       const result = parseJudgeResponse(response);
 
       expect(result.decision).toBe('agree');
-      expect(result.confidence).toBe(0.95);
       expect(result.reasoning).toBe('The output matches the expected result');
     });
 
     it('should parse valid JSON response with disagree decision', () => {
       const response = JSON.stringify({
         decision: 'disagree',
-        confidence: 0.85,
         reasoning: 'The output does not meet the expected criteria',
       });
 
       const result = parseJudgeResponse(response);
 
       expect(result.decision).toBe('disagree');
-      expect(result.confidence).toBe(0.85);
       expect(result.reasoning).toBe('The output does not meet the expected criteria');
     });
 
-    it('should handle response with missing confidence', () => {
+    it('should handle response with missing reasoning', () => {
       const response = JSON.stringify({
         decision: 'agree',
-        reasoning: 'Good output',
       });
 
       const result = parseJudgeResponse(response);
 
       expect(result.decision).toBe('agree');
-      expect(result.confidence).toBeUndefined();
-      expect(result.reasoning).toBe('Good output');
+      expect(result.reasoning).toBe('');
     });
 
     it('should throw error on malformed JSON', () => {
@@ -69,7 +63,6 @@ describe('Judge Evaluator', () => {
 
     it('should throw error on missing decision field', () => {
       const response = JSON.stringify({
-        confidence: 0.9,
         reasoning: 'Missing decision field',
       });
 
@@ -81,35 +74,10 @@ describe('Judge Evaluator', () => {
     it('should throw error on invalid decision value', () => {
       const response = JSON.stringify({
         decision: 'maybe',
-        confidence: 0.5,
         reasoning: 'Invalid decision value',
       });
 
       expect(() => parseJudgeResponse(response)).toThrow('Invalid judge decision');
-    });
-
-    it('should clamp confidence to valid range', () => {
-      const response = JSON.stringify({
-        decision: 'agree',
-        confidence: 1.5,
-        reasoning: 'Confidence out of range',
-      });
-
-      const result = parseJudgeResponse(response);
-
-      expect(result.confidence).toBe(1.0);
-    });
-
-    it('should handle negative confidence by clamping to 0', () => {
-      const response = JSON.stringify({
-        decision: 'disagree',
-        confidence: -0.2,
-        reasoning: 'Negative confidence',
-      });
-
-      const result = parseJudgeResponse(response);
-
-      expect(result.confidence).toBe(0.0);
     });
   });
 

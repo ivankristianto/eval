@@ -108,8 +108,8 @@ describe.skip('Prompt Refinement API Integration', () => {
       `
       INSERT INTO judge_decisions
       (id, iteration_id, training_pair_id, generated_output, judge_decision,
-       judge_confidence, judge_reasoning, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+       judge_reasoning, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
     `
     ).run(
       decisionId,
@@ -117,7 +117,6 @@ describe.skip('Prompt Refinement API Integration', () => {
       pairId,
       'Test output',
       'agree',
-      0.9,
       'Looks good',
       new Date().toISOString()
     );
@@ -126,10 +125,10 @@ describe.skip('Prompt Refinement API Integration', () => {
     db.prepare(
       `
       INSERT INTO human_reviews
-      (id, judge_decision_id, human_decision, human_confidence, human_notes, created_at)
-      VALUES (?, ?, ?, ?, ?, ?)
+      (id, judge_decision_id, human_decision, human_notes, created_at)
+      VALUES (?, ?, ?, ?, ?)
     `
-    ).run(reviewId, decisionId, 'disagree', 0.8, 'Too lenient', new Date().toISOString());
+    ).run(reviewId, decisionId, 'disagree', 'Too lenient', new Date().toISOString());
   });
 
   afterEach(() => {

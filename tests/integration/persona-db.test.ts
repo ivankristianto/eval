@@ -165,7 +165,6 @@ describe('Persona Database Integration Tests', () => {
           pair.id,
           `Generated output ${index + 1}`,
           'agree',
-          0.9,
           'Reasoning',
           undefined,
           db
@@ -247,7 +246,6 @@ describe('Persona Database Integration Tests', () => {
         pairs[0].id,
         'Generated',
         'agree',
-        0.9,
         'Reason',
         undefined,
         db
@@ -283,7 +281,6 @@ describe('Persona Database Integration Tests', () => {
         pairs[0].id,
         'Generated',
         'agree',
-        0.9,
         'Reason',
         undefined,
         db
@@ -294,7 +291,6 @@ describe('Persona Database Integration Tests', () => {
         {
           judge_decision_id: decision.id,
           human_decision: 'agree',
-          human_confidence: 0.95,
         },
         db
       );
@@ -335,7 +331,6 @@ describe('Persona Database Integration Tests', () => {
         pairs[0].id,
         'Gen 1',
         'agree',
-        0.9,
         'R1',
         undefined,
         db
@@ -345,7 +340,6 @@ describe('Persona Database Integration Tests', () => {
         pairs[1].id,
         'Gen 2',
         'disagree',
-        0.8,
         'R2',
         undefined,
         db
@@ -517,7 +511,6 @@ describe('Persona Database Integration Tests', () => {
           pair.id,
           `Generated response ${index + 1}`,
           decision,
-          0.85 + index * 0.02,
           `Reasoning for decision ${index + 1}`,
           undefined,
           db
@@ -534,7 +527,6 @@ describe('Persona Database Integration Tests', () => {
           {
             judge_decision_id: decision.id,
             human_decision: 'agree',
-            human_confidence: 0.9,
             human_notes: 'Judge was incorrect',
           },
           db
@@ -680,7 +672,6 @@ describe('Persona Database Integration Tests', () => {
         pairs[0].id,
         'Gen',
         'agree',
-        0.9,
         'R',
         undefined,
         db

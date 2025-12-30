@@ -63,6 +63,7 @@ CREATE INDEX IF NOT EXISTS idx_personas_judge_model ON personas(judge_model_id);
 ```
 
 **Attributes**:
+
 - `id`: Unique identifier for the persona
 - `name`: Display name (must be unique)
 - `description`: What this judge evaluates
@@ -78,6 +79,7 @@ CREATE INDEX IF NOT EXISTS idx_personas_judge_model ON personas(judge_model_id);
 - `best_f1_iteration`: Iteration number where best F1 was achieved
 
 **Constraints**:
+
 - All three model IDs must be provided (non-empty)
 - F1 target between 0.0 and 1.0
 - Max iterations >= 1
@@ -103,12 +105,14 @@ CREATE INDEX IF NOT EXISTS idx_training_pairs_persona ON training_pairs(persona_
 ```
 
 **Attributes**:
+
 - `id`: Unique identifier
 - `persona_id`: FK to persona
 - `input`: Task input (e.g., customer query, problem statement)
 - `expected_output`: Ground truth / expected answer
 
 **Constraints**:
+
 - 10-200 pairs per persona (enforced at API layer)
 - Non-empty input and expected_output
 
@@ -141,6 +145,7 @@ CREATE INDEX IF NOT EXISTS idx_training_iterations_status ON training_iterations
 ```
 
 **Attributes**:
+
 - `id`: Unique identifier
 - `persona_id`: FK to persona
 - `iteration_number`: Sequential iteration number (1, 2, 3...)
@@ -167,7 +172,6 @@ CREATE TABLE IF NOT EXISTS judge_decisions (
   result_id TEXT,
   generated_output TEXT NOT NULL,
   judge_decision TEXT NOT NULL CHECK(judge_decision IN ('agree', 'disagree')),
-  judge_confidence REAL CHECK(judge_confidence >= 0.0 AND judge_confidence <= 1.0),
   judge_reasoning TEXT,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (iteration_id) REFERENCES training_iterations(id) ON DELETE CASCADE,
@@ -180,13 +184,13 @@ CREATE INDEX IF NOT EXISTS idx_judge_decisions_pair ON judge_decisions(training_
 ```
 
 **Attributes**:
+
 - `id`: Unique identifier
 - `iteration_id`: FK to iteration
 - `training_pair_id`: FK to training pair
 - `result_id`: Optional FK to Result table (for audit trail)
 - `generated_output`: Model output being evaluated
 - `judge_decision`: Judge's assessment (agree/disagree with expected output)
-- `judge_confidence`: Optional confidence score (0.0-1.0)
 - `judge_reasoning`: Explanation of decision
 
 ---
@@ -200,7 +204,6 @@ CREATE TABLE IF NOT EXISTS human_reviews (
   id TEXT PRIMARY KEY,
   judge_decision_id TEXT NOT NULL UNIQUE,
   human_decision TEXT NOT NULL CHECK(human_decision IN ('agree', 'disagree')),
-  human_confidence REAL CHECK(human_confidence >= 0.0 AND human_confidence <= 1.0),
   human_notes TEXT,
   reviewer_id TEXT,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -212,15 +215,16 @@ CREATE INDEX IF NOT EXISTS idx_human_reviews_reviewer ON human_reviews(reviewer_
 ```
 
 **Attributes**:
+
 - `id`: Unique identifier
 - `judge_decision_id`: FK to judge decision (1:1 relationship)
 - `human_decision`: Human's vote (agree/disagree with judge)
-- `human_confidence`: Optional confidence (0.0-1.0)
 - `human_notes`: Comments or reasoning
 - `reviewer_id`: Optional user ID of reviewer
 - `created_at`: When review was submitted
 
 **Semantics**:
+
 - `human_decision = 'agree'`: Human affirms judge's assessment
 - `human_decision = 'disagree'`: Human contradicts judge's assessment
 
@@ -252,6 +256,7 @@ CREATE INDEX IF NOT EXISTS idx_iteration_metrics_kappa ON iteration_metrics(cohe
 ```
 
 **Attributes**:
+
 - `id`: Unique identifier
 - `iteration_id`: FK to iteration (1:1 relationship)
 - `true_positives`: Definition depends on iteration phase:
@@ -273,9 +278,11 @@ CREATE INDEX IF NOT EXISTS idx_iteration_metrics_kappa ON iteration_metrics(cohe
 - `accuracy`: (TP + TN) / Total
 
 **Correctness Algorithm (Iterations 2+)**:
+
 ```
 is_correct = (suggested_output.trim() === expected_output.trim())
 ```
+
 - Uses exact string match after trimming leading/trailing whitespace
 - No semantic similarity or fuzzy matching for MVP (deferred to Phase 3)
 
@@ -302,6 +309,7 @@ CREATE INDEX IF NOT EXISTS idx_judge_prompt_versions_persona ON judge_prompt_ver
 ```
 
 **Attributes**:
+
 - `id`: Unique identifier
 - `persona_id`: FK to persona
 - `iteration_number`: Which iteration this prompt was used for
@@ -344,6 +352,7 @@ CREATE INDEX IF NOT EXISTS idx_training_loop_state_persona ON training_loop_stat
 ```
 
 **Attributes**:
+
 - `session_id`: Unique session identifier
 - `persona_id`: FK to persona being trained
 - `current_iteration`: Current iteration number (0 = not started)
@@ -382,6 +391,7 @@ CREATE INDEX IF NOT EXISTS idx_training_loop_checkpoints_session ON training_loo
 ```
 
 **Attributes**:
+
 - `id`: Unique identifier
 - `session_id`: FK to training session
 - `iteration_number`: Which iteration this checkpoint is for
@@ -398,25 +408,32 @@ CREATE INDEX IF NOT EXISTS idx_training_loop_checkpoints_session ON training_loo
 ## Key Design Decisions
 
 ### 1. Agree/Disagree vs. Correct/Incorrect
+
 The `judge_decision` and `human_decision` fields use `agree`/`disagree` semantics per spec clarification Q2:
+
 - Judge evaluates: "Does this output meet the expected quality?"
 - Human reviews: "Does the judge's assessment match my judgment?"
 - This enables confusion matrix mapping for fair evaluation
 
 ### 2. Significant Prompt Versioning
+
 Only store prompts that represent "significant changes" (semantic changes, not formatting), per spec clarification Q1. This reduces noise while maintaining audit trail.
 
 ### 3. Model Separation Enforcement
+
 Three separate model IDs (`task_model_id`, `judge_model_id`, `prompt_engineer_model_id`) are all REQUIRED and must be from different providers. Enforced by:
+
 - NOT NULL constraints in database
 - CHECK constraints ensuring non-empty
 - Foreign key constraints to ModelConfiguration
 - API-level validation in TypeScript
 
 ### 4. JSON Storage for Snapshots
+
 Metrics snapshots and result IDs are stored as JSON blobs in checkpoints to avoid normalization complexity for ephemeral data (only used for resume, not queried separately).
 
 ### 5. Cascading Deletes
+
 Most FKs use `ON DELETE CASCADE` (e.g., deleting a persona deletes all training pairs, iterations, decisions). Only `ModelConfiguration` FKs use `ON DELETE RESTRICT` to prevent accidental model deletion.
 
 ---
@@ -424,6 +441,7 @@ Most FKs use `ON DELETE CASCADE` (e.g., deleting a persona deletes all training 
 ## Database Initialization
 
 All tables are created via migrations in `db/schema.sql`. Use:
+
 ```bash
 npm run db:init    # Initialize database
 npm run db:reset   # Reset database (development only)
@@ -434,6 +452,7 @@ npm run db:reset   # Reset database (development only)
 ## Integration with Existing Schema
 
 This feature extends but does not modify existing tables:
+
 - ✅ `ModelConfiguration`: Referenced for task/judge/prompt engineer models
 - ✅ `Result`: JudgeDecision optionally references evaluated results
 - ✅ `Evaluation`: Parent context for training tasks
@@ -444,6 +463,7 @@ This feature extends but does not modify existing tables:
 ## Performance Considerations
 
 ### Indexes
+
 - `personas(status)`: Fast filtering by training state
 - `training_pairs(persona_id)`: Quick pair retrieval per persona
 - `training_iterations(persona_id, iteration_number DESC)`: Fast latest iteration lookup
@@ -452,6 +472,7 @@ This feature extends but does not modify existing tables:
 - `training_loop_checkpoints(session_id, iteration_number DESC)`: Fast checkpoint recovery
 
 ### Scale Targets
+
 - **Personas**: 10-50 per system
 - **Training pairs per persona**: 10-200
 - **Iterations per persona**: 5-20 (typical 8-12)
@@ -465,6 +486,7 @@ Estimated maximum storage: ~50 personas × 200 pairs × 20 iterations × 1KB per
 ## Migration Path (If Schema Changes)
 
 Document any schema changes using standard migration format:
+
 ```sql
 -- Migration: 001-add-judge-training-tables
 -- Date: 2025-12-26
@@ -525,24 +547,24 @@ The `personas.status` field follows a strict state machine to ensure data integr
 
 **Valid Transitions**:
 
-| From State | To State | Trigger | Guard Conditions |
-|------------|----------|---------|------------------|
-| `draft` | `training` | User starts training | persona has ≥10 training pairs |
-| `training` | `trained` | Training completed | F1 ≥ target_f1_score OR user accepts early convergence |
-| `training` | `incomplete` | Training stopped | max_iterations reached AND F1 < target_f1_score |
-| `training` | `training` | Pause/Resume | Training session paused then resumed |
-| `trained` | `training` | User re-trains | User explicitly starts new training session |
-| `incomplete` | `training` | User re-trains | User explicitly starts new training session |
+| From State   | To State     | Trigger              | Guard Conditions                                       |
+| ------------ | ------------ | -------------------- | ------------------------------------------------------ |
+| `draft`      | `training`   | User starts training | persona has ≥10 training pairs                         |
+| `training`   | `trained`    | Training completed   | F1 ≥ target_f1_score OR user accepts early convergence |
+| `training`   | `incomplete` | Training stopped     | max_iterations reached AND F1 < target_f1_score        |
+| `training`   | `training`   | Pause/Resume         | Training session paused then resumed                   |
+| `trained`    | `training`   | User re-trains       | User explicitly starts new training session            |
+| `incomplete` | `training`   | User re-trains       | User explicitly starts new training session            |
 
 **Invalid Transitions** (must be prevented):
 
-| From State | To State | Reason |
-|------------|----------|--------|
-| `draft` | `trained` | Cannot be trained without running iterations |
-| `draft` | `incomplete` | Cannot be incomplete without starting training |
-| `trained` | `draft` | Cannot return to draft after training |
-| `incomplete` | `draft` | Cannot return to draft after training |
-| `trained` | `incomplete` | Cannot transition from terminal state |
+| From State   | To State     | Reason                                         |
+| ------------ | ------------ | ---------------------------------------------- |
+| `draft`      | `trained`    | Cannot be trained without running iterations   |
+| `draft`      | `incomplete` | Cannot be incomplete without starting training |
+| `trained`    | `draft`      | Cannot return to draft after training          |
+| `incomplete` | `draft`      | Cannot return to draft after training          |
+| `trained`    | `incomplete` | Cannot transition from terminal state          |
 
 **State Transition Validation** (to be implemented in `persona-db.ts`):
 
@@ -640,13 +662,13 @@ The `training_iterations.status` field tracks iteration-level state.
 
 **Valid Transitions**:
 
-| From State | To State | Trigger |
-|------------|----------|---------|
-| `in_progress` | `completed` | All pairs evaluated, metrics calculated |
-| `in_progress` | `paused` | User clicks "Pause" button |
-| `in_progress` | `failed` | Unrecoverable API error (3 retries exhausted) |
-| `paused` | `in_progress` | User clicks "Resume" button |
-| `paused` | `failed` | Resume fails with unrecoverable error |
+| From State    | To State      | Trigger                                       |
+| ------------- | ------------- | --------------------------------------------- |
+| `in_progress` | `completed`   | All pairs evaluated, metrics calculated       |
+| `in_progress` | `paused`      | User clicks "Pause" button                    |
+| `in_progress` | `failed`      | Unrecoverable API error (3 retries exhausted) |
+| `paused`      | `in_progress` | User clicks "Resume" button                   |
+| `paused`      | `failed`      | Resume fails with unrecoverable error         |
 
 **Terminal States**: `completed`, `failed`
 
@@ -703,13 +725,13 @@ The `training_loop_state.status` field tracks overall session state for pause/re
 
 **Valid Transitions**:
 
-| From State | To State | Trigger |
-|------------|----------|---------|
-| `pending` | `in_progress` | User starts training loop |
-| `in_progress` | `paused` | User clicks "Pause" button |
-| `in_progress` | `completed` | Convergence achieved OR max iterations reached |
-| `in_progress` | `failed` | Unrecoverable error during training |
-| `paused` | `in_progress` | User clicks "Resume" button |
+| From State    | To State      | Trigger                                        |
+| ------------- | ------------- | ---------------------------------------------- |
+| `pending`     | `in_progress` | User starts training loop                      |
+| `in_progress` | `paused`      | User clicks "Pause" button                     |
+| `in_progress` | `completed`   | Convergence achieved OR max iterations reached |
+| `in_progress` | `failed`      | Unrecoverable error during training            |
+| `paused`      | `in_progress` | User clicks "Resume" button                    |
 
 **State Persistence**:
 
@@ -727,6 +749,7 @@ The `training_loop_state.status` field tracks overall session state for pause/re
 **Checkpoint Integration**:
 
 TrainingLoopState integrates with `training_loop_checkpoints` table:
+
 - Checkpoint saved after each iteration completion
 - Checkpoint includes: iteration state, metrics, prompt versions, next iteration number
 - Resume loads latest checkpoint and restores training loop state
@@ -736,11 +759,13 @@ TrainingLoopState integrates with `training_loop_checkpoints` table:
 ### Timestamp Handling
 
 All timestamps stored in **UTC** using ISO 8601 format with `Z` suffix:
+
 - `created_at TEXT NOT NULL DEFAULT (datetime('now', 'utc'))`
 - Display in user's local timezone using JavaScript `toLocaleString()`
 - Ensures consistent sorting across timezones
 
 **Implementation Note**: Database schema uses UTC storage; UI components convert to local time for display using:
+
 ```javascript
-new Date(timestamp).toLocaleString() // Displays in user's local timezone
+new Date(timestamp).toLocaleString(); // Displays in user's local timezone
 ```

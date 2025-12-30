@@ -554,7 +554,6 @@ export function updateIterationCounts(
  * @param trainingPairId - Training pair ID
  * @param generatedOutput - Model output that was judged
  * @param decision - Judge's decision (agree/disagree)
- * @param confidence - Judge's confidence level
  * @param reasoning - Judge's reasoning
  * @param resultId - Optional evaluation result reference
  * @param db - Optional database instance
@@ -565,7 +564,6 @@ export function createJudgeDecision(
   trainingPairId: string,
   generatedOutput: string,
   decision: JudgeDecisionType,
-  confidence: number | null,
   reasoning: string | null,
   resultId?: string,
   db?: Database.Database
@@ -577,8 +575,8 @@ export function createJudgeDecision(
   const stmt = database.prepare(`
     INSERT INTO judge_decisions (
       id, iteration_id, training_pair_id, result_id, generated_output,
-      judge_decision, judge_confidence, judge_reasoning, created_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      judge_decision, judge_reasoning, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   stmt.run(
@@ -588,7 +586,6 @@ export function createJudgeDecision(
     resultId || null,
     generatedOutput,
     decision,
-    confidence,
     reasoning,
     now
   );
@@ -642,15 +639,14 @@ export function createHumanReview(
 
   const stmt = database.prepare(`
     INSERT INTO human_reviews (
-      id, judge_decision_id, human_decision, human_confidence, human_notes, reviewer_id, created_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?)
+      id, judge_decision_id, human_decision, human_notes, reviewer_id, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?)
   `);
 
   stmt.run(
     id,
     input.judge_decision_id,
     input.human_decision,
-    input.human_confidence || null,
     input.human_notes || null,
     input.reviewer_id || null,
     now

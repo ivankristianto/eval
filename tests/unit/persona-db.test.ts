@@ -380,7 +380,6 @@ describe('Persona Database Access Layer', () => {
         pairs[0].id,
         'Generated output',
         'agree',
-        0.95,
         'Reasoning here',
         undefined,
         db
@@ -388,7 +387,6 @@ describe('Persona Database Access Layer', () => {
 
       expect(decision).toBeDefined();
       expect(decision.judge_decision).toBe('agree');
-      expect(decision.judge_confidence).toBe(0.95);
     });
 
     it('should get all decisions for an iteration', () => {
@@ -415,7 +413,6 @@ describe('Persona Database Access Layer', () => {
         pairs[0].id,
         'Generated 1',
         'agree',
-        0.9,
         'Reason 1',
         undefined,
         db
@@ -425,7 +422,6 @@ describe('Persona Database Access Layer', () => {
         pairs[1].id,
         'Generated 2',
         'disagree',
-        0.8,
         'Reason 2',
         undefined,
         db
@@ -458,7 +454,6 @@ describe('Persona Database Access Layer', () => {
         pairs[0].id,
         'Generated',
         'agree',
-        0.9,
         'Reason',
         undefined,
         db
@@ -467,7 +462,6 @@ describe('Persona Database Access Layer', () => {
       const input: CreateHumanReviewInput = {
         judge_decision_id: decision.id,
         human_decision: 'agree',
-        human_confidence: 0.95,
         human_notes: 'I agree with the judge',
       };
 
@@ -475,7 +469,6 @@ describe('Persona Database Access Layer', () => {
 
       expect(review).toBeDefined();
       expect(review.human_decision).toBe('agree');
-      expect(review.human_confidence).toBe(0.95);
     });
 
     it('should get human review by decision ID', () => {
@@ -498,7 +491,6 @@ describe('Persona Database Access Layer', () => {
         pairs[0].id,
         'Generated',
         'agree',
-        0.9,
         'Reason',
         undefined,
         db
@@ -543,7 +535,6 @@ describe('Persona Database Access Layer', () => {
         pairs[0].id,
         'Gen 1',
         'agree',
-        0.9,
         'R1',
         undefined,
         db
@@ -553,7 +544,6 @@ describe('Persona Database Access Layer', () => {
         pairs[1].id,
         'Gen 2',
         'disagree',
-        0.8,
         'R2',
         undefined,
         db
