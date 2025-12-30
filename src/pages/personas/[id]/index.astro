@@ -168,6 +168,24 @@ if (currentTab === 'prompts') {
         )
       }
 
+      <button class="btn btn-warning btn-outline" id="reset-persona-btn">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-6 w-6"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+          />
+        </svg>
+        Reset Training
+      </button>
+
       <button class="btn btn-error btn-outline" id="delete-persona-btn">
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -580,6 +598,50 @@ if (currentTab === 'prompts') {
     } catch (error) {
       console.error('Delete error:', error);
       addToast('Failed to delete persona', 'error');
+    }
+  });
+
+  // Reset persona training data
+  document.getElementById('reset-persona-btn')?.addEventListener('click', async () => {
+    if (
+      !confirm(
+        'Are you sure you want to reset all training data? This will delete all iterations, metrics, judge decisions, and prompt versions. This action cannot be undone.'
+      )
+    ) {
+      return;
+    }
+
+    const button = document.getElementById('reset-persona-btn') as HTMLButtonElement;
+    if (button) {
+      button.disabled = true;
+      button.classList.add('loading');
+    }
+
+    try {
+      const response = await fetch(`/api/personas/${personaId}/reset`, {
+        method: 'POST',
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        addToast('Training data reset successfully', 'success');
+        // Refresh the page to show reset state
+        window.location.reload();
+      } else {
+        const result = await response.json();
+        addToast(result.message || 'Failed to reset training data', 'error');
+        if (button) {
+          button.disabled = false;
+          button.classList.remove('loading');
+        }
+      }
+    } catch (error) {
+      console.error('Reset error:', error);
+      addToast('Failed to reset training data', 'error');
+      if (button) {
+        button.disabled = false;
+        button.classList.remove('loading');
+      }
     }
   });
 
