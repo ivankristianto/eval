@@ -10,6 +10,56 @@ import { createLogger } from '@lib/logger';
 const logger = createLogger('PromptEngineer');
 
 /**
+ * Build system prompt for task model.
+ * @param taskPrompt - The task prompt instructions
+ * @returns System prompt for task model
+ */
+export function buildTaskModelSystemPrompt(taskPrompt: string): string {
+  return `You are a task model. Follow these instructions: ${taskPrompt}`;
+}
+
+/**
+ * Build instruction for task model to generate response.
+ * @param input - The input to process
+ * @returns Instruction for task model
+ */
+export function buildTaskModelInstruction(input: string): string {
+  return `Input: ${input}\n\nGenerate a response following the task instructions above.`;
+}
+
+/**
+ * Build judge evaluation prompt for comparing generated output against judge criteria.
+ * @param judgePrompt - The judge prompt/criteria
+ * @param input - Original input
+ * @param generatedOutput - Output from task model
+ * @returns Full instruction for judge model
+ */
+export function buildJudgeEvaluationInstruction(
+  judgePrompt: string,
+  input: string,
+  generatedOutput: string
+): string {
+  return `Judge Prompt: ${judgePrompt}
+
+Input: ${input}
+Generated Output: ${generatedOutput}
+
+Evaluate whether the generated output correctly addresses the input according to the judge prompt.
+
+Respond with a JSON object containing:
+{
+  "decision": "agree" or "disagree",
+  "reasoning": "Brief explanation of your decision (1-2 sentences)"
+}
+
+Important:
+- Format the response strictly as JSON
+- Avoid any additional commentary outside the JSON response
+- Do not use markdown formatting in your response
+`;
+}
+
+/**
  * Result of a prompt refinement process.
  */
 export interface PromptRefinementResult {

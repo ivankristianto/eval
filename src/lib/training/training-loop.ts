@@ -23,6 +23,11 @@ import { calculateIterationMetricsFromGroundTruth } from '@lib/evaluation/metric
 import { getSemanticSimilarityScore } from '@lib/evaluation/semanticSimilarity';
 import { TrainingStateError } from './training-errors';
 import { callModel, extractJsonFromResponse } from '@lib/utils/api-clients';
+import {
+  buildTaskModelSystemPrompt,
+  buildTaskModelInstruction,
+  buildJudgeEvaluationInstruction,
+} from './prompt-engineer';
 import { createLogger } from '@lib/logger';
 
 const logger = createLogger('TrainingLoop');
@@ -568,8 +573,8 @@ export class IterativeTrainingLoop {
     input: string,
     taskPrompt: string
   ): Promise<string> {
-    const systemPrompt = `You are a task model. Follow these instructions: ${taskPrompt}`;
-    const instruction = `Input: ${input}\n\nGenerate a response following the task instructions above.`;
+    const systemPrompt = buildTaskModelSystemPrompt(taskPrompt);
+    const instruction = buildTaskModelInstruction(input);
 
     try {
       return await callModel(taskModelId, instruction, { systemPrompt, temperature: 0.7 });
@@ -597,24 +602,7 @@ export class IterativeTrainingLoop {
     judgePrompt: string,
     expectedOutput?: string
   ): Promise<JudgeDecisionResult> {
-    const instruction = `Judge Prompt: ${judgePrompt}
-
-Input: ${input}
-Generated Output: ${generatedOutput}
-
-Evaluate whether the generated output correctly addresses the input according to the judge prompt.
-
-Respond with a JSON object containing:
-{
-  "decision": "agree" or "disagree",
-  "reasoning": "Brief explanation of your decision (1-2 sentences)"
-}
-  
-Important:
-- Format the response strictly as JSON
-- Avoid any additional commentary outside the JSON response
-- Do not use markdown formatting in your response
-`;
+    const instruction = buildJudgeEvaluationInstruction(judgePrompt, input, generatedOutput);
 
     try {
       const response = await callModel(judgeModelId, instruction, { temperature: 0.3 });
