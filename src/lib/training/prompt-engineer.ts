@@ -3,29 +3,11 @@
  * Uses LLM to refine judge prompts based on failure analysis
  */
 
-import { callModel } from '@lib/utils/api-clients';
+import { callModel, extractJsonFromResponse } from '@lib/utils/api-clients';
 import type { FailureAnalysisContext } from './failure-analysis';
 import { createLogger } from '@lib/logger';
 
 const logger = createLogger('PromptEngineer');
-
-/**
- * Extract JSON from LLM response, handling markdown code blocks.
- * LLMs often wrap JSON responses in ```json ... ``` blocks.
- * @param response - Raw LLM response
- * @returns Extracted JSON string, or original if no code blocks found
- */
-function extractJsonFromResponse(response: string): string {
-  // First, try to extract content from markdown code blocks
-  const jsonCodeBlockRegex = /```(?:json)?\s*\n?([\s\S]*?)\n?```/i;
-  const match = response.match(jsonCodeBlockRegex);
-  if (match && match[1]) {
-    return match[1].trim();
-  }
-
-  // If no code blocks found, return the response as-is
-  return response.trim();
-}
 
 /**
  * Result of a prompt refinement process.

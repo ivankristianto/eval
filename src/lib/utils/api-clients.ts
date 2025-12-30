@@ -383,6 +383,24 @@ export class ClientFactory {
   }
 }
 
+/**
+ * Extract JSON from LLM response, handling markdown code blocks.
+ * LLMs often wrap JSON responses in ```json ... ``` blocks.
+ * @param response - Raw LLM response
+ * @returns Extracted JSON string, or original if no code blocks found
+ */
+export function extractJsonFromResponse(response: string): string {
+  // First, try to extract content from markdown code blocks
+  const jsonCodeBlockRegex = /```(?:json)?\s*\n?([\s\S]*?)\n?```/i;
+  const match = response.match(jsonCodeBlockRegex);
+  if (match && match[1]) {
+    return match[1].trim();
+  }
+
+  // If no code blocks found, return the response as-is
+  return response.trim();
+}
+
 // Logger for callModel helper function
 const callModelLogger = createLogger('callModel');
 

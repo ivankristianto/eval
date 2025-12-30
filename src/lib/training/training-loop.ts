@@ -22,7 +22,7 @@ import { calculateMetrics, buildConfusionMatrix } from '@lib/evaluation/metrics'
 import { calculateIterationMetricsFromGroundTruth } from '@lib/evaluation/metrics-orchestrator';
 import { getSemanticSimilarityScore } from '@lib/evaluation/semanticSimilarity';
 import { TrainingStateError } from './training-errors';
-import { callModel } from '@lib/utils/api-clients';
+import { callModel, extractJsonFromResponse } from '@lib/utils/api-clients';
 import { createLogger } from '@lib/logger';
 
 const logger = createLogger('TrainingLoop');
@@ -57,24 +57,6 @@ export interface IterationResult {
   iterationId: string;
   f1Score: number;
   converged: boolean;
-}
-
-/**
- * Extract JSON from LLM response, handling markdown code blocks.
- * LLMs often wrap JSON responses in ```json ... ``` blocks.
- * @param response - Raw LLM response
- * @returns Extracted JSON string, or original if no code blocks found
- */
-function extractJsonFromResponse(response: string): string {
-  // First, try to extract content from markdown code blocks
-  const jsonCodeBlockRegex = /```(?:json)?\s*\n?([\s\S]*?)\n?```/i;
-  const match = response.match(jsonCodeBlockRegex);
-  if (match && match[1]) {
-    return match[1].trim();
-  }
-
-  // If no code blocks found, return the response as-is
-  return response.trim();
 }
 
 /**
