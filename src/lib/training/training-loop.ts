@@ -1436,7 +1436,13 @@ export class IterativeTrainingLoop {
 
       if (result.refined_task_prompt) {
         // Store refined task prompt for iteration 2
-        this.storeTaskPromptVersion(2, result.refined_task_prompt, 'ai', metrics, result.task_rationale);
+        this.storeTaskPromptVersion(
+          2,
+          result.refined_task_prompt,
+          'ai',
+          metrics,
+          result.task_rationale
+        );
         logger.info('Refined task prompt for iteration 2', {
           personaId: this.personaId,
           rationale: result.task_rationale,
@@ -1445,7 +1451,13 @@ export class IterativeTrainingLoop {
 
       if (result.refined_judge_prompt) {
         // Store refined judge prompt for iteration 2
-        this.storeJudgePromptVersion(2, result.refined_judge_prompt, 'ai', metrics, result.judge_rationale);
+        this.storeJudgePromptVersion(
+          2,
+          result.refined_judge_prompt,
+          'ai',
+          metrics,
+          result.judge_rationale
+        );
         logger.info('Refined judge prompt for iteration 2', {
           personaId: this.personaId,
           rationale: result.judge_rationale,

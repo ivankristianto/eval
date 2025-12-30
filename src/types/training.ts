@@ -13,7 +13,6 @@ export type PersonaStatus = 'draft' | 'training' | 'trained' | 'incomplete';
  */
 export type IterationStatus =
   | 'in_progress'
-  | 'calculating_metrics'
   | 'paused'
   | 'completed'
   | 'failed';
