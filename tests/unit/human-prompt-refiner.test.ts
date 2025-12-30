@@ -536,15 +536,7 @@ describe('Human-Driven Prompt Refiner', () => {
         `INSERT INTO judge_decisions
          (id, iteration_id, training_pair_id, generated_output, judge_decision, judge_reasoning, created_at)
          VALUES (?, ?, ?, ?, ?, ?, ?)`
-      ).run(
-        decisionId,
-        iterationId,
-        pairId,
-        'Response',
-        'agree',
-        'Good',
-        new Date().toISOString()
-      );
+      ).run(decisionId, iterationId, pairId, 'Response', 'agree', 'Good', new Date().toISOString());
 
       const reviewId = uuidv4();
       db.prepare(

@@ -52,8 +52,6 @@ const humanNotes = decision.human_review?.notes;
 // Truncate long content for compact display (expandable via JS)
 const TRUNCATE_LENGTH = 600;
 const shouldTruncate = (text: string) => text.length > TRUNCATE_LENGTH;
-const truncate = (text: string) =>
-  shouldTruncate(text) ? text.slice(0, TRUNCATE_LENGTH) + '…' : text;
 ---
 
 <div
@@ -73,13 +71,16 @@ const truncate = (text: string) =>
           class="p-2 bg-base-100 rounded-b-md border border-base-content/10 h-full text-sm truncate-content"
         >
           <p class="whitespace-pre-wrap">{decision.training_pair.input}</p>
-          {shouldTruncate(decision.training_pair.input) && (
-            <button
-              class="text-primary text-xs mt-1 hover:underline expand-btn"
-              data-field="input"
-              >Show more</button
-            >
-          )}
+          {
+            shouldTruncate(decision.training_pair.input) && (
+              <button
+                class="text-primary text-xs mt-1 hover:underline expand-btn"
+                data-field="input"
+              >
+                Show more
+              </button>
+            )
+          }
         </div>
       </div>
 
@@ -95,13 +96,16 @@ const truncate = (text: string) =>
             class="p-2 bg-base-100 rounded-b-md border border-base-content/10 min-h-20 text-sm truncate-content"
           >
             <p class="whitespace-pre-wrap">{decision.training_pair.expected_output}</p>
-            {shouldTruncate(decision.training_pair.expected_output) && (
-              <button
-                class="text-primary text-xs mt-1 hover:underline expand-btn"
-                data-field="expected"
-                >Show more</button
-              >
-            )}
+            {
+              shouldTruncate(decision.training_pair.expected_output) && (
+                <button
+                  class="text-primary text-xs mt-1 hover:underline expand-btn"
+                  data-field="expected"
+                >
+                  Show more
+                </button>
+              )
+            }
           </div>
         </div>
 
@@ -115,13 +119,16 @@ const truncate = (text: string) =>
             class="p-2 bg-base-100 rounded-b-md border border-base-content/10 min-h-20 text-sm truncate-content"
           >
             <p class="whitespace-pre-wrap">{decision.judge.generated_output}</p>
-            {shouldTruncate(decision.judge.generated_output) && (
-              <button
-                class="text-primary text-xs mt-1 hover:underline expand-btn"
-                data-field="generated"
-                >Show more</button
-              >
-            )}
+            {
+              shouldTruncate(decision.judge.generated_output) && (
+                <button
+                  class="text-primary text-xs mt-1 hover:underline expand-btn"
+                  data-field="generated"
+                >
+                  Show more
+                </button>
+              )
+            }
           </div>
         </div>
       </div>
@@ -137,11 +144,13 @@ const truncate = (text: string) =>
           </Badge>
         </div>
       </div>
-      {decision.judge.reasoning && (
-        <div class="p-3 bg-base-300/30 rounded text-sm border-l-2 border-info">
-          <p class="whitespace-pre-wrap text-base-content/80">{decision.judge.reasoning}</p>
-        </div>
-      )}
+      {
+        decision.judge.reasoning && (
+          <div class="p-3 bg-base-300/30 rounded text-sm border-l-2 border-info">
+            <p class="whitespace-pre-wrap text-base-content/80">{decision.judge.reasoning}</p>
+          </div>
+        )
+      }
     </div>
 
     <!-- Human Review Section -->
@@ -153,7 +162,7 @@ const truncate = (text: string) =>
             <span class="badge badge-sm badge-error">Required</span>
           </div>
 
-          <!-- Instructions -->
+          {/* Instructions */}
           <div class="text-xs text-base-content/70 mb-3">
             Review if the Judge's assessment is correct.
             <span class="text-success font-medium">✓ Agree</span> = Judge is right &nbsp;|&nbsp;
@@ -161,7 +170,7 @@ const truncate = (text: string) =>
           </div>
 
           <form class="space-y-3 human-review-form">
-            <!-- Decision Buttons -->
+            {/* Decision Buttons */}
             <div class="grid grid-cols-2 gap-2">
               <label class="cursor-pointer">
                 <input
@@ -171,9 +180,7 @@ const truncate = (text: string) =>
                   class="peer radio radio-success radio-sm hidden"
                   required
                 />
-                <div
-                  class="p-3 rounded-lg border-2 border-base-content/20 text-center transition-all peer-checked:border-success peer-checked:bg-success/10 hover:border-base-content/30"
-                >
+                <div class="p-3 rounded-lg border-2 border-base-content/20 text-center transition-all peer-checked:border-success peer-checked:bg-success/10 hover:border-base-content/30">
                   <div class="text-success text-lg mb-1">✓</div>
                   <div class="text-sm font-medium">Agree with Judge</div>
                   <div class="text-xs text-base-content/60 mt-1">The judge got it right</div>
@@ -188,9 +195,7 @@ const truncate = (text: string) =>
                   class="peer radio radio-error radio-sm hidden"
                   required
                 />
-                <div
-                  class="p-3 rounded-lg border-2 border-base-content/20 text-center transition-all peer-checked:border-error peer-checked:bg-error/10 hover:border-base-content/30"
-                >
+                <div class="p-3 rounded-lg border-2 border-base-content/20 text-center transition-all peer-checked:border-error peer-checked:bg-error/10 hover:border-base-content/30">
                   <div class="text-error text-lg mb-1">✗</div>
                   <div class="text-sm font-medium">Disagree with Judge</div>
                   <div class="text-xs text-base-content/60 mt-1">The judge got it wrong</div>
@@ -198,17 +203,17 @@ const truncate = (text: string) =>
               </label>
             </div>
 
-            <!-- Optional Notes -->
+            {/* Optional Notes */}
             <div>
               <textarea
                 class="textarea textarea-bordered textarea-sm w-full"
                 rows="2"
                 placeholder="Optional: Explain why you disagree..."
                 name="notes"
-              ></textarea>
+              />
             </div>
 
-            <!-- Submit Button -->
+            {/* Submit Button */}
             <button
               type="submit"
               class="btn btn-primary btn-sm w-full"
@@ -309,7 +314,9 @@ const truncate = (text: string) =>
         window.location.reload();
       } catch (error) {
         console.error('Failed to submit review:', error);
-        alert(`Failed to submit review: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        alert(
+          `Failed to submit review: ${error instanceof Error ? error.message : 'Unknown error'}`
+        );
         submitBtn.disabled = false;
         submitBtn.classList.remove('loading');
         submitBtn.textContent = 'Submit Review';

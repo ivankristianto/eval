@@ -170,13 +170,7 @@ export const POST: APIRoute = async ({ params, request }) => {
       (id, judge_decision_id, human_decision, human_notes, created_at)
       VALUES (?, ?, ?, ?, ?)
     `
-    ).run(
-      reviewId,
-      decision_id,
-      human_decision,
-      notes || null,
-      new Date().toISOString()
-    );
+    ).run(reviewId, decision_id, human_decision, notes || null, new Date().toISOString());
 
     // Update iteration pairs_reviewed_by_human count
     db.prepare(

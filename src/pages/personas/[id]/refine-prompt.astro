@@ -15,8 +15,6 @@ if (!id || !iterationNum) {
   return Astro.redirect('/personas');
 }
 
-const iterationNumber = parseInt(iterationNum, 10);
-
 const db = getDatabase();
 
 // Fetch persona
@@ -25,6 +23,8 @@ const persona = db.prepare('SELECT * FROM personas WHERE id = ?').get(id) as any
 if (!persona) {
   return Astro.redirect('/personas');
 }
+
+const iterationNumber = parseInt(iterationNum, 10);
 
 // Fetch iteration
 const iteration = db
