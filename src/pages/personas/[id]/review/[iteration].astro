@@ -335,8 +335,9 @@ const breadcrumbItems = [
             throw new Error(data.message || 'Failed to start metrics calculation');
           });
         }
+
         // Redirect to metrics page
-        window.location.href = `/personas/${personaId}/metrics?iteration=${iteration}`;
+        window.location.href = `/personas/${personaId}/metrics`;
       })
       .catch((error) => {
         button.disabled = false;
