@@ -113,36 +113,29 @@ describe('GET /api/personas/{id}/iterations/{iteration}/status', () => {
     it('should return calculating status when metrics are being computed', async () => {
       const getMock = vi.fn();
 
-      // Persona exists
-      getMock.mockReturnValue({ id: 'persona-1', name: 'Test Persona' });
-
-      // Iteration is calculating
-      mockDb.prepare = vi.fn().mockReturnValue({
-        get: vi.fn().mockReturnValueOnce({ id: 'persona-1', name: 'Test' }).mockReturnValueOnce({
-          id: 'iter-1',
-          iteration_number: 1,
-          status: 'calculating_metrics',
-        }),
-      });
-
-      // No metrics yet
-      mockDb.prepare = vi.fn().mockReturnValue({
-        get: vi.fn().mockReturnValue(null),
-      });
-
-      // Mock query chain for training state
-      const trainingStateStmt = {
-        get: vi.fn().mockReturnValue({ status: 'calculating_metrics' }),
+      // Mock query chain for training pairs count
+      const pairsStmt = {
+        get: vi.fn().mockReturnValue({ count: 10 }),
       };
 
       mockDb.prepare = vi.fn().mockImplementation((query) => {
+        if (query.includes('training_pairs')) {
+          return pairsStmt;
+        }
         if (query.includes('iteration_metrics')) {
           return { get: vi.fn().mockReturnValue(null) };
         }
-        if (query.includes('training_loop_state')) {
-          return trainingStateStmt;
-        }
+        // Default mock for persona and iteration queries
         return { get: getMock };
+      });
+
+      // First call: persona, second call: iteration
+      getMock.mockReturnValueOnce({ id: 'persona-1', name: 'Test Persona' });
+      getMock.mockReturnValueOnce({
+        id: 'iter-1',
+        iteration_number: 1,
+        status: 'in_progress',
+        total_pairs_evaluated: 5,
       });
 
       const response = await GET({
@@ -244,26 +237,30 @@ describe('GET /api/personas/{id}/iterations/{iteration}/status', () => {
 
   describe('Progress Tracking', () => {
     it('should return progress percent for in-progress calculations', async () => {
-      mockDb.prepare = vi.fn().mockReturnValue({
-        get: vi.fn().mockReturnValueOnce({ id: 'persona-1', name: 'Test' }).mockReturnValueOnce({
-          id: 'iter-1',
-          iteration_number: 1,
-          status: 'calculating_metrics',
-          total_pairs_evaluated: 15,
-        }),
+      const getMock = vi.fn();
+
+      // Training pairs count for progress calculation
+      const pairsStmt = {
+        get: vi.fn().mockReturnValue({ count: 30 }),
+      };
+
+      mockDb.prepare = vi.fn().mockImplementation((query) => {
+        if (query.includes('training_pairs')) {
+          return pairsStmt;
+        }
+        if (query.includes('iteration_metrics')) {
+          return { get: vi.fn().mockReturnValue(null) };
+        }
+        return { get: getMock };
       });
 
-      // No metrics yet
-      mockDb.prepare = vi.fn().mockReturnValue({
-        get: vi.fn().mockReturnValue(null),
-      });
-
-      // Training state with progress
-      mockDb.prepare = vi.fn().mockReturnValue({
-        get: vi.fn().mockReturnValue({
-          status: 'calculating_metrics',
-          task_results_evaluated: 15,
-        }),
+      // First call: persona, second call: iteration
+      getMock.mockReturnValueOnce({ id: 'persona-1', name: 'Test' });
+      getMock.mockReturnValueOnce({
+        id: 'iter-1',
+        iteration_number: 1,
+        status: 'in_progress',
+        total_pairs_evaluated: 15,
       });
 
       const response = await GET({

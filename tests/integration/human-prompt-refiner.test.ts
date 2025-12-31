@@ -24,6 +24,7 @@ import {
 // Mock the API clients
 vi.mock('@lib/utils/api-clients', () => ({
   callModel: vi.fn(),
+  extractJsonFromResponse: (response: string) => response.trim(),
 }));
 
 import { callModel } from '@lib/utils/api-clients';
@@ -188,7 +189,6 @@ describe('Human-Driven Prompt Refiner Integration', () => {
           pairId,
           testCase.output,
           testCase.decision,
-          0.8,
           'Evaluation based on current criteria',
           new Date().toISOString()
         );
@@ -202,7 +202,6 @@ describe('Human-Driven Prompt Refiner Integration', () => {
           reviewId,
           decisionId,
           testCase.human,
-          1.0,
           (testCase as { note?: string }).note || 'Correct assessment',
           new Date().toISOString()
         );
@@ -304,7 +303,6 @@ describe('Human-Driven Prompt Refiner Integration', () => {
           pairId,
           `Response ${i}`,
           'agree',
-          0.9,
           'Good response',
           new Date().toISOString()
         );
@@ -381,16 +379,7 @@ describe('Human-Driven Prompt Refiner Integration', () => {
           `INSERT INTO judge_decisions
            (id, iteration_id, training_pair_id, generated_output, judge_decision, judge_reasoning, created_at)
            VALUES (?, ?, ?, ?, ?, ?, ?)`
-        ).run(
-          decisionId,
-          iterationId2,
-          pairId,
-          `R${i}`,
-          'agree',
-          0.8,
-          'Good',
-          new Date().toISOString()
-        );
+        ).run(decisionId, iterationId2, pairId, `R${i}`, 'agree', 'Good', new Date().toISOString());
 
         const reviewId = uuidv4();
         db.prepare(
@@ -418,16 +407,7 @@ describe('Human-Driven Prompt Refiner Integration', () => {
           `INSERT INTO judge_decisions
            (id, iteration_id, training_pair_id, generated_output, judge_decision, judge_reasoning, created_at)
            VALUES (?, ?, ?, ?, ?, ?, ?)`
-        ).run(
-          decisionId,
-          iterationId,
-          pairId,
-          `R${i}`,
-          'agree',
-          0.8,
-          'Good',
-          new Date().toISOString()
-        );
+        ).run(decisionId, iterationId, pairId, `R${i}`, 'agree', 'Good', new Date().toISOString());
 
         // Only add reviews for first 5
         if (i < 5) {

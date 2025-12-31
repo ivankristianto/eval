@@ -10,6 +10,7 @@ import type { FailureAnalysisContext } from '@lib/training/failure-analysis';
 // Mock the API clients
 vi.mock('@lib/utils/api-clients', () => ({
   callModel: vi.fn(),
+  extractJsonFromResponse: (response: string) => response.trim(),
 }));
 
 import { callModel } from '@lib/utils/api-clients';
