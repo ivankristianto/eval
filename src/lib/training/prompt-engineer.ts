@@ -9,54 +9,19 @@ import { createLogger } from '@lib/logger';
 
 const logger = createLogger('PromptEngineer');
 
-/**
- * Build system prompt for task model.
- * @param taskPrompt - The task prompt instructions
- * @returns System prompt for task model
- */
-export function buildTaskModelSystemPrompt(taskPrompt: string): string {
-  return `You are a task model. Follow these instructions: ${taskPrompt}`;
-}
+// ============================================================================
+// TYPE DEFINITIONS
+// ============================================================================
 
 /**
- * Build instruction for task model to generate response.
- * @param input - The input to process
- * @returns Instruction for task model
+ * Result of atomic fact evaluation.
  */
-export function buildTaskModelInstruction(input: string): string {
-  return `Input: ${input}\n\nGenerate a response following the task instructions above.`;
-}
-
-/**
- * Build judge evaluation prompt for comparing generated output against judge criteria.
- * @param judgePrompt - The judge prompt/criteria
- * @param input - Original input
- * @param generatedOutput - Output from task model
- * @returns Full instruction for judge model
- */
-export function buildJudgeEvaluationInstruction(
-  judgePrompt: string,
-  input: string,
-  generatedOutput: string
-): string {
-  return `Judge Prompt: ${judgePrompt}
-
-Input: ${input}
-Generated Output: ${generatedOutput}
-
-Evaluate whether the generated output correctly addresses the input according to the judge prompt.
-
-Respond with a JSON object containing:
-{
-  "decision": "agree" or "disagree",
-  "reasoning": "Brief explanation of your decision (1-2 sentences)"
-}
-
-Important:
-- Format the response strictly as JSON
-- Avoid any additional commentary outside the JSON response
-- Do not use markdown formatting in your response
-`;
+export interface AtomicFactEvaluationResult {
+  TP_count: number;
+  TN_count: number;
+  FP_count: number;
+  FN_count: number;
+  Reasoning: string;
 }
 
 /**
@@ -113,6 +78,192 @@ export interface HumanFeedbackContext {
   total_decisions: number;
   disagreements_count: number;
 }
+
+// ============================================================================
+// TASK MODEL PROMPT BUILDERS
+// ============================================================================
+
+/**
+ * Build system prompt for task model.
+ * @param taskPrompt - The task prompt instructions
+ * @returns System prompt for task model
+ */
+export function buildTaskModelSystemPrompt(taskPrompt: string): string {
+  return `You are a task model. Follow these instructions: ${taskPrompt}`;
+}
+
+/**
+ * Build instruction for task model to generate response.
+ * @param input - The input to process
+ * @returns Instruction for task model
+ */
+export function buildTaskModelInstruction(input: string): string {
+  return `Input: ${input}\n\nGenerate a response following the task instructions above.`;
+}
+
+// ============================================================================
+// JUDGE MODEL PROMPT BUILDERS
+// ============================================================================
+
+/**
+ * Build judge evaluation prompt for comparing generated output against judge criteria.
+ * @param judgePrompt - The judge prompt/criteria
+ * @param input - Original input
+ * @param generatedOutput - Output from task model
+ * @returns Full instruction for judge model
+ */
+export function buildJudgeEvaluationInstruction(
+  judgePrompt: string,
+  input: string,
+  generatedOutput: string
+): string {
+  return `Judge Prompt: ${judgePrompt}
+
+Input: ${input}
+Generated Output: ${generatedOutput}
+
+Evaluate whether the generated output correctly addresses the input according to the judge prompt.
+
+Respond with a JSON object containing:
+{
+  "decision": "agree" or "disagree",
+  "reasoning": "Brief explanation of your decision (1-2 sentences)"
+}
+
+Important:
+- Format the response strictly as JSON
+- Avoid any additional commentary outside the JSON response
+- Do not use markdown formatting in your response
+`;
+}
+
+// ============================================================================
+// ATOMIC FACT EVALUATION
+// ============================================================================
+
+/**
+ * Build system prompt for atomic fact evaluation.
+ * Evaluates model output against reference answer using atomic fact comparison.
+ * @returns System prompt for atomic fact evaluation
+ */
+export function buildAtomicFactEvaluationSystemPrompt(): string {
+  return `You are an expert evaluator for a RAG (Retrieval-Augmented Generation) system.
+Your task is to compare a **Model Output** against a **Reference Answer** (Ground Truth).
+
+You must evaluate based on "Atomic Facts" (individual pieces of information).
+
+**Definitions:**
+1. **True Positive (TP):** A fact stated in the **Model Output** that is semantically identical or equivalent to a fact in the **Reference Answer**.
+2. **False Positive (FP):** A fact stated in the **Model Output** that is NOT present in the **Reference Answer** (hallucination or extra info).
+3. **False Negative (FN):** A fact present in the **Reference Answer** that was omitted or missed by the **Model Output**.
+4. **True Negative (TN):** A fact not stated in the **Model Output** that is also not in the **Reference Answer**.
+
+**Steps to Follow:**
+1. Break down the **Reference Answer** into a numbered list of atomic facts.
+2. Break down the **Model Output** into a numbered list of atomic facts.
+3. Compare the two lists item-by-item to determine TP, TN, FP, and FN.
+4. Output the final counts in JSON format.
+
+**Constraint:**
+- Do not count stylistic differences or word variations as False Positives if the meaning is the same.
+- Focus strictly on the information content.`;
+}
+
+/**
+ * Build user input for atomic fact evaluation.
+ * @param referenceAnswer - The ground truth/expected output
+ * @param modelOutput - The generated output to evaluate
+ * @returns User input for atomic fact evaluation
+ */
+export function buildAtomicFactEvaluationUserInput(
+  referenceAnswer: string,
+  modelOutput: string
+): string {
+  return `**Reference Answer:**
+${referenceAnswer}
+
+**Model Output:**
+${modelOutput}
+
+Please provide your reasoning followed by a JSON block exactly like this:
+
+\`\`\`json
+{
+  "TP_count": <integer>,
+  "TN_count": <integer>,
+  "FP_count": <integer>,
+  "FN_count": <integer>,
+  "Reasoning": "1-3 sentences of the reasoning."
+}
+\`\`\`
+
+Important:
+- Format the response strictly as JSON
+- Avoid any additional commentary outside the JSON response
+- Do not use markdown formatting in your response`;
+}
+
+/**
+ * Evaluate outputs using atomic fact comparison via LLM.
+ * @param referenceAnswer - The ground truth/expected output
+ * @param modelOutput - The generated output to evaluate
+ * @param promptEngineerModelId - Model ID for the prompt engineer
+ * @returns Promise with atomic fact evaluation result
+ */
+export async function evaluateByAtomicFacts(
+  referenceAnswer: string,
+  modelOutput: string,
+  promptEngineerModelId: string
+): Promise<AtomicFactEvaluationResult> {
+  const systemPrompt = buildAtomicFactEvaluationSystemPrompt();
+  const userInput = buildAtomicFactEvaluationUserInput(referenceAnswer, modelOutput);
+
+  try {
+    const response = await callModel(promptEngineerModelId, userInput, {
+      systemPrompt,
+      temperature: 0.3,
+    });
+
+    // Check for null/empty/undefined response
+    if (!response || typeof response !== 'string') {
+      throw new Error('LLM returned empty or invalid response');
+    }
+
+    // Parse JSON response
+    const jsonContent = extractJsonFromResponse(response);
+    const parsed = JSON.parse(jsonContent) as AtomicFactEvaluationResult;
+
+    // Validate required fields
+    if (
+      typeof parsed.TP_count !== 'number' ||
+      typeof parsed.TN_count !== 'number' ||
+      typeof parsed.FP_count !== 'number' ||
+      typeof parsed.FN_count !== 'number'
+    ) {
+      throw new Error('Invalid atomic fact evaluation response: missing or invalid count fields');
+    }
+
+    return parsed;
+  } catch (error) {
+    logger.error('Atomic fact evaluation failed', error as Error, {
+      referenceAnswer: referenceAnswer.slice(0, 100),
+      modelOutput: modelOutput.slice(0, 100),
+    });
+
+    // Return fallback values on error
+    return {
+      TP_count: 0,
+      TN_count: 0,
+      FP_count: 1,
+      FN_count: 1,
+      Reasoning: 'Evaluation failed',
+    };
+  }
+}
+
+// ============================================================================
+// JUDGE PROMPT REFINEMENT (iterations 2+, judge only)
+// ============================================================================
 
 /**
  * Refine judge prompt using Prompt Engineer LLM.
@@ -305,6 +456,10 @@ Important:
 - Do not use markdown formatting in your response
 `;
 }
+
+// ============================================================================
+// BOTH PROMPTS REFINEMENT (iteration 1, human feedback)
+// ============================================================================
 
 /**
  * Refine both Task and Judge prompts based on human feedback from iteration 1.
@@ -499,6 +654,10 @@ Important:
 - Do not use markdown formatting in your response
 `;
 }
+
+// ============================================================================
+// BOTH PROMPTS REFINEMENT (iterations 2+, failure analysis)
+// ============================================================================
 
 /**
  * Refine both Task and Judge prompts based on FP/FN failure analysis (iterations 2+).

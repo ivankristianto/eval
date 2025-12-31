@@ -384,7 +384,7 @@ export class IterativeTrainingLoop {
     }
 
     // ITERATIONS 2+: Calculate metrics AUTOMATICALLY from ground truth
-    const { metrics } = calculateIterationMetricsFromGroundTruth(iterationId, this.db);
+    const { metrics } = await calculateIterationMetricsFromGroundTruth(iterationId, this.db);
 
     // Update iteration status to completed
     this.db

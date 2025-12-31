@@ -252,7 +252,7 @@ export const POST: APIRoute = async ({ params, request }) => {
         });
 
         try {
-          const result = calculateIterationMetricsFromGroundTruth(iteration.id, db);
+          const result = await calculateIterationMetricsFromGroundTruth(iteration.id, db);
           metrics = result.metrics;
 
           logger.info('Ground truth metrics calculated successfully', {

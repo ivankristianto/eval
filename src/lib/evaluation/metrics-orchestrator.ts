@@ -8,6 +8,10 @@ import type { Database } from 'better-sqlite3';
 import { calculateMetrics, buildConfusionMatrix } from './metrics';
 import type { MetricsResult, FailureCase } from '@src-types/training';
 import { MetricsCalculationError } from '@lib/training/training-errors';
+import { evaluateByAtomicFacts } from '@lib/training/prompt-engineer';
+import { createLogger } from '@lib/logger';
+
+const logger = createLogger('MetricsOrchestrator');
 
 /** Database row type for iteration_metrics */
 interface IterationMetricsRow {
@@ -30,17 +34,19 @@ interface IterationMetricsJoinRow extends IterationMetricsRow {
 
 /**
  * Calculate metrics for a training iteration AUTOMATICALLY from ground truth
- * Compares judge decisions against expected_output (ground truth) - NO human review required
+ * Uses Atomic Fact Evaluation via LLM to compare generated output vs expected output
+ * - NO human review required
+ * - NO exact string matching (uses semantic fact comparison)
  *
  * @param iterationId - The iteration to calculate metrics for
  * @param db - Database connection
  * @returns Calculated metrics and failure cases for prompt refinement
  * @throws MetricsCalculationError if no judge decisions found
  */
-export function calculateIterationMetricsFromGroundTruth(
+export async function calculateIterationMetricsFromGroundTruth(
   iterationId: string,
   db: Database
-): { metrics: MetricsResult; failureCases: FailureCase[] } {
+): Promise<{ metrics: MetricsResult; failureCases: FailureCase[] }> {
   // Fetch all judge decisions with their training pairs (for ground truth)
   const decisions = db
     .prepare(
@@ -51,9 +57,11 @@ export function calculateIterationMetricsFromGroundTruth(
         jd.generated_output,
         jd.judge_reasoning,
         tp.input as pair_input,
-        tp.expected_output
+        tp.expected_output,
+        ti.persona_id
       FROM judge_decisions jd
       JOIN training_pairs tp ON tp.id = jd.training_pair_id
+      JOIN training_iterations ti ON ti.id = jd.iteration_id
       WHERE jd.iteration_id = ?
     `
     )
@@ -64,51 +72,88 @@ export function calculateIterationMetricsFromGroundTruth(
     judge_reasoning: string;
     pair_input: string;
     expected_output: string;
+    persona_id: string;
   }>;
 
   if (decisions.length === 0) {
     throw new MetricsCalculationError(`No judge decisions found for iteration: ${iterationId}`);
   }
 
-  // Build confusion matrix from ground truth comparison
-  // For each decision, determine if the generated output is actually correct
-  const judgeAgreements: boolean[] = [];
-  const groundTruthCorrectness: boolean[] = [];
+  // Get persona's prompt engineer model ID
+  const persona = db
+    .prepare('SELECT prompt_engineer_model_id FROM personas WHERE id = ?')
+    .get(decisions[0].persona_id) as { prompt_engineer_model_id: string } | undefined;
+
+  if (!persona) {
+    throw new MetricsCalculationError(`Persona not found: ${decisions[0].persona_id}`);
+  }
+
+  // Aggregate atomic fact evaluation results across all decisions
+  let totalTP = 0;
+  let totalTN = 0;
+  let totalFP = 0;
+  let totalFN = 0;
   const failureCases: FailureCase[] = [];
 
+  // Evaluate each decision using atomic fact comparison
   for (const decision of decisions) {
-    // Determine ground truth correctness by comparing generated_output vs expected_output
-    const isCorrect = isOutputCorrect(decision.generated_output, decision.expected_output);
+    try {
+      const evaluation = await evaluateByAtomicFacts(
+        decision.expected_output,
+        decision.generated_output,
+        persona.prompt_engineer_model_id
+      );
 
-    judgeAgreements.push(decision.judge_decision === 'agree');
-    groundTruthCorrectness.push(isCorrect);
+      // Aggregate counts from atomic fact evaluation
+      totalTP += evaluation.TP_count;
+      totalTN += evaluation.TN_count;
+      totalFP += evaluation.FP_count;
+      totalFN += evaluation.FN_count;
 
-    // Collect failure cases for prompt refinement
-    if (!isCorrect && decision.judge_decision === 'agree') {
-      // False Positive: Judge said "agree" (correct) but output is actually wrong
-      failureCases.push({
-        type: 'false_positive',
-        input: decision.pair_input,
-        generated_output: decision.generated_output,
-        expected_output: decision.expected_output,
-        judge_reasoning: decision.judge_reasoning,
+      // Collect failure cases for prompt refinement
+      if (evaluation.FP_count > 0) {
+        // False Positive: Model generated facts not in reference (hallucination)
+        failureCases.push({
+          type: 'false_positive',
+          input: decision.pair_input,
+          generated_output: decision.generated_output,
+          expected_output: decision.expected_output,
+          judge_reasoning: `${evaluation.FP_count} hallucinated facts. ${evaluation.Reasoning}`,
+        });
+      }
+
+      if (evaluation.FN_count > 0) {
+        // False Negative: Model missed facts from reference (omission)
+        failureCases.push({
+          type: 'false_negative',
+          input: decision.pair_input,
+          generated_output: decision.generated_output,
+          expected_output: decision.expected_output,
+          judge_reasoning: `${evaluation.FN_count} missing facts. ${evaluation.Reasoning}`,
+        });
+      }
+    } catch (error) {
+      logger.warn('Atomic fact evaluation failed for decision, using fallback', {
+        decisionId: decision.id,
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
-    } else if (isCorrect && decision.judge_decision === 'disagree') {
-      // False Negative: Judge said "disagree" (incorrect) but output is actually right
-      failureCases.push({
-        type: 'false_negative',
-        input: decision.pair_input,
-        generated_output: decision.generated_output,
-        expected_output: decision.expected_output,
-        judge_reasoning: decision.judge_reasoning,
-      });
+      // On failure, count as FP and FN (worst case)
+      totalFP += 1;
+      totalFN += 1;
     }
   }
 
-  // Build confusion matrix
-  const confusionMatrix = buildConfusionMatrix(judgeAgreements, groundTruthCorrectness);
+  // Build confusion matrix from aggregated atomic fact counts
+  // TP: facts correctly included, TN: facts correctly omitted
+  // FP: hallucinated facts, FN: omitted facts
+  const confusionMatrix = {
+    true_positives: totalTP,
+    true_negatives: totalTN,
+    false_positives: totalFP,
+    false_negatives: totalFN,
+  };
 
-  // Calculate metrics
+  // Calculate metrics from confusion matrix
   const metrics = calculateMetrics(confusionMatrix);
 
   // Store metrics to database
@@ -117,24 +162,17 @@ export function calculateIterationMetricsFromGroundTruth(
   // Update persona best_f1_score if this is an improvement
   updatePersonaBestScore(iterationId, metrics.f1_score, db);
 
+  logger.info('Atomic fact evaluation metrics calculated', {
+    iterationId,
+    totalDecisions: decisions.length,
+    TP: totalTP,
+    TN: totalTN,
+    FP: totalFP,
+    FN: totalFN,
+    f1Score: metrics.f1_score,
+  });
+
   return { metrics, failureCases };
-}
-
-/**
- * Determine if generated output matches expected output
- * Uses exact string comparison for MVP - could use semantic similarity in production
- *
- * @param generatedOutput - The output generated by the task model
- * @param expectedOutput - The ground truth expected output
- * @returns True if outputs match, false otherwise
- */
-function isOutputCorrect(generatedOutput: string, expectedOutput: string): boolean {
-  // Normalize both strings for comparison (trim, lowercase)
-  const normalizedGenerated = generatedOutput.trim().toLowerCase();
-  const normalizedExpected = expectedOutput.trim().toLowerCase();
-
-  // Exact match after normalization
-  return normalizedGenerated === normalizedExpected;
 }
 
 /**
