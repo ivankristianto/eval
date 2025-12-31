@@ -18,7 +18,7 @@ const logger = createLogger('API:Training:Status');
  * SSE event data for training status updates
  */
 interface TrainingStatusEvent {
-  type: 'status_update' | 'iteration_complete' | 'metrics_ready' | 'error';
+  type: 'status_update' | 'stream_closed' | 'error';
   data: {
     persona_id: string;
     latest_iteration: {
@@ -396,25 +396,10 @@ function createSSEStream(
         encoder.encode(`data: ${JSON.stringify({ type: 'status_update', data: initialData })}\n\n`)
       );
 
-      // Check if iteration is already completed on connection start
-      // This handles the case where user connects after training already finished
-      const initialIterationStatus = initialResponse.latest_iteration?.status || null;
-      const initialHasMetrics = !!initialResponse.metrics;
-
-      if (initialIterationStatus === 'completed') {
-        controller.enqueue(
-          sendEvent('iteration_complete', initialData as TrainingStatusEvent['data'])
-        );
-      }
-
-      if (initialHasMetrics && initialResponse.metrics) {
-        controller.enqueue(sendEvent('metrics_ready', initialData as TrainingStatusEvent['data']));
-      }
-
       // Poll for status changes every 2 seconds
-      let lastStatus = initialIterationStatus;
+      let lastStatus = initialResponse.latest_iteration?.status || null;
       let lastIterationNumber = initialResponse.latest_iteration?.iteration_number || 0;
-      let hadMetrics = initialHasMetrics;
+      let lastHasMetrics = !!initialResponse.metrics;
 
       pollInterval = setInterval(() => {
         if (isClosed) {
@@ -428,46 +413,48 @@ function createSSEStream(
           const currentIterationNumber = currentData.latest_iteration?.iteration_number || 0;
           const hasMetrics = !!currentData.metrics;
 
-          // Check if status changed
-          if (currentStatus !== lastStatus) {
-            lastStatus = currentStatus;
-            controller.enqueue(sendEvent('status_update', currentData));
+          // Send status_update if anything changed
+          const statusChanged = currentStatus !== lastStatus;
+          const iterationChanged = currentIterationNumber > lastIterationNumber;
+          const metricsChanged = hasMetrics !== lastHasMetrics;
 
-            // If iteration completed, send iteration_complete event
-            if (currentStatus === 'completed') {
-              controller.enqueue(sendEvent('iteration_complete', currentData));
-            }
-          }
+          if (statusChanged || iterationChanged || metricsChanged) {
+            // Update last known values
+            if (statusChanged) lastStatus = currentStatus;
+            if (iterationChanged) lastIterationNumber = currentIterationNumber;
+            if (metricsChanged) lastHasMetrics = hasMetrics;
 
-          // Check if new iteration started
-          if (currentIterationNumber > lastIterationNumber) {
-            lastIterationNumber = currentIterationNumber;
+            // Always send the full status update when anything changes
             controller.enqueue(sendEvent('status_update', currentData));
           }
 
-          // Check if metrics became available
-          if (hasMetrics && !hadMetrics) {
-            hadMetrics = true;
-            if (currentData.metrics) {
-              controller.enqueue(sendEvent('metrics_ready', currentData));
-            }
-          }
+          // Stop polling if training is in a terminal state
+          // Terminal states: 'completed', 'failed', 'paused', or no active training loop
+          const loopStatus = currentData.training_loop_state?.status;
+          const iterationStatus = currentData.latest_iteration?.status;
+          const isTerminalState =
+            loopStatus === 'completed' ||
+            loopStatus === 'failed' ||
+            loopStatus === 'paused' ||
+            // No active training loop and iteration is completed
+            (!loopStatus && iterationStatus === 'completed') ||
+            // Iteration failed even if loop state exists
+            iterationStatus === 'failed';
 
-          // Stop polling if training is completed
-          if (
-            currentData.training_loop_state?.status === 'completed' ||
-            currentData.latest_iteration?.status === 'failed'
-          ) {
+          if (isTerminalState) {
             if (pollInterval) clearInterval(pollInterval);
+
             // Send final status update
             controller.enqueue(sendEvent('status_update', currentData));
-            // Close stream after a short delay
-            setTimeout(() => {
-              if (!isClosed) {
-                controller.close();
-                isClosed = true;
-              }
-            }, 1000);
+            // Send stream_closed event to signal clean close to client
+            controller.enqueue(sendEvent('stream_closed', currentData));
+            // Close stream immediately after sending events
+            try {
+              controller.close();
+              isClosed = true;
+            } catch {
+              // Controller may already be closed
+            }
           }
         } catch (error) {
           logger.error('SSE polling error', error instanceof Error ? error : undefined);
