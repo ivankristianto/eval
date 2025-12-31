@@ -26,6 +26,7 @@ import { callModel, extractJsonFromResponse } from '@lib/utils/api-clients';
 import {
   buildTaskModelSystemPrompt,
   buildTaskModelInstruction,
+  buildJudgeSystemPrompt,
   buildJudgeEvaluationInstruction,
 } from './prompt-engineer';
 import { createLogger } from '@lib/logger';
@@ -585,7 +586,7 @@ export class IterativeTrainingLoop {
    * @param judgeModelId - Model ID for the judge model
    * @param input - Original input
    * @param generatedOutput - Output from task model
-   * @param judgePrompt - Judge prompt to guide evaluation
+   * @param judgePrompt - Judge prompt to use as system prompt
    * @param expectedOutput - Optional expected output for semantic similarity fallback
    * @returns Judge decision and reasoning
    */
@@ -596,10 +597,14 @@ export class IterativeTrainingLoop {
     judgePrompt: string,
     expectedOutput?: string
   ): Promise<JudgeDecisionResult> {
-    const instruction = buildJudgeEvaluationInstruction(judgePrompt, input, generatedOutput);
+    const systemPrompt = buildJudgeSystemPrompt(judgePrompt);
+    const instruction = buildJudgeEvaluationInstruction(input, generatedOutput);
 
     try {
-      const response = await callModel(judgeModelId, instruction, { temperature: 0.3 });
+      const response = await callModel(judgeModelId, instruction, {
+        systemPrompt,
+        temperature: 0.3,
+      });
       const jsonContent = extractJsonFromResponse(response);
       return this.parseJudgeResponse(jsonContent, generatedOutput, expectedOutput);
     } catch (error) {

@@ -106,35 +106,43 @@ export function buildTaskModelInstruction(input: string): string {
 // ============================================================================
 
 /**
- * Build judge evaluation prompt for comparing generated output against judge criteria.
+ * Build system prompt for judge model.
  * @param judgePrompt - The judge prompt/criteria
- * @param input - Original input
- * @param generatedOutput - Output from task model
- * @returns Full instruction for judge model
+ * @returns System prompt for judge model
  */
-export function buildJudgeEvaluationInstruction(
-  judgePrompt: string,
-  input: string,
-  generatedOutput: string
-): string {
-  return `Judge Prompt: ${judgePrompt}
+export function buildJudgeSystemPrompt(judgePrompt: string): string {
+  return `You are a judge model. Your task is to evaluate whether a generated output correctly addresses the input according to the following criteria:
 
-Input: ${input}
-Generated Output: ${generatedOutput}
+${judgePrompt}
 
-Evaluate whether the generated output correctly addresses the input according to the judge prompt.
-
-Respond with a JSON object containing:
+Evaluate the output and provide your decision in JSON format:
 {
   "decision": "agree" or "disagree",
   "reasoning": "Brief explanation of your decision (1-2 sentences)"
 }
 
 Important:
+- "agree" means the generated output correctly addresses the input according to the criteria
+- "disagree" means the generated output does not correctly address the input
 - Format the response strictly as JSON
 - Avoid any additional commentary outside the JSON response
-- Do not use markdown formatting in your response
-`;
+- Do not use markdown formatting in your response`;
+}
+
+/**
+ * Build user instruction for judge model evaluation.
+ * @param input - Original input
+ * @param generatedOutput - Output from task model
+ * @returns User instruction for judge model
+ */
+export function buildJudgeEvaluationInstruction(
+  input: string,
+  generatedOutput: string
+): string {
+  return `Input: ${input}
+Generated Output: ${generatedOutput}
+
+Evaluate whether the generated output correctly addresses the input according to the criteria provided in the system prompt.`;
 }
 
 // ============================================================================
