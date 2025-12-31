@@ -412,7 +412,7 @@ function buildHumanFeedbackPromptContext(context: HumanFeedbackContext): string 
 ## Context
 This is iteration ${iteration_number} of the training process. Humans have reviewed the judge's decisions and provided feedback where they disagreed.
 
-## Current Task Prompt
+## Current Task Prompt (Iteration ${iteration_number})
 "${current_task_prompt}"
 
 ## Current Judge Prompt (Iteration ${iteration_number})
