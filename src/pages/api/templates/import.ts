@@ -107,7 +107,7 @@ export const POST: APIRoute = async ({ request }) => {
   }
 };
 
-interface CSVTemplate {
+export interface CSVTemplate {
   id: string;
   name: string;
   description: string;
@@ -123,12 +123,12 @@ interface CSVTemplate {
   updated_at: string;
 }
 
-interface ParseResult {
+export interface ParseResult {
   templates: CSVTemplate[];
   errors: string[];
 }
 
-interface ImportResult {
+export interface ImportResult {
   imported: number;
   failed: number;
   skipped: number;
@@ -138,8 +138,9 @@ interface ImportResult {
 /**
  * Parse CSV content into template objects
  * Handles quoted fields with commas, quotes, and newlines
+ * Exported for testing
  */
-function parseCSV(content: string): ParseResult {
+export function parseCSV(content: string): ParseResult {
   const templates: CSVTemplate[] = [];
   const errors: string[] = [];
 
