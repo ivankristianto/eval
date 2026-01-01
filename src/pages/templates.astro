@@ -97,7 +97,7 @@ const templateIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 t
                   <td>
                     <div class="font-medium">{template.name}</div>
                     {template.description && (
-                      <div class="text-xs text-base-content/50 mt-1">{template.description}</div>
+                      <div class="text-xs text-base-content/50 mt-1 line-clamp-2" title={template.description}>{template.description}</div>
                     )}
                   </td>
                   <td>
