@@ -3,6 +3,7 @@ import Layout from '../layouts/Layout.astro';
 import Breadcrumbs from '../components/ui/Breadcrumbs.astro';
 import Badge from '../components/ui/Badge.astro';
 import EmptyState from '../components/ui/EmptyState.astro';
+import EditTemplateModal from '../components/EditTemplateModal.astro';
 import { getTemplates } from '../lib/db';
 
 // Get templates
@@ -54,6 +55,12 @@ const templateIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 t
         Saved evaluation configurations for quick reuse.
       </p>
     </div>
+    <button id="export-csv-btn" class="btn btn-luxe btn-ghost gap-2">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      </svg>
+      Export CSV
+    </button>
   </div>
 
   <!-- Templates List -->
@@ -108,6 +115,12 @@ const templateIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 t
                       >
                         Run
                       </button>
+                      <button
+                        class="edit-btn btn btn-xs btn-ghost text-base-content/70"
+                        data-id={template.id}
+                      >
+                        Edit
+                      </button>
                       <a
                         href={`/?template=${template.id}`}
                         class="btn btn-xs btn-ghost text-base-content/70"
@@ -139,10 +152,91 @@ const templateIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 t
       )
     }
   </div>
+
+  <!-- Edit Template Modal -->
+  <EditTemplateModal />
 </Layout>
 
 <script>
   import { addToast } from '../lib/toastStore';
+
+  // Export CSV
+  const exportBtn = document.getElementById('export-csv-btn');
+  if (exportBtn) {
+    exportBtn.addEventListener('click', async () => {
+      exportBtn.disabled = true;
+      const originalText = exportBtn.innerHTML;
+      exportBtn.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 animate-spin" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        Exporting...
+      `;
+
+      try {
+        const response = await fetch('/api/templates/export');
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || 'Failed to export templates');
+        }
+
+        // Get the CSV content
+        const csvContent = await response.text();
+
+        // Create a blob from the CSV content
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+
+        // Create a temporary link element
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+
+        // Extract filename from Content-Disposition header or use default
+        const contentDisposition = response.headers.get('Content-Disposition');
+        let filename = 'templates-export.csv';
+        if (contentDisposition) {
+          const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+          if (filenameMatch && filenameMatch[1]) {
+            filename = filenameMatch[1].replace(/['"]/g, '');
+          }
+        }
+
+        link.setAttribute('download', filename);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        // Clean up the object URL
+        URL.revokeObjectURL(url);
+
+        addToast('Templates exported successfully', 'success');
+      } catch (error) {
+        addToast(error instanceof Error ? error.message : 'Failed to export templates', 'error');
+      } finally {
+        exportBtn.disabled = false;
+        exportBtn.innerHTML = originalText;
+      }
+    });
+  }
+
+  // Edit template
+  document.querySelectorAll('.edit-btn').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      const target = e.target as HTMLButtonElement;
+      const templateId = target.dataset.id;
+      if (!templateId) return;
+
+      // Call the global function exposed by EditTemplateModal
+      if (typeof (window as any).openEditTemplateModal === 'function') {
+        (window as any).openEditTemplateModal(templateId);
+      } else {
+        addToast('Failed to open edit modal', 'error');
+      }
+    });
+  });
 
   // Run template
   document.querySelectorAll('.run-btn').forEach((btn) => {
