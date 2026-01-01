@@ -105,7 +105,7 @@ describe('Import/Export Roundtrip Integration Tests', () => {
 
       // Step 1: Export templates
       const { GET: exportGET } = await import('../../src/pages/api/templates/export.ts');
-      const exportResponse = await exportGET();
+      const exportResponse = await exportGET({} as any);
       expect(exportResponse.status).toBe(200);
 
       const csvContent = await exportResponse.text();
@@ -133,7 +133,7 @@ describe('Import/Export Roundtrip Integration Tests', () => {
       });
 
       const { POST: importPOST } = await import('../../src/pages/api/templates/import.ts');
-      const importResponse = await importPOST({ request } as { request: Request });
+      const importResponse = await importPOST({ request } as any);
       expect(importResponse.status).toBe(200);
 
       const importResult = (await importResponse.json()) as {
@@ -202,7 +202,7 @@ describe('Import/Export Roundtrip Integration Tests', () => {
       // Database is empty from beforeEach
 
       const { GET: exportGET } = await import('../../src/pages/api/templates/export.ts');
-      const exportResponse = await exportGET();
+      const exportResponse = await exportGET({} as any);
       expect(exportResponse.status).toBe(200);
 
       const csvContent = await exportResponse.text();
@@ -233,7 +233,7 @@ describe('Import/Export Roundtrip Integration Tests', () => {
 
       // Export it
       const { GET: exportGET } = await import('../../src/pages/api/templates/export.ts');
-      const exportResponse = await exportGET();
+      const exportResponse = await exportGET({} as any);
       const csvContent = await exportResponse.text();
 
       // Try to import the same CSV (should skip duplicate)
@@ -247,7 +247,7 @@ describe('Import/Export Roundtrip Integration Tests', () => {
       });
 
       const { POST: importPOST } = await import('../../src/pages/api/templates/import.ts');
-      const importResponse = await importPOST({ request } as { request: Request });
+      const importResponse = await importPOST({ request } as any);
       const importResult = (await importResponse.json()) as {
         imported: number;
         failed: number;
@@ -277,7 +277,7 @@ describe('Import/Export Roundtrip Integration Tests', () => {
       });
 
       const { POST: importPOST } = await import('../../src/pages/api/templates/import.ts');
-      const response = await importPOST({ request } as { request: Request });
+      const response = await importPOST({ request } as any);
       const result = await response.json();
 
       expect(response.status).toBe(400);
@@ -295,7 +295,7 @@ describe('Import/Export Roundtrip Integration Tests', () => {
       });
 
       const { POST: importPOST } = await import('../../src/pages/api/templates/import.ts');
-      const response = await importPOST({ request } as { request: Request });
+      const response = await importPOST({ request } as any);
       const result = await response.json();
 
       expect(response.status).toBe(400);
@@ -322,7 +322,7 @@ describe('Import/Export Roundtrip Integration Tests', () => {
       });
 
       const { POST: importPOST } = await import('../../src/pages/api/templates/import.ts');
-      const response = await importPOST({ request } as { request: Request });
+      const response = await importPOST({ request } as any);
       const result = await response.json();
 
       expect(response.status).toBe(400);
@@ -350,7 +350,7 @@ describe('Import/Export Roundtrip Integration Tests', () => {
       });
 
       const { POST: importPOST } = await import('../../src/pages/api/templates/import.ts');
-      const response = await importPOST({ request } as { request: Request });
+      const response = await importPOST({ request } as any);
       const result = await response.json();
 
       expect(response.status).toBe(400);
@@ -385,7 +385,7 @@ describe('Import/Export Roundtrip Integration Tests', () => {
       });
 
       const { POST: importPOST } = await import('../../src/pages/api/templates/import.ts');
-      const response = await importPOST({ request } as { request: Request });
+      const response = await importPOST({ request } as any);
       const result = (await response.json()) as {
         imported: number;
         failed: number;
@@ -425,7 +425,7 @@ describe('Import/Export Roundtrip Integration Tests', () => {
       });
 
       const { POST: importPOST } = await import('../../src/pages/api/templates/import.ts');
-      const response = await importPOST({ request } as { request: Request });
+      const response = await importPOST({ request } as any);
       const result = await response.json();
 
       expect(response.status).toBe(400);
@@ -450,7 +450,7 @@ describe('Import/Export Roundtrip Integration Tests', () => {
       });
 
       const { POST: importPOST } = await import('../../src/pages/api/templates/import.ts');
-      const response = await importPOST({ request } as { request: Request });
+      const response = await importPOST({ request } as any);
       const result = await response.json();
 
       expect(response.status).toBe(400);
@@ -477,7 +477,7 @@ describe('Import/Export Roundtrip Integration Tests', () => {
       );
 
       const { GET: exportGET } = await import('../../src/pages/api/templates/export.ts');
-      const response = await exportGET();
+      const response = await exportGET({} as any);
       expect(response.status).toBe(200);
 
       const csvContent = await response.text();
@@ -500,7 +500,7 @@ describe('Import/Export Roundtrip Integration Tests', () => {
       });
 
       const { POST: importPOST } = await import('../../src/pages/api/templates/import.ts');
-      const importResponse = await importPOST({ request } as { request: Request });
+      const importResponse = await importPOST({ request } as any);
       const importResult = (await importResponse.json()) as {
         imported: number;
         failed: number;
@@ -551,7 +551,7 @@ describe('Import/Export Roundtrip Integration Tests', () => {
       db.prepare('UPDATE EvaluationTemplate SET run_count = 1 WHERE id = ?').run(template2.id);
 
       const { GET: exportGET } = await import('../../src/pages/api/templates/export.ts');
-      const response = await exportGET();
+      const response = await exportGET({} as any);
       const csvContent = await response.text();
 
       const lines = csvContent.split('\n');
@@ -565,7 +565,7 @@ describe('Import/Export Roundtrip Integration Tests', () => {
 
     it('should return proper CSV content-type headers', async () => {
       const { GET: exportGET } = await import('../../src/pages/api/templates/export.ts');
-      const response = await exportGET();
+      const response = await exportGET({} as any);
 
       expect(response.status).toBe(200);
       expect(response.headers.get('Content-Type')).toContain('text/csv');
@@ -593,7 +593,7 @@ describe('Import/Export Roundtrip Integration Tests', () => {
 
       // Export
       const { GET: exportGET } = await import('../../src/pages/api/templates/export.ts');
-      await exportGET();
+      await exportGET({} as any);
 
       // Verify template unchanged
       const templates = getTemplates('created', 'desc');
@@ -625,7 +625,7 @@ describe('Import/Export Roundtrip Integration Tests', () => {
       );
 
       const { GET: exportGET } = await import('../../src/pages/api/templates/export.ts');
-      const exportResponse = await exportGET();
+      const exportResponse = await exportGET({} as any);
       const csvContent = await exportResponse.text();
 
       // Clear database
@@ -643,7 +643,7 @@ describe('Import/Export Roundtrip Integration Tests', () => {
       });
 
       const { POST: importPOST } = await import('../../src/pages/api/templates/import.ts');
-      await importPOST({ request } as { request: Request });
+      await importPOST({ request } as any);
 
       // Verify new template was created
       const templates = getTemplates('created', 'desc');
@@ -677,7 +677,7 @@ describe('Import/Export Roundtrip Integration Tests', () => {
 
       // Export
       const { GET: exportGET } = await import('../../src/pages/api/templates/export.ts');
-      const exportResponse = await exportGET();
+      const exportResponse = await exportGET({} as any);
       const csvContent = await exportResponse.text();
 
       const lines = csvContent.split('\n').filter((l) => l.trim());
@@ -698,7 +698,7 @@ describe('Import/Export Roundtrip Integration Tests', () => {
       });
 
       const { POST: importPOST } = await import('../../src/pages/api/templates/import.ts');
-      const importResponse = await importPOST({ request } as { request: Request });
+      const importResponse = await importPOST({ request } as any);
       const importResult = (await importResponse.json()) as {
         imported: number;
         failed: number;
@@ -738,7 +738,7 @@ describe('Import/Export Roundtrip Integration Tests', () => {
       );
 
       const { GET: exportGET } = await import('../../src/pages/api/templates/export.ts');
-      let response = await exportGET();
+      let response = await exportGET({} as any);
       let csvContent = await response.text();
 
       // Cycle 2: Add more templates and export again
@@ -754,7 +754,7 @@ describe('Import/Export Roundtrip Integration Tests', () => {
         undefined
       );
 
-      response = await exportGET();
+      response = await exportGET({} as any);
       csvContent = await response.text();
 
       // Verify both templates are in the export
@@ -775,7 +775,7 @@ describe('Import/Export Roundtrip Integration Tests', () => {
       });
 
       const { POST: importPOST } = await import('../../src/pages/api/templates/import.ts');
-      const importResponse = await importPOST({ request } as { request: Request });
+      const importResponse = await importPOST({ request } as any);
       const importResult = (await importResponse.json()) as {
         imported: number;
         failed: number;

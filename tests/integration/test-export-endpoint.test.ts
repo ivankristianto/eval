@@ -129,7 +129,7 @@ describe('GET /api/templates/export', () => {
     );
 
     const { GET: exportGET } = await import('../../src/pages/api/templates/export.ts');
-    const response = await exportGET();
+    const response = await exportGET({} as any);
 
     expect(response.status).toBe(200);
 
@@ -170,7 +170,7 @@ describe('GET /api/templates/export', () => {
 
   it('should handle empty database gracefully', async () => {
     const { GET: exportGET } = await import('../../src/pages/api/templates/export.ts');
-    const response = await exportGET();
+    const response = await exportGET({} as any);
 
     expect(response.status).toBe(200);
 
@@ -184,7 +184,7 @@ describe('GET /api/templates/export', () => {
 
   it('should set correct content-type headers', async () => {
     const { GET: exportGET } = await import('../../src/pages/api/templates/export.ts');
-    const response = await exportGET();
+    const response = await exportGET({} as any);
 
     expect(response.status).toBe(200);
     expect(response.headers.get('Content-Type')).toContain('text/csv');
@@ -206,7 +206,7 @@ describe('GET /api/templates/export', () => {
     );
 
     const { GET: exportGET } = await import('../../src/pages/api/templates/export.ts');
-    const response = await exportGET();
+    const response = await exportGET({} as any);
 
     expect(response.status).toBe(200);
 
@@ -235,7 +235,7 @@ describe('GET /api/templates/export', () => {
     );
 
     const { GET: exportGET } = await import('../../src/pages/api/templates/export.ts');
-    const response = await exportGET();
+    const response = await exportGET({} as any);
 
     expect(response.status).toBe(200);
 
@@ -261,7 +261,7 @@ describe('GET /api/templates/export', () => {
     }
 
     const { GET: exportGET } = await import('../../src/pages/api/templates/export.ts');
-    const response = await exportGET();
+    const response = await exportGET({} as any);
 
     expect(response.status).toBe(200);
 
@@ -291,7 +291,7 @@ describe('GET /api/templates/export', () => {
     );
 
     const { GET: exportGET } = await import('../../src/pages/api/templates/export.ts');
-    const response = await exportGET();
+    const response = await exportGET({} as any);
 
     expect(response.status).toBe(200);
 
@@ -320,7 +320,7 @@ describe('GET /api/templates/export', () => {
     db.prepare('UPDATE EvaluationTemplate SET run_count = 5 WHERE id = ?').run(template.id);
 
     const { GET: exportGET } = await import('../../src/pages/api/templates/export.ts');
-    const response = await exportGET();
+    const response = await exportGET({} as any);
 
     expect(response.status).toBe(200);
 
@@ -352,7 +352,7 @@ describe('GET /api/templates/export', () => {
     );
 
     const { GET: exportGET } = await import('../../src/pages/api/templates/export.ts');
-    const response = await exportGET();
+    const response = await exportGET({} as any);
 
     expect(response.status).toBe(200);
 
@@ -379,7 +379,7 @@ describe('GET /api/templates/export', () => {
     const templatesBefore = getTemplates('created', 'desc');
 
     const { GET: exportGET } = await import('../../src/pages/api/templates/export.ts');
-    await exportGET();
+    await exportGET({} as any);
 
     const templatesAfter = getTemplates('created', 'desc');
 
@@ -407,7 +407,7 @@ describe('GET /api/templates/export', () => {
     );
 
     const { GET: exportGET } = await import('../../src/pages/api/templates/export.ts');
-    const response = await exportGET();
+    const response = await exportGET({} as any);
 
     expect(response.status).toBe(200);
 
@@ -427,7 +427,7 @@ describe('GET /api/templates/export', () => {
     const template3 = insertTemplate('Template 3', 'Instruction 3', ['model-1'], 'exact_match');
 
     const { GET: exportGET } = await import('../../src/pages/api/templates/export.ts');
-    const response = await exportGET();
+    const response = await exportGET({} as any);
 
     expect(response.status).toBe(200);
 

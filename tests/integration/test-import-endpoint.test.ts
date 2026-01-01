@@ -82,7 +82,7 @@ describe('POST /api/templates/import', () => {
     const { POST } = await import('../../src/pages/api/templates/import.ts');
 
     // Call the handler
-    const response = await POST({ request } as { request: Request });
+    const response = await POST({ request } as any);
 
     // Check response status
     expect(response.status).toBe(200);
@@ -154,7 +154,7 @@ describe('POST /api/templates/import', () => {
     });
 
     const { POST } = await import('../../src/pages/api/templates/import.ts');
-    const response = await POST({ request } as { request: Request });
+    const response = await POST({ request } as any);
     const result = (await response.json()) as {
       imported: number;
       failed: number;
@@ -183,7 +183,7 @@ describe('POST /api/templates/import', () => {
     });
 
     const { POST } = await import('../../src/pages/api/templates/import.ts');
-    const response = await POST({ request } as { request: Request });
+    const response = await POST({ request } as any);
     const result = await response.json();
 
     expect(response.status).toBe(400);
@@ -209,7 +209,7 @@ describe('POST /api/templates/import', () => {
     });
 
     const { POST } = await import('../../src/pages/api/templates/import.ts');
-    const response = await POST({ request } as { request: Request });
+    const response = await POST({ request } as any);
     const result = (await response.json()) as {
       imported: number;
       failed: number;
@@ -240,7 +240,7 @@ describe('POST /api/templates/import', () => {
     });
 
     const { POST } = await import('../../src/pages/api/templates/import.ts');
-    const response = await POST({ request } as { request: Request });
+    const response = await POST({ request } as any);
     const result = await response.json();
 
     expect(response.status).toBe(400);
@@ -257,7 +257,7 @@ describe('POST /api/templates/import', () => {
     });
 
     const { POST } = await import('../../src/pages/api/templates/import.ts');
-    const response = await POST({ request } as { request: Request });
+    const response = await POST({ request } as any);
     const result = await response.json();
 
     expect(response.status).toBe(400);
@@ -276,7 +276,7 @@ describe('POST /api/templates/import', () => {
     });
 
     const { POST } = await import('../../src/pages/api/templates/import.ts');
-    const response = await POST({ request } as { request: Request });
+    const response = await POST({ request } as any);
     const result = await response.json();
 
     expect(response.status).toBe(400);
@@ -304,7 +304,7 @@ describe('POST /api/templates/import', () => {
     });
 
     const { POST } = await import('../../src/pages/api/templates/import.ts');
-    const response = await POST({ request } as { request: Request });
+    const response = await POST({ request } as any);
     const result = (await response.json()) as {
       imported: number;
       failed: number;
@@ -350,7 +350,7 @@ describe('POST /api/templates/import', () => {
     });
 
     const { POST } = await import('../../src/pages/api/templates/import.ts');
-    const response = await POST({ request } as { request: Request });
+    const response = await POST({ request } as any);
 
     console.log('Response status:', response.status);
 
@@ -418,7 +418,7 @@ describe('POST /api/templates/import', () => {
     });
 
     const { POST } = await import('../../src/pages/api/templates/import.ts');
-    const response = await POST({ request } as { request: Request });
+    const response = await POST({ request } as any);
     const result = (await response.json()) as {
       imported: number;
       failed: number;
@@ -456,7 +456,7 @@ describe('POST /api/templates/import', () => {
     });
 
     const { POST } = await import('../../src/pages/api/templates/import.ts');
-    const response = await POST({ request } as { request: Request });
+    const response = await POST({ request } as any);
     const result = (await response.json()) as {
       imported: number;
       failed: number;
@@ -489,7 +489,7 @@ describe('POST /api/templates/import', () => {
     });
 
     const { POST } = await import('../../src/pages/api/templates/import.ts');
-    const response = await POST({ request } as { request: Request });
+    const response = await POST({ request } as any);
     const result = (await response.json()) as {
       imported: number;
       failed: number;
@@ -530,7 +530,7 @@ describe('POST /api/templates/import', () => {
     });
 
     const { POST } = await import('../../src/pages/api/templates/import.ts');
-    const response = await POST({ request } as { request: Request });
+    const response = await POST({ request } as any);
     const result = (await response.json()) as {
       imported: number;
       failed: number;
@@ -574,7 +574,7 @@ describe('POST /api/templates/import', () => {
     });
 
     const { POST } = await import('../../src/pages/api/templates/import.ts');
-    const response = await POST({ request } as { request: Request });
+    const response = await POST({ request } as any);
     const result = (await response.json()) as {
       imported: number;
       failed: number;
@@ -617,7 +617,7 @@ describe('POST /api/templates/import', () => {
     });
 
     const { POST } = await import('../../src/pages/api/templates/import.ts');
-    const response = await POST({ request } as { request: Request });
+    const response = await POST({ request } as any);
     const result = (await response.json()) as {
       imported: number;
       failed: number;
