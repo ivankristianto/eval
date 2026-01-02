@@ -25,7 +25,8 @@
       "Bash(bd stats)",
       "Bash(bd list:*)",
       "Bash(bd update:*)",
-      "Bash(npm run test:e2e:*)"
+      "Bash(npm run test:e2e:*)",
+      "Bash(bd show:*)"
     ]
   },
   "gitAttribution": false
