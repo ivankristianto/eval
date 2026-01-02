@@ -7,10 +7,14 @@ import {
   validateCreateTemplate,
   validateSystemPrompt,
   validateTemperature,
-} from '../../../lib/validators';
-import type { RubricType } from '../../../lib/types';
+} from '@lib/validation/validators';
+import type { RubricType } from '@lib/utils/types';
 
-// POST /api/templates/import - Import templates from CSV
+/**
+ * POST /api/templates/import - Import templates from CSV file.
+ * @param request - The Astro API request containing the CSV file
+ * @returns JSON response with import results
+ */
 export const POST: APIRoute = async ({ request }) => {
   try {
     // Parse multipart form data

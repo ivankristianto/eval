@@ -7,15 +7,14 @@ import {
   closeDatabase,
   getDatabase,
 } from '../../src/lib/db';
-import Database from 'better-sqlite3';
-import { unlinkSync, existsSync, readFileSync } from 'fs';
+import { unlinkSync, existsSync } from 'fs';
 import { join } from 'path';
 
 // Test database path for isolation
 const TEST_DB_PATH = join(process.cwd(), 'db', 'evaluation-roundtrip-test.db');
 
 describe('Import/Export Roundtrip Integration Tests', () => {
-  let originalDbPath: string | undefined;
+  let _originalDbPath: string | undefined;
 
   beforeAll(() => {
     // Close any existing database connection
@@ -105,7 +104,7 @@ describe('Import/Export Roundtrip Integration Tests', () => {
 
       // Step 1: Export templates
       const { GET: exportGET } = await import('../../src/pages/api/templates/export.ts');
-      const exportResponse = await exportGET({} as any);
+      const exportResponse = await exportGET({} as any) // eslint-disable-line @typescript-eslint/no-explicit-any
       expect(exportResponse.status).toBe(200);
 
       const csvContent = await exportResponse.text();
@@ -133,7 +132,7 @@ describe('Import/Export Roundtrip Integration Tests', () => {
       });
 
       const { POST: importPOST } = await import('../../src/pages/api/templates/import.ts');
-      const importResponse = await importPOST({ request } as any);
+      const importResponse = await importPOST({ request } as any) // eslint-disable-line @typescript-eslint/no-explicit-any
       expect(importResponse.status).toBe(200);
 
       const importResult = (await importResponse.json()) as {
@@ -202,7 +201,7 @@ describe('Import/Export Roundtrip Integration Tests', () => {
       // Database is empty from beforeEach
 
       const { GET: exportGET } = await import('../../src/pages/api/templates/export.ts');
-      const exportResponse = await exportGET({} as any);
+      const exportResponse = await exportGET({} as any) // eslint-disable-line @typescript-eslint/no-explicit-any
       expect(exportResponse.status).toBe(200);
 
       const csvContent = await exportResponse.text();
@@ -233,7 +232,7 @@ describe('Import/Export Roundtrip Integration Tests', () => {
 
       // Export it
       const { GET: exportGET } = await import('../../src/pages/api/templates/export.ts');
-      const exportResponse = await exportGET({} as any);
+      const exportResponse = await exportGET({} as any) // eslint-disable-line @typescript-eslint/no-explicit-any
       const csvContent = await exportResponse.text();
 
       // Try to import the same CSV (should skip duplicate)
@@ -247,7 +246,7 @@ describe('Import/Export Roundtrip Integration Tests', () => {
       });
 
       const { POST: importPOST } = await import('../../src/pages/api/templates/import.ts');
-      const importResponse = await importPOST({ request } as any);
+      const importResponse = await importPOST({ request } as any) // eslint-disable-line @typescript-eslint/no-explicit-any
       const importResult = (await importResponse.json()) as {
         imported: number;
         failed: number;
@@ -277,7 +276,7 @@ describe('Import/Export Roundtrip Integration Tests', () => {
       });
 
       const { POST: importPOST } = await import('../../src/pages/api/templates/import.ts');
-      const response = await importPOST({ request } as any);
+      const response = await importPOST({ request } as any) // eslint-disable-line @typescript-eslint/no-explicit-any
       const result = await response.json();
 
       expect(response.status).toBe(400);
@@ -295,7 +294,7 @@ describe('Import/Export Roundtrip Integration Tests', () => {
       });
 
       const { POST: importPOST } = await import('../../src/pages/api/templates/import.ts');
-      const response = await importPOST({ request } as any);
+      const response = await importPOST({ request } as any) // eslint-disable-line @typescript-eslint/no-explicit-any
       const result = await response.json();
 
       expect(response.status).toBe(400);
@@ -322,7 +321,7 @@ describe('Import/Export Roundtrip Integration Tests', () => {
       });
 
       const { POST: importPOST } = await import('../../src/pages/api/templates/import.ts');
-      const response = await importPOST({ request } as any);
+      const response = await importPOST({ request } as any) // eslint-disable-line @typescript-eslint/no-explicit-any
       const result = await response.json();
 
       expect(response.status).toBe(400);
@@ -350,7 +349,7 @@ describe('Import/Export Roundtrip Integration Tests', () => {
       });
 
       const { POST: importPOST } = await import('../../src/pages/api/templates/import.ts');
-      const response = await importPOST({ request } as any);
+      const response = await importPOST({ request } as any) // eslint-disable-line @typescript-eslint/no-explicit-any
       const result = await response.json();
 
       expect(response.status).toBe(400);
@@ -385,7 +384,7 @@ describe('Import/Export Roundtrip Integration Tests', () => {
       });
 
       const { POST: importPOST } = await import('../../src/pages/api/templates/import.ts');
-      const response = await importPOST({ request } as any);
+      const response = await importPOST({ request } as any) // eslint-disable-line @typescript-eslint/no-explicit-any
       const result = (await response.json()) as {
         imported: number;
         failed: number;
@@ -425,7 +424,7 @@ describe('Import/Export Roundtrip Integration Tests', () => {
       });
 
       const { POST: importPOST } = await import('../../src/pages/api/templates/import.ts');
-      const response = await importPOST({ request } as any);
+      const response = await importPOST({ request } as any) // eslint-disable-line @typescript-eslint/no-explicit-any
       const result = await response.json();
 
       expect(response.status).toBe(400);
@@ -450,7 +449,7 @@ describe('Import/Export Roundtrip Integration Tests', () => {
       });
 
       const { POST: importPOST } = await import('../../src/pages/api/templates/import.ts');
-      const response = await importPOST({ request } as any);
+      const response = await importPOST({ request } as any) // eslint-disable-line @typescript-eslint/no-explicit-any
       const result = await response.json();
 
       expect(response.status).toBe(400);
@@ -477,7 +476,7 @@ describe('Import/Export Roundtrip Integration Tests', () => {
       );
 
       const { GET: exportGET } = await import('../../src/pages/api/templates/export.ts');
-      const response = await exportGET({} as any);
+      const response = await exportGET({} as any) // eslint-disable-line @typescript-eslint/no-explicit-any
       expect(response.status).toBe(200);
 
       const csvContent = await response.text();
@@ -500,7 +499,7 @@ describe('Import/Export Roundtrip Integration Tests', () => {
       });
 
       const { POST: importPOST } = await import('../../src/pages/api/templates/import.ts');
-      const importResponse = await importPOST({ request } as any);
+      const importResponse = await importPOST({ request } as any) // eslint-disable-line @typescript-eslint/no-explicit-any
       const importResult = (await importResponse.json()) as {
         imported: number;
         failed: number;
@@ -551,7 +550,7 @@ describe('Import/Export Roundtrip Integration Tests', () => {
       db.prepare('UPDATE EvaluationTemplate SET run_count = 1 WHERE id = ?').run(template2.id);
 
       const { GET: exportGET } = await import('../../src/pages/api/templates/export.ts');
-      const response = await exportGET({} as any);
+      const response = await exportGET({} as any) // eslint-disable-line @typescript-eslint/no-explicit-any
       const csvContent = await response.text();
 
       const lines = csvContent.split('\n');
@@ -565,7 +564,7 @@ describe('Import/Export Roundtrip Integration Tests', () => {
 
     it('should return proper CSV content-type headers', async () => {
       const { GET: exportGET } = await import('../../src/pages/api/templates/export.ts');
-      const response = await exportGET({} as any);
+      const response = await exportGET({} as any) // eslint-disable-line @typescript-eslint/no-explicit-any
 
       expect(response.status).toBe(200);
       expect(response.headers.get('Content-Type')).toContain('text/csv');
@@ -593,7 +592,7 @@ describe('Import/Export Roundtrip Integration Tests', () => {
 
       // Export
       const { GET: exportGET } = await import('../../src/pages/api/templates/export.ts');
-      await exportGET({} as any);
+      await exportGET({} as any) // eslint-disable-line @typescript-eslint/no-explicit-any
 
       // Verify template unchanged
       const templates = getTemplates('created', 'desc');
@@ -625,7 +624,7 @@ describe('Import/Export Roundtrip Integration Tests', () => {
       );
 
       const { GET: exportGET } = await import('../../src/pages/api/templates/export.ts');
-      const exportResponse = await exportGET({} as any);
+      const exportResponse = await exportGET({} as any) // eslint-disable-line @typescript-eslint/no-explicit-any
       const csvContent = await exportResponse.text();
 
       // Clear database
@@ -643,7 +642,7 @@ describe('Import/Export Roundtrip Integration Tests', () => {
       });
 
       const { POST: importPOST } = await import('../../src/pages/api/templates/import.ts');
-      await importPOST({ request } as any);
+      await importPOST({ request } as any) // eslint-disable-line @typescript-eslint/no-explicit-any
 
       // Verify new template was created
       const templates = getTemplates('created', 'desc');
@@ -679,7 +678,7 @@ describe('Import/Export Roundtrip Integration Tests', () => {
 
       // Export
       const { GET: exportGET } = await import('../../src/pages/api/templates/export.ts');
-      const exportResponse = await exportGET({} as any);
+      const exportResponse = await exportGET({} as any) // eslint-disable-line @typescript-eslint/no-explicit-any
       const csvContent = await exportResponse.text();
 
       const lines = csvContent.split('\n').filter((l) => l.trim());
@@ -700,7 +699,7 @@ describe('Import/Export Roundtrip Integration Tests', () => {
       });
 
       const { POST: importPOST } = await import('../../src/pages/api/templates/import.ts');
-      const importResponse = await importPOST({ request } as any);
+      const importResponse = await importPOST({ request } as any) // eslint-disable-line @typescript-eslint/no-explicit-any
       const importResult = (await importResponse.json()) as {
         imported: number;
         failed: number;
@@ -740,7 +739,7 @@ describe('Import/Export Roundtrip Integration Tests', () => {
       );
 
       const { GET: exportGET } = await import('../../src/pages/api/templates/export.ts');
-      let response = await exportGET({} as any);
+      let response = await exportGET({} as any) // eslint-disable-line @typescript-eslint/no-explicit-any
       let csvContent = await response.text();
 
       // Cycle 2: Add more templates and export again
@@ -756,7 +755,7 @@ describe('Import/Export Roundtrip Integration Tests', () => {
         undefined
       );
 
-      response = await exportGET({} as any);
+      response = await exportGET({} as any) // eslint-disable-line @typescript-eslint/no-explicit-any
       csvContent = await response.text();
 
       // Verify both templates are in the export
@@ -777,7 +776,7 @@ describe('Import/Export Roundtrip Integration Tests', () => {
       });
 
       const { POST: importPOST } = await import('../../src/pages/api/templates/import.ts');
-      const importResponse = await importPOST({ request } as any);
+      const importResponse = await importPOST({ request } as any) // eslint-disable-line @typescript-eslint/no-explicit-any
       const importResult = (await importResponse.json()) as {
         imported: number;
         failed: number;

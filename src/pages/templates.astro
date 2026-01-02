@@ -341,8 +341,9 @@ const templateIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 t
       if (!templateId) return;
 
       // Call the global function exposed by EditTemplateModal
-      if (typeof (window as any).openEditTemplateModal === 'function') {
-        (window as any).openEditTemplateModal(templateId);
+      const win = window as unknown as { openEditTemplateModal?: (id: string) => void };
+      if (typeof win.openEditTemplateModal === 'function') {
+        win.openEditTemplateModal(templateId);
       } else {
         addToast('Failed to open edit modal', 'error');
       }

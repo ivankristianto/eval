@@ -1,14 +1,13 @@
 // tests/unit/test-csv-validation.ts
 // Unit tests for CSV parsing and validation for template import/export
 
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   parseCSVLine,
   parseCSV,
 } from '../../src/pages/api/templates/import';
 import { escapeCSVField } from '../../src/pages/api/templates/export';
-import * as db from '../../src/lib/db';
-import type { RubricType } from '../../src/lib/types';
+import type { RubricType } from '@lib/utils/types';
 
 // Mock database functions
 vi.mock('../../src/lib/db', () => ({
@@ -559,7 +558,7 @@ describe('CSV Malformed Cases', () => {
     'updated_at',
   ];
 
-  const validRow = [
+  const _validRow = [
     '123e4567-e89b-12d3-a456-426614174000',
     'Test Template',
     'A test template',
@@ -575,7 +574,7 @@ describe('CSV Malformed Cases', () => {
     '2024-01-01 00:00:00',
   ];
 
-  const createCSV = (headers: string[], rows: string[][]): string => {
+  const _createCSV = (headers: string[], rows: string[][]): string => {
     const allRows = [headers, ...rows];
     return allRows.map((row) =>
       row.map((field) => {
