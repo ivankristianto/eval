@@ -61,6 +61,7 @@ npm run typecheck
 ## Testing Status
 
 Latest coverage (vitest `npm test -- --coverage`):
+
 - Overall line coverage: 69.17%
 - Critical path coverage: validators.ts 84.29%, accuracy.ts 92.85%, evaluator.ts 93.05%
 - Other coverage: api-clients.ts 64.38%, db.ts 62.62%
@@ -99,6 +100,7 @@ Latest coverage (vitest `npm test -- --coverage`):
 ## Styling Conventions
 
 **TOP PRIORITY**: Always use Tailwind CSS v4 utility classes for styling.
+
 - Use Tailwind v4 syntax and features (e.g., `@theme` directive, CSS variables)
 - Leverage daisyUI component classes when appropriate
 - Only fall back to custom CSS when Tailwind utilities cannot achieve the desired result
@@ -137,6 +139,7 @@ Latest coverage (vitest `npm test -- --coverage`):
 7. **Hand off** - Provide context for next session
 
 **CRITICAL RULES:**
+
 - Work is NOT complete until `git push` succeeds
 - NEVER stop before pushing - that leaves work stranded locally
 - NEVER say "ready to push when you are" - YOU must push

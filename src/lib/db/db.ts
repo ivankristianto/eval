@@ -28,6 +28,15 @@ const DB_PATH = envDbPath || join(__dirname, '../../../db/evaluation.db');
 const SCHEMA_PATH = join(__dirname, '../../../db/schema.sql');
 const MIGRATIONS_DIR = join(__dirname, '../../../db/migrations');
 
+/**
+ * Get the database path from environment variable or default.
+ * This is computed dynamically to support test isolation.
+ */
+function getDatabasePath(): string {
+  const envDbPath = import.meta.env?.EVAL_DB_PATH || process.env.EVAL_DB_PATH;
+  return envDbPath || join(__dirname, '../../db/evaluation.db');
+}
+
 let db: Database.Database | null = null;
 let databaseInitialized = false;
 
@@ -39,7 +48,7 @@ let databaseInitialized = false;
  */
 export function getDatabase(): Database.Database {
   if (!db) {
-    db = new Database(DB_PATH);
+    db = new Database(getDatabasePath());
     db.pragma('journal_mode = WAL');
     db.pragma('foreign_keys = ON');
 

@@ -1,0 +1,529 @@
+---
+/**
+ * EditTemplateModal - Modal for editing evaluation templates
+ *
+ * This modal allows users to edit existing evaluation templates or create new ones.
+ * It follows the luxe-themed styling consistent with the rest of the application.
+ *
+ * @example
+ * // In your page component, expose a function to open the modal:
+ * <EditTemplateModal />
+ *
+ * // Then call it from your client-side code:
+ * window.openEditTemplateModal(templateId); // to edit existing template
+ * window.openEditTemplateModal(); // to create new template
+ */
+import { getModels } from '../lib/db';
+import Icon from './ui/Icon.astro';
+
+// Get active models for the form
+let models: { id: string; model_name: string; provider: string }[] = [];
+try {
+  models = getModels(true).map((m) => ({
+    id: m.id,
+    model_name: m.model_name,
+    provider: m.provider,
+  }));
+} catch {
+  // Database may not be initialized yet
+}
+---
+
+<dialog id="edit-template-modal" class="modal">
+  <div class="modal-box max-w-4xl">
+    <form method="dialog">
+      <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+    </form>
+    <h3 class="font-display text-2xl font-semibold mb-1 text-gold-accessible">Edit Template</h3>
+    <p class="text-base-content/70 mb-6">Configure your evaluation template settings.</p>
+
+    <form id="edit-template-form" class="space-y-4">
+      <!-- Template Name -->
+      <div class="form-control w-full">
+        <label class="label" for="template-name">
+          <span class="label-text font-medium">Template Name <span class="text-error">*</span></span>
+        </label>
+        <input
+          type="text"
+          id="template-name"
+          name="name"
+          required
+          maxlength="100"
+          placeholder="e.g., Code Review Prompt Test"
+          class="input input-bordered w-full"
+        />
+      </div>
+
+      <!-- Template Description -->
+      <div class="form-control w-full">
+        <label class="label" for="template-description">
+          <span class="label-text font-medium"
+            >Description <span class="text-base-content/50">(optional)</span></span
+          >
+        </label>
+        <textarea
+          id="template-description"
+          name="description"
+          rows="2"
+          maxlength="500"
+          placeholder="Brief description of what this template evaluates..."
+          class="textarea textarea-bordered w-full"></textarea>
+      </div>
+
+      <!-- Instruction -->
+      <div class="form-control w-full">
+        <label class="label" for="instruction">
+          <span class="label-text font-medium">Instruction <span class="text-error">*</span></span>
+        </label>
+        <textarea
+          id="instruction"
+          name="instruction_text"
+          rows="4"
+          class="textarea textarea-bordered w-full"
+          placeholder="Enter the instruction to evaluate..."
+          required></textarea>
+      </div>
+
+      <!-- Two column layout for rubric and expected output -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Rubric Type -->
+        <div class="form-control w-full">
+          <label class="label" for="rubric_type">
+            <span class="label-text font-medium">Accuracy Rubric <span class="text-error">*</span></span>
+          </label>
+          <select
+            id="rubric_type"
+            name="accuracy_rubric"
+            class="select select-bordered w-full"
+            required
+          >
+            <option value="exact_match">Exact Match</option>
+            <option value="partial_credit">Partial Credit</option>
+            <option value="semantic_similarity">Semantic Similarity</option>
+          </select>
+        </div>
+
+        <!-- Expected Output -->
+        <div class="form-control w-full">
+          <label class="label" for="expected_output">
+            <span class="label-text font-medium">Expected Output <span class="text-error">*</span></span>
+          </label>
+          <input
+            type="text"
+            id="expected_output"
+            name="expected_output"
+            class="input input-bordered w-full"
+            placeholder="Expected output..."
+            required
+          />
+        </div>
+      </div>
+
+      <!-- Partial Credit Concepts (conditional) -->
+      <div id="concepts-container" class="hidden form-control w-full">
+        <label class="label" for="partial_credit_concepts">
+          <span class="label-text font-medium">Key Concepts (comma-separated)</span>
+        </label>
+        <textarea
+          id="partial_credit_concepts"
+          name="partial_credit_concepts"
+          rows="2"
+          class="textarea textarea-bordered w-full"
+          placeholder="concept1, concept2, concept3..."></textarea>
+      </div>
+
+      <!-- System Prompt (optional, hidden by default) -->
+      <div class="form-control w-full">
+        <label class="cursor-pointer label justify-start gap-3">
+          <input type="checkbox" id="use-system-prompt" class="checkbox checkbox-luxe" />
+          <span class="label-text font-medium">Use System Prompt</span>
+        </label>
+      </div>
+
+      <div id="system-prompt-container" class="hidden form-control w-full">
+        <label class="label" for="system_prompt">
+          <span class="label-text font-medium">System Prompt</span>
+          <span class="label-text-alt text-base-content/50">Max 4,000 characters</span>
+        </label>
+        <textarea
+          id="system_prompt"
+          name="system_prompt"
+          rows="3"
+          maxlength="4000"
+          class="textarea textarea-bordered w-full"
+          placeholder="You are a helpful assistant that..."></textarea>
+        <label class="label">
+          <span class="label-text-alt text-base-content/50">
+            Provide custom instructions to shape model behavior
+          </span>
+        </label>
+      </div>
+
+      <!-- Temperature Slider -->
+      <div class="form-control w-full">
+        <label class="label" for="temperature">
+          <span class="label-text font-medium">Temperature</span>
+          <span class="label-text-alt font-mono text-base-content/70">
+            <span id="temperature-value">0.3</span>
+          </span>
+        </label>
+        <input
+          type="range"
+          id="temperature"
+          name="temperature"
+          min="0"
+          max="2"
+          step="0.1"
+          value="0.3"
+          class="range range-luxe"
+        />
+        <div class="flex justify-between text-xs text-base-content/50 px-1 mt-1">
+          <span>0.0 (Deterministic)</span>
+          <span>2.0 (Creative)</span>
+        </div>
+      </div>
+
+      <!-- Model Selection -->
+      <div class="form-control w-full">
+        <label class="label">
+          <span class="label-text font-medium">Select Models <span class="text-error">*</span></span>
+        </label>
+        {
+          models.length > 0 ? (
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2 p-3 bg-base-200 rounded-lg">
+              {models.map((model) => (
+                <label class="flex items-center gap-2 cursor-pointer p-2 hover:bg-base-300 rounded">
+                  <input
+                    type="checkbox"
+                    name="model_ids"
+                    value={model.id}
+                    class="checkbox checkbox-luxe checkbox-sm"
+                  />
+                  <span class="label-text">
+                    {model.model_name}
+                    <span class="text-base-content/50 text-xs ml-1">({model.provider})</span>
+                  </span>
+                </label>
+              ))}
+            </div>
+          ) : (
+            <div class="alert alert-warning mt-2">
+              <Icon name="warning" size="lg" />
+              <span>
+                No models configured.{' '}
+                <a href="/models" class="link">
+                  Add models
+                </a>{' '}
+                first.
+              </span>
+            </div>
+          )
+        }
+      </div>
+
+      <!-- Error message -->
+      <div id="edit-template-error" class="hidden alert alert-error">
+        <Icon name="error" size="lg" />
+        <span id="edit-template-error-text"></span>
+      </div>
+
+      <!-- Actions -->
+      <div class="modal-action">
+        <button
+          type="button"
+          id="edit-template-cancel-btn"
+          class="btn btn-ghost min-w-28"
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          id="edit-template-submit-btn"
+          class="btn btn-luxe btn-luxe-primary min-w-28"
+          disabled={models.length === 0}
+        >
+          Save Template
+        </button>
+      </div>
+    </form>
+  </div>
+  <form method="dialog" class="modal-backdrop">
+    <button>close</button>
+  </form>
+</dialog>
+
+<script>
+  import { addToast } from '../lib/toastStore';
+  import { initializeOnce } from '../lib/client-utils';
+
+  interface TemplateData {
+    id?: string;
+    name?: string;
+    description?: string;
+    instruction_text?: string;
+    model_ids?: string[];
+    accuracy_rubric?: string;
+    expected_output?: string;
+    partial_credit_concepts?: string[];
+    system_prompt?: string;
+    temperature?: number;
+  }
+
+  function initEditTemplateModal() {
+    let currentTemplateId: string | null = null;
+    let isCreating = false;
+
+    // DOM Elements
+    const modal = document.getElementById('edit-template-modal') as HTMLDialogElement;
+    const form = document.getElementById('edit-template-form') as HTMLFormElement;
+    const submitBtn = document.getElementById('edit-template-submit-btn') as HTMLButtonElement;
+    const cancelBtn = document.getElementById('edit-template-cancel-btn') as HTMLButtonElement;
+    const rubricSelect = document.getElementById('rubric_type') as HTMLSelectElement;
+    const conceptsContainer = document.getElementById('concepts-container') as HTMLDivElement;
+    const systemPromptCheckbox = document.getElementById('use-system-prompt') as HTMLInputElement;
+    const systemPromptContainer = document.getElementById(
+      'system-prompt-container'
+    ) as HTMLDivElement;
+    const temperatureSlider = document.getElementById('temperature') as HTMLInputElement;
+    const temperatureValue = document.getElementById('temperature-value') as HTMLSpanElement;
+    const templateError = document.getElementById('edit-template-error') as HTMLDivElement;
+    const templateErrorText = document.getElementById('edit-template-error-text') as HTMLSpanElement;
+
+    if (!modal || !form) return;
+
+    // Show/hide partial credit concepts based on rubric selection
+    if (rubricSelect && conceptsContainer) {
+      rubricSelect.addEventListener('change', () => {
+        conceptsContainer.classList.toggle('hidden', rubricSelect.value !== 'partial_credit');
+      });
+    }
+
+    // Show/hide system prompt textarea based on checkbox
+    if (systemPromptCheckbox && systemPromptContainer) {
+      systemPromptCheckbox.addEventListener('change', () => {
+        systemPromptContainer.classList.toggle('hidden', !systemPromptCheckbox.checked);
+      });
+    }
+
+    // Update temperature display value
+    if (temperatureSlider && temperatureValue) {
+      temperatureSlider.addEventListener('input', () => {
+        temperatureValue.textContent = parseFloat(temperatureSlider.value).toFixed(1);
+      });
+    }
+
+    // Open modal for editing or creating
+    async function openEditTemplateModal(templateId?: string) {
+      // Reset form
+      form.reset();
+      templateError.classList.add('hidden');
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Save Template';
+
+      // Reset conditional fields
+      if (conceptsContainer) conceptsContainer.classList.add('hidden');
+      if (systemPromptContainer) systemPromptContainer.classList.add('hidden');
+      if (temperatureValue) temperatureValue.textContent = '0.3';
+
+      if (templateId) {
+        // Edit mode - fetch template data
+        isCreating = false;
+        currentTemplateId = templateId;
+        submitBtn.textContent = 'Loading...';
+        submitBtn.disabled = true;
+
+        try {
+          const response = await fetch(`/api/templates/${templateId}`);
+          const data = await response.json();
+
+          if (!response.ok) {
+            throw new Error(data.message || 'Failed to load template');
+          }
+
+          // Populate form with template data
+          if (data.name)
+            (form.elements.namedItem('name') as HTMLInputElement).value = data.name;
+          if (data.description)
+            (form.elements.namedItem('description') as HTMLTextAreaElement).value =
+              data.description;
+          if (data.instruction_text)
+            (form.elements.namedItem('instruction_text') as HTMLTextAreaElement).value =
+              data.instruction_text;
+          if (data.accuracy_rubric)
+            (form.elements.namedItem('accuracy_rubric') as HTMLSelectElement).value =
+              data.accuracy_rubric;
+          if (data.expected_output)
+            (form.elements.namedItem('expected_output') as HTMLInputElement).value =
+              data.expected_output;
+          if (data.temperature)
+            (form.elements.namedItem('temperature') as HTMLInputElement).value =
+              data.temperature.toString();
+
+          // Handle partial credit concepts
+          if (data.partial_credit_concepts && data.partial_credit_concepts.length > 0) {
+            conceptsContainer.classList.remove('hidden');
+            (form.elements.namedItem(
+              'partial_credit_concepts'
+            ) as HTMLTextAreaElement).value = data.partial_credit_concepts.join(', ');
+          }
+
+          // Handle system prompt
+          if (data.system_prompt) {
+            systemPromptCheckbox.checked = true;
+            systemPromptContainer.classList.remove('hidden');
+            (form.elements.namedItem('system_prompt') as HTMLTextAreaElement).value =
+              data.system_prompt;
+          }
+
+          // Update temperature display
+          if (data.temperature !== undefined && temperatureValue) {
+            temperatureValue.textContent = data.temperature.toFixed(1);
+          }
+
+          // Handle model selection
+          if (data.model_ids && Array.isArray(data.model_ids)) {
+            const modelCheckboxes = form.querySelectorAll('input[name="model_ids"]');
+            modelCheckboxes.forEach((checkbox) => {
+              const input = checkbox as HTMLInputElement;
+              input.checked = data.model_ids.includes(input.value);
+            });
+          }
+
+          submitBtn.textContent = 'Save Template';
+          submitBtn.disabled = false;
+        } catch (error) {
+          showEditTemplateError(
+            error instanceof Error ? error.message : 'Failed to load template'
+          );
+          submitBtn.textContent = 'Save Template';
+          submitBtn.disabled = false;
+          return;
+        }
+      } else {
+        // Create mode
+        isCreating = true;
+        currentTemplateId = null;
+      }
+
+      modal.showModal();
+    }
+
+    function showEditTemplateError(message: string) {
+      if (templateErrorText) {
+        templateErrorText.textContent = message;
+      }
+      templateError.classList.remove('hidden');
+    }
+
+    // Cancel button handler
+    if (cancelBtn) {
+      cancelBtn.addEventListener('click', () => {
+        modal.close();
+      });
+    }
+
+    // Form submission
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const formData = new FormData(form);
+      const modelIds = formData.getAll('model_ids') as string[];
+
+      if (modelIds.length === 0) {
+        showEditTemplateError('Please select at least one model');
+        return;
+      }
+
+      const name = formData.get('name') as string;
+      const description = formData.get('description') as string;
+      const instruction = formData.get('instruction_text') as string;
+      const rubricType = formData.get('accuracy_rubric') as string;
+      const expectedOutput = formData.get('expected_output') as string;
+      const conceptsRaw = formData.get('partial_credit_concepts') as string;
+      const systemPromptRaw = formData.get('system_prompt') as string;
+      const temperatureRaw = formData.get('temperature') as string;
+
+      const partialCreditConcepts =
+        rubricType === 'partial_credit' && conceptsRaw
+          ? conceptsRaw
+              .split(',')
+              .map((c) => c.trim())
+              .filter(Boolean)
+          : undefined;
+
+      // Only include system prompt if checkbox is checked and text is provided
+      const systemPrompt =
+        systemPromptCheckbox?.checked && systemPromptRaw?.trim()
+          ? systemPromptRaw.trim()
+          : undefined;
+
+      // Parse temperature value
+      const temperature = parseFloat(temperatureRaw);
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = isCreating ? 'Creating...' : 'Saving...';
+      templateError.classList.add('hidden');
+
+      try {
+        const url = isCreating ? '/api/templates' : `/api/templates/${currentTemplateId}`;
+        const method = isCreating ? 'POST' : 'PATCH';
+
+        const response = await fetch(url, {
+          method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name,
+            description: description || undefined,
+            instruction_text: instruction,
+            model_ids: modelIds,
+            accuracy_rubric: rubricType,
+            expected_output: expectedOutput,
+            partial_credit_concepts: partialCreditConcepts,
+            system_prompt: systemPrompt,
+            temperature,
+          }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || data.error || 'Failed to save template');
+        }
+
+        // Close modal
+        modal.close();
+        form.reset();
+
+        addToast(
+          isCreating ? 'Template created successfully!' : 'Template updated successfully!',
+          'success'
+        );
+
+        // Reload page to show updated template
+        window.location.reload();
+      } catch (error) {
+        showEditTemplateError(
+          error instanceof Error ? error.message : 'An error occurred'
+        );
+        submitBtn.disabled = false;
+        submitBtn.textContent = isCreating ? 'Create Template' : 'Save Template';
+      }
+    });
+
+    // Expose function globally
+    window.openEditTemplateModal = openEditTemplateModal;
+  }
+
+  // Initialize once and re-initialize on Astro page transitions
+  initializeOnce('editTemplateModal', initEditTemplateModal);
+  document.addEventListener('astro:page-load', () => {
+    initializeOnce('editTemplateModal', initEditTemplateModal);
+  });
+</script>
+
+<style>
+  /* Ensure proper z-index stacking */
+  #edit-template-modal {
+    z-index: 50;
+  }
+</style>
