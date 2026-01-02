@@ -34,7 +34,7 @@ const MIGRATIONS_DIR = join(__dirname, '../../../db/migrations');
  */
 function getDatabasePath(): string {
   const envDbPath = import.meta.env?.EVAL_DB_PATH || process.env.EVAL_DB_PATH;
-  return envDbPath || join(__dirname, '../../db/evaluation.db');
+  return envDbPath || DB_PATH;
 }
 
 let db: Database.Database | null = null;
