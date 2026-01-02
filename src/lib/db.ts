@@ -22,9 +22,16 @@ import type {
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const envDbPath = import.meta.env?.EVAL_DB_PATH || process.env.EVAL_DB_PATH;
-const DB_PATH = envDbPath || join(__dirname, '../../db/evaluation.db');
 const SCHEMA_PATH = join(__dirname, '../../db/schema.sql');
+
+/**
+ * Get the database path from environment variable or default.
+ * This is computed dynamically to support test isolation.
+ */
+function getDatabasePath(): string {
+  const envDbPath = import.meta.env?.EVAL_DB_PATH || process.env.EVAL_DB_PATH;
+  return envDbPath || join(__dirname, '../../db/evaluation.db');
+}
 
 let db: Database.Database | null = null;
 
@@ -32,7 +39,7 @@ let db: Database.Database | null = null;
 
 export function getDatabase(): Database.Database {
   if (!db) {
-    db = new Database(DB_PATH);
+    db = new Database(getDatabasePath());
     db.pragma('journal_mode = WAL');
     db.pragma('foreign_keys = ON');
   }

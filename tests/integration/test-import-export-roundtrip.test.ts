@@ -62,8 +62,8 @@ describe('Import/Export Roundtrip Integration Tests', () => {
 
   describe('Full Roundtrip: Export → Import', () => {
     it('should successfully export and re-import templates preserving all data', async () => {
-      const model1 = '00000000-0000-0000-0000-000000000001';
-      const model2 = '00000000-0000-0000-0000-000000000002';
+      const model1 = '00000000-0000-1000-8000-000000000001';
+      const model2 = '00000000-0000-1000-8000-000000000002';
       const timestamp = Date.now();
 
       // Create test templates with various field configurations
@@ -215,7 +215,7 @@ describe('Import/Export Roundtrip Integration Tests', () => {
     });
 
     it('should skip duplicates during import without failing', async () => {
-      const model1 = '00000000-0000-0000-0000-000000000001';
+      const model1 = '00000000-0000-1000-8000-000000000001';
       const timestamp = Date.now();
 
       // Create a template
@@ -304,7 +304,7 @@ describe('Import/Export Roundtrip Integration Tests', () => {
     });
 
     it('should reject CSV with malformed structure', async () => {
-      const model1 = '00000000-0000-0000-0000-000000000001';
+      const model1 = '00000000-0000-1000-8000-000000000001';
 
       // CSV with wrong number of columns
       const csvContent = [
@@ -332,7 +332,7 @@ describe('Import/Export Roundtrip Integration Tests', () => {
     });
 
     it('should reject CSV with invalid header names', async () => {
-      const model1 = '00000000-0000-0000-0000-000000000001';
+      const model1 = '00000000-0000-1000-8000-000000000001';
 
       // CSV with wrong header names
       const csvContent = [
@@ -359,18 +359,18 @@ describe('Import/Export Roundtrip Integration Tests', () => {
     });
 
     it('should handle CSV with validation errors gracefully', async () => {
-      const model1 = '00000000-0000-0000-0000-000000000001';
+      const model1 = '00000000-0000-1000-8000-000000000001';
       const timestamp = Date.now();
 
       // CSV with multiple rows, some valid, some invalid
       const csvContent = [
         'id,name,description,instruction_text,model_ids,accuracy_rubric,partial_credit_concepts,expected_output,system_prompt,temperature,run_count,created_at,updated_at',
         // Valid row
-        `template-1,Valid Template ${timestamp},Description,Instruction,${model1},exact_match,,,Expected,Valid prompt,0.5,0,2024-01-01T00:00:00.000Z,2024-01-01T00:00:00.000Z`,
+        `template-1,Valid Template ${timestamp},Description,Instruction,${model1},exact_match,,Expected,Valid prompt,0.5,0,2024-01-01T00:00:00.000Z,2024-01-01T00:00:00.000Z`,
         // Invalid: missing name
-        `template-2,,,Instruction,${model1},exact_match,,,Expected,,,0,0.3,2024-01-01T00:00:00.000Z,2024-01-01T00:00:00.000Z`,
+        `template-2,,,Instruction,${model1},exact_match,,Expected,,,0,0.3,2024-01-01T00:00:00.000Z,2024-01-01T00:00:00.000Z`,
         // Invalid: temperature out of range
-        `template-3,Invalid Temp ${timestamp},Description,Instruction,${model1},exact_match,,,Expected,,,3.0,0,2024-01-01T00:00:00.000Z,2024-01-01T00:00:00.000Z`,
+        `template-3,Invalid Temp ${timestamp},Description,Instruction,${model1},exact_match,,Expected,,,3.0,0,2024-01-01T00:00:00.000Z,2024-01-01T00:00:00.000Z`,
         // Another valid row
         `template-4,Another Valid ${timestamp},Description,Instruction,${model1},partial_credit,concept1;concept2,Expected,Prompt,0.7,0,2024-01-01T00:00:00.000Z,2024-01-01T00:00:00.000Z`,
       ].join('\n');
@@ -460,7 +460,7 @@ describe('Import/Export Roundtrip Integration Tests', () => {
 
   describe('Export Edge Cases', () => {
     it('should handle templates with special characters in export', async () => {
-      const model1 = '00000000-0000-0000-0000-000000000001';
+      const model1 = '00000000-0000-1000-8000-000000000001';
       const timestamp = Date.now();
 
       // Insert template with all kinds of special characters
@@ -518,7 +518,7 @@ describe('Import/Export Roundtrip Integration Tests', () => {
     });
 
     it('should include all templates in export regardless of run_count', async () => {
-      const model1 = '00000000-0000-0000-0000-000000000001';
+      const model1 = '00000000-0000-1000-8000-000000000001';
       const timestamp = Date.now();
 
       // Insert templates with different run counts
@@ -576,7 +576,7 @@ describe('Import/Export Roundtrip Integration Tests', () => {
 
   describe('Database State Verification', () => {
     it('should not modify original templates during export', async () => {
-      const model1 = '00000000-0000-0000-0000-000000000001';
+      const model1 = '00000000-0000-1000-8000-000000000001';
       const timestamp = Date.now();
 
       const originalTemplate = insertTemplate(
@@ -608,7 +608,7 @@ describe('Import/Export Roundtrip Integration Tests', () => {
     });
 
     it('should create new IDs during import but preserve data', async () => {
-      const model1 = '00000000-0000-0000-0000-000000000001';
+      const model1 = '00000000-0000-1000-8000-000000000001';
       const timestamp = Date.now();
 
       // Create and export
@@ -657,7 +657,7 @@ describe('Import/Export Roundtrip Integration Tests', () => {
     });
 
     it('should handle large number of templates in roundtrip', async () => {
-      const model1 = '00000000-0000-0000-0000-000000000001';
+      const model1 = '00000000-0000-1000-8000-000000000001';
       const templateCount = 50;
 
       // Create many templates
@@ -721,7 +721,7 @@ describe('Import/Export Roundtrip Integration Tests', () => {
 
   describe('Concurrent and Sequential Operations', () => {
     it('should handle multiple sequential export/import cycles', async () => {
-      const model1 = '00000000-0000-0000-0000-000000000001';
+      const model1 = '00000000-0000-1000-8000-000000000001';
       const timestamp = Date.now();
 
       // Cycle 1: Create and export

@@ -46,8 +46,8 @@ export function validateRubricType(rubricType: unknown): ValidationResult {
       valid: false,
       error: {
         error: 'INVALID_RUBRIC',
-        message: `rubric_type must be one of: ${VALID_RUBRIC_TYPES.join(', ')}`,
-        field: 'rubric_type',
+        message: `accuracy_rubric must be one of: ${VALID_RUBRIC_TYPES.join(', ')}`,
+        field: 'accuracy_rubric',
       },
     };
   }

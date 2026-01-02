@@ -217,8 +217,8 @@ describe('GET /api/templates/export', () => {
     expect(csvContent).toContain('"Instruction with ""nested quotes"", and commas,');
     expect(csvContent).toContain('"System prompt with ""quotes"" and, commas"');
 
-    // Verify semicolon-separated arrays are preserved
-    expect(csvContent).toContain('concept 1;concept with, comma;concept with "quotes"');
+    // Verify semicolon-separated arrays are preserved (field is quoted due to comma)
+    expect(csvContent).toContain('"concept 1;concept with, comma;concept with ""quotes"""');
   });
 
   it('should handle templates with missing optional fields', async () => {

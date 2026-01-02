@@ -149,7 +149,6 @@ export function parseCSV(content: string): ParseResult {
   let currentRow: string[] = [];
   let currentField = '';
   let inQuotes = false;
-  let fieldCount = 0;
 
   for (let i = 0; i < content.length; i++) {
     const char = content[i];
@@ -165,36 +164,36 @@ export function parseCSV(content: string): ParseResult {
         inQuotes = !inQuotes;
       }
     } else if (char === ',' && !inQuotes) {
-      // Field separator
+      // Field separator (only outside quotes)
       currentRow.push(currentField);
       currentField = '';
-      fieldCount++;
     } else if ((char === '\r' || char === '\n') && !inQuotes) {
-      // Row separator
-      if (currentField || currentRow.length > 0) {
-        currentRow.push(currentField);
-      }
+      // Row separator (only outside quotes)
+      // Add the last field to the current row
+      currentRow.push(currentField);
 
-      if (currentRow.length > 0) {
+      // Only add non-empty rows
+      if (currentRow.some((field) => field.length > 0)) {
         rows.push(currentRow);
       }
 
+      // Reset for next row
       currentRow = [];
       currentField = '';
-      fieldCount = 0;
 
       // Skip \n if we're at \r\n
       if (char === '\r' && nextChar === '\n') {
         i++;
       }
     } else {
+      // Regular character (or newline/quote inside quoted field)
       currentField += char;
     }
   }
 
-  // Add last row/field
-  if (currentField || currentRow.length > 0) {
-    currentRow.push(currentField);
+  // Add the last field and row
+  currentRow.push(currentField);
+  if (currentRow.some((field) => field.length > 0)) {
     rows.push(currentRow);
   }
 
@@ -251,8 +250,8 @@ export function parseCSV(content: string): ParseResult {
   for (let i = 1; i < rows.length; i++) {
     const values = rows[i];
 
-    // Skip completely empty rows
-    if (values.length === 1 && values[0].trim() === '') {
+    // Skip completely empty rows (all fields are empty/whitespace)
+    if (values.every((v) => v.trim() === '')) {
       continue;
     }
 
