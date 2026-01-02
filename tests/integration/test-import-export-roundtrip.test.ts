@@ -188,13 +188,13 @@ describe('Import/Export Roundtrip Integration Tests', () => {
         (t) => t.name === `Template ${timestamp} - Minimal`
       );
       expect(minimalTemplate).toBeDefined();
-      expect(minimalTemplate?.description).toBeUndefined();
+      expect(minimalTemplate?.description).toBeNull(); // Empty fields are null in DB
       expect(minimalTemplate?.instruction_text).toBe('Minimal instruction');
       expect(minimalTemplate?.model_ids).toEqual([model2]);
       expect(minimalTemplate?.accuracy_rubric).toBe('semantic_similarity');
-      expect(minimalTemplate?.expected_output).toBeUndefined();
-      expect(minimalTemplate?.partial_credit_concepts).toBeUndefined();
-      expect(minimalTemplate?.system_prompt).toBeUndefined();
+      expect(minimalTemplate?.expected_output).toBeNull(); // Empty fields are null in DB
+      expect(minimalTemplate?.partial_credit_concepts).toBeUndefined(); // Array fields are undefined when null
+      expect(minimalTemplate?.system_prompt).toBeNull(); // Empty fields are null in DB
       expect(minimalTemplate?.temperature).toBe(0.3); // default value
     });
 
@@ -368,9 +368,9 @@ describe('Import/Export Roundtrip Integration Tests', () => {
         // Valid row
         `template-1,Valid Template ${timestamp},Description,Instruction,${model1},exact_match,,Expected,Valid prompt,0.5,0,2024-01-01T00:00:00.000Z,2024-01-01T00:00:00.000Z`,
         // Invalid: missing name
-        `template-2,,,Instruction,${model1},exact_match,,Expected,,,0,0.3,2024-01-01T00:00:00.000Z,2024-01-01T00:00:00.000Z`,
+        `template-2,,,Instruction,${model1},exact_match,,,,0.3,0,2024-01-01T00:00:00.000Z,2024-01-01T00:00:00.000Z`,
         // Invalid: temperature out of range
-        `template-3,Invalid Temp ${timestamp},Description,Instruction,${model1},exact_match,,Expected,,,3.0,0,2024-01-01T00:00:00.000Z,2024-01-01T00:00:00.000Z`,
+        `template-3,Invalid Temp ${timestamp},Description,Instruction,${model1},exact_match,,,,3.0,0,2024-01-01T00:00:00.000Z,2024-01-01T00:00:00.000Z`,
         // Another valid row
         `template-4,Another Valid ${timestamp},Description,Instruction,${model1},partial_credit,concept1;concept2,Expected,Prompt,0.7,0,2024-01-01T00:00:00.000Z,2024-01-01T00:00:00.000Z`,
       ].join('\n');
@@ -401,7 +401,7 @@ describe('Import/Export Roundtrip Integration Tests', () => {
 
       // Verify error details
       const errorRows = result.errors.map((e) => e.row).sort();
-      expect(errorRows).toEqual([2, 3]); // Rows 2 and 3 failed
+      expect(errorRows).toEqual([3, 4]); // Rows 3 and 4 failed (row 1 is header)
 
       // Verify only valid templates were imported
       const templates = getTemplates('created', 'desc');
@@ -454,7 +454,7 @@ describe('Import/Export Roundtrip Integration Tests', () => {
       const result = await response.json();
 
       expect(response.status).toBe(400);
-      expect(result.error).toBe('CSV_PARSE_ERROR');
+      expect(result.error).toBe('EMPTY_CSV');
     });
   });
 
@@ -662,14 +662,16 @@ describe('Import/Export Roundtrip Integration Tests', () => {
 
       // Create many templates
       for (let i = 0; i < templateCount; i++) {
+        const rubricType =
+          i % 3 === 0 ? 'exact_match' : i % 3 === 1 ? 'partial_credit' : 'semantic_similarity';
         insertTemplate(
           `Bulk Template ${i}`,
           `Instruction ${i}`,
           [model1],
-          i % 3 === 0 ? 'exact_match' : i % 3 === 1 ? 'partial_credit' : 'semantic_similarity',
+          rubricType,
           `Description ${i}`,
           undefined,
-          undefined,
+          rubricType === 'partial_credit' ? [`concept ${i}`] : undefined,
           undefined,
           undefined
         );
@@ -749,7 +751,7 @@ describe('Import/Export Roundtrip Integration Tests', () => {
         'partial_credit',
         undefined,
         undefined,
-        undefined,
+        ['concept 2'],
         undefined,
         undefined
       );

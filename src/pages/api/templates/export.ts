@@ -5,7 +5,7 @@ import type { APIRoute } from 'astro';
 import { getTemplates } from '../../../lib/db';
 
 // GET /api/templates/export - Export all templates as CSV
-export const GET: APIRoute = async ({}) => {
+export const GET: APIRoute = async () => {
   try {
     const templates = getTemplates('created', 'desc');
 

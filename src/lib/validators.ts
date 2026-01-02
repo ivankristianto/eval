@@ -278,13 +278,18 @@ export function validateExpectedOutput(
   expectedOutput: unknown,
   _rubricType: RubricType
 ): ValidationResult {
-  // Required for all rubric types
+  // null/undefined is valid (optional field)
+  if (expectedOutput === null || expectedOutput === undefined) {
+    return { valid: true };
+  }
+
+  // If provided, must be a non-empty string
   if (typeof expectedOutput !== 'string' || expectedOutput.trim().length === 0) {
     return {
       valid: false,
       error: {
         error: 'INVALID_INPUT',
-        message: 'expected_output is required for accuracy comparison',
+        message: 'expected_output must be a non-empty string if provided',
         field: 'expected_output',
       },
     };
