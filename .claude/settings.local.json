@@ -17,7 +17,17 @@
       "Bash(cat:*)",
       "Bash(ls:*)",
       "Bash(npm test:*)",
-      "Bash(npm run lint:*)"
+      "Bash(npm run lint:*)",
+      "Bash(bd create:*)",
+      "Bash(bd dep add:*)",
+      "Bash(bd ready:*)",
+      "Bash(bd prime:*)",
+      "Bash(bd stats)",
+      "Bash(bd list:*)",
+      "Bash(bd update:*)",
+      "Bash(npm run test:e2e:*)",
+      "Bash(bd show:*)",
+      "Bash(bd sync)"
     ]
   },
   "gitAttribution": false
