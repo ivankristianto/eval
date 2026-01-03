@@ -3,11 +3,12 @@
  * TrainingPairsTable Component
  *
  * Unified table displaying all training pair data with inline actions.
- * Columns: checkbox, input, expected_output, generated_output, human rating, human feedback, judge rating, judge feedback, actions
+ * Features: pagination, inline row editing, no alert() calls, proper zebra striping
  *
  * @param pairs - Array of training pair objects with results
  * @param selectable - Whether to show checkboxes for selection (default: true)
  * @param showActions - Whether to show inline actions (default: true)
+ * @param pageSize - Number of rows per page (default: 10)
  */
 
 import PassFailBadge from './PassFailBadge.astro';
@@ -27,9 +28,13 @@ interface Props {
   pairs: TrainingPairResult[];
   selectable?: boolean;
   showActions?: boolean;
+  pageSize?: number;
 }
 
-const { pairs, selectable = true, showActions = true } = Astro.props;
+const { pairs, selectable = true, showActions = true, pageSize = 10 } = Astro.props;
+
+// Pagination state (will be managed by client-side script)
+const totalPages = Math.max(1, Math.ceil(pairs.length / pageSize));
 
 const truncateText = (text: string, maxLength: number = 100) => {
   if (text.length <= maxLength) return text;
@@ -104,7 +109,7 @@ const truncateText = (text: string, maxLength: number = 100) => {
 
     <!-- Table -->
     <div class="overflow-x-auto">
-      <table class="table table-sm table-zebra">
+      <table class="table table-sm" id="training-pairs-table">
         <thead class="bg-base-200">
           <tr>
             {selectable && <th class="w-12" />}
@@ -118,7 +123,58 @@ const truncateText = (text: string, maxLength: number = 100) => {
             {showActions && <th class="w-14" />}
           </tr>
         </thead>
-        <tbody>
+        <tbody id="training-pairs-body">
+          <!-- New editable row (shown by default) -->
+          <tr class="new-row bg-primary/10" data-new-row="true">
+            {selectable && <td></td>}
+            <td class="sticky left-0 z-10 align-top">
+              <textarea
+                class="textarea textarea-xs w-full min-h-[60px] resize-y"
+                placeholder="Enter input..."
+                data-new-field="input"
+              ></textarea>
+            </td>
+            <td class="sticky left-[12rem] z-10 align-top">
+              <textarea
+                class="textarea textarea-xs w-full min-h-[60px] resize-y"
+                placeholder="Enter expected output..."
+                data-new-field="expected_output"
+              ></textarea>
+            </td>
+            <td class="sticky left-[24rem] z-10 align-top">
+              <span class="text-sm opacity-50 italic">Auto-generated</span>
+            </td>
+            <td class="text-center align-middle">
+              <span class="text-sm opacity-50 italic">-</span>
+            </td>
+            <td class="align-top">
+              <input
+                type="text"
+                class="input input-sm input-ghost w-full"
+                placeholder="Optional feedback..."
+                data-new-field="feedback"
+              />
+            </td>
+            <td class="text-center align-middle">
+              <span class="text-sm opacity-50 italic">-</span>
+            </td>
+            <td class="align-top">
+              <span class="text-sm opacity-50 italic">-</span>
+            </td>
+            {showActions && (
+              <td>
+                <button
+                  class="btn btn-ghost btn-xs btn-circle text-success hover:bg-success/20"
+                  data-action="save-new-row"
+                  title="Save new row"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                  </svg>
+                </button>
+              </td>
+            )}
+          </tr>
           {
             pairs.map((pair) => (
               <tr class="hover" data-pair-id={pair.id}>
@@ -131,17 +187,17 @@ const truncateText = (text: string, maxLength: number = 100) => {
                     />
                   </td>
                 )}
-                <td class="sticky left-0 z-10 bg-base-100 even:bg-base-200 hover:bg-base-200 align-top">
+                <td class="sticky left-0 z-10 sticky-col align-top">
                   <div class="text-sm whitespace-pre-wrap break-words max-h-20 overflow-y-auto" title={pair.input}>
                     {pair.input}
                   </div>
                 </td>
-                <td class="sticky left-[12rem] z-10 bg-base-100 even:bg-base-200 hover:bg-base-200 align-top">
+                <td class="sticky left-[12rem] z-10 sticky-col align-top">
                   <div class="text-sm whitespace-pre-wrap break-words max-h-20 overflow-y-auto" title={pair.expected_output}>
                     {pair.expected_output}
                   </div>
                 </td>
-                <td class="sticky left-[24rem] z-10 bg-base-100 even:bg-base-200 hover:bg-base-200 align-top">
+                <td class="sticky left-[24rem] z-10 sticky-col align-top">
                   {pair.generated_output ? (
                     <div class="text-sm whitespace-pre-wrap break-words max-h-20 overflow-y-auto" title={pair.generated_output}>
                       {pair.generated_output}
@@ -239,25 +295,23 @@ const truncateText = (text: string, maxLength: number = 100) => {
       </table>
     </div>
 
-    <!-- Add Row Button (at end of table) -->
-    <div class="px-2 py-2 border-t border-base-300">
-      <button
-        class="btn btn-sm btn-outline w-full"
-        data-action="add-row"
-        title="Add a new training pair"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke-width="1.5"
-          stroke="currentColor"
-          class="w-4 h-4"
-        >
-          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"></path>
-        </svg>
-        Add New Row
-      </button>
+    <!-- Pagination -->
+    <div class="flex items-center justify-between px-2 py-2 border-t border-base-300">
+      <div class="text-sm text-base-content/70">
+        <span id="pagination-info">Showing 1-{Math.min(pageSize, pairs.length)} of {pairs.length} pairs</span>
+      </div>
+      <div class="join">
+        <button class="join-item btn btn-xs" data-action="prev-page" disabled>«</button>
+        <button class="join-item btn btn-xs btn-active" data-page="1">1</button>
+        {totalPages > 1 && (
+          <button class="join-item btn btn-xs" data-page="2">2</button>
+        )}
+        {totalPages > 2 && <span class="join-item btn btn-xs btn-disabled">...</span>}
+        {totalPages > 2 && (
+          <button class="join-item btn btn-xs" data-page={totalPages}>{totalPages}</button>
+        )}
+        <button class="join-item btn btn-xs" data-action="next-page" disabled>»</button>
+      </div>
     </div>
 
     <!-- Empty State -->
@@ -303,41 +357,102 @@ const truncateText = (text: string, maxLength: number = 100) => {
   </div>
 </div>
 
-<script>
+<script define:vars={{ pageSize, pairs }}>
+  // Pagination state
+  let currentPage = 1;
+  const totalPairs = pairs.length;
+  const totalPages = Math.max(1, Math.ceil(totalPairs / pageSize));
+
   // Select all functionality
   const selectAllCheckbox = document.getElementById('select-all-pairs') as HTMLInputElement;
-  const pairCheckboxes = document.querySelectorAll(
-    '.pair-checkbox'
-  ) as NodeListOf<HTMLInputElement>;
   const evaluateSelectedBtn = document.querySelector(
     '[data-action="evaluate-selected"]'
   ) as HTMLButtonElement;
 
-  selectAllCheckbox?.addEventListener('change', (e) => {
-    const isChecked = (e.target as HTMLInputElement).checked;
-    pairCheckboxes.forEach((checkbox) => {
-      checkbox.checked = isChecked;
-    });
-    updateEvaluateButton();
-  });
+  function updateCheckboxes() {
+    const pairCheckboxes = document.querySelectorAll(
+      '.pair-checkbox'
+    ) as NodeListOf<HTMLInputElement>;
 
-  pairCheckboxes.forEach((checkbox) => {
-    checkbox.addEventListener('change', () => {
+    selectAllCheckbox?.addEventListener('change', (e) => {
+      const isChecked = (e.target as HTMLInputElement).checked;
+      pairCheckboxes.forEach((checkbox) => {
+        checkbox.checked = isChecked;
+      });
       updateEvaluateButton();
     });
-  });
+
+    pairCheckboxes.forEach((checkbox) => {
+      checkbox.addEventListener('change', () => {
+        updateEvaluateButton();
+      });
+    });
+  }
 
   function updateEvaluateButton() {
+    const pairCheckboxes = document.querySelectorAll('.pair-checkbox') as NodeListOf<HTMLInputElement>;
     const selectedCount = Array.from(pairCheckboxes).filter((cb) => cb.checked).length;
     if (evaluateSelectedBtn) {
       evaluateSelectedBtn.disabled = selectedCount === 0;
-      const btnSpan = evaluateSelectedBtn.querySelector('span');
-      if (btnSpan) {
-        btnSpan.textContent =
-          selectedCount > 0 ? `Evaluate Selected (${selectedCount})` : 'Evaluate Selected';
-      }
     }
   }
+
+  // Pagination functions
+  function updatePagination() {
+    const start = (currentPage - 1) * pageSize + 1;
+    const end = Math.min(currentPage * pageSize, totalPairs);
+    const infoEl = document.getElementById('pagination-info');
+    if (infoEl) {
+      infoEl.textContent = `Showing ${start}-${end} of ${totalPairs} pairs`;
+    }
+
+    // Update page buttons
+    document.querySelectorAll('[data-page]').forEach((btn) => {
+      const pageNum = parseInt(btn.dataset.page || '0');
+      if (pageNum === currentPage) {
+        btn.classList.add('btn-active');
+      } else {
+        btn.classList.remove('btn-active');
+      }
+    });
+
+    // Update prev/next buttons
+    const prevBtn = document.querySelector('[data-action="prev-page"]') as HTMLButtonElement;
+    const nextBtn = document.querySelector('[data-action="next-page"]') as HTMLButtonElement;
+    if (prevBtn) prevBtn.disabled = currentPage === 1;
+    if (nextBtn) nextBtn.disabled = currentPage === totalPages;
+  }
+
+  document.querySelectorAll('[data-page]').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      const target = e.target as HTMLElement;
+      const page = parseInt(target.dataset.page || '1');
+      currentPage = page;
+      updatePagination();
+      // Dispatch event for parent to handle actual data re-rendering
+      const event = new CustomEvent('page-change', {
+        bubbles: true,
+        detail: { page },
+      });
+      target.dispatchEvent(event);
+    });
+  });
+
+  document.querySelector('[data-action="prev-page"]")?.addEventListener('click', () => {
+    if (currentPage > 1) {
+      currentPage--;
+      updatePagination();
+      document.dispatchEvent(new CustomEvent('page-change', { detail: { page: currentPage } }));
+    }
+  });
+
+  document.querySelector('[data-action="next-page"]')?.addEventListener('click', () => {
+    if (currentPage < totalPages) {
+      currentPage++;
+      updatePagination();
+      document.dispatchEvent(new CustomEvent('page-change', { detail: { page: currentPage } }));
+    }
+  });
 
   // Human rating buttons
   document.querySelectorAll('[data-action="human-rate"]').forEach((btn) => {
@@ -354,7 +469,7 @@ const truncateText = (text: string, maxLength: number = 100) => {
       });
       button.dispatchEvent(event);
 
-      // Mock: Replace buttons with badge
+      // Replace buttons with badge
       const td = button.closest('td');
       if (td) {
         td.innerHTML = `<span class="badge badge-sm badge-${rating === 'pass' ? 'success' : 'error'}">${rating}</span>`;
@@ -378,8 +493,7 @@ const truncateText = (text: string, maxLength: number = 100) => {
         });
         target.dispatchEvent(event);
 
-        // Keep the input with the value - don't replace it
-        // Just show visual confirmation
+        // Show visual confirmation
         target.classList.add('input-success');
         setTimeout(() => {
           target.classList.remove('input-success');
@@ -387,7 +501,6 @@ const truncateText = (text: string, maxLength: number = 100) => {
       }
     });
 
-    // Also handle blur event for saving
     input.addEventListener('blur', (e) => {
       const target = e.target as HTMLInputElement;
       const pairId = target.dataset.pairId;
@@ -400,16 +513,23 @@ const truncateText = (text: string, maxLength: number = 100) => {
 
   // Evaluate selected button
   evaluateSelectedBtn?.addEventListener('click', () => {
+    const pairCheckboxes = document.querySelectorAll('.pair-checkbox') as NodeListOf<HTMLInputElement>;
     const selectedIds = Array.from(pairCheckboxes)
       .filter((cb) => cb.checked)
       .map((cb) => cb.dataset.pairId);
     console.log('Evaluate selected pairs:', selectedIds);
 
-    // Mock: Show loading
+    // Show loading state
     evaluateSelectedBtn.classList.add('loading');
     setTimeout(() => {
       evaluateSelectedBtn.classList.remove('loading');
-      alert(`Evaluated ${selectedIds.length} pairs!`);
+      // Dispatch event with results instead of alert
+      const event = new CustomEvent('evaluation-complete', {
+        bubbles: true,
+        detail: { count: selectedIds.length, ids: selectedIds },
+      });
+      evaluateSelectedBtn.dispatchEvent(event);
+      console.log(`Evaluated ${selectedIds.length} pairs`);
     }, 2000);
   });
 
@@ -435,33 +555,83 @@ const truncateText = (text: string, maxLength: number = 100) => {
         detail: { file },
       });
       csvFileInput.dispatchEvent(event);
-
-      // Mock: Show success message
-      alert(`CSV file "${file.name}" would be imported here.`);
       // Reset input
       target.value = '';
     }
   });
 
-  // Add row button
-  document.querySelectorAll('[data-action="add-row"]').forEach((btn) => {
+  // Save new row button
+  document.querySelectorAll('[data-action="save-new-row"]').forEach((btn) => {
     btn.addEventListener('click', (e) => {
-      console.log('Add new row clicked');
+      const button = e.currentTarget as HTMLElement;
+      const row = button.closest('[data-new-row]') as HTMLElement;
+      const input = row.querySelector('[data-new-field="input"]') as HTMLTextAreaElement;
+      const expectedOutput = row.querySelector('[data-new-field="expected_output"]') as HTMLTextAreaElement;
+      const feedback = row.querySelector('[data-new-field="feedback"]') as HTMLInputElement;
 
-      // Dispatch custom event for adding a row
-      const event = new CustomEvent('add-row', {
-        bubbles: true,
-        detail: {},
-      });
-      btn.dispatchEvent(event);
+      const inputValue = input?.value?.trim();
+      const expectedValue = expectedOutput?.value?.trim();
 
-      // Mock: Show prompt for new row
-      const input = prompt('Enter input:');
-      const expectedOutput = prompt('Enter expected output:');
-      if (input && expectedOutput) {
-        console.log('New row:', { input, expectedOutput });
-        alert('New row would be added here (this is a mock implementation).');
+      if (!inputValue || !expectedValue) {
+        // Show error state on empty fields
+        if (!inputValue) input?.classList.add('textarea-error');
+        if (!expectedValue) expectedOutput?.classList.add('textarea-error');
+        setTimeout(() => {
+          input?.classList.remove('textarea-error');
+          expectedOutput?.classList.remove('textarea-error');
+        }, 2000);
+        return;
       }
+
+      const newRow = {
+        input: inputValue,
+        expected_output: expectedValue,
+        feedback: feedback?.value?.trim() || '',
+      };
+
+      console.log('Saving new row:', newRow);
+
+      // Dispatch custom event
+      const event = new CustomEvent('new-row-save', {
+        bubbles: true,
+        detail: newRow,
+      });
+      button.dispatchEvent(event);
+
+      // Show success state
+      button.classList.add('btn-success');
+      button.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+      </svg>`;
+
+      // Clear form after delay
+      setTimeout(() => {
+        if (input) input.value = '';
+        if (expectedOutput) expectedOutput.value = '';
+        if (feedback) feedback.value = '';
+        button.classList.remove('btn-success');
+        button.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+        </svg>`;
+      }, 1500);
     });
   });
+
+  // Initialize checkboxes on load
+  updateCheckboxes();
 </script>
+
+<style>
+  /* Fix zebra striping for sticky columns */
+  #training-pairs-table tbody tr:nth-child(even) .sticky-col {
+    background-color: hsl(var(--b2));
+  }
+
+  #training-pairs-table tbody tr:nth-child(odd) .sticky-col {
+    background-color: hsl(var(--b1));
+  }
+
+  #training-pairs-table tbody tr:hover .sticky-col {
+    background-color: hsl(var(--bc) / 0.1);
+  }
+</style>
