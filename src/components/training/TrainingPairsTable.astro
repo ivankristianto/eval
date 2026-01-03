@@ -3,7 +3,7 @@
  * TrainingPairsTable Component
  *
  * Unified table displaying all training pair data with inline actions.
- * Columns: checkbox, input, expected_output, generated_output, rating (Pass/Fail), feedback, actions
+ * Columns: checkbox, input, expected_output, generated_output, human rating, human feedback, judge rating, judge feedback, actions
  *
  * @param pairs - Array of training pair objects with results
  * @param selectable - Whether to show checkboxes for selection (default: true)
@@ -42,18 +42,60 @@ const truncateText = (text: string, maxLength: number = 100) => {
     <!-- Table Header Actions -->
     <div class="flex items-center justify-between px-2 py-2 border-b border-base-300">
       <div class="flex items-center gap-3">
-        {selectable && (
-          <label class="flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" class="checkbox checkbox-sm" id="select-all-pairs" />
-            <span class="text-sm font-semibold">Select All</span>
-          </label>
-        )}
+        {
+          selectable && (
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" class="checkbox" id="select-all-pairs" />
+              <span class="text-sm font-semibold">Select All</span>
+            </label>
+          )
+        }
         <span class="text-sm text-base-content/70">{pairs.length} training pairs</span>
       </div>
       <div class="flex items-center gap-2">
+        <label
+          for="csv-upload-input"
+          class="btn btn-xs btn-outline"
+          data-action="import-csv"
+          title="Import CSV"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="1.5"
+            stroke="currentColor"
+            class="w-4 h-4"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"
+            ></path>
+          </svg>
+          Import CSV
+        </label>
+        <input
+          type="file"
+          id="csv-upload-input"
+          class="hidden"
+          accept=".csv"
+          data-action="csv-file-input"
+        />
         <button class="btn btn-xs btn-primary" data-action="evaluate-selected" disabled>
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m3 7.5V21a.75.75 0 01-.75.75h-4.5a.75.75 0 01-.75-.75v-4.5M9 12.75l3 .75M9 12.75l-.75-3M12 15.75l3-.75M12 15.75l.75-3M15 12.75l-.75 3" />
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="1.5"
+            stroke="currentColor"
+            class="w-4 h-4"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M9 12.75L11.25 15 15 9.75m3 7.5V21a.75.75 0 01-.75.75h-4.5a.75.75 0 01-.75-.75v-4.5M9 12.75l3 .75M9 12.75l-.75-3M12 15.75l3-.75M12 15.75l.75-3M15 12.75l-.75 3"
+            ></path>
           </svg>
           Evaluate Selected
         </button>
@@ -62,126 +104,214 @@ const truncateText = (text: string, maxLength: number = 100) => {
 
     <!-- Table -->
     <div class="overflow-x-auto">
-      <table class="table table-xs table-zebra">
+      <table class="table table-sm table-zebra">
         <thead class="bg-base-200">
           <tr>
-            {selectable && <th class="w-12"></th>}
-            <th class="w-1/5 sticky left-0 z-10 bg-base-200 hover:bg-base-300">Input</th>
-            <th class="w-1/5 sticky left-20 z-10 bg-base-200 hover:bg-base-300">Expected Output</th>
-            <th class="w-1/5 sticky left-[12.5rem] z-10 bg-base-200 hover:bg-base-300">Generated Output</th>
-            <th class="w-20 text-center">Judge Rating</th>
-            <th class="w-1/5">Judge Feedback</th>
-            <th class="w-20 text-center">Human Rating</th>
-            <th class="w-1/5">Human Feedback</th>
-            {showActions && <th class="w-14"></th>}
+            {selectable && <th class="w-12" />}
+            <th class="min-w-[200px] max-w-[300px] sticky left-0 z-10 bg-base-200 hover:bg-base-300">Input</th>
+            <th class="min-w-[200px] max-w-[300px] sticky left-[12rem] z-10 bg-base-200 hover:bg-base-300">Expected Output</th>
+            <th class="min-w-[200px] max-w-[300px] sticky left-[24rem] z-10 bg-base-200 hover:bg-base-300">Generated Output</th>
+            <th class="w-24 text-center">Human Rating</th>
+            <th class="min-w-[150px]">Human Feedback</th>
+            <th class="w-24 text-center">Judge Rating</th>
+            <th class="min-w-[150px]">Judge Feedback</th>
+            {showActions && <th class="w-14" />}
           </tr>
         </thead>
         <tbody>
-          {pairs.map((pair) => (
-            <tr class="hover" data-pair-id={pair.id}>
-              {selectable && (
-                <td>
-                  <input type="checkbox" class="checkbox checkbox-xs pair-checkbox" data-pair-id={pair.id} />
-                </td>
-              )}
-              <td class="sticky left-0 z-10 bg-base-100 even:bg-base-200 hover:bg-base-200">
-                <div class="text-xs" title={pair.input}>{truncateText(pair.input, 80)}</div>
-              </td>
-              <td class="sticky left-20 z-10 bg-base-100 even:bg-base-200 hover:bg-base-200">
-                <div class="text-xs" title={pair.expected_output}>{truncateText(pair.expected_output, 80)}</div>
-              </td>
-              <td class="sticky left-[12.5rem] z-10 bg-base-100 even:bg-base-200 hover:bg-base-200">
-                {pair.generated_output ? (
-                  <div class="text-xs" title={pair.generated_output}>{truncateText(pair.generated_output, 80)}</div>
-                ) : (
-                  <span class="text-xs opacity-50 italic">Not generated</span>
-                )}
-              </td>
-              <td class="text-center">
-                <PassFailBadge rating={pair.judge_rating} size="sm" />
-              </td>
-              <td>
-                {pair.judge_feedback ? (
-                  <div class="text-xs opacity-70" title={pair.judge_feedback}>{truncateText(pair.judge_feedback, 60)}</div>
-                ) : (
-                  <span class="text-xs opacity-50 italic">-</span>
-                )}
-              </td>
-              <td class="text-center">
-                {pair.human_rating ? (
-                  <PassFailBadge rating={pair.human_rating} size="sm" />
-                ) : (
-                  <div class="flex gap-1 justify-center">
-                    <button
-                      class="btn btn-xs btn-success"
-                      data-action="human-rate"
+          {
+            pairs.map((pair) => (
+              <tr class="hover" data-pair-id={pair.id}>
+                {selectable && (
+                  <td>
+                    <input
+                      type="checkbox"
+                      class="checkbox checkbox-sm pair-checkbox"
                       data-pair-id={pair.id}
-                      data-rating="pass"
-                      title="Mark as Pass"
-                    >
-                      ✓
-                    </button>
-                    <button
-                      class="btn btn-xs btn-error"
-                      data-action="human-rate"
-                      data-pair-id={pair.id}
-                      data-rating="fail"
-                      title="Mark as Fail"
-                    >
-                      ✗
-                    </button>
-                  </div>
+                    />
+                  </td>
                 )}
-              </td>
-              <td>
-                {pair.human_feedback ? (
-                  <div class="text-xs opacity-70" title={pair.human_feedback}>{truncateText(pair.human_feedback, 60)}</div>
-                ) : (
-                  <button class="btn btn-xs btn-ghost" data-action="add-feedback" data-pair-id={pair.id}>Add note</button>
-                )}
-              </td>
-              {showActions && (
-                <td>
-                  <div class="dropdown dropdown-end">
-                    <label tabindex="0" class="btn btn-ghost btn-xs">⋮</label>
-                    <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-200 rounded-box w-52 text-sm">
-                      <li><a data-action="view-details" data-pair-id={pair.id}>View Details</a></li>
-                      <li><a data-action="regenerate" data-pair-id={pair.id}>Regenerate Output</a></li>
-                      <li><a data-action="copy" data-pair-id={pair.id}>Copy to Clipboard</a></li>
-                    </ul>
+                <td class="sticky left-0 z-10 bg-base-100 even:bg-base-200 hover:bg-base-200 align-top">
+                  <div class="text-sm whitespace-pre-wrap break-words max-h-20 overflow-y-auto" title={pair.input}>
+                    {pair.input}
                   </div>
                 </td>
-              )}
-            </tr>
-          ))}
+                <td class="sticky left-[12rem] z-10 bg-base-100 even:bg-base-200 hover:bg-base-200 align-top">
+                  <div class="text-sm whitespace-pre-wrap break-words max-h-20 overflow-y-auto" title={pair.expected_output}>
+                    {pair.expected_output}
+                  </div>
+                </td>
+                <td class="sticky left-[24rem] z-10 bg-base-100 even:bg-base-200 hover:bg-base-200 align-top">
+                  {pair.generated_output ? (
+                    <div class="text-sm whitespace-pre-wrap break-words max-h-20 overflow-y-auto" title={pair.generated_output}>
+                      {pair.generated_output}
+                    </div>
+                  ) : (
+                    <span class="text-sm opacity-50 italic">Not generated</span>
+                  )}
+                </td>
+                <td class="text-center align-middle">
+                  {pair.human_rating ? (
+                    <PassFailBadge rating={pair.human_rating} size="sm" />
+                  ) : (
+                    <div class="flex gap-1 justify-center">
+                      <button
+                        class="btn btn-sm btn-success"
+                        data-action="human-rate"
+                        data-pair-id={pair.id}
+                        data-rating="pass"
+                        title="Mark as Pass"
+                      >
+                        Pass
+                      </button>
+                      <button
+                        class="btn btn-sm btn-error"
+                        data-action="human-rate"
+                        data-pair-id={pair.id}
+                        data-rating="fail"
+                        title="Mark as Fail"
+                      >
+                        Fail
+                      </button>
+                    </div>
+                  )}
+                </td>
+                <td class="align-top">
+                  {pair.human_feedback ? (
+                    <div class="text-sm opacity-70 whitespace-pre-wrap break-words max-h-20 overflow-y-auto" title={pair.human_feedback}>
+                      {pair.human_feedback}
+                    </div>
+                  ) : (
+                    <input
+                      type="text"
+                      class="input input-sm input-ghost w-full"
+                      placeholder="Add note..."
+                      data-action="add-feedback"
+                      data-pair-id={pair.id}
+                    />
+                  )}
+                </td>
+                <td class="text-center align-middle">
+                  <PassFailBadge rating={pair.judge_rating} size="sm" />
+                </td>
+                <td class="align-top">
+                  {pair.judge_feedback ? (
+                    <div class="text-sm opacity-70 whitespace-pre-wrap break-words max-h-20 overflow-y-auto" title={pair.judge_feedback}>
+                      {pair.judge_feedback}
+                    </div>
+                  ) : (
+                    <span class="text-sm opacity-50 italic">-</span>
+                  )}
+                </td>
+                {showActions && (
+                  <td>
+                    <div class="dropdown dropdown-end">
+                      <label tabindex="0" class="btn btn-ghost btn-xs">
+                        ⋮
+                      </label>
+                      <ul
+                        tabindex="0"
+                        class="dropdown-content z-[1] menu p-2 shadow bg-base-200 rounded-box w-52 text-sm"
+                      >
+                        <li>
+                          <a data-action="view-details" data-pair-id={pair.id}>
+                            View Details
+                          </a>
+                        </li>
+                        <li>
+                          <a data-action="regenerate" data-pair-id={pair.id}>
+                            Regenerate Output
+                          </a>
+                        </li>
+                        <li>
+                          <a data-action="copy" data-pair-id={pair.id}>
+                            Copy to Clipboard
+                          </a>
+                        </li>
+                      </ul>
+                    </div>
+                  </td>
+                )}
+              </tr>
+            ))
+          }
         </tbody>
       </table>
     </div>
 
-    <!-- Empty State -->
-    {pairs.length === 0 && (
-      <div class="p-12 text-center">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-16 h-16 mx-auto opacity-30 mb-4">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+    <!-- Add Row Button (at end of table) -->
+    <div class="px-2 py-2 border-t border-base-300">
+      <button
+        class="btn btn-sm btn-outline w-full"
+        data-action="add-row"
+        title="Add a new training pair"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke-width="1.5"
+          stroke="currentColor"
+          class="w-4 h-4"
+        >
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"></path>
         </svg>
-        <h3 class="text-lg font-semibold mb-2">No Training Data</h3>
-        <p class="text-sm text-base-content/70 mb-4">Upload a CSV file to add training pairs</p>
-        <button class="btn btn-primary btn-sm">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+        Add New Row
+      </button>
+    </div>
+
+    <!-- Empty State -->
+    {
+      pairs.length === 0 && (
+        <div class="p-12 text-center">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="1.5"
+            stroke="currentColor"
+            class="w-16 h-16 mx-auto opacity-30 mb-4"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"
+            />
           </svg>
-          Upload CSV
-        </button>
-      </div>
-    )}
+          <h3 class="text-lg font-semibold mb-2">No Training Data</h3>
+          <p class="text-sm text-base-content/70 mb-4">Upload a CSV file to add training pairs</p>
+          <button class="btn btn-primary btn-sm">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke-width="1.5"
+              stroke="currentColor"
+              class="w-4 h-4"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"
+              />
+            </svg>
+            Upload CSV
+          </button>
+        </div>
+      )
+    }
   </div>
 </div>
 
 <script>
   // Select all functionality
   const selectAllCheckbox = document.getElementById('select-all-pairs') as HTMLInputElement;
-  const pairCheckboxes = document.querySelectorAll('.pair-checkbox') as NodeListOf<HTMLInputElement>;
-  const evaluateSelectedBtn = document.querySelector('[data-action="evaluate-selected"]') as HTMLButtonElement;
+  const pairCheckboxes = document.querySelectorAll(
+    '.pair-checkbox'
+  ) as NodeListOf<HTMLInputElement>;
+  const evaluateSelectedBtn = document.querySelector(
+    '[data-action="evaluate-selected"]'
+  ) as HTMLButtonElement;
 
   selectAllCheckbox?.addEventListener('change', (e) => {
     const isChecked = (e.target as HTMLInputElement).checked;
@@ -203,7 +333,8 @@ const truncateText = (text: string, maxLength: number = 100) => {
       evaluateSelectedBtn.disabled = selectedCount === 0;
       const btnSpan = evaluateSelectedBtn.querySelector('span');
       if (btnSpan) {
-        btnSpan.textContent = selectedCount > 0 ? `Evaluate Selected (${selectedCount})` : 'Evaluate Selected';
+        btnSpan.textContent =
+          selectedCount > 0 ? `Evaluate Selected (${selectedCount})` : 'Evaluate Selected';
       }
     }
   }
@@ -231,25 +362,47 @@ const truncateText = (text: string, maxLength: number = 100) => {
     });
   });
 
-  // Add feedback button
-  document.querySelectorAll('[data-action="add-feedback"]').forEach((btn) => {
-    btn.addEventListener('click', (e) => {
-      const button = e.currentTarget as HTMLElement;
-      const pairId = button.dataset.pairId;
-      const feedback = prompt('Add feedback note:');
+  // Add feedback input handler
+  document.querySelectorAll('[data-action="add-feedback"]').forEach((input) => {
+    input.addEventListener('change', (e) => {
+      const target = e.target as HTMLInputElement;
+      const pairId = target.dataset.pairId;
+      const feedback = target.value;
       if (feedback) {
         console.log(`Added feedback for pair ${pairId}:`, feedback);
-        const td = button.closest('td');
-        if (td) {
-          td.innerHTML = `<div class="text-xs opacity-70" title="${feedback}">${feedback.substring(0, 60)}...</div>`;
-        }
+
+        // Dispatch custom event
+        const event = new CustomEvent('human-feedback', {
+          bubbles: true,
+          detail: { pairId, feedback },
+        });
+        target.dispatchEvent(event);
+
+        // Keep the input with the value - don't replace it
+        // Just show visual confirmation
+        target.classList.add('input-success');
+        setTimeout(() => {
+          target.classList.remove('input-success');
+        }, 1000);
+      }
+    });
+
+    // Also handle blur event for saving
+    input.addEventListener('blur', (e) => {
+      const target = e.target as HTMLInputElement;
+      const pairId = target.dataset.pairId;
+      const feedback = target.value;
+      if (feedback) {
+        console.log(`Saved feedback for pair ${pairId}:`, feedback);
       }
     });
   });
 
   // Evaluate selected button
   evaluateSelectedBtn?.addEventListener('click', () => {
-    const selectedIds = Array.from(pairCheckboxes).filter((cb) => cb.checked).map((cb) => cb.dataset.pairId);
+    const selectedIds = Array.from(pairCheckboxes)
+      .filter((cb) => cb.checked)
+      .map((cb) => cb.dataset.pairId);
     console.log('Evaluate selected pairs:', selectedIds);
 
     // Mock: Show loading
@@ -258,5 +411,57 @@ const truncateText = (text: string, maxLength: number = 100) => {
       evaluateSelectedBtn.classList.remove('loading');
       alert(`Evaluated ${selectedIds.length} pairs!`);
     }, 2000);
+  });
+
+  // CSV import button
+  const importCsvBtn = document.querySelector('[data-action="import-csv"]') as HTMLLabelElement;
+  const csvFileInput = document.querySelector('[data-action="csv-file-input"]') as HTMLInputElement;
+
+  importCsvBtn?.addEventListener('click', () => {
+    console.log('Import CSV clicked');
+    if (csvFileInput) {
+      csvFileInput.click();
+    }
+  });
+
+  csvFileInput?.addEventListener('change', (e) => {
+    const target = e.target as HTMLInputElement;
+    const file = target.files?.[0];
+    if (file) {
+      console.log('CSV file selected:', file.name);
+      // Dispatch custom event for CSV import
+      const event = new CustomEvent('csv-import', {
+        bubbles: true,
+        detail: { file },
+      });
+      csvFileInput.dispatchEvent(event);
+
+      // Mock: Show success message
+      alert(`CSV file "${file.name}" would be imported here.`);
+      // Reset input
+      target.value = '';
+    }
+  });
+
+  // Add row button
+  document.querySelectorAll('[data-action="add-row"]').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      console.log('Add new row clicked');
+
+      // Dispatch custom event for adding a row
+      const event = new CustomEvent('add-row', {
+        bubbles: true,
+        detail: {},
+      });
+      btn.dispatchEvent(event);
+
+      // Mock: Show prompt for new row
+      const input = prompt('Enter input:');
+      const expectedOutput = prompt('Enter expected output:');
+      if (input && expectedOutput) {
+        console.log('New row:', { input, expectedOutput });
+        alert('New row would be added here (this is a mock implementation).');
+      }
+    });
   });
 </script>

@@ -151,7 +151,23 @@ const mockTrainingPairs = [
   },
 ];
 
-// Mock metrics
+// Mock metrics - aligned with metrics.astro format
+const mockMetrics = {
+  f1_score: 0.72,
+  precision: 0.70,
+  recall: 0.80,
+  cohens_kappa: 0.65,
+  accuracy: 0.75,
+  confusion_matrix: {
+    true_positives: 28,
+    true_negatives: 10,
+    false_positives: 12,
+    false_negatives: 0,
+  },
+  total_pairs: 50,
+};
+
+// Legacy format for backward compatibility
 const mockJudgeMetrics = {
   total_pairs: 50,
   pass_count: 35,
@@ -225,6 +241,7 @@ Mark as PASS only if all criteria are met. Mark as FAIL if any criterion is not 
       selectedVersion: 2,
     }}
     trainingPairs={mockTrainingPairs}
+    metrics={mockMetrics}
     judgeMetrics={mockJudgeMetrics}
     humanMetrics={mockHumanMetrics}
   />

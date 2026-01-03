@@ -44,10 +44,10 @@ const editorId = `${type}-prompt-editor`;
 const historyModalId = `${type}-prompt-history`;
 ---
 
-<div class="card bg-base-100 shadow-md">
-  <div class="card-body p-4">
+<div class="card bg-base-100 shadow-sm">
+  <div class="card-body p-3">
     <!-- Header with Version Selector -->
-    <div class="mb-3">
+    <div class="mb-2">
       <VersionSelector
         versions={versions}
         selectedVersion={selectedVersion}
@@ -57,48 +57,43 @@ const historyModalId = `${type}-prompt-history`;
 
     <!-- Prompt Textarea -->
     <div class="form-control">
-      <label class="label" for={editorId}>
-        <span class="label-text font-semibold capitalize">{type} Prompt</span>
-        <span class="label-text-alt text-xs">{promptText.length} characters</span>
+      <label class="label py-1" for={editorId}>
+        <span class="label-text font-semibold capitalize text-sm">{type} Prompt</span>
+        <span class="label-text-alt text-xs">{promptText.length} chars</span>
       </label>
       <textarea
         id={editorId}
-        class="textarea textarea-bordered h-48 font-mono text-sm leading-relaxed"
+        class="textarea textarea-bordered textarea-sm h-32 font-mono text-xs leading-relaxed w-full resize-y"
         placeholder={`Enter your ${type} prompt here...`}
         data-prompt-editor={type}
       >{promptText}</textarea>
-      <label class="label">
-        <span class="label-text-alt text-xs opacity-70">
-          Edit the prompt and click an action to create a new version
-        </span>
-      </label>
     </div>
 
     <!-- Action Buttons -->
     <div class="flex gap-2 mt-2">
       {showOptimize && (
         <button
-          class="btn btn-primary btn-sm flex-1"
+          class="btn btn-primary btn-xs flex-1"
           data-action="optimize"
           data-type={type}
         >
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3 h-3">
             <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z" />
           </svg>
-          Optimize ✨
+          Optimize
         </button>
       )}
       {showHistory && (
         <label
           for={historyModalId}
-          class="btn btn-ghost btn-sm"
+          class="btn btn-ghost btn-xs"
           data-action="view-history"
           data-type={type}
         >
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3 h-3">
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-          View History
+          History
         </label>
       )}
     </div>
