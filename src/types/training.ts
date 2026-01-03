@@ -1,12 +1,12 @@
 /**
  * TypeScript types for LLM-as-Judge training system
- * Corresponds to database schema in db/migrations/001-add-judge-training-tables.sql
+ * Corresponds to database schema in db/schema.sql
  */
 
 /**
  * Persona status lifecycle
  */
-export type PersonaStatus = 'draft' | 'training' | 'trained' | 'incomplete';
+export type PersonaStatus = 'draft' | 'training' | 'awaiting_human_review' | 'trained' | 'incomplete';
 
 /**
  * Training iteration status
@@ -40,16 +40,15 @@ export interface Persona {
   id: string;
   name: string;
   description: string | null;
-  task_prompt: string;
   task_model_id: string;
   judge_model_id: string;
   prompt_engineer_model_id: string;
+  current_task_prompt_version_id: string | null;
+  current_judge_prompt_version_id: string | null;
   status: PersonaStatus;
   target_f1_score: number;
-  max_iterations: number;
-  current_iteration: number;
   best_f1_score: number | null;
-  best_f1_iteration: number | null;
+  best_f1_score_updated_at: string | null;
   created_at: string;
   updated_at: string;
   created_by: string | null;
@@ -61,13 +60,12 @@ export interface Persona {
 export interface CreatePersonaInput {
   name: string;
   description?: string | null;
-  task_prompt: string;
+  initial_task_prompt: string;
   initial_judge_prompt: string;
   task_model_id: string;
   judge_model_id: string;
   prompt_engineer_model_id: string;
   target_f1_score?: number;
-  max_iterations?: number;
   created_by?: string;
 }
 
@@ -194,11 +192,118 @@ export interface MetricsResult {
 export interface JudgePromptVersion {
   id: string;
   persona_id: string;
-  iteration_number: number;
+  version_number: number;
   prompt_text: string;
   improvement_rationale: string | null;
+  label: string | null;
   created_by: PromptSource;
   created_at: string;
+}
+
+/**
+ * TaskPromptVersion - history of task prompt refinements
+ */
+export interface TaskPromptVersion {
+  id: string;
+  persona_id: string;
+  version_number: number;
+  prompt_text: string;
+  improvement_rationale: string | null;
+  label: string | null;
+  created_by: PromptSource;
+  created_at: string;
+}
+
+// ============================================
+// Training Workspace Redesign Types
+// ============================================
+
+/**
+ * Evaluation run type
+ */
+export type EvaluationRunType = 'task_generate' | 'judge_evaluate' | 'full_evaluation';
+
+/**
+ * Evaluation run status
+ */
+export type EvaluationRunStatus = 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
+
+/**
+ * Snapshot type for persona metrics
+ */
+export type MetricsSnapshotType = 'iteration' | 'manual' | 'auto_checkpoint';
+
+/**
+ * EvaluationRun - tracks a single evaluation session
+ */
+export interface EvaluationRun {
+  id: string;
+  persona_id: string;
+  run_type: EvaluationRunType;
+  status: EvaluationRunStatus;
+  total_pairs: number;
+  processed_pairs: number;
+  started_at: string | null;
+  completed_at: string | null;
+  error_message: string | null;
+  created_at: string;
+  updated_at: string;
+  model_id: string;
+  prompt_version_id: string;
+}
+
+/**
+ * Judge rating for training pair result
+ */
+export type JudgeRating = 'pass' | 'fail';
+
+/**
+ * Human rating for training pair result
+ */
+export type HumanRating = 'pass' | 'fail';
+
+/**
+ * TrainingPairResult - evaluation result for a training pair
+ */
+export interface TrainingPairResult {
+  id: string;
+  persona_id: string;
+  evaluation_run_id: string | null;
+  training_pair_id: string;
+  generated_output: string | null;
+  judge_rating: JudgeRating | null;
+  judge_feedback: string | null;
+  judge_reasoning: string | null;
+  human_rating: HumanRating | null;
+  human_feedback: string | null;
+  execution_time_ms: number | null;
+  input_tokens: number | null;
+  output_tokens: number | null;
+  total_tokens: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * PersonaMetrics - aggregated metrics snapshot
+ */
+export interface PersonaMetrics {
+  id: string;
+  persona_id: string;
+  evaluation_run_id: string | null;
+  snapshot_type: MetricsSnapshotType;
+  total_pairs: number;
+  judge_pass_count: number;
+  judge_fail_count: number;
+  human_pass_count: number;
+  human_fail_count: number;
+  f1_score: number | null;
+  precision: number | null;
+  recall: number | null;
+  cohens_kappa: number | null;
+  accuracy: number | null;
+  confusion_matrix: string | null; // JSON serialized
+  calculated_at: string;
 }
 
 /**
