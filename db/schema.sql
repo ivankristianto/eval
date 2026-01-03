@@ -281,3 +281,89 @@ CREATE TABLE IF NOT EXISTS training_loop_checkpoints (
 
 CREATE INDEX IF NOT EXISTS idx_training_loop_checkpoints_session ON training_loop_checkpoints(session_id, iteration_number DESC);
 
+-- ============================================
+-- Training Workspace Redesign Tables
+-- ============================================
+
+-- 11. evaluation_runs table
+-- Tracks a single evaluation session (e.g., "Generate outputs for all pairs")
+CREATE TABLE IF NOT EXISTS evaluation_runs (
+  id TEXT PRIMARY KEY,
+  persona_id TEXT NOT NULL,
+  run_type TEXT NOT NULL CHECK(run_type IN ('task_generate', 'judge_evaluate', 'full_evaluation')),
+  status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending', 'running', 'completed', 'failed', 'cancelled')),
+  total_pairs INTEGER NOT NULL DEFAULT 0,
+  processed_pairs INTEGER NOT NULL DEFAULT 0,
+  started_at TEXT,
+  completed_at TEXT,
+  error_message TEXT,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  model_id TEXT NOT NULL,
+  prompt_version_id TEXT NOT NULL,
+  FOREIGN KEY (persona_id) REFERENCES personas(id) ON DELETE CASCADE,
+  FOREIGN KEY (model_id) REFERENCES ModelConfiguration(id) ON DELETE RESTRICT
+);
+
+CREATE INDEX IF NOT EXISTS idx_evaluation_runs_persona ON evaluation_runs(persona_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_evaluation_runs_status ON evaluation_runs(status);
+CREATE INDEX IF NOT EXISTS idx_evaluation_runs_type ON evaluation_runs(run_type);
+
+-- 12. training_pair_results table
+-- Stores evaluation results for each training pair
+CREATE TABLE IF NOT EXISTS training_pair_results (
+  id TEXT PRIMARY KEY,
+  persona_id TEXT NOT NULL,
+  evaluation_run_id TEXT,
+  training_pair_id TEXT NOT NULL,
+  generated_output TEXT,
+  judge_rating TEXT CHECK(judge_rating IN ('pass', 'fail')),
+  judge_feedback TEXT,
+  judge_reasoning TEXT,
+  human_rating TEXT CHECK(human_rating IN ('pass', 'fail')),
+  human_feedback TEXT,
+  execution_time_ms INTEGER,
+  input_tokens INTEGER,
+  output_tokens INTEGER,
+  total_tokens INTEGER,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (persona_id) REFERENCES personas(id) ON DELETE CASCADE,
+  FOREIGN KEY (evaluation_run_id) REFERENCES evaluation_runs(id) ON DELETE SET NULL,
+  FOREIGN KEY (training_pair_id) REFERENCES training_pairs(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_training_pair_results_persona ON training_pair_results(persona_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_training_pair_results_run ON training_pair_results(evaluation_run_id);
+CREATE INDEX IF NOT EXISTS idx_training_pair_results_pair ON training_pair_results(training_pair_id);
+CREATE INDEX IF NOT EXISTS idx_training_pair_results_judge_rating ON training_pair_results(judge_rating);
+CREATE INDEX IF NOT EXISTS idx_training_pair_results_human_rating ON training_pair_results(human_rating);
+
+-- 13. persona_metrics table
+-- Aggregated metrics snapshots for a persona at a point in time
+CREATE TABLE IF NOT EXISTS persona_metrics (
+  id TEXT PRIMARY KEY,
+  persona_id TEXT NOT NULL,
+  evaluation_run_id TEXT,
+  snapshot_type TEXT NOT NULL CHECK(snapshot_type IN ('iteration', 'manual', 'auto_checkpoint')),
+  total_pairs INTEGER NOT NULL DEFAULT 0,
+  judge_pass_count INTEGER NOT NULL DEFAULT 0,
+  judge_fail_count INTEGER NOT NULL DEFAULT 0,
+  human_pass_count INTEGER NOT NULL DEFAULT 0,
+  human_fail_count INTEGER NOT NULL DEFAULT 0,
+  f1_score REAL,
+  precision REAL,
+  recall REAL,
+  cohens_kappa REAL,
+  accuracy REAL,
+  confusion_matrix TEXT,  -- JSON: {true_positives, true_negatives, false_positives, false_negatives}
+  calculated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (persona_id) REFERENCES personas(id) ON DELETE CASCADE,
+  FOREIGN KEY (evaluation_run_id) REFERENCES evaluation_runs(id) ON DELETE SET NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_persona_metrics_persona ON persona_metrics(persona_id, calculated_at DESC);
+CREATE INDEX IF NOT EXISTS idx_persona_metrics_run ON persona_metrics(evaluation_run_id);
+CREATE INDEX IF NOT EXISTS idx_persona_metrics_type ON persona_metrics(snapshot_type);
+CREATE INDEX IF NOT EXISTS idx_persona_metrics_f1 ON persona_metrics(f1_score DESC);
+
