@@ -31,7 +31,11 @@ const { versions, selectedVersion, type, id = `version-selector-${type}` } = Ast
 const sortedVersions = [...versions].sort((a, b) => b.version_number - a.version_number);
 
 const getCreatedByIcon = (createdBy: 'human' | 'ai') => {
-  return createdBy === 'ai' ? '🤖' : '👤';
+  return createdBy === 'ai' ? '✦' : '●';
+};
+
+const getCreatedByColor = (createdBy: 'human' | 'ai') => {
+  return createdBy === 'ai' ? 'text-info' : 'text-warning';
 };
 
 const formatDate = (dateStr: string) => {
@@ -45,32 +49,34 @@ const formatDate = (dateStr: string) => {
 ---
 
 <div class="form-control w-full">
-  <label for={id} class="label">
-    <span class="label-text font-semibold capitalize">{type} Prompt Version</span>
-    <span class="label-text-alt">{sortedVersions.length} versions</span>
+  <label for={id} class="label px-0 py-1">
+    <span class="label-text font-semibold capitalize text-xs tracking-wide">{type} Prompt Version</span>
+    <span class="label-text-alt text-xs">{sortedVersions.length} versions</span>
   </label>
-  <select
-    id={id}
-    class="select select-bordered w-full"
-    data-version-selector={type}
-  >
-    {sortedVersions.map((version) => (
-      <option
-        value={version.version_number}
-        selected={version.version_number === selectedVersion}
-      >
-        v{version.version_number}
-        {' '}
-        {getCreatedByIcon(version.created_by)}
-        {' - '}
-        {formatDate(version.created_at)}
-        {version.version_number === selectedVersion ? ' (current)' : ''}
-      </option>
-    ))}
-  </select>
+  <div class="dropdown w-full">
+    <select
+      id={id}
+      class="select select-bordered select-sm w-full bg-base-100/80 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+      data-version-selector={type}
+    >
+      {sortedVersions.map((version) => (
+        <option
+          value={version.version_number}
+          selected={version.version_number === selectedVersion}
+        >
+          v{version.version_number}
+          {' '}
+          {getCreatedByIcon(version.created_by)}
+          {' - '}
+          {formatDate(version.created_at)}
+          {version.version_number === selectedVersion ? ' (current)' : ''}
+        </option>
+      ))}
+    </select>
+  </div>
   {sortedVersions.find(v => v.version_number === selectedVersion)?.improvement_rationale && (
-    <label class="label">
-      <span class="label-text-alt text-xs opacity-70">
+    <label class="label px-0 py-1">
+      <span class="label-text-alt text-xs text-base-content/60 leading-relaxed">
         {sortedVersions.find(v => v.version_number === selectedVersion)!.improvement_rationale}
       </span>
     </label>
