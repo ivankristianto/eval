@@ -59,9 +59,7 @@ const historyModalId = `${type}-prompt-history`;
     <div class="form-control">
       <label class="label" for={editorId}>
         <span class="label-text font-semibold capitalize">{type} Prompt</span>
-        <span class="label-text-alt text-xs">
-          {promptText.length} characters
-        </span>
+        <span class="label-text-alt text-xs">{promptText.length} characters</span>
       </label>
       <textarea
         id={editorId}
@@ -129,9 +127,7 @@ const historyModalId = `${type}-prompt-history`;
                     <span class="badge badge-primary badge-sm">Current</span>
                   )}
                 </div>
-                <span class="text-xs opacity-70">
-                  {new Date(version.created_at).toLocaleString()}
-                </span>
+                <span class="text-xs opacity-70">{new Date(version.created_at).toLocaleString()}</span>
               </div>
               {version.improvement_rationale && (
                 <p class="text-sm opacity-80 mt-1">{version.improvement_rationale}</p>
@@ -167,7 +163,6 @@ const historyModalId = `${type}-prompt-history`;
       const currentText = textarea?.value || '';
 
       console.log(`Optimize ${type} prompt clicked`);
-      console.log('Current prompt:', currentText);
 
       // Dispatch custom event
       const event = new CustomEvent('prompt-optimize', {
@@ -208,7 +203,10 @@ const historyModalId = `${type}-prompt-history`;
     textarea.addEventListener('input', (e) => {
       const target = e.target as HTMLTextAreaElement;
       const type = target.dataset.promptEditor;
-      console.log(`${type} prompt modified:`, target.value.length, 'characters');
+      const charCountLabel = target.closest('.card')?.querySelector('.label-text-alt') as HTMLElement;
+      if (charCountLabel) {
+        charCountLabel.textContent = `${target.value.length} characters`;
+      }
     });
   });
 </script>

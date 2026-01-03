@@ -6,7 +6,7 @@
  * Uses mock data for demonstration purposes.
  */
 
-import '@styles/global.css';
+import WorkspaceLayout from '@layouts/WorkspaceLayout.astro';
 import TrainingWorkspace from '@components/training/TrainingWorkspace.astro';
 import LoadingStates from '@components/training/LoadingStates.astro';
 
@@ -210,31 +210,26 @@ Check that the output:
 Mark as PASS only if all criteria are met. Mark as FAIL if any criterion is not satisfied.`;
 ---
 
-<!doctype html>
-<html lang="en" data-theme="light">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{mockPersona.name} - Training Workspace</title>
-  </head>
-  <body class="bg-base-100">
-    <TrainingWorkspace
-      personaId={mockPersona.id}
-      personaName={mockPersona.name}
-      taskPrompt={{
-        text: currentTaskPrompt,
-        versions: mockTaskVersions,
-        selectedVersion: 3,
-      }}
-      judgePrompt={{
-        text: currentJudgePrompt,
-        versions: mockJudgeVersions,
-        selectedVersion: 2,
-      }}
-      trainingPairs={mockTrainingPairs}
-      judgeMetrics={mockJudgeMetrics}
-      humanMetrics={mockHumanMetrics}
-    />
+<WorkspaceLayout title={`${mockPersona.name} - Training Workspace`}>
+  <TrainingWorkspace
+    personaId={mockPersona.id}
+    personaName={mockPersona.name}
+    taskPrompt={{
+      text: currentTaskPrompt,
+      versions: mockTaskVersions,
+      selectedVersion: 3,
+    }}
+    judgePrompt={{
+      text: currentJudgePrompt,
+      versions: mockJudgeVersions,
+      selectedVersion: 2,
+    }}
+    trainingPairs={mockTrainingPairs}
+    judgeMetrics={mockJudgeMetrics}
+    humanMetrics={mockHumanMetrics}
+  />
+
+  <slot slot="overlays">
     <LoadingStates />
-  </body>
-</html>
+  </slot>
+</WorkspaceLayout>

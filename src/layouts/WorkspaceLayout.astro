@@ -1,0 +1,44 @@
+---
+/**
+ * WorkspaceLayout Component
+ *
+ * Full-screen layout for training workspace pages.
+ * No navbar, no container constraints - optimized for focused work.
+ *
+ * Features:
+ * - Full viewport height with hidden overflow
+ * - Dark theme optimized for long sessions
+ * - Flex column layout for header + content
+ * - Professional research terminal aesthetic
+ *
+ * @param title - Page title for browser tab
+ * @param personaId - Optional persona ID for breadcrumbs
+ * @param personaName - Optional persona name for header
+ */
+
+import '../styles/global.css';
+
+export interface Props {
+  title?: string;
+  personaId?: string;
+  personaName?: string;
+}
+
+const { title = 'Training Workspace', personaId, personaName } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en" data-theme="dim">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title}</title>
+  </head>
+  <body class="bg-base-100 h-screen overflow-hidden flex flex-col font-sans antialiased">
+    <!-- Optional overlays slot - for modals, drawers, etc. -->
+    <slot name="overlays" />
+
+    <!-- Main content slot -->
+    <slot />
+  </body>
+</html>

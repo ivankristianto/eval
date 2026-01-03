@@ -81,7 +81,8 @@ const getPassRateColor = (rate: number) => {
         <span>
           {Math.abs(humanMetrics.pass_rate - judgeMetrics.pass_rate) < 0.1
             ? 'Judge aligned with human feedback'
-            : `${formatPercentage(Math.abs(humanMetrics.pass_rate - judgeMetrics.pass_rate))} difference`}
+            : `${formatPercentage(Math.abs(humanMetrics.pass_rate - judgeMetrics.pass_rate))} difference`
+          }
         </span>
       </div>
     )}
