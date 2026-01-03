@@ -95,23 +95,24 @@ CREATE TABLE IF NOT EXISTS personas (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL UNIQUE,
   description TEXT,
-  task_prompt TEXT NOT NULL,
   task_model_id TEXT NOT NULL,
   judge_model_id TEXT NOT NULL,
   prompt_engineer_model_id TEXT NOT NULL,
+  current_task_prompt_version_id TEXT,
+  current_judge_prompt_version_id TEXT,
   status TEXT NOT NULL CHECK(status IN ('draft', 'training', 'awaiting_human_review', 'trained', 'incomplete')),
   target_f1_score REAL NOT NULL DEFAULT 0.80 CHECK(target_f1_score >= 0.0 AND target_f1_score <= 1.0),
-  max_iterations INTEGER NOT NULL DEFAULT 5 CHECK(max_iterations >= 1),
-  current_iteration INTEGER DEFAULT 0,
   best_f1_score REAL DEFAULT NULL,
-  best_f1_iteration INTEGER DEFAULT NULL,
+  best_f1_score_updated_at TEXT,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   created_by TEXT,
   CHECK (task_model_id != '' AND judge_model_id != '' AND prompt_engineer_model_id != ''),
   FOREIGN KEY (task_model_id) REFERENCES ModelConfiguration(id) ON DELETE RESTRICT,
   FOREIGN KEY (judge_model_id) REFERENCES ModelConfiguration(id) ON DELETE RESTRICT,
-  FOREIGN KEY (prompt_engineer_model_id) REFERENCES ModelConfiguration(id) ON DELETE RESTRICT
+  FOREIGN KEY (prompt_engineer_model_id) REFERENCES ModelConfiguration(id) ON DELETE RESTRICT,
+  FOREIGN KEY (current_task_prompt_version_id) REFERENCES task_prompt_versions(id) ON DELETE SET NULL,
+  FOREIGN KEY (current_judge_prompt_version_id) REFERENCES judge_prompt_versions(id) ON DELETE SET NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_personas_status ON personas(status);
@@ -212,32 +213,34 @@ CREATE INDEX IF NOT EXISTS idx_iteration_metrics_kappa ON iteration_metrics(cohe
 CREATE TABLE IF NOT EXISTS judge_prompt_versions (
   id TEXT PRIMARY KEY,
   persona_id TEXT NOT NULL,
-  iteration_number INTEGER NOT NULL,
+  version_number INTEGER NOT NULL,
   prompt_text TEXT NOT NULL,
   improvement_rationale TEXT,
+  label TEXT,  -- Optional display name (e.g., "v3 - Added explicit criteria")
   created_by TEXT NOT NULL CHECK(created_by IN ('human', 'ai')),
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (persona_id) REFERENCES personas(id) ON DELETE CASCADE,
-  UNIQUE(persona_id, iteration_number)
+  FOREIGN KEY (persona_id) REFERENCES personas(id) ON DELETE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS idx_judge_prompt_versions_persona ON judge_prompt_versions(persona_id, iteration_number DESC);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_judge_prompt_versions_persona_version ON judge_prompt_versions(persona_id, version_number);
+CREATE INDEX IF NOT EXISTS idx_judge_prompt_versions_persona ON judge_prompt_versions(persona_id, version_number DESC);
 
 -- 8. TaskPromptVersion table
 -- History of task prompt refinements during training
 CREATE TABLE IF NOT EXISTS task_prompt_versions (
   id TEXT PRIMARY KEY,
   persona_id TEXT NOT NULL,
-  iteration_number INTEGER NOT NULL,
+  version_number INTEGER NOT NULL,
   prompt_text TEXT NOT NULL,
   improvement_rationale TEXT,
+  label TEXT,  -- Optional display name (e.g., "v3 - Better examples")
   created_by TEXT NOT NULL CHECK(created_by IN ('human', 'ai')),
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (persona_id) REFERENCES personas(id) ON DELETE CASCADE,
-  UNIQUE(persona_id, iteration_number)
+  FOREIGN KEY (persona_id) REFERENCES personas(id) ON DELETE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS idx_task_prompt_versions_persona ON task_prompt_versions(persona_id, iteration_number DESC);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_task_prompt_versions_persona_version ON task_prompt_versions(persona_id, version_number);
+CREATE INDEX IF NOT EXISTS idx_task_prompt_versions_persona ON task_prompt_versions(persona_id, version_number DESC);
 
 -- 9. TrainingLoopState table
 -- Tracks overall training session state for pause/resume functionality
