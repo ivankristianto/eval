@@ -18,6 +18,7 @@ import type {
   CreateHumanReviewInput,
   IterationMetrics,
   JudgePromptVersion,
+  TaskPromptVersion,
   TrainingLoopState,
   TrainingLoopCheckpoint,
   PersonaStatus,
@@ -799,19 +800,21 @@ export function getPersonaMetrics(personaId: string, db?: Database.Database): It
 /**
  * Create a new judge prompt version.
  * @param personaId - Persona ID
- * @param iterationNumber - Iteration number this prompt belongs to
+ * @param versionNumber - Version number (auto-incremented if not provided)
  * @param promptText - Prompt text content
  * @param rationale - Improvement rationale
  * @param createdBy - Source of the prompt (human/ai)
+ * @param label - Optional display label
  * @param db - Optional database instance
  * @returns Created prompt version
  */
-export function createPromptVersion(
+export function createJudgePromptVersion(
   personaId: string,
-  iterationNumber: number,
+  versionNumber: number,
   promptText: string,
   rationale: string | null,
   createdBy: PromptSource,
+  label?: string | null,
   db?: Database.Database
 ): JudgePromptVersion {
   const database = db || getTrainingDatabase();
@@ -820,60 +823,286 @@ export function createPromptVersion(
 
   const stmt = database.prepare(`
     INSERT INTO judge_prompt_versions (
-      id, persona_id, iteration_number, prompt_text, improvement_rationale, created_by, created_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?)
+      id, persona_id, version_number, prompt_text, improvement_rationale, label, created_by, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
-  stmt.run(id, personaId, iterationNumber, promptText, rationale, createdBy, now);
+  stmt.run(id, personaId, versionNumber, promptText, rationale, label || null, createdBy, now);
 
-  return getPromptVersion(id, database)!;
+  return getJudgePromptVersion(id, database)!;
 }
 
 /**
- * Get prompt version by ID.
+ * Get next version number for a persona's judge prompt.
+ * @param personaId - Persona ID
+ * @param db - Optional database instance
+ * @returns Next version number
+ */
+export function getNextJudgeVersionNumber(personaId: string, db?: Database.Database): number {
+  const database = db || getTrainingDatabase();
+  const stmt = database.prepare(
+    'SELECT COALESCE(MAX(version_number), -1) + 1 as next_version FROM judge_prompt_versions WHERE persona_id = ?'
+  );
+  const result = stmt.get(personaId) as { next_version: number };
+  return result.next_version;
+}
+
+/**
+ * Get judge prompt version by ID.
  * @param id - Version ID
  * @param db - Optional database instance
  * @returns Prompt version or null
  */
-export function getPromptVersion(id: string, db?: Database.Database): JudgePromptVersion | null {
+export function getJudgePromptVersion(id: string, db?: Database.Database): JudgePromptVersion | null {
   const database = db || getTrainingDatabase();
   const stmt = database.prepare('SELECT * FROM judge_prompt_versions WHERE id = ?');
   return stmt.get(id) as JudgePromptVersion | null;
 }
 
 /**
- * Get prompt version by persona and iteration number.
+ * Get judge prompt version by persona and version number.
  * @param personaId - Persona ID
- * @param iterationNumber - Iteration number
+ * @param versionNumber - Version number
  * @param db - Optional database instance
  * @returns Prompt version or null
  */
-export function getPromptVersionByIteration(
+export function getJudgePromptVersionByNumber(
   personaId: string,
-  iterationNumber: number,
+  versionNumber: number,
   db?: Database.Database
 ): JudgePromptVersion | null {
   const database = db || getTrainingDatabase();
   const stmt = database.prepare(
-    'SELECT * FROM judge_prompt_versions WHERE persona_id = ? AND iteration_number = ?'
+    'SELECT * FROM judge_prompt_versions WHERE persona_id = ? AND version_number = ?'
   );
-  return stmt.get(personaId, iterationNumber) as JudgePromptVersion | null;
+  return stmt.get(personaId, versionNumber) as JudgePromptVersion | null;
 }
 
 /**
- * Get all prompt versions for a persona.
+ * Get all judge prompt versions for a persona.
  * @param personaId - Persona ID
  * @param db - Optional database instance
  * @returns Array of prompt versions
  */
-export function getPromptHistory(personaId: string, db?: Database.Database): JudgePromptVersion[] {
+export function getJudgePromptHistory(personaId: string, db?: Database.Database): JudgePromptVersion[] {
   const database = db || getTrainingDatabase();
   const stmt = database.prepare(`
     SELECT * FROM judge_prompt_versions
     WHERE persona_id = ?
-    ORDER BY iteration_number DESC
+    ORDER BY version_number DESC
   `);
   return stmt.all(personaId) as JudgePromptVersion[];
+}
+
+// ===== TaskPromptVersion CRUD Operations =====
+
+/**
+ * Create a new task prompt version.
+ * @param personaId - Persona ID
+ * @param versionNumber - Version number (auto-incremented if not provided)
+ * @param promptText - Prompt text content
+ * @param rationale - Improvement rationale
+ * @param createdBy - Source of the prompt (human/ai)
+ * @param label - Optional display label
+ * @param db - Optional database instance
+ * @returns Created prompt version
+ */
+export function createTaskPromptVersion(
+  personaId: string,
+  versionNumber: number,
+  promptText: string,
+  rationale: string | null,
+  createdBy: PromptSource,
+  label?: string | null,
+  db?: Database.Database
+): TaskPromptVersion {
+  const database = db || getTrainingDatabase();
+  const id = uuidv4();
+  const now = new Date().toISOString();
+
+  const stmt = database.prepare(`
+    INSERT INTO task_prompt_versions (
+      id, persona_id, version_number, prompt_text, improvement_rationale, label, created_by, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  stmt.run(id, personaId, versionNumber, promptText, rationale, label || null, createdBy, now);
+
+  return getTaskPromptVersion(id, database)!;
+}
+
+/**
+ * Get next version number for a persona's task prompt.
+ * @param personaId - Persona ID
+ * @param db - Optional database instance
+ * @returns Next version number
+ */
+export function getNextTaskVersionNumber(personaId: string, db?: Database.Database): number {
+  const database = db || getTrainingDatabase();
+  const stmt = database.prepare(
+    'SELECT COALESCE(MAX(version_number), -1) + 1 as next_version FROM task_prompt_versions WHERE persona_id = ?'
+  );
+  const result = stmt.get(personaId) as { next_version: number };
+  return result.next_version;
+}
+
+/**
+ * Get task prompt version by ID.
+ * @param id - Version ID
+ * @param db - Optional database instance
+ * @returns Prompt version or null
+ */
+export function getTaskPromptVersion(id: string, db?: Database.Database): TaskPromptVersion | null {
+  const database = db || getTrainingDatabase();
+  const stmt = database.prepare('SELECT * FROM task_prompt_versions WHERE id = ?');
+  return stmt.get(id) as TaskPromptVersion | null;
+}
+
+/**
+ * Get task prompt version by persona and version number.
+ * @param personaId - Persona ID
+ * @param versionNumber - Version number
+ * @param db - Optional database instance
+ * @returns Prompt version or null
+ */
+export function getTaskPromptVersionByNumber(
+  personaId: string,
+  versionNumber: number,
+  db?: Database.Database
+): TaskPromptVersion | null {
+  const database = db || getTrainingDatabase();
+  const stmt = database.prepare(
+    'SELECT * FROM task_prompt_versions WHERE persona_id = ? AND version_number = ?'
+  );
+  return stmt.get(personaId, versionNumber) as TaskPromptVersion | null;
+}
+
+/**
+ * Get all task prompt versions for a persona.
+ * @param personaId - Persona ID
+ * @param db - Optional database instance
+ * @returns Array of prompt versions
+ */
+export function getTaskPromptHistory(personaId: string, db?: Database.Database): TaskPromptVersion[] {
+  const database = db || getTrainingDatabase();
+  const stmt = database.prepare(`
+    SELECT * FROM task_prompt_versions
+    WHERE persona_id = ?
+    ORDER BY version_number DESC
+  `);
+  return stmt.all(personaId) as TaskPromptVersion[];
+}
+
+// ===== Persona Current Version Management =====
+
+/**
+ * Set the current judge prompt version for a persona.
+ * @param personaId - Persona ID
+ * @param versionId - Judge prompt version ID
+ * @param db - Optional database instance
+ * @returns Updated persona
+ */
+export function setCurrentJudgeVersion(
+  personaId: string,
+  versionId: string,
+  db?: Database.Database
+): Persona {
+  const dbInstance = db || getTrainingDatabase();
+
+  return withTransaction((database) => {
+    const persona = getPersona(personaId, database);
+    if (!persona) {
+      throw new Error(`Persona not found: ${personaId}`);
+    }
+
+    const version = getJudgePromptVersion(versionId, database);
+    if (!version) {
+      throw new Error(`Judge prompt version not found: ${versionId}`);
+    }
+
+    if (version.persona_id !== personaId) {
+      throw new Error(`Judge prompt version ${versionId} does not belong to persona ${personaId}`);
+    }
+
+    const stmt = database.prepare(
+      'UPDATE personas SET current_judge_prompt_version_id = ?, updated_at = ? WHERE id = ?'
+    );
+    stmt.run(versionId, new Date().toISOString(), personaId);
+
+    return getPersona(personaId, database)!;
+  }, dbInstance);
+}
+
+/**
+ * Set the current task prompt version for a persona.
+ * @param personaId - Persona ID
+ * @param versionId - Task prompt version ID
+ * @param db - Optional database instance
+ * @returns Updated persona
+ */
+export function setCurrentTaskVersion(
+  personaId: string,
+  versionId: string,
+  db?: Database.Database
+): Persona {
+  const dbInstance = db || getTrainingDatabase();
+
+  return withTransaction((database) => {
+    const persona = getPersona(personaId, database);
+    if (!persona) {
+      throw new Error(`Persona not found: ${personaId}`);
+    }
+
+    const version = getTaskPromptVersion(versionId, database);
+    if (!version) {
+      throw new Error(`Task prompt version not found: ${versionId}`);
+    }
+
+    if (version.persona_id !== personaId) {
+      throw new Error(`Task prompt version ${versionId} does not belong to persona ${personaId}`);
+    }
+
+    const stmt = database.prepare(
+      'UPDATE personas SET current_task_prompt_version_id = ?, updated_at = ? WHERE id = ?'
+    );
+    stmt.run(versionId, new Date().toISOString(), personaId);
+
+    return getPersona(personaId, database)!;
+  }, dbInstance);
+}
+
+/**
+ * Get the current judge prompt version for a persona.
+ * @param personaId - Persona ID
+ * @param db - Optional database instance
+ * @returns Current judge prompt version or null
+ */
+export function getCurrentJudgeVersion(
+  personaId: string,
+  db?: Database.Database
+): JudgePromptVersion | null {
+  const persona = getPersona(personaId, db);
+  if (!persona || !persona.current_judge_prompt_version_id) {
+    return null;
+  }
+  return getJudgePromptVersion(persona.current_judge_prompt_version_id, db);
+}
+
+/**
+ * Get the current task prompt version for a persona.
+ * @param personaId - Persona ID
+ * @param db - Optional database instance
+ * @returns Current task prompt version or null
+ */
+export function getCurrentTaskVersion(
+  personaId: string,
+  db?: Database.Database
+): TaskPromptVersion | null {
+  const persona = getPersona(personaId, db);
+  if (!persona || !persona.current_task_prompt_version_id) {
+    return null;
+  }
+  return getTaskPromptVersion(persona.current_task_prompt_version_id, db);
 }
 
 // ===== TrainingLoopState CRUD Operations =====
