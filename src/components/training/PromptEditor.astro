@@ -1,0 +1,214 @@
+---
+/**
+ * PromptEditor Component
+ *
+ * Editable prompt textarea with version selector and optimization controls.
+ * Displays version history and allows triggering LLM-based prompt optimization.
+ *
+ * @param type - 'task' or 'judge' prompt type
+ * @param promptText - Current prompt text (editable)
+ * @param versions - Array of version objects for version selector
+ * @param selectedVersion - Currently selected version number
+ * @param showOptimize - Whether to show the Optimize button (default: true)
+ * @param showHistory - Whether to show the View History button (default: true)
+ */
+
+import VersionSelector from './VersionSelector.astro';
+
+interface Version {
+  version_number: number;
+  created_by: 'human' | 'ai';
+  created_at: string;
+  improvement_rationale?: string;
+}
+
+interface Props {
+  type: 'task' | 'judge';
+  promptText: string;
+  versions: Version[];
+  selectedVersion: number;
+  showOptimize?: boolean;
+  showHistory?: boolean;
+}
+
+const {
+  type,
+  promptText,
+  versions,
+  selectedVersion,
+  showOptimize = true,
+  showHistory = true,
+} = Astro.props;
+
+const editorId = `${type}-prompt-editor`;
+const historyModalId = `${type}-prompt-history`;
+---
+
+<div class="card bg-base-100 shadow-md">
+  <div class="card-body p-4">
+    <!-- Header with Version Selector -->
+    <div class="mb-3">
+      <VersionSelector
+        versions={versions}
+        selectedVersion={selectedVersion}
+        type={type}
+      />
+    </div>
+
+    <!-- Prompt Textarea -->
+    <div class="form-control">
+      <label class="label" for={editorId}>
+        <span class="label-text font-semibold capitalize">{type} Prompt</span>
+        <span class="label-text-alt text-xs">
+          {promptText.length} characters
+        </span>
+      </label>
+      <textarea
+        id={editorId}
+        class="textarea textarea-bordered h-48 font-mono text-sm leading-relaxed"
+        placeholder={`Enter your ${type} prompt here...`}
+        data-prompt-editor={type}
+      >{promptText}</textarea>
+      <label class="label">
+        <span class="label-text-alt text-xs opacity-70">
+          Edit the prompt and click an action to create a new version
+        </span>
+      </label>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="flex gap-2 mt-2">
+      {showOptimize && (
+        <button
+          class="btn btn-primary btn-sm flex-1"
+          data-action="optimize"
+          data-type={type}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z" />
+          </svg>
+          Optimize ✨
+        </button>
+      )}
+      {showHistory && (
+        <label
+          for={historyModalId}
+          class="btn btn-ghost btn-sm"
+          data-action="view-history"
+          data-type={type}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          View History
+        </label>
+      )}
+    </div>
+  </div>
+</div>
+
+<!-- Version History Modal -->
+{showHistory && (
+  <input type="checkbox" id={historyModalId} class="modal-toggle" />
+  <div class="modal" role="dialog">
+    <div class="modal-box max-w-3xl">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-bold text-lg capitalize">{type} Prompt History</h3>
+        <label for={historyModalId} class="btn btn-sm btn-circle btn-ghost">✕</label>
+      </div>
+
+      <div class="space-y-3">
+        {versions.sort((a, b) => b.version_number - a.version_number).map((version) => (
+          <div class:list={['card bg-base-200', version.version_number === selectedVersion && 'ring-2 ring-primary']}>
+            <div class="card-body p-4">
+              <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center gap-2">
+                  <span class="badge badge-lg">v{version.version_number}</span>
+                  <span class="text-xs">{version.created_by === 'ai' ? '🤖 AI' : '👤 Human'}</span>
+                  {version.version_number === selectedVersion && (
+                    <span class="badge badge-primary badge-sm">Current</span>
+                  )}
+                </div>
+                <span class="text-xs opacity-70">
+                  {new Date(version.created_at).toLocaleString()}
+                </span>
+              </div>
+              {version.improvement_rationale && (
+                <p class="text-sm opacity-80 mt-1">{version.improvement_rationale}</p>
+              )}
+              <button
+                class="btn btn-xs btn-ghost mt-2"
+                data-action="load-version"
+                data-version={version.version_number}
+                data-type={type}
+              >
+                Load this version
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div class="modal-action">
+        <label for={historyModalId} class="btn">Close</label>
+      </div>
+    </div>
+    <label class="modal-backdrop" for={historyModalId}>Close</label>
+  </div>
+)}
+
+<script>
+  // Optimize button handler
+  document.querySelectorAll('[data-action="optimize"]').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      const button = e.currentTarget as HTMLElement;
+      const type = button.dataset.type;
+      const textarea = document.getElementById(`${type}-prompt-editor`) as HTMLTextAreaElement;
+      const currentText = textarea?.value || '';
+
+      console.log(`Optimize ${type} prompt clicked`);
+      console.log('Current prompt:', currentText);
+
+      // Dispatch custom event
+      const event = new CustomEvent('prompt-optimize', {
+        bubbles: true,
+        detail: { type, currentText },
+      });
+      button.dispatchEvent(event);
+
+      // Mock: Show loading state
+      button.classList.add('loading');
+      setTimeout(() => {
+        button.classList.remove('loading');
+        alert(`Optimization suggestion ready for ${type} prompt!`);
+      }, 1500);
+    });
+  });
+
+  // Load version handler
+  document.querySelectorAll('[data-action="load-version"]').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      const button = e.currentTarget as HTMLElement;
+      const version = parseInt(button.dataset.version || '0');
+      const type = button.dataset.type;
+
+      console.log(`Load version ${version} for ${type} prompt`);
+
+      // Dispatch custom event
+      const event = new CustomEvent('version-load', {
+        bubbles: true,
+        detail: { type, version },
+      });
+      button.dispatchEvent(event);
+    });
+  });
+
+  // Track textarea changes
+  document.querySelectorAll('[data-prompt-editor]').forEach((textarea) => {
+    textarea.addEventListener('input', (e) => {
+      const target = e.target as HTMLTextAreaElement;
+      const type = target.dataset.promptEditor;
+      console.log(`${type} prompt modified:`, target.value.length, 'characters');
+    });
+  });
+</script>

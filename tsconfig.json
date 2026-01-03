@@ -19,6 +19,8 @@
       "@lib/*": ["src/lib/*"],
       "@components/*": ["src/components/*"],
       "@layouts/*": ["src/layouts/*"],
+      "@styles/*": ["src/styles/*"],
+      "@db/*": ["db/*"],
       "@src-types/*": ["src/types/*"]
     },
     "types": ["node", "better-sqlite3"]

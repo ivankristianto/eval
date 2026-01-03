@@ -1,0 +1,300 @@
+---
+/**
+ * Training Components Showcase Page
+ *
+ * Demo page displaying all training UI components with mock data.
+ * Useful for visual testing and component development.
+ */
+
+import '@styles/global.css';
+import PassFailBadge from '@components/training/PassFailBadge.astro';
+import VersionSelector from '@components/training/VersionSelector.astro';
+import SimpleMetrics from '@components/training/SimpleMetrics.astro';
+import PromptEditor from '@components/training/PromptEditor.astro';
+import OptimizationSuggestion from '@components/training/OptimizationSuggestion.astro';
+import LoadingStates from '@components/training/LoadingStates.astro';
+
+// Mock data for demos
+const mockVersions = [
+  {
+    version_number: 3,
+    created_by: 'ai' as const,
+    created_at: '2026-01-03T10:00:00Z',
+    improvement_rationale: 'Enhanced clarity and added examples',
+  },
+  {
+    version_number: 2,
+    created_by: 'ai' as const,
+    created_at: '2026-01-02T14:30:00Z',
+    improvement_rationale: 'Improved specificity',
+  },
+  {
+    version_number: 1,
+    created_by: 'human' as const,
+    created_at: '2026-01-01T09:00:00Z',
+  },
+];
+
+const mockMetrics = {
+  judgeMetrics: {
+    total_pairs: 50,
+    pass_count: 35,
+    fail_count: 15,
+    pass_rate: 0.7,
+  },
+  humanMetrics: {
+    total_pairs: 50,
+    pass_count: 40,
+    fail_count: 10,
+    pass_rate: 0.8,
+  },
+};
+
+const sampleTaskPrompt = `Write a helpful response as an AI assistant.
+
+Guidelines:
+- Be clear and concise
+- Provide examples when relevant
+- Use friendly, professional tone
+
+Task: Answer the user's question accurately.`;
+---
+
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Training Components Showcase</title>
+  </head>
+  <body class="bg-base-100">
+    <div class="container mx-auto p-6 max-w-7xl">
+      <!-- Header -->
+      <div class="mb-8">
+        <h1 class="text-4xl font-bold mb-2">Training Components Showcase</h1>
+        <p class="text-base-content/70">
+          Interactive demo of all training workspace UI components with mock data
+        </p>
+        <div class="flex gap-2 mt-4">
+          <a href="/personas/demo-persona/workspace" class="btn btn-primary btn-sm">
+            View Full Workspace
+          </a>
+          <button
+            onclick="window.toast.success('Toast notification works!')"
+            class="btn btn-ghost btn-sm"
+          >
+            Test Toast
+          </button>
+        </div>
+      </div>
+
+      <!-- Component Sections -->
+      <div class="space-y-12">
+        <!-- PassFailBadge Section -->
+        <section>
+          <h2 class="text-2xl font-bold mb-4">1. PassFailBadge Component</h2>
+          <div class="card bg-base-200 p-6">
+            <div class="flex flex-wrap gap-4 items-center">
+              <div>
+                <p class="text-sm font-semibold mb-2">Pass (default size):</p>
+                <PassFailBadge rating="pass" />
+              </div>
+              <div>
+                <p class="text-sm font-semibold mb-2">Fail (default size):</p>
+                <PassFailBadge rating="fail" />
+              </div>
+              <div>
+                <p class="text-sm font-semibold mb-2">Not Rated:</p>
+                <PassFailBadge rating={null} />
+              </div>
+              <div>
+                <p class="text-sm font-semibold mb-2">Small:</p>
+                <PassFailBadge rating="pass" size="sm" />
+              </div>
+              <div>
+                <p class="text-sm font-semibold mb-2">Large:</p>
+                <PassFailBadge rating="fail" size="lg" />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- VersionSelector Section -->
+        <section>
+          <h2 class="text-2xl font-bold mb-4">2. VersionSelector Component</h2>
+          <div class="card bg-base-200 p-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <VersionSelector versions={mockVersions} selectedVersion={3} type="task" />
+              <VersionSelector
+                versions={mockVersions.slice(0, 2)}
+                selectedVersion={2}
+                type="judge"
+              />
+            </div>
+          </div>
+        </section>
+
+        <!-- SimpleMetrics Section -->
+        <section>
+          <h2 class="text-2xl font-bold mb-4">3. SimpleMetrics Component</h2>
+          <div class="card bg-base-200 p-6">
+            <SimpleMetrics
+              judgeMetrics={mockMetrics.judgeMetrics}
+              humanMetrics={mockMetrics.humanMetrics}
+            />
+          </div>
+        </section>
+
+        <!-- PromptEditor Section -->
+        <section>
+          <h2 class="text-2xl font-bold mb-4">4. PromptEditor Component</h2>
+          <div class="card bg-base-200 p-6">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <PromptEditor
+                type="task"
+                promptText={sampleTaskPrompt}
+                versions={mockVersions}
+                selectedVersion={3}
+              />
+              <PromptEditor
+                type="judge"
+                promptText="Evaluate if the output is accurate and helpful.\n\nMark PASS if correct, FAIL otherwise."
+                versions={mockVersions.slice(0, 2)}
+                selectedVersion={2}
+                showHistory={false}
+              />
+            </div>
+          </div>
+        </section>
+
+        <!-- OptimizationSuggestion Section -->
+        <section>
+          <h2 class="text-2xl font-bold mb-4">5. OptimizationSuggestion Modal</h2>
+          <div class="card bg-base-200 p-6">
+            <p class="mb-4 text-sm">Click the button below to open the optimization modal:</p>
+            <label for="demo-optimization-modal" class="btn btn-primary">
+              Open Optimization Suggestion
+            </label>
+          </div>
+        </section>
+
+        <!-- LoadingStates Section -->
+        <section>
+          <h2 class="text-2xl font-bold mb-4">6. Loading States & Animations</h2>
+          <div class="card bg-base-200 p-6 space-y-4">
+            <div>
+              <h3 class="font-semibold mb-2">Loading Spinner:</h3>
+              <span class="loading loading-spinner loading-lg text-primary"></span>
+            </div>
+            <div>
+              <h3 class="font-semibold mb-2">Progress Bar:</h3>
+              <progress class="progress progress-primary w-56" value="70" max="100"></progress>
+            </div>
+            <div>
+              <h3 class="font-semibold mb-2">Toast Notifications:</h3>
+              <div class="flex gap-2">
+                <button
+                  onclick="window.toast.success('Success message!')"
+                  class="btn btn-success btn-sm"
+                >
+                  Success Toast
+                </button>
+                <button onclick="window.toast.error('Error message!')" class="btn btn-error btn-sm">
+                  Error Toast
+                </button>
+                <button
+                  onclick="window.toast.warning('Warning message!')"
+                  class="btn btn-warning btn-sm"
+                >
+                  Warning Toast
+                </button>
+                <button onclick="window.toast.info('Info message!')" class="btn btn-info btn-sm">
+                  Info Toast
+                </button>
+              </div>
+            </div>
+            <div>
+              <h3 class="font-semibold mb-2">Skeleton Loader:</h3>
+              <div class="overflow-x-auto">
+                <table class="table table-sm">
+                  <thead>
+                    <tr>
+                      <th></th>
+                      <th>Column 1</th>
+                      <th>Column 2</th>
+                      <th>Column 3</th>
+                    </tr>
+                  </thead>
+                  <tbody id="demo-skeleton-tbody">
+                    <tr class="animate-pulse">
+                      <td><div class="h-3 bg-base-300 rounded w-8"></div></td>
+                      <td><div class="h-3 bg-base-300 rounded w-full"></div></td>
+                      <td><div class="h-3 bg-base-300 rounded w-full"></div></td>
+                      <td><div class="h-3 bg-base-300 rounded w-full"></div></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Usage Examples Section -->
+        <section>
+          <h2 class="text-2xl font-bold mb-4">7. Integration Example</h2>
+          <div class="card bg-base-200 p-6">
+            <div class="space-y-4">
+              <div class="alert alert-info">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  class="stroke-current shrink-0 w-6 h-6"
+                  ><path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg
+                >
+                <span>All components work together in the full workspace view.</span>
+              </div>
+              <a href="/personas/demo-persona/workspace" class="btn btn-primary btn-block">
+                View Complete Training Workspace →
+              </a>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- Footer -->
+      <div class="mt-12 text-center text-sm text-base-content/50">
+        <p>Component Showcase • Mock UI Implementation</p>
+        <p class="mt-1">All data on this page is mock/demo data</p>
+      </div>
+    </div>
+
+    <!-- Hidden Modal for Demo -->
+    <OptimizationSuggestion
+      type="task"
+      currentPrompt={sampleTaskPrompt}
+      suggestedPrompt={`Write a helpful, detailed response as an AI assistant.
+
+Guidelines:
+- Be clear, concise, and well-structured
+- Provide concrete examples with code snippets when relevant
+- Use friendly, professional, and encouraging tone
+- Break complex topics into digestible steps
+
+Quality Standards:
+- Ensure accuracy and cite sources when applicable
+- Anticipate follow-up questions
+- Avoid jargon unless it's necessary (then define it)
+
+Task: Answer the user's question accurately and comprehensively.`}
+      rationale={`Added 'detailed' and 'well-structured' to improve completeness. Added 'concrete examples with code snippets' because 8 failures lacked specific examples. Added Quality Standards section to address accuracy issues. Added 'comprehensive' to final task instruction to reduce incomplete answers.`}
+      modalId="demo-optimization-modal"
+    />
+
+    <LoadingStates />
+  </body>
+</html>

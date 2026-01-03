@@ -1,0 +1,89 @@
+---
+/**
+ * SimpleMetrics Component
+ *
+ * Displays simple pass/fail percentage metrics for training data.
+ * Shows both judge ratings and human ratings side by side.
+ *
+ * @param metrics - Object containing judge and human metrics with mock data
+ */
+
+interface MetricsData {
+  total_pairs: number;
+  pass_count: number;
+  fail_count: number;
+  pass_rate: number; // 0.0 - 1.0
+}
+
+interface Props {
+  judgeMetrics: MetricsData;
+  humanMetrics: MetricsData;
+  showComparison?: boolean;
+}
+
+const { judgeMetrics, humanMetrics, showComparison = true } = Astro.props;
+
+const formatPercentage = (rate: number) => {
+  return `${(rate * 100).toFixed(1)}%`;
+};
+
+const getPassRateColor = (rate: number) => {
+  if (rate >= 0.8) return 'text-success';
+  if (rate >= 0.6) return 'text-warning';
+  return 'text-error';
+};
+---
+
+<div class="card bg-base-200 shadow-md">
+  <div class="card-body p-4">
+    <h3 class="card-title text-sm font-semibold mb-3">Training Metrics</h3>
+
+    <!-- Metrics Grid -->
+    <div class="grid grid-cols-2 gap-4">
+      <!-- Judge Metrics -->
+      <div class="stats stats-vertical shadow bg-base-100">
+        <div class="stat p-3">
+          <div class="stat-title text-xs">Judge Evaluation</div>
+          <div class:list={['stat-value text-2xl', getPassRateColor(judgeMetrics.pass_rate)]}>
+            {formatPercentage(judgeMetrics.pass_rate)}
+          </div>
+          <div class="stat-desc text-xs mt-1">
+            {judgeMetrics.pass_count} pass / {judgeMetrics.fail_count} fail
+          </div>
+        </div>
+      </div>
+
+      <!-- Human Metrics -->
+      <div class="stats stats-vertical shadow bg-base-100">
+        <div class="stat p-3">
+          <div class="stat-title text-xs">Human Review</div>
+          <div class:list={['stat-value text-2xl', getPassRateColor(humanMetrics.pass_rate)]}>
+            {formatPercentage(humanMetrics.pass_rate)}
+          </div>
+          <div class="stat-desc text-xs mt-1">
+            {humanMetrics.pass_count} pass / {humanMetrics.fail_count} fail
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Total Pairs Summary -->
+    <div class="divider my-2"></div>
+    <div class="flex justify-between items-center text-sm">
+      <span class="text-base-content/70">Total Training Pairs:</span>
+      <span class="font-bold">{judgeMetrics.total_pairs}</span>
+    </div>
+
+    <!-- Comparison (if enabled) -->
+    {showComparison && (
+      <div class="alert alert-info mt-3 py-2 text-xs">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        <span>
+          {Math.abs(humanMetrics.pass_rate - judgeMetrics.pass_rate) < 0.1
+            ? 'Judge aligned with human feedback'
+            : `${formatPercentage(Math.abs(humanMetrics.pass_rate - judgeMetrics.pass_rate))} difference`}
+        </span>
+      </div>
+    )}
+  </div>
+</div>

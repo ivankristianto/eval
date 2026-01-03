@@ -1,0 +1,210 @@
+---
+/**
+ * TrainingWorkspace Layout Component
+ *
+ * Main workspace layout with split view:
+ * - Left panel (40%): Task and Judge prompt editors stacked
+ * - Right panel (60%): Training pairs table and metrics
+ *
+ * @param personaId - Persona ID for data loading
+ * @param personaName - Persona display name
+ * @param taskPrompt - Mock task prompt configuration
+ * @param judgePrompt - Mock judge prompt configuration
+ * @param trainingPairs - Mock training pairs data
+ * @param metrics - Mock metrics data
+ */
+
+import PromptEditor from './PromptEditor.astro';
+import TrainingPairsTable from './TrainingPairsTable.astro';
+import SimpleMetrics from './SimpleMetrics.astro';
+import OptimizationSuggestion from './OptimizationSuggestion.astro';
+
+interface PromptConfig {
+  text: string;
+  versions: Array<{
+    version_number: number;
+    created_by: 'human' | 'ai';
+    created_at: string;
+    improvement_rationale?: string;
+  }>;
+  selectedVersion: number;
+}
+
+interface TrainingPair {
+  id: string;
+  input: string;
+  expected_output: string;
+  generated_output?: string;
+  judge_rating?: 'pass' | 'fail';
+  judge_feedback?: string;
+  human_rating?: 'pass' | 'fail';
+  human_feedback?: string;
+}
+
+interface MetricsData {
+  total_pairs: number;
+  pass_count: number;
+  fail_count: number;
+  pass_rate: number;
+}
+
+interface Props {
+  personaId: string;
+  personaName: string;
+  taskPrompt: PromptConfig;
+  judgePrompt: PromptConfig;
+  trainingPairs: TrainingPair[];
+  judgeMetrics: MetricsData;
+  humanMetrics: MetricsData;
+}
+
+const {
+  personaId,
+  personaName,
+  taskPrompt,
+  judgePrompt,
+  trainingPairs,
+  judgeMetrics,
+  humanMetrics,
+} = Astro.props;
+---
+
+<div class="container mx-auto p-4">
+  <!-- Header -->
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-3xl font-bold">{personaName}</h1>
+      <p class="text-sm text-base-content/70 mt-1">Training Workspace</p>
+    </div>
+    <div class="flex gap-2">
+      <button
+        class="btn btn-primary"
+        data-action="generate-outputs"
+        data-persona-id={personaId}
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" />
+        </svg>
+        Generate Outputs
+      </button>
+      <button
+        class="btn btn-secondary"
+        data-action="evaluate-all"
+        data-persona-id={personaId}
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        Evaluate All
+      </button>
+    </div>
+  </div>
+
+  <!-- Main Workspace Grid -->
+  <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+    <!-- Left Panel: Prompts (2/5 width on lg screens) -->
+    <div class="lg:col-span-2 space-y-6">
+      <!-- Task Prompt Editor -->
+      <PromptEditor
+        type="task"
+        promptText={taskPrompt.text}
+        versions={taskPrompt.versions}
+        selectedVersion={taskPrompt.selectedVersion}
+      />
+
+      <!-- Judge Prompt Editor -->
+      <PromptEditor
+        type="judge"
+        promptText={judgePrompt.text}
+        versions={judgePrompt.versions}
+        selectedVersion={judgePrompt.selectedVersion}
+      />
+    </div>
+
+    <!-- Right Panel: Data & Metrics (3/5 width on lg screens) -->
+    <div class="lg:col-span-3 space-y-6">
+      <!-- Metrics Summary -->
+      <SimpleMetrics
+        judgeMetrics={judgeMetrics}
+        humanMetrics={humanMetrics}
+      />
+
+      <!-- Training Pairs Table -->
+      <TrainingPairsTable
+        pairs={trainingPairs}
+      />
+    </div>
+  </div>
+
+  <!-- Optimization Suggestion Modals (hidden by default) -->
+  <OptimizationSuggestion
+    type="task"
+    currentPrompt={taskPrompt.text}
+    suggestedPrompt="Write a detailed response that answers the user's question about {topic}. Include:\n1. A clear explanation of the concept\n2. Relevant examples\n3. Common misconceptions to avoid\n\nEnsure the response is beginner-friendly and uses simple language."
+    rationale="Added structure with numbered list for clarity. Specified 'beginner-friendly' and 'simple language' to address cases where previous outputs were too technical. These changes directly address the 5 failed examples where responses lacked structure."
+    modalId="optimization-modal-task"
+  />
+
+  <OptimizationSuggestion
+    type="judge"
+    currentPrompt={judgePrompt.text}
+    suggestedPrompt="Evaluate if the generated output correctly addresses the user's question.\n\nCheck that the output:\n- Directly answers the question asked\n- Provides accurate information\n- Includes relevant examples when appropriate\n- Avoids hallucinations or unsupported claims\n\nMark as PASS only if all criteria are met. Mark as FAIL if any criterion is not satisfied, and explain which specific criterion failed."
+    rationale="Added explicit evaluation criteria with bullet points. Specified 'mark as PASS only if ALL criteria are met' to reduce false positives. Added requirement to explain which criterion failed to improve feedback quality."
+    modalId="optimization-modal-judge"
+  />
+</div>
+
+<script>
+  // Generate outputs action
+  document.querySelectorAll('[data-action="generate-outputs"]').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      const button = e.currentTarget as HTMLElement;
+      const personaId = button.dataset.personaId;
+      console.log(`Generate outputs for persona: ${personaId}`);
+
+      // Mock: Show loading state
+      button.classList.add('loading');
+      button.textContent = 'Generating...';
+
+      setTimeout(() => {
+        button.classList.remove('loading');
+        button.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z"></path></svg> Generate Outputs';
+        alert('Generated outputs for 50 training pairs with Task Prompt v3!');
+      }, 2500);
+    });
+  });
+
+  // Evaluate all action
+  document.querySelectorAll('[data-action="evaluate-all"]').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      const button = e.currentTarget as HTMLElement;
+      const personaId = button.dataset.personaId;
+      console.log(`Evaluate all for persona: ${personaId}`);
+
+      // Mock: Show loading state
+      button.classList.add('loading');
+      button.textContent = 'Evaluating...';
+
+      setTimeout(() => {
+        button.classList.remove('loading');
+        button.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> Evaluate All';
+        alert('Evaluated 50 pairs with Judge Prompt v2! Results: 35 Pass, 15 Fail (70% pass rate)');
+      }, 3000);
+    });
+  });
+</script>
+
+<style>
+  /* Ensure smooth transitions */
+  .btn {
+    transition: all 0.2s ease-in-out;
+  }
+
+  /* Responsive grid adjustments */
+  @media (max-width: 1024px) {
+    .lg\:col-span-2,
+    .lg\:col-span-3 {
+      grid-column: span 1;
+    }
+  }
+</style>

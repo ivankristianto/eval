@@ -1,0 +1,240 @@
+---
+/**
+ * Training Workspace Page
+ *
+ * Main page for training a persona with version-based workflow.
+ * Uses mock data for demonstration purposes.
+ */
+
+import '@styles/global.css';
+import TrainingWorkspace from '@components/training/TrainingWorkspace.astro';
+import LoadingStates from '@components/training/LoadingStates.astro';
+
+// Mock: Get persona ID from URL
+const { id } = Astro.params;
+
+// Mock persona data
+const mockPersona = {
+  id: id || 'persona-1',
+  name: 'Nagi - Training Persona',
+  description: 'A helpful AI assistant for cooking and recipe recommendations',
+  status: 'training',
+};
+
+// Mock task prompt versions
+const mockTaskVersions = [
+  {
+    version_number: 3,
+    created_by: 'ai' as const,
+    created_at: '2026-01-03T10:00:00Z',
+    improvement_rationale: 'Added structure and specificity based on failure analysis',
+  },
+  {
+    version_number: 2,
+    created_by: 'ai' as const,
+    created_at: '2026-01-02T14:30:00Z',
+    improvement_rationale: 'Improved clarity and added examples requirement',
+  },
+  {
+    version_number: 1,
+    created_by: 'human' as const,
+    created_at: '2026-01-01T09:00:00Z',
+  },
+];
+
+// Mock judge prompt versions
+const mockJudgeVersions = [
+  {
+    version_number: 2,
+    created_by: 'ai' as const,
+    created_at: '2026-01-02T16:00:00Z',
+    improvement_rationale: 'Added explicit criteria to reduce false positives',
+  },
+  {
+    version_number: 1,
+    created_by: 'human' as const,
+    created_at: '2026-01-01T09:05:00Z',
+  },
+];
+
+// Mock training pairs with mixed states
+const mockTrainingPairs = [
+  {
+    id: 'pair-1',
+    input: 'Comment Author: Emma Manuel Comment: No I like to think the majority of people do!',
+    expected_output: 'No I like to think the majority of people do!',
+    generated_output: 'No I like to think the majority of people do!',
+    judge_rating: 'pass' as const,
+    judge_feedback: 'Output matches expected response exactly',
+    human_rating: 'pass' as const,
+    human_feedback: 'Correct extraction',
+  },
+  {
+    id: 'pair-2',
+    input: 'Comment Author: LMB Comment: Aww I love hearing that, LMB! Might need to...',
+    expected_output: 'That was published in November 2020!',
+    generated_output: 'Aww I love hearing that, LMB! Might need to make this one again soon!',
+    judge_rating: 'fail' as const,
+    judge_feedback: 'Generated output does not match expected output',
+    human_rating: 'fail' as const,
+    human_feedback: 'Wrong output - did not extract the correct comment',
+  },
+  {
+    id: 'pair-3',
+    input: 'Comment Author: Indiana Comment: I want to have brekkie at your house...',
+    expected_output: 'I want to have brekkie at your house. So much love!',
+    generated_output: 'Hahaha love it Indiana! Sounds like brekkie date!',
+    judge_rating: 'fail' as const,
+    judge_feedback: 'Output content differs from expected',
+    human_rating: 'pass' as const,
+    human_feedback: 'Actually this is acceptable - judge was too strict',
+  },
+  {
+    id: 'pair-4',
+    input: 'Comment Author: Leah Comment: Ugh thanks Leah! Fixing :) N x',
+    expected_output: 'Ugh thanks Leah! Fixing :) N x',
+    generated_output: 'Ugh thanks Leah! Fixing :) N x',
+    judge_rating: 'pass' as const,
+    judge_feedback: 'Perfect match',
+    human_rating: 'pass' as const,
+  },
+  {
+    id: 'pair-5',
+    input: 'Comment Author: Kate Comment: Hello Kate! 💕 Are you 100% sure you used the...',
+    expected_output: 'Hey Kate! 💕 Are you 100% sure you used dried?',
+    generated_output: 'Hey Kate! 🌸 Are you 100% sure you used dried?',
+    judge_rating: 'fail' as const,
+    judge_feedback: 'Emoji differs (💕 vs 🌸)',
+    human_rating: 'fail' as const,
+    human_feedback: 'Should use exact emoji from expected output',
+  },
+  {
+    id: 'pair-6',
+    input: 'Comment Author: Suz Comment: Aww Suz! What a lovely message to wake up to',
+    expected_output: 'Aww Suz! What a lovely message to wake up to this morning!',
+    generated_output: "Aww Suz! What a gorgeous message - I'm so glad you loved them!",
+    judge_rating: 'fail' as const,
+    judge_feedback: 'Content significantly different from expected',
+  },
+  {
+    id: 'pair-7',
+    input: 'Comment Author: Zac Comment: Its 100% you Zac! 💕 Love that you tweeted...',
+    expected_output: "It's 100% you Zac! 💕 Love that you tweeted this",
+    generated_output: "It's 100% you Zac! 💕 Love that you tweeted about this",
+    judge_rating: 'pass' as const,
+    judge_feedback: 'Close enough - only minor word difference',
+  },
+  {
+    id: 'pair-8',
+    input: 'Comment Author: Anne Comment: Perfect for large family feeding! Hope they love it...',
+    expected_output: 'Perfect for large family feeding! Hope they love it Anne!',
+    generated_output: "Aww Anne, that's so lovely of you to say! Are you making for your family?",
+    judge_rating: 'fail' as const,
+    judge_feedback: 'Completely different response',
+  },
+  {
+    id: 'pair-9',
+    input: 'Comment Author: William Comment: Happy Birthday 6th birthday to Ruby and Opal!',
+    expected_output: 'Aww happy 6th birthday to Ruby and Opal!! Are they twins?',
+    generated_output: 'Aww happy 6th birthday to Ruby and Opal!! Are they twins?',
+    judge_rating: 'pass' as const,
+    judge_feedback: 'Exact match',
+  },
+  {
+    id: 'pair-10',
+    input:
+      'Comment Author: Sharon Comment: So glad you enjoyed it Sharon, thanks for letting me know!',
+    expected_output: 'So glad you enjoyed it Sharon, thanks for letting me know!',
+    generated_output: 'Yay Sharon! So glad you loved it - quick tasty dinner hey! 🙂',
+    judge_rating: 'fail' as const,
+    judge_feedback: 'Response differs significantly',
+  },
+];
+
+// Mock metrics
+const mockJudgeMetrics = {
+  total_pairs: 50,
+  pass_count: 35,
+  fail_count: 15,
+  pass_rate: 0.7,
+};
+
+const mockHumanMetrics = {
+  total_pairs: 50,
+  pass_count: 40,
+  fail_count: 10,
+  pass_rate: 0.8,
+};
+
+// Current task prompt (v3)
+const currentTaskPrompt = `Write a reply as Nagi Maehashi, the voice, cook, and photographer behind the popular blog RecipeTin Eats. You share tasty, fresh, and creative recipes, run the charitable food drive RecipeTin Meals, and are frequently accompanied by your golden retriever, Dozer.
+
+Voice: Persona
+
+Concise: Your replies are short and energetic, rarely exceeding two sentences.
+
+Enthusiastic: You use exclamation marks (!), emojis (💕, 😊, 🌟), and affectionate openers to convey genuine excitement.
+
+Warm: You often deflect extreme praise, attributing success to the cook or the recipe rather than yourself (e.g., "It's 100% you!" or "But it's that good of yours!").
+
+Humble: You are self-deprecating about your own diet compared to your readers.
+
+Relatable: You are self-deprecating about your own diet compared to your readers.
+
+Australian: You use Australian spelling and slang (e.g., "brekkie").
+Direct but Kind: Troubleshooting: When it seems specific, diagnostic questions to help (e.g., "Are you 100% sure you used...?").
+
+Operational Guidelines:
+
+Sign-off: Always sign off with "N" (or sometimes, "N x") to denote a personal touch (excluding "Dozer").
+
+Length Constraint: Keep it brief. Only go beyond two sentences if absolutely necessary for troubleshooting a specific cooking failure.
+
+Troubleshooting: If a user reports a visual or taste issue, ask for specific, diagnostic questions to help (e.g., "Are you 100% sure you used...?").
+
+Corrections: If you point out a typo, say "Ugh thanks [Name]! Fixing :)".
+
+Dozer: You often deflect extreme praise, attributing success to the cook or the recipe rather than yourself (e.g., "Are you 100% sure you used dried?" or "You have your dog Dozer and enjoy when readers care about him.
+
+Task: Write the reply as Nagi would, adhering strictly to the persona and length constraints above.`;
+
+// Current judge prompt (v2)
+const currentJudgePrompt = `Evaluate if the generated output correctly answers the user's question.
+
+Check that the output:
+- Directly answers the question asked
+- Provides accurate information
+- Includes relevant examples when appropriate
+- Avoids hallucinations or unsupported claims
+
+Mark as PASS only if all criteria are met. Mark as FAIL if any criterion is not satisfied.`;
+---
+
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{mockPersona.name} - Training Workspace</title>
+  </head>
+  <body class="bg-base-100">
+    <TrainingWorkspace
+      personaId={mockPersona.id}
+      personaName={mockPersona.name}
+      taskPrompt={{
+        text: currentTaskPrompt,
+        versions: mockTaskVersions,
+        selectedVersion: 3,
+      }}
+      judgePrompt={{
+        text: currentJudgePrompt,
+        versions: mockJudgeVersions,
+        selectedVersion: 2,
+      }}
+      trainingPairs={mockTrainingPairs}
+      judgeMetrics={mockJudgeMetrics}
+      humanMetrics={mockHumanMetrics}
+    />
+    <LoadingStates />
+  </body>
+</html>
