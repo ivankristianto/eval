@@ -114,6 +114,11 @@ const currentTab = Astro.url.searchParams.get('tab') || 'overview';
 if (currentTab === 'prompts') {
   return Astro.redirect(`/personas/${id}/judge-prompts`);
 }
+
+// Redirect removed training-progress tab to workspace
+if (currentTab === 'training-progress') {
+  return Astro.redirect(`/personas/${id}/workspace`);
+}
 ---
 
 <Layout title={`${persona.name} - Persona Details`}>
@@ -211,9 +216,7 @@ if (currentTab === 'prompts') {
     personaId={id}
     activeTab={currentTab === 'overview'
       ? 'overview'
-      : currentTab === 'training-progress'
-        ? 'training-progress'
-        : currentTab === 'settings'
+      : currentTab === 'settings'
           ? 'settings'
           : 'overview'}
   />

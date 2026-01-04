@@ -4,9 +4,8 @@ type PersonaTabsArgs = {
   personaId: string;
   activeTab:
     | "overview"
-    | "training-data"
-    | "training-progress"
-    | "metrics"
+    | "workspace"
+    | "task-prompts"
     | "judge-prompts"
     | "settings";
 };
@@ -23,9 +22,8 @@ const meta = {
       control: "select",
       options: [
         "overview",
-        "training-data",
-        "training-progress",
-        "metrics",
+        "workspace",
+        "task-prompts",
         "judge-prompts",
         "settings",
       ],
@@ -38,9 +36,8 @@ type Story = StoryObj<typeof meta>;
 
 const tabs = [
   { id: "overview", label: "Overview", href: "?tab=overview" },
-  { id: "training-data", label: "Training Data", href: "/training" },
-  { id: "training-progress", label: "Training Progress", href: "?tab=training-progress" },
-  { id: "metrics", label: "Metrics", href: "/metrics" },
+  { id: "workspace", label: "Workspace", href: "/workspace" },
+  { id: "task-prompts", label: "Task Prompts", href: "/task-prompts" },
   { id: "judge-prompts", label: "Judge Prompts", href: "/judge-prompts" },
   { id: "settings", label: "Settings", href: "?tab=settings" },
 ];
@@ -68,9 +65,9 @@ export const Default: Story = {
   },
 };
 
-export const MetricsActive: Story = {
+export const WorkspaceActive: Story = {
   args: {
-    activeTab: "metrics",
+    activeTab: "workspace",
   },
   render: Default.render,
 };
