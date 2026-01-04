@@ -558,8 +558,8 @@ const breadcrumbItems = [
 
       if (response.ok) {
         addToast('Persona created successfully!', 'success');
-        // Redirect to the new persona's detail page
-        window.location.href = `/personas/${result.id}`;
+        // Redirect to the new persona's workspace page
+        window.location.href = `/personas/${result.id}/workspace`;
       } else {
         // Handle validation errors
         if (result.details && Array.isArray(result.details)) {
