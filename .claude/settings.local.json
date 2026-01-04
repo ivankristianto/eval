@@ -38,7 +38,8 @@
       "Bash(bd update:*)",
       "Bash(npm run test:e2e:*)",
       "Bash(bd show:*)",
-      "Bash(bd sync)"
+      "Bash(bd sync)",
+      "Bash(bd close:*)"
     ]
   },
   "gitAttribution": false
