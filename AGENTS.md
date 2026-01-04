@@ -58,6 +58,16 @@ npm run format:check
 npm run typecheck
 ```
 
+## Pre-Commit Quality Gates
+
+**Before committing ANY code**, you MUST run:
+
+```bash
+bun run lint         # ESLint check
+npm run typecheck    # Typeheck
+bun run format:fix    # Prettier auto-format
+```
+
 ## Testing Status
 
 Latest coverage (vitest `npm test -- --coverage`):
