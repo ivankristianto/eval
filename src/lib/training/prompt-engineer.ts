@@ -135,10 +135,7 @@ Important:
  * @param generatedOutput - Output from task model
  * @returns User instruction for judge model
  */
-export function buildJudgeEvaluationInstruction(
-  input: string,
-  generatedOutput: string
-): string {
+export function buildJudgeEvaluationInstruction(input: string, generatedOutput: string): string {
   return `Input: ${input}
 Generated Output: ${generatedOutput}
 

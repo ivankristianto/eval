@@ -69,7 +69,9 @@ const { title = 'Training Workspace', personaId, personaName } = Astro.props;
       document.documentElement.setAttribute('data-theme', storedTheme || systemTheme);
     </script>
   </head>
-  <body class={`bg-base-100 h-screen overflow-hidden flex flex-col font-sans antialiased ${TYPOGRAPHY.body}`}>
+  <body
+    class={`bg-base-100 h-screen overflow-hidden flex flex-col font-sans antialiased ${TYPOGRAPHY.body}`}
+  >
     <Navbar />
 
     <!-- Main content slot -->

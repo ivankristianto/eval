@@ -88,11 +88,15 @@ const {
 
 <div class="flex flex-col h-full bg-gradient-to-b from-base-100 to-base-200/30">
   <!-- Header -->
-  <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 px-6 py-5 border-b border-base-300/80 bg-base-100/50 backdrop-blur-sm flex-shrink-0">
+  <div
+    class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 px-6 py-5 border-b border-base-300/80 bg-base-100/50 backdrop-blur-sm flex-shrink-0"
+  >
     <div>
       <div class="flex items-center gap-3 mb-1">
         <h1 class="text-2xl font-bold tracking-tight">{personaName}</h1>
-        <div class="badge badge-ghost badge-sm font-mono">v{taskPrompt.selectedVersion}.{judgePrompt.selectedVersion}</div>
+        <div class="badge badge-ghost badge-sm font-mono">
+          v{taskPrompt.selectedVersion}.{judgePrompt.selectedVersion}
+        </div>
       </div>
       <p class="text-sm text-base-content/60">Training Workspace</p>
     </div>
@@ -102,8 +106,18 @@ const {
         data-action="generate-outputs"
         data-persona-id={personaId}
       >
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke-width="1.5"
+          stroke="currentColor"
+          class="w-4 h-4"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"></path>
         </svg>
         Generate Outputs
       </button>
@@ -112,8 +126,19 @@ const {
         data-action="generate-judge"
         data-persona-id={personaId}
       >
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke-width="1.5"
+          stroke="currentColor"
+          class="w-4 h-4"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"
+          ></path>
         </svg>
         Generate Judge
       </button>
@@ -122,8 +147,19 @@ const {
         data-action="evaluate-all"
         data-persona-id={personaId}
       >
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m3 7.5V21a.75.75 0 01-.75.75h-4.5a.75.75 0 01-.75-.75v-4.5M9 12.75l3 .75M9 12.75l-.75-3M12 15.75l3-.75M12 15.75l.75-3M15 12.75l-.75 3" />
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke-width="1.5"
+          stroke="currentColor"
+          class="w-4 h-4"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M9 12.75L11.25 15 15 9.75m3 7.5V21a.75.75 0 01-.75.75h-4.5a.75.75 0 01-.75-.75v-4.5M9 12.75l3 .75M9 12.75l-.75-3M12 15.75l3-.75M12 15.75l.75-3M15 12.75l-.75 3"
+          ></path>
         </svg>
         Evaluate All
       </button>
@@ -133,13 +169,11 @@ const {
   <!-- Main Workspace Grid -->
   <div class="flex-1 overflow-hidden grid grid-cols-1 lg:grid-cols-12">
     <!-- Left Panel: Metrics & Prompts (3/12 = 25% width on lg screens) -->
-    <div class="lg:col-span-3 overflow-y-auto p-4 space-y-4 border-r border-base-300/50 bg-base-50/30">
+    <div
+      class="lg:col-span-3 overflow-y-auto p-4 space-y-4 border-r border-base-300/50 bg-base-50/30"
+    >
       <!-- Metrics Summary -->
-      <SimpleMetrics
-        metrics={metrics}
-        judgeMetrics={judgeMetrics}
-        humanMetrics={humanMetrics}
-      />
+      <SimpleMetrics metrics={metrics} judgeMetrics={judgeMetrics} humanMetrics={humanMetrics} />
 
       <!-- Task Prompt Editor -->
       <PromptEditor
@@ -185,62 +219,356 @@ const {
 <script>
   // Generate outputs action
   document.querySelectorAll('[data-action="generate-outputs"]').forEach((btn) => {
-    btn.addEventListener('click', (e) => {
+    btn.addEventListener('click', async (e) => {
       const button = e.currentTarget as HTMLElement;
       const personaId = button.dataset.personaId;
-      console.log(`Generate outputs for persona: ${personaId}`);
 
-      // Mock: Show loading state
+      // Show loading state
       button.classList.add('loading');
-      const originalText = button.innerText;
-      button.innerText = 'Generating...';
+      button.setAttribute('disabled', 'true');
+      const originalContent = button.innerHTML;
 
-      setTimeout(() => {
+      try {
+        const response = await fetch('/api/task/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ persona_id: personaId }),
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.message || 'Failed to generate outputs');
+        }
+
+        // Show success notification
+        if ((window as any).toast) {
+          (window as any).toast.success(
+            `Generated ${result.processed_pairs} outputs successfully! Watching for updates...`
+          );
+        }
+
+        // Start polling for real-time updates
+        document.dispatchEvent(new CustomEvent('operation-started'));
+      } catch (error) {
+        console.error('Generate outputs error:', error);
+        if ((window as any).toast) {
+          (window as any).toast.error(
+            error instanceof Error ? error.message : 'Failed to generate outputs'
+          );
+        }
+      } finally {
         button.classList.remove('loading');
-        button.innerText = originalText;
-        console.log('Generated outputs for 50 training pairs with Task Prompt v3!');
-      }, 2500);
+        button.removeAttribute('disabled');
+        button.innerHTML = originalContent;
+      }
     });
   });
 
   // Generate judge decision action
   document.querySelectorAll('[data-action="generate-judge"]').forEach((btn) => {
-    btn.addEventListener('click', (e) => {
+    btn.addEventListener('click', async (e) => {
       const button = e.currentTarget as HTMLElement;
       const personaId = button.dataset.personaId;
-      console.log(`Generate judge decision for persona: ${personaId}`);
 
-      // Mock: Show loading state
+      // Show loading state
       button.classList.add('loading');
-      const originalText = button.innerText;
-      button.innerText = 'Generating...';
+      button.setAttribute('disabled', 'true');
+      const originalContent = button.innerHTML;
 
-      setTimeout(() => {
+      try {
+        const response = await fetch('/api/judge/evaluate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ persona_id: personaId }),
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.message || 'Failed to generate judge decisions');
+        }
+
+        // Show success notification
+        if ((window as any).toast) {
+          (window as any).toast.success(
+            `Evaluated ${result.evaluated_results} results with judge! Watching for updates...`
+          );
+        }
+
+        // Start polling for real-time updates
+        document.dispatchEvent(new CustomEvent('operation-started'));
+      } catch (error) {
+        console.error('Generate judge error:', error);
+        if ((window as any).toast) {
+          (window as any).toast.error(
+            error instanceof Error ? error.message : 'Failed to generate judge decisions'
+          );
+        }
+      } finally {
         button.classList.remove('loading');
-        button.innerText = originalText;
-        console.log('Generated judge decisions for 50 pairs with Judge Prompt v2!');
-      }, 2000);
+        button.removeAttribute('disabled');
+        button.innerHTML = originalContent;
+      }
     });
   });
 
-  // Evaluate all action
+  // Evaluate all action (generate outputs + judge decisions)
   document.querySelectorAll('[data-action="evaluate-all"]').forEach((btn) => {
-    btn.addEventListener('click', (e) => {
+    btn.addEventListener('click', async (e) => {
       const button = e.currentTarget as HTMLElement;
       const personaId = button.dataset.personaId;
-      console.log(`Evaluate all for persona: ${personaId}`);
 
-      // Mock: Show loading state
+      // Show loading state
       button.classList.add('loading');
-      const originalText = button.innerText;
-      button.innerText = 'Evaluating...';
+      button.setAttribute('disabled', 'true');
+      const originalContent = button.innerHTML;
 
-      setTimeout(() => {
+      try {
+        // Step 1: Generate task outputs
+        const generateResponse = await fetch('/api/task/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ persona_id: personaId }),
+        });
+
+        const generateResult = await generateResponse.json();
+
+        if (!generateResponse.ok) {
+          throw new Error(generateResult.message || 'Failed to generate outputs');
+        }
+
+        if ((window as any).toast) {
+          (window as any).toast.info(
+            `Generated ${generateResult.processed_pairs} outputs. Now evaluating with judge...`
+          );
+        }
+
+        // Step 2: Evaluate with judge
+        const judgeResponse = await fetch('/api/judge/evaluate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ persona_id: personaId }),
+        });
+
+        const judgeResult = await judgeResponse.json();
+
+        if (!judgeResponse.ok) {
+          throw new Error(judgeResult.message || 'Failed to evaluate with judge');
+        }
+
+        // Show success notification
+        if ((window as any).toast) {
+          (window as any).toast.success(
+            `Evaluation complete! Processed ${judgeResult.evaluated_results} results. Watching for updates...`
+          );
+        }
+
+        // Start polling for real-time updates
+        document.dispatchEvent(new CustomEvent('operation-started'));
+      } catch (error) {
+        console.error('Evaluate all error:', error);
+        if ((window as any).toast) {
+          (window as any).toast.error(
+            error instanceof Error ? error.message : 'Failed to evaluate all'
+          );
+        }
+      } finally {
         button.classList.remove('loading');
-        button.innerText = originalText;
-        console.log('Evaluated 50 pairs with Judge Prompt v2! Results: 35 Pass, 15 Fail (70% pass rate)');
-      }, 3000);
+        button.removeAttribute('disabled');
+        button.innerHTML = originalContent;
+      }
     });
+  });
+
+  // Handle prompt optimization events from PromptEditor
+  document.addEventListener('prompt-optimize', async (e: Event) => {
+    const customEvent = e as CustomEvent;
+    const { type, currentText } = customEvent.detail;
+
+    try {
+      const response = await fetch('/api/prompts/optimize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt_text: currentText,
+          prompt_type: type,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || 'Failed to optimize prompt');
+      }
+
+      // Update the optimization modal with the results
+      const modalId = `optimization-modal-${type}`;
+      const modal = document.getElementById(modalId);
+
+      if (modal) {
+        // Update modal content dynamically
+        const rationaleEl = modal.querySelector('.alert-info p');
+        const suggestedCodeEl = modal.querySelectorAll('.mockup-code pre code')[1];
+
+        if (rationaleEl) rationaleEl.textContent = result.rationale;
+        if (suggestedCodeEl) suggestedCodeEl.textContent = result.suggested_prompt;
+
+        // Show the modal
+        const modalCheckbox = document.getElementById(modalId) as HTMLInputElement;
+        if (modalCheckbox) modalCheckbox.checked = true;
+      }
+
+      if ((window as any).toast) {
+        (window as any).toast.success('Optimization suggestion ready!');
+      }
+    } catch (error) {
+      console.error('Optimize prompt error:', error);
+      if ((window as any).toast) {
+        (window as any).toast.error(
+          error instanceof Error ? error.message : 'Failed to optimize prompt'
+        );
+      }
+    }
+  });
+
+  // Real-time polling for training pairs updates
+  let pollingInterval: ReturnType<typeof setInterval> | null = null;
+  let isPolling = false;
+
+  /**
+   * Start polling for training pairs updates
+   */
+  function startPolling(personaId: string) {
+    if (isPolling) return;
+
+    isPolling = true;
+    console.log('Starting real-time polling for training pairs updates...');
+
+    // Poll every 3 seconds
+    pollingInterval = setInterval(async () => {
+      try {
+        const response = await fetch(`/api/personas/${personaId}/training/pairs-with-results`);
+        const data = await response.json();
+
+        if (!response.ok) {
+          console.error('Polling error:', data);
+          return;
+        }
+
+        // Update the table with new data
+        updateTrainingPairsTable(data.pairs);
+
+        // Check if we should stop polling (all pairs have results)
+        const allHaveResults =
+          data.stats.total_pairs > 0 && data.stats.with_judge_rating === data.stats.total_pairs;
+
+        if (allHaveResults) {
+          stopPolling();
+          if ((window as any).toast) {
+            (window as any).toast.success('All results updated!');
+          }
+        }
+      } catch (error) {
+        console.error('Polling error:', error);
+      }
+    }, 3000);
+  }
+
+  /**
+   * Stop polling for updates
+   */
+  function stopPolling() {
+    if (pollingInterval) {
+      clearInterval(pollingInterval);
+      pollingInterval = null;
+      isPolling = false;
+      console.log('Stopped polling for updates');
+    }
+  }
+
+  /**
+   * Update the training pairs table with new data
+   */
+  function updateTrainingPairsTable(
+    pairs: Array<{
+      id: string;
+      input: string;
+      expected_output: string;
+      generated_output?: string;
+      judge_rating?: string;
+      judge_feedback?: string;
+      human_rating?: string;
+      human_feedback?: string;
+    }>
+  ) {
+    const tbody = document.querySelector('#training-pairs-body');
+    if (!tbody) return;
+
+    // Find all existing data rows (excluding the new-row template)
+    const existingRows = tbody.querySelectorAll('tr:not([data-new-row])');
+
+    // Update each row with new data
+    pairs.forEach((pair, index) => {
+      const row = existingRows[index] as HTMLElement;
+      if (!row) return;
+
+      // Update generated output column
+      const generatedOutputCell = row.querySelectorAll('td')[3]; // 4th column (index 3)
+      if (generatedOutputCell && pair.generated_output) {
+        const contentDiv = generatedOutputCell.querySelector('div');
+        if (contentDiv) {
+          contentDiv.textContent = pair.generated_output;
+          generatedOutputCell.querySelector('span')?.remove(); // Remove "Not generated" text
+        }
+      }
+
+      // Update judge rating column
+      const judgeRatingCell = row.querySelectorAll('td')[6]; // 7th column
+      if (judgeRatingCell && pair.judge_rating) {
+        // Find PassFailBadge or create one
+        const badge = judgeRatingCell.querySelector('.badge');
+        if (badge) {
+          badge.className = `badge badge-sm badge-${pair.judge_rating === 'pass' ? 'success' : 'error'}`;
+          badge.textContent = pair.judge_rating;
+        }
+      }
+
+      // Update judge feedback column
+      const judgeFeedbackCell = row.querySelectorAll('td')[7]; // 8th column
+      if (judgeFeedbackCell && pair.judge_feedback) {
+        const contentDiv = judgeFeedbackCell.querySelector('div');
+        if (contentDiv) {
+          contentDiv.textContent = pair.judge_feedback;
+        }
+      }
+    });
+  }
+
+  // Start polling when generate/evaluate actions are triggered
+  // We'll trigger polling after successful API calls
+  document.addEventListener('DOMContentLoaded', () => {
+    const generateBtn = document.querySelector('[data-action="generate-outputs"]');
+    const evaluateBtn = document.querySelector('[data-action="evaluate-all"]');
+    const judgeBtn = document.querySelector('[data-action="generate-judge"]');
+
+    // Get persona ID from any button
+    const personaId =
+      generateBtn?.getAttribute('data-persona-id') ||
+      evaluateBtn?.getAttribute('data-persona-id') ||
+      judgeBtn?.getAttribute('data-persona-id');
+
+    if (personaId) {
+      // Listen for successful operations to start polling
+      document.addEventListener('operation-started', () => {
+        startPolling(personaId);
+      });
+    }
+  });
+
+  // Clean up polling on page unload
+  window.addEventListener('beforeunload', () => {
+    stopPolling();
   });
 </script>
 

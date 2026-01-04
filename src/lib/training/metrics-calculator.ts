@@ -84,7 +84,10 @@ export function calculateRunMetrics(runId: string, db: Database): SimpleMetrics 
  * @param db - Database connection
  * @returns Array of metrics per run
  */
-export function getMetricsHistory(personaId: string, db: Database): Array<{
+export function getMetricsHistory(
+  personaId: string,
+  db: Database
+): Array<{
   run_id: string;
   run_type: string;
   created_at: string;

@@ -6,7 +6,7 @@
 import type { APIRoute } from 'astro';
 import { getDatabase } from '@lib/db';
 import type { TrainingIteration } from '@src-types/training';
-import { TrainingStateManager } from '@lib/training/training-state';
+import { TrainingStateManager } from '@lib/training/deprecated/training-state';
 import { badRequest, notFound, internalError, createErrorResponse } from '@lib/api-error-handler';
 import { createLogger } from '@lib/logger';
 

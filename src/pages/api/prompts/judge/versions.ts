@@ -3,10 +3,7 @@
 
 import type { APIRoute } from 'astro';
 import { getDatabase } from '@lib/db';
-import {
-  listJudgePromptVersions,
-  createJudgePromptVersion,
-} from '@lib/training/version-manager';
+import { listJudgePromptVersions, createJudgePromptVersion } from '@lib/training/version-manager';
 import { badRequest, notFound, createErrorResponse } from '@lib/api-error-handler';
 import { parseJsonBody } from '@lib/api-error-handler';
 import { createLogger } from '@lib/logger';
@@ -32,14 +29,24 @@ export const GET: APIRoute = async ({ url }) => {
     // Verify persona exists
     const persona = db.prepare('SELECT id FROM personas WHERE id = ?').get(personaId);
     if (!persona) {
-      logger.logApiRequest('GET', `/api/prompts/judge/versions?persona_id=${personaId}`, 404, Date.now() - startTime);
+      logger.logApiRequest(
+        'GET',
+        `/api/prompts/judge/versions?persona_id=${personaId}`,
+        404,
+        Date.now() - startTime
+      );
       return notFound('Persona');
     }
 
     // Get all judge prompt versions
     const versions = listJudgePromptVersions(personaId, db);
 
-    logger.logApiRequest('GET', `/api/prompts/judge/versions?persona_id=${personaId}`, 200, Date.now() - startTime);
+    logger.logApiRequest(
+      'GET',
+      `/api/prompts/judge/versions?persona_id=${personaId}`,
+      200,
+      Date.now() - startTime
+    );
 
     return new Response(
       JSON.stringify({
@@ -52,7 +59,11 @@ export const GET: APIRoute = async ({ url }) => {
       }
     );
   } catch (error) {
-    logger.logApiError('GET', `/api/prompts/judge/versions?persona_id=${personaId}`, error as Error);
+    logger.logApiError(
+      'GET',
+      `/api/prompts/judge/versions?persona_id=${personaId}`,
+      error as Error
+    );
     return createErrorResponse(error);
   }
 };

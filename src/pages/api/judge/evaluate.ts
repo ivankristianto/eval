@@ -55,7 +55,9 @@ export const POST: APIRoute = async ({ request }) => {
     // Verify persona exists
     const persona = db
       .prepare('SELECT id, name, current_judge_prompt_version_id FROM personas WHERE id = ?')
-      .get(persona_id) as { id: string; name: string; current_judge_prompt_version_id: string | null } | undefined;
+      .get(persona_id) as
+      | { id: string; name: string; current_judge_prompt_version_id: string | null }
+      | undefined;
 
     if (!persona) {
       logger.logApiRequest('POST', '/api/judge/evaluate', 404, Date.now() - startTime);
@@ -89,7 +91,10 @@ export const POST: APIRoute = async ({ request }) => {
     // Verify we have a judge prompt version to use
     if (!judgePromptVersionId) {
       logger.logApiRequest('POST', '/api/judge/evaluate', 400, Date.now() - startTime);
-      return badRequest('No judge prompt version available. Please provide judge_prompt_text.', 'NO_JUDGE_PROMPT');
+      return badRequest(
+        'No judge prompt version available. Please provide judge_prompt_text.',
+        'NO_JUDGE_PROMPT'
+      );
     }
 
     // Evaluate with judge

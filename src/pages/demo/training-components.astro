@@ -78,8 +78,18 @@ Task: Answer the user's question accurately.`;
           </div>
           <div class="flex gap-2">
             <a href="/personas/demo-persona/workspace" class="btn btn-primary btn-sm">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke-width="1.5"
+                stroke="currentColor"
+                class="w-4 h-4"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"></path>
               </svg>
               Full Workspace
             </a>
@@ -91,7 +101,6 @@ Task: Answer the user's question accurately.`;
     <!-- Content Grid -->
     <div class="max-w-7xl mx-auto px-6 py-8">
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
         <!-- PassFailBadge Card -->
         <div class="card bg-base-100 border border-base-300 shadow-sm">
           <div class="card-body p-5">
@@ -118,7 +127,11 @@ Task: Answer the user's question accurately.`;
             </div>
             <div class="space-y-3">
               <VersionSelector versions={mockVersions} selectedVersion={3} type="task" />
-              <VersionSelector versions={mockVersions.slice(0, 2)} selectedVersion={2} type="judge" />
+              <VersionSelector
+                versions={mockVersions.slice(0, 2)}
+                selectedVersion={2}
+                type="judge"
+              />
             </div>
           </div>
         </div>
@@ -185,10 +198,18 @@ Task: Answer the user's question accurately.`;
               </div>
               <progress class="progress progress-primary w-full" value="70" max="100"></progress>
               <div class="flex gap-2 flex-wrap">
-                <button onclick="window.toast?.success?.('Success!')" class="btn btn-xs btn-success">Success</button>
-                <button onclick="window.toast?.error?.('Error!')" class="btn btn-xs btn-error">Error</button>
-                <button onclick="window.toast?.warning?.('Warning!')" class="btn btn-xs btn-warning">Warning</button>
-                <button onclick="window.toast?.info?.('Info!')" class="btn btn-xs btn-info">Info</button>
+                <button onclick="window.toast?.success?.('Success!')" class="btn btn-xs btn-success"
+                  >Success</button
+                >
+                <button onclick="window.toast?.error?.('Error!')" class="btn btn-xs btn-error"
+                  >Error</button
+                >
+                <button onclick="window.toast?.warning?.('Warning!')" class="btn btn-xs btn-warning"
+                  >Warning</button
+                >
+                <button onclick="window.toast?.info?.('Info!')" class="btn btn-xs btn-info"
+                  >Info</button
+                >
               </div>
             </div>
           </div>
@@ -201,21 +222,35 @@ Task: Answer the user's question accurately.`;
               <span class="font-mono text-xs text-base-content/40">07</span>
               <h3 class="card-title text-sm font-semibold">Optimization Suggestion</h3>
             </div>
-            <p class="text-sm text-base-content/60 mb-4">AI-powered prompt improvement suggestions</p>
+            <p class="text-sm text-base-content/60 mb-4">
+              AI-powered prompt improvement suggestions
+            </p>
             <label for="demo-optimization-modal" class="btn btn-outline btn-sm w-full">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke-width="1.5"
+                stroke="currentColor"
+                class="w-4 h-4"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"
+                ></path>
               </svg>
               View Optimization Demo
             </label>
           </div>
         </div>
-
       </div>
 
       <!-- Footer -->
       <div class="mt-12 pt-8 border-t border-base-300 text-center">
-        <p class="text-xs text-base-content/40 font-mono">TRAINING WORKSPACE • COMPONENT SHOWCASE</p>
+        <p class="text-xs text-base-content/40 font-mono">
+          TRAINING WORKSPACE • COMPONENT SHOWCASE
+        </p>
         <p class="text-xs text-base-content/30 mt-1">All data is mock/demo</p>
       </div>
     </div>

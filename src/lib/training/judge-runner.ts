@@ -98,10 +98,10 @@ export async function evaluateWithJudge(
          WHERE id IN (${placeholders}) AND generated_output IS NOT NULL`
       )
       .all(...training_pair_result_ids) as Array<{
-        id: string;
-        training_pair_id: string;
-        generated_output: string;
-      }>;
+      id: string;
+      training_pair_id: string;
+      generated_output: string;
+    }>;
   } else {
     // Use all results for persona that have generated output but no judge rating
     resultsToEvaluate = db
@@ -189,7 +189,13 @@ export async function evaluateWithJudge(
         `UPDATE training_pair_results
          SET judge_rating = ?, judge_reasoning = ?, judge_feedback = ?, updated_at = ?
          WHERE id = ?`
-      ).run(judgeResponse.rating, judgeResponse.reasoning, judgeResponse.feedback ?? null, resultNow, result.id);
+      ).run(
+        judgeResponse.rating,
+        judgeResponse.reasoning,
+        judgeResponse.feedback ?? null,
+        resultNow,
+        result.id
+      );
 
       // Get updated result
       const updatedResult = db
@@ -263,7 +269,11 @@ export async function evaluateWithJudge(
  * @param expectedOutput - The expected/correct output
  * @returns Judge instruction string
  */
-function buildJudgeInstruction(input: string, generatedOutput: string, expectedOutput: string): string {
+function buildJudgeInstruction(
+  input: string,
+  generatedOutput: string,
+  expectedOutput: string
+): string {
   return `Please evaluate the following generated output against the expected output.
 
 **Input:**
@@ -332,7 +342,9 @@ function parseJudgeResponse(response: string): JudgeResponse {
     throw new Error('Invalid response structure: missing or invalid rating field');
   } catch (error) {
     logger.error('Failed to parse judge response', error as Error, { response });
-    throw new Error(`Failed to parse judge response: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    throw new Error(
+      `Failed to parse judge response: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
   }
 }
 
@@ -342,7 +354,10 @@ function parseJudgeResponse(response: string): JudgeResponse {
  * @param db - Database connection
  * @returns Array of training pair results that need evaluation
  */
-export function getResultsNeedingJudgeEvaluation(personaId: string, db: Database): TrainingPairResult[] {
+export function getResultsNeedingJudgeEvaluation(
+  personaId: string,
+  db: Database
+): TrainingPairResult[] {
   const results = db
     .prepare(
       `SELECT * FROM training_pair_results

@@ -42,9 +42,9 @@ export function createTaskPromptVersion(
   const { persona_id, prompt_text, improvement_rationale = null, label = null, created_by } = input;
 
   // Verify persona exists
-  const persona = db
-    .prepare('SELECT id FROM personas WHERE id = ?')
-    .get(persona_id) as { id: string } | undefined;
+  const persona = db.prepare('SELECT id FROM personas WHERE id = ?').get(persona_id) as
+    | { id: string }
+    | undefined;
 
   if (!persona) {
     throw new Error(`Persona not found: ${persona_id}`);
@@ -61,14 +61,21 @@ export function createTaskPromptVersion(
     `INSERT INTO task_prompt_versions
      (id, persona_id, version_number, prompt_text, improvement_rationale, label, created_by, created_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-  ).run(id, persona_id, nextVersion, prompt_text, improvement_rationale, label, created_by, created_at);
+  ).run(
+    id,
+    persona_id,
+    nextVersion,
+    prompt_text,
+    improvement_rationale,
+    label,
+    created_by,
+    created_at
+  );
 
   // Update persona's current task prompt version
-  db.prepare('UPDATE personas SET current_task_prompt_version_id = ?, updated_at = ? WHERE id = ?').run(
-    id,
-    created_at,
-    persona_id
-  );
+  db.prepare(
+    'UPDATE personas SET current_task_prompt_version_id = ?, updated_at = ? WHERE id = ?'
+  ).run(id, created_at, persona_id);
 
   return {
     id,
@@ -96,9 +103,9 @@ export function createJudgePromptVersion(
   const { persona_id, prompt_text, improvement_rationale = null, label = null, created_by } = input;
 
   // Verify persona exists
-  const persona = db
-    .prepare('SELECT id FROM personas WHERE id = ?')
-    .get(persona_id) as { id: string } | undefined;
+  const persona = db.prepare('SELECT id FROM personas WHERE id = ?').get(persona_id) as
+    | { id: string }
+    | undefined;
 
   if (!persona) {
     throw new Error(`Persona not found: ${persona_id}`);
@@ -115,14 +122,21 @@ export function createJudgePromptVersion(
     `INSERT INTO judge_prompt_versions
      (id, persona_id, version_number, prompt_text, improvement_rationale, label, created_by, created_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-  ).run(id, persona_id, nextVersion, prompt_text, improvement_rationale, label, created_by, created_at);
+  ).run(
+    id,
+    persona_id,
+    nextVersion,
+    prompt_text,
+    improvement_rationale,
+    label,
+    created_by,
+    created_at
+  );
 
   // Update persona's current judge prompt version
-  db.prepare('UPDATE personas SET current_judge_prompt_version_id = ?, updated_at = ? WHERE id = ?').run(
-    id,
-    created_at,
-    persona_id
-  );
+  db.prepare(
+    'UPDATE personas SET current_judge_prompt_version_id = ?, updated_at = ? WHERE id = ?'
+  ).run(id, created_at, persona_id);
 
   return {
     id,
@@ -143,9 +157,9 @@ export function createJudgePromptVersion(
  * @returns The task prompt version or null if not found
  */
 export function getTaskPromptVersion(versionId: string, db: Database): TaskPromptVersion | null {
-  const version = db
-    .prepare('SELECT * FROM task_prompt_versions WHERE id = ?')
-    .get(versionId) as TaskPromptVersion | undefined;
+  const version = db.prepare('SELECT * FROM task_prompt_versions WHERE id = ?').get(versionId) as
+    | TaskPromptVersion
+    | undefined;
 
   return version ?? null;
 }
@@ -157,9 +171,9 @@ export function getTaskPromptVersion(versionId: string, db: Database): TaskPromp
  * @returns The judge prompt version or null if not found
  */
 export function getJudgePromptVersion(versionId: string, db: Database): JudgePromptVersion | null {
-  const version = db
-    .prepare('SELECT * FROM judge_prompt_versions WHERE id = ?')
-    .get(versionId) as JudgePromptVersion | undefined;
+  const version = db.prepare('SELECT * FROM judge_prompt_versions WHERE id = ?').get(versionId) as
+    | JudgePromptVersion
+    | undefined;
 
   return version ?? null;
 }
@@ -244,7 +258,10 @@ export function listJudgePromptVersions(personaId: string, db: Database): JudgeP
  * @param db - Database connection
  * @returns The latest task prompt version or null if none exist
  */
-export function getCurrentTaskPromptVersion(personaId: string, db: Database): TaskPromptVersion | null {
+export function getCurrentTaskPromptVersion(
+  personaId: string,
+  db: Database
+): TaskPromptVersion | null {
   const version = db
     .prepare(
       `SELECT * FROM task_prompt_versions
@@ -263,7 +280,10 @@ export function getCurrentTaskPromptVersion(personaId: string, db: Database): Ta
  * @param db - Database connection
  * @returns The latest judge prompt version or null if none exist
  */
-export function getCurrentJudgePromptVersion(personaId: string, db: Database): JudgePromptVersion | null {
+export function getCurrentJudgePromptVersion(
+  personaId: string,
+  db: Database
+): JudgePromptVersion | null {
   const version = db
     .prepare(
       `SELECT * FROM judge_prompt_versions
@@ -284,7 +304,9 @@ export function getCurrentJudgePromptVersion(personaId: string, db: Database): J
  */
 export function getNextTaskVersionNumber(personaId: string, db: Database): number {
   const result = db
-    .prepare('SELECT COALESCE(MAX(version_number), 0) as max_version FROM task_prompt_versions WHERE persona_id = ?')
+    .prepare(
+      'SELECT COALESCE(MAX(version_number), 0) as max_version FROM task_prompt_versions WHERE persona_id = ?'
+    )
     .get(personaId) as { max_version: number };
 
   return result.max_version + 1;
@@ -298,7 +320,9 @@ export function getNextTaskVersionNumber(personaId: string, db: Database): numbe
  */
 export function getNextJudgeVersionNumber(personaId: string, db: Database): number {
   const result = db
-    .prepare('SELECT COALESCE(MAX(version_number), 0) as max_version FROM judge_prompt_versions WHERE persona_id = ?')
+    .prepare(
+      'SELECT COALESCE(MAX(version_number), 0) as max_version FROM judge_prompt_versions WHERE persona_id = ?'
+    )
     .get(personaId) as { max_version: number };
 
   return result.max_version + 1;

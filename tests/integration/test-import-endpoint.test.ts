@@ -1,11 +1,6 @@
 // Test script for POST /api/templates/import endpoint
 import { describe, it, expect, afterEach, beforeEach } from 'vitest';
-import {
-  initializeDatabase,
-  getTemplates,
-  insertTemplate,
-  closeDatabase,
-} from '../../src/lib/db';
+import { initializeDatabase, getTemplates, insertTemplate, closeDatabase } from '../../src/lib/db';
 import { unlinkSync, existsSync } from 'fs';
 import { join } from 'path';
 
@@ -81,7 +76,7 @@ describe('POST /api/templates/import', () => {
     const { POST } = await import('../../src/pages/api/templates/import.ts');
 
     // Call the handler
-    const response = await POST({ request } as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+    const response = await POST({ request } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
 
     // Check response status
     expect(response.status).toBe(200);
@@ -114,7 +109,9 @@ describe('POST /api/templates/import', () => {
     expect(commaTemplate?.description).toBe('Description with "quotes"');
     expect(commaTemplate?.instruction_text).toBe('Instruction with "quotes" and, commas');
 
-    const quotesTemplate = templates.find((t) => t.name === `Template with quotes and comma ${timestamp}`);
+    const quotesTemplate = templates.find(
+      (t) => t.name === `Template with quotes and comma ${timestamp}`
+    );
     expect(quotesTemplate).toBeDefined();
     expect(quotesTemplate?.description).toBe('Description with "escaped" quotes');
     expect(quotesTemplate?.instruction_text).toBe('Instruction with "quotes" and commas');
@@ -153,7 +150,7 @@ describe('POST /api/templates/import', () => {
     });
 
     const { POST } = await import('../../src/pages/api/templates/import.ts');
-    const response = await POST({ request } as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+    const response = await POST({ request } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
     const result = (await response.json()) as {
       imported: number;
       failed: number;
@@ -182,7 +179,7 @@ describe('POST /api/templates/import', () => {
     });
 
     const { POST } = await import('../../src/pages/api/templates/import.ts');
-    const response = await POST({ request } as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+    const response = await POST({ request } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
     const result = await response.json();
 
     expect(response.status).toBe(400);
@@ -208,7 +205,7 @@ describe('POST /api/templates/import', () => {
     });
 
     const { POST } = await import('../../src/pages/api/templates/import.ts');
-    const response = await POST({ request } as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+    const response = await POST({ request } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
 
     // Parse JSON once
     const json = await response.json();
@@ -250,7 +247,7 @@ describe('POST /api/templates/import', () => {
     });
 
     const { POST } = await import('../../src/pages/api/templates/import.ts');
-    const response = await POST({ request } as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+    const response = await POST({ request } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
     const result = await response.json();
 
     expect(response.status).toBe(400);
@@ -267,7 +264,7 @@ describe('POST /api/templates/import', () => {
     });
 
     const { POST } = await import('../../src/pages/api/templates/import.ts');
-    const response = await POST({ request } as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+    const response = await POST({ request } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
     const result = await response.json();
 
     expect(response.status).toBe(400);
@@ -286,7 +283,7 @@ describe('POST /api/templates/import', () => {
     });
 
     const { POST } = await import('../../src/pages/api/templates/import.ts');
-    const response = await POST({ request } as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+    const response = await POST({ request } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
     const result = await response.json();
 
     expect(response.status).toBe(400);
@@ -314,7 +311,7 @@ describe('POST /api/templates/import', () => {
     });
 
     const { POST } = await import('../../src/pages/api/templates/import.ts');
-    const response = await POST({ request } as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+    const response = await POST({ request } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
     const result = (await response.json()) as {
       imported: number;
       failed: number;
@@ -360,7 +357,7 @@ describe('POST /api/templates/import', () => {
     });
 
     const { POST } = await import('../../src/pages/api/templates/import.ts');
-    const response = await POST({ request } as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+    const response = await POST({ request } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
 
     const result = (await response.json()) as {
       imported: number;
@@ -420,7 +417,7 @@ describe('POST /api/templates/import', () => {
     });
 
     const { POST } = await import('../../src/pages/api/templates/import.ts');
-    const response = await POST({ request } as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+    const response = await POST({ request } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
     const result = (await response.json()) as {
       imported: number;
       failed: number;
@@ -458,7 +455,7 @@ describe('POST /api/templates/import', () => {
     });
 
     const { POST } = await import('../../src/pages/api/templates/import.ts');
-    const response = await POST({ request } as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+    const response = await POST({ request } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
     const result = (await response.json()) as {
       imported: number;
       failed: number;
@@ -491,7 +488,7 @@ describe('POST /api/templates/import', () => {
     });
 
     const { POST } = await import('../../src/pages/api/templates/import.ts');
-    const response = await POST({ request } as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+    const response = await POST({ request } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
     const result = (await response.json()) as {
       imported: number;
       failed: number;
@@ -531,7 +528,7 @@ describe('POST /api/templates/import', () => {
     });
 
     const { POST } = await import('../../src/pages/api/templates/import.ts');
-    const response = await POST({ request } as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+    const response = await POST({ request } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
     const result = (await response.json()) as {
       imported: number;
       failed: number;
@@ -575,7 +572,7 @@ describe('POST /api/templates/import', () => {
     });
 
     const { POST } = await import('../../src/pages/api/templates/import.ts');
-    const response = await POST({ request } as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+    const response = await POST({ request } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
     const result = (await response.json()) as {
       imported: number;
       failed: number;
@@ -618,7 +615,7 @@ describe('POST /api/templates/import', () => {
     });
 
     const { POST } = await import('../../src/pages/api/templates/import.ts');
-    const response = await POST({ request } as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+    const response = await POST({ request } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
     const result = (await response.json()) as {
       imported: number;
       failed: number;

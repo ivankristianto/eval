@@ -6,7 +6,7 @@
 import type { APIRoute } from 'astro';
 import { getDatabase } from '@lib/db';
 import type { Persona } from '@src-types/training';
-import { IterativeTrainingLoop } from '@lib/training/training-loop';
+import { IterativeTrainingLoop } from '@lib/training/deprecated/training-loop';
 import { v4 as uuidv4 } from 'uuid';
 import { badRequest, notFound, createErrorResponse } from '@lib/api-error-handler';
 import { createLogger } from '@lib/logger';

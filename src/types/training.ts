@@ -6,7 +6,12 @@
 /**
  * Persona status lifecycle
  */
-export type PersonaStatus = 'draft' | 'training' | 'awaiting_human_review' | 'trained' | 'incomplete';
+export type PersonaStatus =
+  | 'draft'
+  | 'training'
+  | 'awaiting_human_review'
+  | 'trained'
+  | 'incomplete';
 
 /**
  * Training iteration status
