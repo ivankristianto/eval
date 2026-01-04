@@ -79,9 +79,7 @@ describe('GET /api/templates/export', () => {
       expect(() => escapeCSVField(template.instruction_text)).not.toThrow();
       expect(() => escapeCSVField(template.model_ids.join(';'))).not.toThrow();
       expect(() => escapeCSVField(template.accuracy_rubric)).not.toThrow();
-      expect(() =>
-        escapeCSVField(template.partial_credit_concepts?.join(';') || '')
-      ).not.toThrow();
+      expect(() => escapeCSVField(template.partial_credit_concepts?.join(';') || '')).not.toThrow();
       expect(() => escapeCSVField(template.expected_output || '')).not.toThrow();
       expect(() => escapeCSVField(template.system_prompt || '')).not.toThrow();
       expect(() => escapeCSVField(template.temperature?.toString() || '')).not.toThrow();
@@ -129,7 +127,7 @@ describe('GET /api/templates/export', () => {
     );
 
     const { GET: exportGET } = await import('../../src/pages/api/templates/export.ts');
-    const response = await exportGET({} as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+    const response = await exportGET({} as any); // eslint-disable-line @typescript-eslint/no-explicit-any
 
     expect(response.status).toBe(200);
 
@@ -170,7 +168,7 @@ describe('GET /api/templates/export', () => {
 
   it('should handle empty database gracefully', async () => {
     const { GET: exportGET } = await import('../../src/pages/api/templates/export.ts');
-    const response = await exportGET({} as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+    const response = await exportGET({} as any); // eslint-disable-line @typescript-eslint/no-explicit-any
 
     expect(response.status).toBe(200);
 
@@ -184,7 +182,7 @@ describe('GET /api/templates/export', () => {
 
   it('should set correct content-type headers', async () => {
     const { GET: exportGET } = await import('../../src/pages/api/templates/export.ts');
-    const response = await exportGET({} as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+    const response = await exportGET({} as any); // eslint-disable-line @typescript-eslint/no-explicit-any
 
     expect(response.status).toBe(200);
     expect(response.headers.get('Content-Type')).toContain('text/csv');
@@ -206,7 +204,7 @@ describe('GET /api/templates/export', () => {
     );
 
     const { GET: exportGET } = await import('../../src/pages/api/templates/export.ts');
-    const response = await exportGET({} as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+    const response = await exportGET({} as any); // eslint-disable-line @typescript-eslint/no-explicit-any
 
     expect(response.status).toBe(200);
 
@@ -235,7 +233,7 @@ describe('GET /api/templates/export', () => {
     );
 
     const { GET: exportGET } = await import('../../src/pages/api/templates/export.ts');
-    const response = await exportGET({} as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+    const response = await exportGET({} as any); // eslint-disable-line @typescript-eslint/no-explicit-any
 
     expect(response.status).toBe(200);
 
@@ -261,7 +259,7 @@ describe('GET /api/templates/export', () => {
     }
 
     const { GET: exportGET } = await import('../../src/pages/api/templates/export.ts');
-    const response = await exportGET({} as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+    const response = await exportGET({} as any); // eslint-disable-line @typescript-eslint/no-explicit-any
 
     expect(response.status).toBe(200);
 
@@ -291,7 +289,7 @@ describe('GET /api/templates/export', () => {
     );
 
     const { GET: exportGET } = await import('../../src/pages/api/templates/export.ts');
-    const response = await exportGET({} as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+    const response = await exportGET({} as any); // eslint-disable-line @typescript-eslint/no-explicit-any
 
     expect(response.status).toBe(200);
 
@@ -320,7 +318,7 @@ describe('GET /api/templates/export', () => {
     db.prepare('UPDATE EvaluationTemplate SET run_count = 5 WHERE id = ?').run(template.id);
 
     const { GET: exportGET } = await import('../../src/pages/api/templates/export.ts');
-    const response = await exportGET({} as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+    const response = await exportGET({} as any); // eslint-disable-line @typescript-eslint/no-explicit-any
 
     expect(response.status).toBe(200);
 
@@ -352,7 +350,7 @@ describe('GET /api/templates/export', () => {
     );
 
     const { GET: exportGET } = await import('../../src/pages/api/templates/export.ts');
-    const response = await exportGET({} as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+    const response = await exportGET({} as any); // eslint-disable-line @typescript-eslint/no-explicit-any
 
     expect(response.status).toBe(200);
 
@@ -379,7 +377,7 @@ describe('GET /api/templates/export', () => {
     const templatesBefore = getTemplates('created', 'desc');
 
     const { GET: exportGET } = await import('../../src/pages/api/templates/export.ts');
-    await exportGET({} as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+    await exportGET({} as any); // eslint-disable-line @typescript-eslint/no-explicit-any
 
     const templatesAfter = getTemplates('created', 'desc');
 
@@ -407,7 +405,7 @@ describe('GET /api/templates/export', () => {
     );
 
     const { GET: exportGET } = await import('../../src/pages/api/templates/export.ts');
-    const response = await exportGET({} as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+    const response = await exportGET({} as any); // eslint-disable-line @typescript-eslint/no-explicit-any
 
     expect(response.status).toBe(200);
 
@@ -427,7 +425,7 @@ describe('GET /api/templates/export', () => {
     insertTemplate('Template 3', 'Instruction 3', ['model-1'], 'exact_match');
 
     const { GET: exportGET } = await import('../../src/pages/api/templates/export.ts');
-    const response = await exportGET({} as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+    const response = await exportGET({} as any); // eslint-disable-line @typescript-eslint/no-explicit-any
 
     expect(response.status).toBe(200);
 

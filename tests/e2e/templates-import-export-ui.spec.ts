@@ -82,10 +82,7 @@ test.describe('Templates Import/Export UI', () => {
 
       // Click export and check for loading state
       // Note: Loading state may be too fast to capture in tests
-      await Promise.all([
-        page.waitForEvent('download'),
-        exportBtn.click(),
-      ]);
+      await Promise.all([page.waitForEvent('download'), exportBtn.click()]);
 
       // Button should exist and be in normal state after operation
       await expect(exportBtn).toBeVisible();
@@ -94,10 +91,7 @@ test.describe('Templates Import/Export UI', () => {
 
     test('should show success toast after export', async ({ page }) => {
       // Click export button
-      await Promise.all([
-        page.waitForEvent('download'),
-        page.click('#export-csv-btn'),
-      ]);
+      await Promise.all([page.waitForEvent('download'), page.click('#export-csv-btn')]);
 
       // Check for success toast
       const toastContainer = page.locator('#toast-container');
@@ -203,7 +197,9 @@ test.describe('Templates Import/Export UI', () => {
       const hasErrorToast = (await errorToast.count()) > 0;
 
       if (hasErrorToast) {
-        await expect(errorToast).toContainText(/Failed to parse CSV|Invalid header|CSV_PARSE_ERROR/);
+        await expect(errorToast).toContainText(
+          /Failed to parse CSV|Invalid header|CSV_PARSE_ERROR/
+        );
       }
 
       // Clean up
@@ -280,9 +276,7 @@ test.describe('Templates Import/Export UI', () => {
   });
 
   test.describe('Round-trip Export/Import', () => {
-    test('should export and import templates maintaining data integrity', async ({
-      page,
-    }) => {
+    test('should export and import templates maintaining data integrity', async ({ page }) => {
       // Step 1: Export templates
       const downloadPromise = page.waitForEvent('download', { timeout: 10000 });
       await page.click('#export-csv-btn');
@@ -335,7 +329,8 @@ test.describe('Templates Import/Export UI', () => {
   test.describe('Error Handling', () => {
     test('should handle empty CSV file', async ({ page }) => {
       // Create empty CSV
-      const emptyCSV = 'id,name,description,instruction_text,model_ids,accuracy_rubric,partial_credit_concepts,expected_output,system_prompt,temperature,run_count,created_at,updated_at\n';
+      const emptyCSV =
+        'id,name,description,instruction_text,model_ids,accuracy_rubric,partial_credit_concepts,expected_output,system_prompt,temperature,run_count,created_at,updated_at\n';
       const tempFilePath = await createTestCSV(emptyCSV);
 
       // Set up file chooser
@@ -354,7 +349,9 @@ test.describe('Templates Import/Export UI', () => {
       const hasErrorToast = (await errorToast.count()) > 0;
 
       if (hasErrorToast) {
-        await expect(errorToast).toContainText(/Failed to parse CSV|no valid template|CSV file contains no valid|EMPTY_CSV/);
+        await expect(errorToast).toContainText(
+          /Failed to parse CSV|no valid template|CSV file contains no valid|EMPTY_CSV/
+        );
       }
 
       // Clean up
@@ -382,7 +379,9 @@ test.describe('Templates Import/Export UI', () => {
       const hasErrorToast = (await errorToast.count()) > 0;
 
       if (hasErrorToast) {
-        await expect(errorToast).toContainText(/Failed to parse CSV|Invalid header|Invalid column count/);
+        await expect(errorToast).toContainText(
+          /Failed to parse CSV|Invalid header|Invalid column count/
+        );
       }
 
       // Clean up
@@ -507,10 +506,7 @@ test.describe('Templates Import/Export UI', () => {
       // Test export operation completes
       const exportBtn = page.locator('#export-csv-btn');
 
-      await Promise.all([
-        page.waitForEvent('download'),
-        exportBtn.click(),
-      ]);
+      await Promise.all([page.waitForEvent('download'), exportBtn.click()]);
 
       // Verify export completed successfully
       await expect(exportBtn).toBeVisible();
@@ -548,10 +544,7 @@ test.describe('Templates Import/Export UI', () => {
     });
 
     test('should show success toast for successful export', async ({ page }) => {
-      await Promise.all([
-        page.waitForEvent('download'),
-        page.click('#export-csv-btn'),
-      ]);
+      await Promise.all([page.waitForEvent('download'), page.click('#export-csv-btn')]);
 
       const successToast = page.locator('.alert-success');
       await expect(successToast).toBeVisible({ timeout: 5000 });
@@ -582,10 +575,7 @@ test.describe('Templates Import/Export UI', () => {
 
     test('should allow closing toast notifications', async ({ page }) => {
       // Trigger a toast
-      await Promise.all([
-        page.waitForEvent('download'),
-        page.click('#export-csv-btn'),
-      ]);
+      await Promise.all([page.waitForEvent('download'), page.click('#export-csv-btn')]);
 
       const successToast = page.locator('.alert-success');
       await expect(successToast).toBeVisible({ timeout: 5000 });

@@ -55,7 +55,9 @@ export const POST: APIRoute = async ({ request }) => {
     // Verify persona exists
     const persona = db
       .prepare('SELECT id, name, current_task_prompt_version_id FROM personas WHERE id = ?')
-      .get(persona_id) as { id: string; name: string; current_task_prompt_version_id: string | null } | undefined;
+      .get(persona_id) as
+      | { id: string; name: string; current_task_prompt_version_id: string | null }
+      | undefined;
 
     if (!persona) {
       logger.logApiRequest('POST', '/api/task/generate', 404, Date.now() - startTime);
@@ -89,7 +91,10 @@ export const POST: APIRoute = async ({ request }) => {
     // Verify we have a task prompt version to use
     if (!taskPromptVersionId) {
       logger.logApiRequest('POST', '/api/task/generate', 400, Date.now() - startTime);
-      return badRequest('No task prompt version available. Please provide task_prompt_text.', 'NO_TASK_PROMPT');
+      return badRequest(
+        'No task prompt version available. Please provide task_prompt_text.',
+        'NO_TASK_PROMPT'
+      );
     }
 
     // Generate task outputs

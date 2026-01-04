@@ -9,8 +9,8 @@ import type { APIRoute } from 'astro';
 import { getDatabase } from '@lib/db';
 import type { TrainingIteration, Persona } from '@src-types/training';
 import { calculateIterationMetricsFromGroundTruth } from '@lib/evaluation/metrics-orchestrator';
-import type { JudgeResult } from '@lib/training/training-loop';
-import { IterativeTrainingLoop } from '@lib/training/training-loop';
+import type { JudgeResult } from '@lib/training/deprecated/training-loop';
+import { IterativeTrainingLoop } from '@lib/training/deprecated/training-loop';
 import { badRequest, notFound, createErrorResponse } from '@lib/api-error-handler';
 import { createLogger } from '@lib/logger';
 

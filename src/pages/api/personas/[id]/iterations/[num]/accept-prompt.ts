@@ -13,7 +13,7 @@ import type { APIRoute } from 'astro';
 import { getDatabase } from '@lib/db';
 import type { Persona, TrainingIteration } from '@src-types/training';
 import { storePromptVersion } from '@lib/training/prompt-version-manager';
-import { IterativeTrainingLoop } from '@lib/training/training-loop';
+import { IterativeTrainingLoop } from '@lib/training/deprecated/training-loop';
 import { badRequest, notFound, createErrorResponse } from '@lib/api-error-handler';
 import { createLogger } from '@lib/logger';
 

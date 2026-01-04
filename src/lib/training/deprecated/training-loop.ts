@@ -17,7 +17,7 @@ import type {
   FailureAnalysisContext,
   FailureExample,
   FalseNegativeExample,
-} from './failure-analysis';
+} from '../failure-analysis';
 import { calculateMetrics, buildConfusionMatrix } from '@lib/evaluation/metrics';
 import { calculateIterationMetricsFromGroundTruth } from '@lib/evaluation/metrics-orchestrator';
 import { getSemanticSimilarityScore } from '@lib/evaluation/semanticSimilarity';
@@ -28,7 +28,7 @@ import {
   buildTaskModelInstruction,
   buildJudgeSystemPrompt,
   buildJudgeEvaluationInstruction,
-} from './prompt-engineer';
+} from '../prompt-engineer';
 import { createLogger } from '@lib/logger';
 
 const logger = createLogger('TrainingLoop');
@@ -789,7 +789,7 @@ export class IterativeTrainingLoop {
 
     // Call the Prompt Engineer LLM to refine BOTH prompts
     try {
-      const { refineBothPromptsFromFailureAnalysis } = await import('./prompt-engineer');
+      const { refineBothPromptsFromFailureAnalysis } = await import('../prompt-engineer');
 
       // Build failure analysis context
       const failureContext: FailureAnalysisContext = {
@@ -1417,7 +1417,7 @@ export class IterativeTrainingLoop {
 
     try {
       // Call the Prompt Engineer LLM to refine BOTH prompts
-      const { refineBothPromptsFromHumanFeedback } = await import('./prompt-engineer');
+      const { refineBothPromptsFromHumanFeedback } = await import('../prompt-engineer');
 
       const result = await refineBothPromptsFromHumanFeedback(
         {

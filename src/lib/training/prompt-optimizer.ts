@@ -253,20 +253,36 @@ function buildOptimizationPrompt(promptType: PromptType, context: FeedbackContex
 - Pass Rate: ${(metrics.pass_rate * 100).toFixed(1)}%
 
 ## Pass Examples (${pass_examples.length} examples)
-${pass_examples.length > 0 ? pass_examples.map((ex, idx) => `
+${
+  pass_examples.length > 0
+    ? pass_examples
+        .map(
+          (ex, idx) => `
 ${idx + 1}. Input: "${ex.input.substring(0, 200)}${ex.input.length > 200 ? '...' : ''}"
    Generated Output: "${ex.generated_output.substring(0, 200)}${ex.generated_output.length > 200 ? '...' : ''}"
    Expected Output: "${ex.expected_output.substring(0, 200)}${ex.expected_output.length > 200 ? '...' : ''}"
    Judge Reasoning: "${ex.judge_reasoning}"
-`).join('') : 'No pass examples available.'}
+`
+        )
+        .join('')
+    : 'No pass examples available.'
+}
 
 ## Fail Examples (${fail_examples.length} examples)
-${fail_examples.length > 0 ? fail_examples.map((ex, idx) => `
+${
+  fail_examples.length > 0
+    ? fail_examples
+        .map(
+          (ex, idx) => `
 ${idx + 1}. Input: "${ex.input.substring(0, 200)}${ex.input.length > 200 ? '...' : ''}"
    Generated Output: "${ex.generated_output.substring(0, 200)}${ex.generated_output.length > 200 ? '...' : ''}"
    Expected Output: "${ex.expected_output.substring(0, 200)}${ex.expected_output.length > 200 ? '...' : ''}"
    Judge Reasoning: "${ex.judge_reasoning}"
-`).join('') : 'No fail examples available.'}
+`
+        )
+        .join('')
+    : 'No fail examples available.'
+}
 
 ## Your Task
 
@@ -353,7 +369,10 @@ function parseOptimizationResponse(response: string): PromptOptimizationResult {
  * @param db - Database connection
  * @returns Feedback summary with metrics
  */
-export function getFeedbackSummary(personaId: string, db: Database): {
+export function getFeedbackSummary(
+  personaId: string,
+  db: Database
+): {
   total_results: number;
   pass_count: number;
   fail_count: number;

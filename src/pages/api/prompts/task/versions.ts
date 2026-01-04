@@ -3,10 +3,7 @@
 
 import type { APIRoute } from 'astro';
 import { getDatabase } from '@lib/db';
-import {
-  listTaskPromptVersions,
-  createTaskPromptVersion,
-} from '@lib/training/version-manager';
+import { listTaskPromptVersions, createTaskPromptVersion } from '@lib/training/version-manager';
 import { badRequest, notFound, createErrorResponse } from '@lib/api-error-handler';
 import { parseJsonBody } from '@lib/api-error-handler';
 import { createLogger } from '@lib/logger';
@@ -32,14 +29,24 @@ export const GET: APIRoute = async ({ url }) => {
     // Verify persona exists
     const persona = db.prepare('SELECT id FROM personas WHERE id = ?').get(personaId);
     if (!persona) {
-      logger.logApiRequest('GET', `/api/prompts/task/versions?persona_id=${personaId}`, 404, Date.now() - startTime);
+      logger.logApiRequest(
+        'GET',
+        `/api/prompts/task/versions?persona_id=${personaId}`,
+        404,
+        Date.now() - startTime
+      );
       return notFound('Persona');
     }
 
     // Get all task prompt versions
     const versions = listTaskPromptVersions(personaId, db);
 
-    logger.logApiRequest('GET', `/api/prompts/task/versions?persona_id=${personaId}`, 200, Date.now() - startTime);
+    logger.logApiRequest(
+      'GET',
+      `/api/prompts/task/versions?persona_id=${personaId}`,
+      200,
+      Date.now() - startTime
+    );
 
     return new Response(
       JSON.stringify({

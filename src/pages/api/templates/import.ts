@@ -376,9 +376,7 @@ async function importTemplates(templates: CSVTemplate[]): Promise<ImportResult> 
       }
 
       // Validate system prompt if provided
-      const systemPromptValidation = validateSystemPrompt(
-        csvTemplate.system_prompt || undefined
-      );
+      const systemPromptValidation = validateSystemPrompt(csvTemplate.system_prompt || undefined);
       if (!systemPromptValidation.valid) {
         result.failed++;
         result.errors.push({

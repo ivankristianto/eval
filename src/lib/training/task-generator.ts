@@ -79,7 +79,9 @@ export async function generateTaskOutputs(
     // Use specified pairs
     const placeholders = training_pair_ids.map(() => '?').join(',');
     pairsToProcess = db
-      .prepare(`SELECT id, input, expected_output FROM training_pairs WHERE id IN (${placeholders})`)
+      .prepare(
+        `SELECT id, input, expected_output FROM training_pairs WHERE id IN (${placeholders})`
+      )
       .all(...training_pair_ids) as Array<{ id: string; input: string; expected_output: string }>;
   } else {
     // Use all pairs for persona
@@ -227,9 +229,9 @@ export async function generateTaskOutputs(
  * @returns Evaluation run or null if not found
  */
 export function getEvaluationRun(runId: string, db: Database): EvaluationRun | null {
-  const run = db
-    .prepare('SELECT * FROM evaluation_runs WHERE id = ?')
-    .get(runId) as EvaluationRun | undefined;
+  const run = db.prepare('SELECT * FROM evaluation_runs WHERE id = ?').get(runId) as
+    | EvaluationRun
+    | undefined;
 
   return run ?? null;
 }
@@ -242,7 +244,9 @@ export function getEvaluationRun(runId: string, db: Database): EvaluationRun | n
  */
 export function getTrainingPairResults(runId: string, db: Database): TrainingPairResult[] {
   const results = db
-    .prepare('SELECT * FROM training_pair_results WHERE evaluation_run_id = ? ORDER BY created_at ASC')
+    .prepare(
+      'SELECT * FROM training_pair_results WHERE evaluation_run_id = ? ORDER BY created_at ASC'
+    )
     .all(runId) as TrainingPairResult[];
 
   return results;

@@ -170,21 +170,22 @@ const historyModalId = `${type}-prompt-history`;
       const textarea = document.getElementById(`${type}-prompt-editor`) as HTMLTextAreaElement;
       const currentText = textarea?.value || '';
 
-      console.log(`Optimize ${type} prompt clicked`);
+      // Show loading state
+      button.classList.add('loading');
+      button.setAttribute('disabled', 'true');
 
-      // Dispatch custom event
+      // Dispatch custom event (will be handled by TrainingWorkspace)
       const event = new CustomEvent('prompt-optimize', {
         bubbles: true,
         detail: { type, currentText },
       });
       button.dispatchEvent(event);
 
-      // Show loading state
-      button.classList.add('loading');
+      // Remove loading state after a short delay (actual loading handled by parent)
       setTimeout(() => {
         button.classList.remove('loading');
-        console.log(`Optimization suggestion ready for ${type} prompt`);
-      }, 1500);
+        button.removeAttribute('disabled');
+      }, 2000);
     });
   });
 
