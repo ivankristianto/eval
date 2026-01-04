@@ -31,11 +31,11 @@ export const POST: APIRoute = async ({ request }) => {
       return badRequest('Validation failed', 'VALIDATION_ERROR', validation.errors);
     }
 
-    // Create persona
+    // Create persona (support both task_prompt and initial_task_prompt for backward compatibility)
     const persona = createPersona(
       body.name,
       body.description,
-      body.task_prompt,
+      body.initial_task_prompt || body.task_prompt,
       body.initial_judge_prompt,
       body.task_model_id,
       body.judge_model_id,

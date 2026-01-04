@@ -29,9 +29,10 @@ interface Props {
   selectable?: boolean;
   showActions?: boolean;
   pageSize?: number;
+  personaId?: string;
 }
 
-const { pairs, selectable = true, showActions = true, pageSize = 10 } = Astro.props;
+const { pairs, selectable = true, showActions = true, pageSize = 10, personaId } = Astro.props;
 
 // Pagination state (will be managed by client-side script)
 const totalPages = Math.max(1, Math.ceil(pairs.length / pageSize));
@@ -87,7 +88,7 @@ const truncateText = (text: string, maxLength: number = 100) => {
           accept=".csv"
           data-action="csv-file-input"
         />
-        <button class="btn btn-sm btn-primary shadow-md hover:shadow-lg transition-all" data-action="evaluate-selected" disabled>
+        <button class="btn btn-sm btn-primary shadow-md hover:shadow-lg transition-all" data-action="evaluate-selected" data-persona-id={personaId} disabled>
           <svg
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
@@ -512,25 +513,75 @@ const truncateText = (text: string, maxLength: number = 100) => {
   });
 
   // Evaluate selected button
-  evaluateSelectedBtn?.addEventListener('click', () => {
+  evaluateSelectedBtn?.addEventListener('click', async () => {
     const pairCheckboxes = document.querySelectorAll('.pair-checkbox') as NodeListOf<HTMLInputElement>;
     const selectedIds = Array.from(pairCheckboxes)
       .filter((cb) => cb.checked)
-      .map((cb) => cb.dataset.pairId);
+      .map((cb) => cb.dataset.pairId)
+      .filter((id): id is string => id !== undefined);
+
+    if (selectedIds.length === 0) {
+      console.log('No pairs selected');
+      return;
+    }
+
+    const personaId = evaluateSelectedBtn?.dataset.personaId;
+    if (!personaId) {
+      console.error('No persona_id found on evaluate-selected button');
+      return;
+    }
+
     console.log('Evaluate selected pairs:', selectedIds);
 
     // Show loading state
     evaluateSelectedBtn.classList.add('loading');
-    setTimeout(() => {
-      evaluateSelectedBtn.classList.remove('loading');
-      // Dispatch event with results instead of alert
+    evaluateSelectedBtn.disabled = true;
+
+    try {
+      const response = await fetch('/api/judge/evaluate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          persona_id: personaId,
+          training_pair_result_ids: selectedIds,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || 'Failed to evaluate selected pairs');
+      }
+
+      console.log(`Evaluated ${result.evaluated_results} pairs`);
+
+      // Dispatch event with results
       const event = new CustomEvent('evaluation-complete', {
         bubbles: true,
-        detail: { count: selectedIds.length, ids: selectedIds },
+        detail: { count: result.evaluated_results, ids: selectedIds },
       });
       evaluateSelectedBtn.dispatchEvent(event);
-      console.log(`Evaluated ${selectedIds.length} pairs`);
-    }, 2000);
+
+      // Start polling for real-time updates
+      document.dispatchEvent(new CustomEvent('operation-started'));
+
+      // Show success notification
+      if ((window as any).toast) {
+        (window as any).toast.success(
+          `Evaluated ${result.evaluated_results} pairs successfully! Watching for updates...`
+        );
+      }
+    } catch (error) {
+      console.error('Evaluate selected error:', error);
+      if ((window as any).toast) {
+        (window as any).toast.error(
+          error instanceof Error ? error.message : 'Failed to evaluate selected pairs'
+        );
+      }
+    } finally {
+      evaluateSelectedBtn.classList.remove('loading');
+      evaluateSelectedBtn.disabled = false;
+    }
   });
 
   // CSV import button

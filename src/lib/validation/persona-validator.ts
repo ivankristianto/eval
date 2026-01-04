@@ -32,7 +32,9 @@ export function validatePersonaCreation(
     errors.push('Name is required');
   }
 
-  if (!input.initial_task_prompt || input.initial_task_prompt.trim() === '') {
+  // Support both initial_task_prompt and task_prompt for backward compatibility
+  const taskPrompt = input.initial_task_prompt || (input as any).task_prompt;
+  if (!taskPrompt || taskPrompt.trim() === '') {
     errors.push('Task prompt is required');
   }
 
@@ -92,7 +94,9 @@ export function validatePersonaCreation(
     warnings.push('Persona name is very short. Consider using a more descriptive name.');
   }
 
-  if (input.initial_task_prompt && input.initial_task_prompt.trim().length < 10) {
+  // Support both initial_task_prompt and task_prompt for backward compatibility
+  const taskPromptForWarning = input.initial_task_prompt || (input as any).task_prompt;
+  if (taskPromptForWarning && taskPromptForWarning.trim().length < 10) {
     warnings.push('Task prompt is very short. Consider providing more context.');
   }
 
