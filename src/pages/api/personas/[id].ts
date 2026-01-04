@@ -40,16 +40,15 @@ export const GET: APIRoute = async ({ params }) => {
         id: persona.id,
         name: persona.name,
         description: persona.description,
-        task_prompt: persona.task_prompt,
         task_model_id: persona.task_model_id,
         judge_model_id: persona.judge_model_id,
         prompt_engineer_model_id: persona.prompt_engineer_model_id,
+        current_task_prompt_version_id: persona.current_task_prompt_version_id,
+        current_judge_prompt_version_id: persona.current_judge_prompt_version_id,
         status: persona.status,
-        target_f1_score: persona.target_f1_score,
-        max_iterations: persona.max_iterations,
-        current_iteration: persona.current_iteration,
-        best_f1_score: persona.best_f1_score,
-        best_f1_iteration: persona.best_f1_iteration,
+        target_pass_rate: persona.target_pass_rate,
+        best_pass_rate: persona.best_pass_rate,
+        best_pass_rate_updated_at: persona.best_pass_rate_updated_at,
         created_at: persona.created_at,
         updated_at: persona.updated_at,
         created_by: persona.created_by,
@@ -102,21 +101,21 @@ export const PATCH: APIRoute = async ({ params, request }) => {
         Persona,
         | 'name'
         | 'description'
-        | 'task_prompt'
         | 'status'
-        | 'current_iteration'
-        | 'best_f1_score'
-        | 'best_f1_iteration'
+        | 'best_pass_rate'
+        | 'best_pass_rate_updated_at'
+        | 'current_task_prompt_version_id'
+        | 'current_judge_prompt_version_id'
       >
     > = {};
 
     if (body.name !== undefined) updates.name = body.name;
     if (body.description !== undefined) updates.description = body.description;
-    if (body.task_prompt !== undefined) updates.task_prompt = body.task_prompt;
     if (body.status !== undefined) updates.status = body.status;
-    if (body.current_iteration !== undefined) updates.current_iteration = body.current_iteration;
-    if (body.best_f1_score !== undefined) updates.best_f1_score = body.best_f1_score;
-    if (body.best_f1_iteration !== undefined) updates.best_f1_iteration = body.best_f1_iteration;
+    if (body.best_pass_rate !== undefined) updates.best_pass_rate = body.best_pass_rate;
+    if (body.best_pass_rate_updated_at !== undefined) updates.best_pass_rate_updated_at = body.best_pass_rate_updated_at;
+    if (body.current_task_prompt_version_id !== undefined) updates.current_task_prompt_version_id = body.current_task_prompt_version_id;
+    if (body.current_judge_prompt_version_id !== undefined) updates.current_judge_prompt_version_id = body.current_judge_prompt_version_id;
 
     // updatePersona will validate and throw on error
     const updated = updatePersona(id, updates);
@@ -129,11 +128,11 @@ export const PATCH: APIRoute = async ({ params, request }) => {
         id: updated.id,
         name: updated.name,
         description: updated.description,
-        task_prompt: updated.task_prompt,
         status: updated.status,
-        current_iteration: updated.current_iteration,
-        best_f1_score: updated.best_f1_score,
-        best_f1_iteration: updated.best_f1_iteration,
+        best_pass_rate: updated.best_pass_rate,
+        best_pass_rate_updated_at: updated.best_pass_rate_updated_at,
+        current_task_prompt_version_id: updated.current_task_prompt_version_id,
+        current_judge_prompt_version_id: updated.current_judge_prompt_version_id,
         updated_at: updated.updated_at,
       }),
       {

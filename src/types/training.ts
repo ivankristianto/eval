@@ -51,9 +51,9 @@ export interface Persona {
   current_task_prompt_version_id: string | null;
   current_judge_prompt_version_id: string | null;
   status: PersonaStatus;
-  target_f1_score: number;
-  best_f1_score: number | null;
-  best_f1_score_updated_at: string | null;
+  target_pass_rate: number;
+  best_pass_rate: number | null;
+  best_pass_rate_updated_at: string | null;
   created_at: string;
   updated_at: string;
   created_by: string | null;
@@ -70,7 +70,7 @@ export interface CreatePersonaInput {
   task_model_id: string;
   judge_model_id: string;
   prompt_engineer_model_id: string;
-  target_f1_score?: number;
+  target_pass_rate?: number;
   created_by?: string;
 }
 

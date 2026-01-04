@@ -123,7 +123,7 @@ export const POST: APIRoute = async ({ params }) => {
         `UPDATE personas
          SET status = 'draft',
              current_iteration = 0,
-             best_f1_score = NULL,
+             best_pass_rate = NULL,
              best_f1_iteration = NULL,
              updated_at = ?
          WHERE id = ?`

@@ -2073,7 +2073,7 @@ components:
         - judge_model_id
         - prompt_engineer_model_id
         - status
-        - target_f1_score
+        - target_pass_rate
         - max_iterations
         - current_iteration
         - created_at
@@ -2096,13 +2096,13 @@ components:
           type: string
         status:
           $ref: '#/components/schemas/PersonaStatus'
-        target_f1_score:
+        target_pass_rate:
           type: number
         max_iterations:
           type: number
         current_iteration:
           type: number
-        best_f1_score:
+        best_pass_rate:
           type: number
           nullable: true
         best_f1_iteration:
@@ -2141,7 +2141,7 @@ components:
           type: string
         prompt_engineer_model_id:
           type: string
-        target_f1_score:
+        target_pass_rate:
           type: number
         max_iterations:
           type: number
@@ -2162,7 +2162,7 @@ components:
           $ref: '#/components/schemas/PersonaStatus'
         current_iteration:
           type: number
-        best_f1_score:
+        best_pass_rate:
           type: number
           nullable: true
         best_f1_iteration:
@@ -2192,7 +2192,7 @@ components:
           $ref: '#/components/schemas/PersonaStatus'
         current_iteration:
           type: number
-        best_f1_score:
+        best_pass_rate:
           type: number
           nullable: true
         best_f1_iteration:

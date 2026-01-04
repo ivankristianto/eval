@@ -58,11 +58,11 @@ const createdDate = new Date(persona.created_at).toLocaleDateString();
 
     <div class="grid grid-cols-2 gap-4 text-sm">
       {
-        persona.status === 'trained' && persona.best_f1_score !== null && (
+        persona.status === 'trained' && persona.best_pass_rate !== null && (
           <div>
             <div class="text-base-content/60 text-xs uppercase tracking-wide mb-1">F1 Score</div>
             <div class="font-mono font-semibold text-success">
-              {(persona.best_f1_score * 100).toFixed(1)}%
+              {(persona.best_pass_rate * 100).toFixed(1)}%
             </div>
           </div>
         )
@@ -88,7 +88,7 @@ const createdDate = new Date(persona.created_at).toLocaleDateString();
 
       <div>
         <div class="text-base-content/60 text-xs uppercase tracking-wide mb-1">Target F1</div>
-        <div class="font-mono font-semibold">{(persona.target_f1_score * 100).toFixed(0)}%</div>
+        <div class="font-mono font-semibold">{(persona.target_pass_rate * 100).toFixed(0)}%</div>
       </div>
     </div>
 

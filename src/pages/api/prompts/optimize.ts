@@ -38,7 +38,7 @@ export const POST: APIRoute = async ({ request }) => {
       persona_id?: string;
     }>(request);
 
-    const { prompt_text, prompt_type, _persona_id } = body;
+    const { prompt_text, prompt_type, persona_id } = body;
 
     if (!prompt_text || !prompt_type) {
       logger.logApiRequest('POST', '/api/prompts/optimize', 400, Date.now() - startTime);

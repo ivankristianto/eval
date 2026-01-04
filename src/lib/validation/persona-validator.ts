@@ -32,7 +32,7 @@ export function validatePersonaCreation(
     errors.push('Name is required');
   }
 
-  if (!input.task_prompt || input.task_prompt.trim() === '') {
+  if (!input.initial_task_prompt || input.initial_task_prompt.trim() === '') {
     errors.push('Task prompt is required');
   }
 
@@ -92,7 +92,7 @@ export function validatePersonaCreation(
     warnings.push('Persona name is very short. Consider using a more descriptive name.');
   }
 
-  if (input.task_prompt && input.task_prompt.trim().length < 10) {
+  if (input.initial_task_prompt && input.initial_task_prompt.trim().length < 10) {
     warnings.push('Task prompt is very short. Consider providing more context.');
   }
 
@@ -157,15 +157,6 @@ export function validatePersonaUpdate(
       if (updates.name.trim().length < 3) {
         warnings.push('Persona name is very short. Consider using a more descriptive name.');
       }
-    }
-  }
-
-  // Validate task prompt if being updated
-  if (updates.task_prompt !== undefined) {
-    if (!updates.task_prompt || updates.task_prompt.trim() === '') {
-      errors.push('Task prompt cannot be empty');
-    } else if (updates.task_prompt.trim().length < 10) {
-      warnings.push('Task prompt is very short. Consider providing more context.');
     }
   }
 

@@ -212,7 +212,7 @@ export const POST: APIRoute = async ({ params, request }) => {
         .get(id) as { prompt_text: string } | undefined;
 
       const currentPrompt =
-        judgePrompt?.prompt_text || (persona as Persona).task_prompt || 'No prompt available';
+        judgePrompt?.prompt_text || 'No prompt available';
 
       // Build checkpoint data
       const checkpointData = {

@@ -64,15 +64,15 @@ function getIterationStatusVariant(status: string): 'warning' | 'info' | 'succes
 }
 
 // Determine if training is active
-const hasMetrics = persona.best_f1_score !== null;
+const hasMetrics = persona.best_pass_rate !== null;
 
 // Calculate F1 score progress
 const f1Progress = hasMetrics
-  ? Math.round((persona.best_f1_score / persona.target_f1_score) * 100)
+  ? Math.round((persona.best_pass_rate / persona.target_pass_rate) * 100)
   : 0;
 
 // Check if target reached
-const targetReached = hasMetrics && persona.best_f1_score >= persona.target_f1_score;
+const targetReached = hasMetrics && persona.best_pass_rate >= persona.target_pass_rate;
 ---
 
 <div class="card bg-base-200 shadow-lg">
@@ -110,17 +110,17 @@ const targetReached = hasMetrics && persona.best_f1_score >= persona.target_f1_s
               Best F1 Score
             </span>
             <span class="font-mono font-bold text-success">
-              {(persona.best_f1_score * 100).toFixed(1)}%
+              {(persona.best_pass_rate * 100).toFixed(1)}%
             </span>
           </div>
           <progress
             class="progress progress-success w-full"
-            value={persona.best_f1_score}
-            max={persona.target_f1_score}
+            value={persona.best_pass_rate}
+            max={persona.target_pass_rate}
           />
           <div class="flex items-center justify-between text-xs mt-1">
             <span class="text-base-content/60">
-              Target: {(persona.target_f1_score * 100).toFixed(0)}%
+              Target: {(persona.target_pass_rate * 100).toFixed(0)}%
             </span>
             {targetReached ? (
               <span class="text-success font-semibold">✓ Target Reached!</span>
@@ -186,7 +186,7 @@ const targetReached = hasMetrics && persona.best_f1_score >= persona.target_f1_s
             <div>
               Reach{' '}
               <span class="font-mono font-bold text-primary">
-                {(persona.target_f1_score * 100).toFixed(0)}%
+                {(persona.target_pass_rate * 100).toFixed(0)}%
               </span>{' '}
               F1 score within <span class="font-mono font-bold">{persona.max_iterations}</span>{' '}
               iterations

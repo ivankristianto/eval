@@ -159,7 +159,7 @@ export async function calculateIterationMetricsFromGroundTruth(
   // Store metrics to database
   storeIterationMetrics(iterationId, metrics, db);
 
-  // Update persona best_f1_score if this is an improvement
+  // Update persona best_pass_rate if this is an improvement
   updatePersonaBestScore(iterationId, metrics.f1_score, db);
 
   logger.info('Atomic fact evaluation metrics calculated', {
@@ -235,7 +235,7 @@ export function calculateIterationMetrics(iterationId: string, db: Database): Me
   // Store metrics to database
   storeIterationMetrics(iterationId, metrics, db);
 
-  // Update persona best_f1_score if this is an improvement
+  // Update persona best_pass_rate if this is an improvement
   updatePersonaBestScore(iterationId, metrics.f1_score, db);
 
   return metrics;
@@ -290,19 +290,19 @@ function updatePersonaBestScore(iterationId: string, f1Score: number, db: Databa
   }
 
   const persona = db
-    .prepare('SELECT best_f1_score FROM personas WHERE id = ?')
-    .get(iteration.persona_id) as { best_f1_score: number | null } | undefined;
+    .prepare('SELECT best_pass_rate FROM personas WHERE id = ?')
+    .get(iteration.persona_id) as { best_pass_rate: number | null } | undefined;
 
   if (!persona) {
     return;
   }
 
   // Update if this is the first score or if it's better than current best
-  if (persona.best_f1_score === null || f1Score > persona.best_f1_score) {
+  if (persona.best_pass_rate === null || f1Score > persona.best_pass_rate) {
     db.prepare(
       `
       UPDATE personas
-      SET best_f1_score = ?, best_f1_iteration = ?, updated_at = ?
+      SET best_pass_rate = ?, best_f1_iteration = ?, updated_at = ?
       WHERE id = ?
     `
     ).run(f1Score, iteration.iteration_number, new Date().toISOString(), iteration.persona_id);

@@ -243,7 +243,7 @@ if (currentTab === 'prompts') {
                     Target F1 Score
                   </div>
                   <div class="font-mono font-semibold text-2xl text-primary">
-                    {(persona.target_f1_score * 100).toFixed(0)}%
+                    {(persona.target_pass_rate * 100).toFixed(0)}%
                   </div>
                 </div>
 
@@ -261,13 +261,13 @@ if (currentTab === 'prompts') {
                   <div class="font-mono font-semibold text-2xl">{persona.current_iteration}</div>
                 </div>
 
-                {persona.best_f1_score !== null && (
+                {persona.best_pass_rate !== null && (
                   <div>
                     <div class="text-base-content/60 text-sm uppercase tracking-wide mb-2">
                       Best F1 Score
                     </div>
                     <div class="font-mono font-semibold text-2xl text-success">
-                      {(persona.best_f1_score * 100).toFixed(1)}%
+                      {(persona.best_pass_rate * 100).toFixed(1)}%
                     </div>
                     <div class="text-sm text-base-content/60">
                       (Iteration {persona.best_f1_iteration})
@@ -385,8 +385,8 @@ if (currentTab === 'prompts') {
                   </label>
                   <input
                     type="number"
-                    name="target_f1_score"
-                    value={persona.target_f1_score}
+                    name="target_pass_rate"
+                    value={persona.target_pass_rate}
                     step="0.01"
                     min="0"
                     max="1"
@@ -690,7 +690,7 @@ if (currentTab === 'prompts') {
     const data = {
       name: formData.get('name') as string,
       description: formData.get('description') as string,
-      target_f1_score: parseFloat(formData.get('target_f1_score') as string),
+      target_pass_rate: parseFloat(formData.get('target_pass_rate') as string),
       max_iterations: parseInt(formData.get('max_iterations') as string, 10),
     };
 

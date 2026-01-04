@@ -116,7 +116,7 @@ export function createPersona(
         typeof descriptionOrDb === 'string' || descriptionOrDb === null
           ? descriptionOrDb
           : undefined,
-      task_prompt: task_prompt!,
+      initial_task_prompt: task_prompt!,
       initial_judge_prompt: initial_judge_prompt!,
       task_model_id: task_model_id!,
       judge_model_id: judge_model_id!,
@@ -142,38 +142,52 @@ export function createPersona(
 
     const stmt = transactionDb.prepare(`
       INSERT INTO personas (
-        id, name, description, task_prompt,
+        id, name, description,
         task_model_id, judge_model_id, prompt_engineer_model_id,
-        status, target_f1_score, max_iterations, current_iteration,
+        status, target_pass_rate,
         created_at, updated_at, created_by
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     stmt.run(
       id,
       input.name,
       input.description || null,
-      input.task_prompt,
       input.task_model_id,
       input.judge_model_id,
       input.prompt_engineer_model_id,
       'draft' as PersonaStatus,
-      input.target_f1_score || 0.8,
-      input.max_iterations || 5,
-      0,
+      input.target_pass_rate || 0.8,
       now,
       now,
       input.created_by || null
     );
 
-    const promptVersionStmt = transactionDb.prepare(`
-      INSERT INTO judge_prompt_versions (
-        id, persona_id, iteration_number, prompt_text,
+    const taskPromptVersionStmt = transactionDb.prepare(`
+      INSERT INTO task_prompt_versions (
+        id, persona_id, version_number, prompt_text,
         improvement_rationale, created_by, created_at
       ) VALUES (?, ?, ?, ?, ?, ?, ?)
     `);
 
-    promptVersionStmt.run(
+    taskPromptVersionStmt.run(
+      uuidv4(),
+      id,
+      0,
+      input.initial_task_prompt,
+      'Initial task prompt provided during persona creation',
+      'human',
+      now
+    );
+
+    const judgePromptVersionStmt = transactionDb.prepare(`
+      INSERT INTO judge_prompt_versions (
+        id, persona_id, version_number, prompt_text,
+        improvement_rationale, created_by, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    judgePromptVersionStmt.run(
       uuidv4(),
       id,
       0,
@@ -235,11 +249,11 @@ export function updatePersona(
       Persona,
       | 'name'
       | 'description'
-      | 'task_prompt'
       | 'status'
-      | 'current_iteration'
-      | 'best_f1_score'
-      | 'best_f1_iteration'
+      | 'best_pass_rate'
+      | 'best_pass_rate_updated_at'
+      | 'current_task_prompt_version_id'
+      | 'current_judge_prompt_version_id'
     >
   >,
   db?: Database.Database
@@ -276,29 +290,29 @@ export function updatePersona(
       values.push(updates.description);
     }
 
-    if (updates.task_prompt !== undefined) {
-      fields.push('task_prompt = ?');
-      values.push(updates.task_prompt);
-    }
-
     if (updates.status !== undefined) {
       fields.push('status = ?');
       values.push(updates.status);
     }
 
-    if (updates.current_iteration !== undefined) {
-      fields.push('current_iteration = ?');
-      values.push(updates.current_iteration);
+    if (updates.best_pass_rate !== undefined) {
+      fields.push('best_pass_rate = ?');
+      values.push(updates.best_pass_rate);
     }
 
-    if (updates.best_f1_score !== undefined) {
-      fields.push('best_f1_score = ?');
-      values.push(updates.best_f1_score);
+    if (updates.best_pass_rate_updated_at !== undefined) {
+      fields.push('best_pass_rate_updated_at = ?');
+      values.push(updates.best_pass_rate_updated_at);
     }
 
-    if (updates.best_f1_iteration !== undefined) {
-      fields.push('best_f1_iteration = ?');
-      values.push(updates.best_f1_iteration);
+    if (updates.current_task_prompt_version_id !== undefined) {
+      fields.push('current_task_prompt_version_id = ?');
+      values.push(updates.current_task_prompt_version_id);
+    }
+
+    if (updates.current_judge_prompt_version_id !== undefined) {
+      fields.push('current_judge_prompt_version_id = ?');
+      values.push(updates.current_judge_prompt_version_id);
     }
 
     if (fields.length === 0) {

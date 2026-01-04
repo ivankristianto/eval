@@ -331,15 +331,15 @@ export const POST: APIRoute = async ({ params, request }) => {
 
     // Update persona best scores if this iteration is better
     const personaRecord = persona as Persona;
-    if (personaRecord.best_f1_score === null || metrics.f1_score > personaRecord.best_f1_score) {
+    if (personaRecord.best_pass_rate === null || metrics.f1_score > personaRecord.best_pass_rate) {
       db.prepare(
-        'UPDATE personas SET best_f1_score = ?, best_f1_iteration = ?, updated_at = ? WHERE id = ?'
+        'UPDATE personas SET best_pass_rate = ?, best_f1_iteration = ?, updated_at = ? WHERE id = ?'
       ).run(metrics.f1_score, iterationNumber, new Date().toISOString(), id);
 
       logger.info('New best F1 score achieved', {
         personaId: id,
         iterationNumber,
-        previousBest: personaRecord.best_f1_score,
+        previousBest: personaRecord.best_pass_rate,
         newBest: metrics.f1_score,
       });
     }
@@ -347,7 +347,8 @@ export const POST: APIRoute = async ({ params, request }) => {
     // ITERATIONS 2+: Refine prompts and continue training automatically
     if (iterationNumber >= 2) {
       // Check if converged (F1 >= 0.95 or reached max iterations)
-      const maxIterations = personaRecord.max_iterations || 10;
+      // Note: max_iterations removed from persona schema - using default of 10
+      const maxIterations = 10;
       const converged = metrics.f1_score >= 0.95 || iterationNumber >= maxIterations;
 
       if (converged) {

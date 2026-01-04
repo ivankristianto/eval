@@ -55,7 +55,7 @@ export const GET: APIRoute = async ({ params }) => {
 
     // Check convergence (F1 >= target)
     const convergenceAchieved =
-      persona.best_f1_score !== null && persona.best_f1_score >= persona.target_f1_score;
+      persona.best_pass_rate !== null && persona.best_pass_rate >= persona.target_pass_rate;
 
     // Get current iteration status if training in progress
     const currentIterationQuery = db
@@ -87,11 +87,9 @@ export const GET: APIRoute = async ({ params }) => {
         name: persona.name,
         description: persona.description,
         status: persona.status,
-        target_f1_score: persona.target_f1_score,
-        max_iterations: persona.max_iterations,
-        current_iteration: persona.current_iteration,
-        best_f1_score: persona.best_f1_score,
-        best_f1_iteration: persona.best_f1_iteration,
+        target_pass_rate: persona.target_pass_rate,
+        best_pass_rate: persona.best_pass_rate,
+        best_pass_rate_updated_at: persona.best_pass_rate_updated_at,
         created_at: persona.created_at,
         updated_at: persona.updated_at,
       },

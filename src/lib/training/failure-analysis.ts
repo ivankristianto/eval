@@ -180,11 +180,11 @@ export async function analyzeIterationFailures(
   // Get task prompt from task_prompt_versions for this iteration
   const taskPromptVersion = db
     .prepare(
-      'SELECT prompt_text FROM task_prompt_versions WHERE persona_id = ? AND iteration_number <= ? ORDER BY iteration_number DESC LIMIT 1'
+      'SELECT prompt_text FROM task_prompt_versions WHERE persona_id = ? AND version_number <= ? ORDER BY version_number DESC LIMIT 1'
     )
     .get(iteration.persona_id, iteration.iteration_number) as { prompt_text: string } | undefined;
 
-  const taskPrompt = taskPromptVersion?.prompt_text || persona.task_prompt;
+  const taskPrompt = taskPromptVersion?.prompt_text || 'No task prompt available';
 
   return {
     current_metrics: currentMetrics,
