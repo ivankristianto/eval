@@ -365,18 +365,16 @@ const truncateText = (text: string, maxLength: number = 100) => {
   const totalPages = Math.max(1, Math.ceil(totalPairs / pageSize));
 
   // Select all functionality
-  const selectAllCheckbox = document.getElementById('select-all-pairs') as HTMLInputElement;
+  const selectAllCheckbox = document.getElementById('select-all-pairs');
   const evaluateSelectedBtn = document.querySelector(
     '[data-action="evaluate-selected"]'
-  ) as HTMLButtonElement;
+  );
 
   function updateCheckboxes() {
-    const pairCheckboxes = document.querySelectorAll(
-      '.pair-checkbox'
-    ) as NodeListOf<HTMLInputElement>;
+    const pairCheckboxes = document.querySelectorAll('.pair-checkbox');
 
     selectAllCheckbox?.addEventListener('change', (e) => {
-      const isChecked = (e.target as HTMLInputElement).checked;
+      const isChecked = e.target.checked;
       pairCheckboxes.forEach((checkbox) => {
         checkbox.checked = isChecked;
       });
@@ -391,7 +389,7 @@ const truncateText = (text: string, maxLength: number = 100) => {
   }
 
   function updateEvaluateButton() {
-    const pairCheckboxes = document.querySelectorAll('.pair-checkbox') as NodeListOf<HTMLInputElement>;
+    const pairCheckboxes = document.querySelectorAll('.pair-checkbox');
     const selectedCount = Array.from(pairCheckboxes).filter((cb) => cb.checked).length;
     if (evaluateSelectedBtn) {
       evaluateSelectedBtn.disabled = selectedCount === 0;
@@ -418,15 +416,15 @@ const truncateText = (text: string, maxLength: number = 100) => {
     });
 
     // Update prev/next buttons
-    const prevBtn = document.querySelector('[data-action="prev-page"]') as HTMLButtonElement;
-    const nextBtn = document.querySelector('[data-action="next-page"]') as HTMLButtonElement;
+    const prevBtn = document.querySelector('[data-action="prev-page"]');
+    const nextBtn = document.querySelector('[data-action="next-page"]');
     if (prevBtn) prevBtn.disabled = currentPage === 1;
     if (nextBtn) nextBtn.disabled = currentPage === totalPages;
   }
 
   document.querySelectorAll('[data-page]').forEach((btn) => {
     btn.addEventListener('click', (e) => {
-      const target = e.target as HTMLElement;
+      const target = e.target;
       const page = parseInt(target.dataset.page || '1');
       currentPage = page;
       updatePagination();
@@ -458,7 +456,7 @@ const truncateText = (text: string, maxLength: number = 100) => {
   // Human rating buttons
   document.querySelectorAll('[data-action="human-rate"]').forEach((btn) => {
     btn.addEventListener('click', (e) => {
-      const button = e.currentTarget as HTMLElement;
+      const button = e.currentTarget;
       const pairId = button.dataset.pairId;
       const rating = button.dataset.rating;
       console.log(`Human rated pair ${pairId} as ${rating}`);
@@ -481,7 +479,7 @@ const truncateText = (text: string, maxLength: number = 100) => {
   // Add feedback input handler
   document.querySelectorAll('[data-action="add-feedback"]').forEach((input) => {
     input.addEventListener('change', (e) => {
-      const target = e.target as HTMLInputElement;
+      const target = e.target;
       const pairId = target.dataset.pairId;
       const feedback = target.value;
       if (feedback) {
@@ -503,7 +501,7 @@ const truncateText = (text: string, maxLength: number = 100) => {
     });
 
     input.addEventListener('blur', (e) => {
-      const target = e.target as HTMLInputElement;
+      const target = e.target;
       const pairId = target.dataset.pairId;
       const feedback = target.value;
       if (feedback) {
@@ -514,11 +512,11 @@ const truncateText = (text: string, maxLength: number = 100) => {
 
   // Evaluate selected button
   evaluateSelectedBtn?.addEventListener('click', async () => {
-    const pairCheckboxes = document.querySelectorAll('.pair-checkbox') as NodeListOf<HTMLInputElement>;
+    const pairCheckboxes = document.querySelectorAll('.pair-checkbox');
     const selectedIds = Array.from(pairCheckboxes)
       .filter((cb) => cb.checked)
       .map((cb) => cb.dataset.pairId)
-      .filter((id): id is string => id !== undefined);
+      .filter((id) => id !== undefined);
 
     if (selectedIds.length === 0) {
       console.log('No pairs selected');
@@ -585,8 +583,8 @@ const truncateText = (text: string, maxLength: number = 100) => {
   });
 
   // CSV import button
-  const importCsvBtn = document.querySelector('[data-action="import-csv"]') as HTMLLabelElement;
-  const csvFileInput = document.querySelector('[data-action="csv-file-input"]') as HTMLInputElement;
+  const importCsvBtn = document.querySelector('[data-action="import-csv"]');
+  const csvFileInput = document.querySelector('[data-action="csv-file-input"]');
 
   importCsvBtn?.addEventListener('click', () => {
     console.log('Import CSV clicked');
@@ -596,7 +594,7 @@ const truncateText = (text: string, maxLength: number = 100) => {
   });
 
   csvFileInput?.addEventListener('change', (e) => {
-    const target = e.target as HTMLInputElement;
+    const target = e.target;
     const file = target.files?.[0];
     if (file) {
       console.log('CSV file selected:', file.name);
@@ -614,11 +612,11 @@ const truncateText = (text: string, maxLength: number = 100) => {
   // Save new row button
   document.querySelectorAll('[data-action="save-new-row"]').forEach((btn) => {
     btn.addEventListener('click', (e) => {
-      const button = e.currentTarget as HTMLElement;
-      const row = button.closest('[data-new-row]') as HTMLElement;
+      const button = e.currentTarget;
+      const row = button.closest('[data-new-row]');
       const input = row.querySelector('[data-new-field="input"]') as HTMLTextAreaElement;
       const expectedOutput = row.querySelector('[data-new-field="expected_output"]') as HTMLTextAreaElement;
-      const feedback = row.querySelector('[data-new-field="feedback"]') as HTMLInputElement;
+      const feedback = row.querySelector('[data-new-field="feedback"]');
 
       const inputValue = input?.value?.trim();
       const expectedValue = expectedOutput?.value?.trim();
