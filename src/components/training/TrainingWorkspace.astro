@@ -545,6 +545,57 @@ const {
     });
   }
 
+  // Handle new row save event from TrainingPairsTable
+  document.addEventListener('new-row-save', async (e: Event) => {
+    const customEvent = e as CustomEvent;
+    const { input, expected_output } = customEvent.detail;
+
+    // Get persona ID from the page
+    const personaId = (document.querySelector('[data-persona-id]') as HTMLElement)?.dataset.personaId;
+
+    if (!personaId) {
+      console.error('No persona_id found on page');
+      if ((window as any).toast) {
+        (window as any).toast.error('Failed to save training pair: Missing persona ID');
+      }
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/personas/${personaId}/training/pairs`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ input, expected_output }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || 'Failed to create training pair');
+      }
+
+      // Show success notification
+      if ((window as any).toast) {
+        (window as any).toast.success('Training pair created successfully!');
+      }
+
+      // Start polling for real-time updates
+      document.dispatchEvent(new CustomEvent('operation-started'));
+
+      // Optionally reload the page after a short delay to show the new row
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    } catch (error) {
+      console.error('Save training pair error:', error);
+      if ((window as any).toast) {
+        (window as any).toast.error(
+          error instanceof Error ? error.message : 'Failed to save training pair'
+        );
+      }
+    }
+  });
+
   // Start polling when generate/evaluate actions are triggered
   // We'll trigger polling after successful API calls
   document.addEventListener('DOMContentLoaded', () => {
