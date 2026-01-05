@@ -7,9 +7,7 @@ interface Props {
   personaId: string;
   activeTab:
     | 'overview'
-    | 'training-data'
-    | 'training-progress'
-    | 'metrics'
+    | 'workspace'
     | 'task-prompts'
     | 'judge-prompts'
     | 'settings';
@@ -26,22 +24,10 @@ const { personaId, activeTab } = Astro.props;
     Overview
   </a>
   <a
-    href={`/personas/${personaId}/training`}
-    class={`tab tab-lg ${activeTab === 'training-data' ? 'tab-active' : ''}`}
+    href={`/personas/${personaId}/workspace`}
+    class={`tab tab-lg ${activeTab === 'workspace' ? 'tab-active' : ''}`}
   >
-    Training Data
-  </a>
-  <a
-    href={`/personas/${personaId}?tab=training-progress`}
-    class={`tab tab-lg ${activeTab === 'training-progress' ? 'tab-active' : ''}`}
-  >
-    Training Progress
-  </a>
-  <a
-    href={`/personas/${personaId}/metrics`}
-    class={`tab tab-lg ${activeTab === 'metrics' ? 'tab-active' : ''}`}
-  >
-    Metrics
+    Workspace
   </a>
   <a
     href={`/personas/${personaId}/task-prompts`}

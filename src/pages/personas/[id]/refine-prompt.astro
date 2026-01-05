@@ -54,7 +54,7 @@ const metrics = db
           {persona.name} - Iteration {iterationNumber}
         </p>
       </div>
-      <a href={`/personas/${id}?tab=training-progress`} class="btn btn-outline">
+      <a href={`/personas/${id}/workspace`} class="btn btn-outline">
         ← Back to Training
       </a>
     </div>
@@ -316,8 +316,8 @@ const metrics = db
         throw new Error(error.message || 'Failed to accept prompt');
       }
 
-      // Success - redirect to training progress
-      window.location.href = `/personas/${personaId}?tab=training-progress`;
+      // Success - redirect to workspace
+      window.location.href = `/personas/${personaId}/workspace`;
     } catch (error) {
       console.error('Accept prompt failed:', error);
       alert(`Failed to accept prompt: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -334,7 +334,7 @@ const metrics = db
 
   document.getElementById('skip-btn')?.addEventListener('click', () => {
     if (confirm('Are you sure you want to skip this refinement and keep the current prompt?')) {
-      window.location.href = `/personas/${personaId}?tab=training-progress`;
+      window.location.href = `/personas/${personaId}/workspace`;
     }
   });
 
