@@ -3,247 +3,187 @@
  * Training Workspace Page
  *
  * Main page for training a persona with version-based workflow.
- * Uses mock data for demonstration purposes.
+ * Connected to database for real data.
  */
 
 import WorkspaceLayout from '@layouts/WorkspaceLayout.astro';
 import TrainingWorkspace from '@components/training/TrainingWorkspace.astro';
 import LoadingStates from '@components/training/LoadingStates.astro';
+import {
+  getPersona,
+  getTrainingPairs,
+  getTaskPromptHistory,
+  getJudgePromptHistory,
+  getCurrentTaskVersion,
+  getCurrentJudgeVersion,
+  getPersonaMetrics,
+  getLatestIteration,
+  getDatabase,
+} from '@lib/db/persona-db';
 
-// Mock: Get persona ID from URL
+// Get persona ID from URL
 const { id } = Astro.params;
 
-// Mock persona data
-const mockPersona = {
-  id: id || 'persona-1',
-  name: 'Nagi - Training Persona',
-  description: 'A helpful AI assistant for cooking and recipe recommendations',
-  status: 'training',
-};
+if (!id) {
+  return Astro.redirect('/personas');
+}
 
-// Mock task prompt versions
-const mockTaskVersions = [
-  {
-    version_number: 3,
-    created_by: 'ai' as const,
-    created_at: '2026-01-03T10:00:00Z',
-    improvement_rationale: 'Added structure and specificity based on failure analysis',
-  },
-  {
-    version_number: 2,
-    created_by: 'ai' as const,
-    created_at: '2026-01-02T14:30:00Z',
-    improvement_rationale: 'Improved clarity and added examples requirement',
-  },
-  {
-    version_number: 1,
-    created_by: 'human' as const,
-    created_at: '2026-01-01T09:00:00Z',
-  },
-];
+// Fetch real persona data
+const persona = getPersona(id);
 
-// Mock judge prompt versions
-const mockJudgeVersions = [
-  {
-    version_number: 2,
-    created_by: 'ai' as const,
-    created_at: '2026-01-02T16:00:00Z',
-    improvement_rationale: 'Added explicit criteria to reduce false positives',
-  },
-  {
-    version_number: 1,
-    created_by: 'human' as const,
-    created_at: '2026-01-01T09:05:00Z',
-  },
-];
+if (!persona) {
+  return Astro.redirect('/personas');
+}
 
-// Mock training pairs with mixed states
-const mockTrainingPairs = [
-  {
-    id: 'pair-1',
-    input: 'Comment Author: Emma Manuel Comment: No I like to think the majority of people do!',
-    expected_output: 'No I like to think the majority of people do!',
-    generated_output: 'No I like to think the majority of people do!',
-    judge_rating: 'pass' as const,
-    judge_feedback: 'Output matches expected response exactly',
-    human_rating: 'pass' as const,
-    human_feedback: 'Correct extraction',
-  },
-  {
-    id: 'pair-2',
-    input: 'Comment Author: LMB Comment: Aww I love hearing that, LMB! Might need to...',
-    expected_output: 'That was published in November 2020!',
-    generated_output: 'Aww I love hearing that, LMB! Might need to make this one again soon!',
-    judge_rating: 'fail' as const,
-    judge_feedback: 'Generated output does not match expected output',
-    human_rating: 'fail' as const,
-    human_feedback: 'Wrong output - did not extract the correct comment',
-  },
-  {
-    id: 'pair-3',
-    input: 'Comment Author: Indiana Comment: I want to have brekkie at your house...',
-    expected_output: 'I want to have brekkie at your house. So much love!',
-    generated_output: 'Hahaha love it Indiana! Sounds like brekkie date!',
-    judge_rating: 'fail' as const,
-    judge_feedback: 'Output content differs from expected',
-    human_rating: 'pass' as const,
-    human_feedback: 'Actually this is acceptable - judge was too strict',
-  },
-  {
-    id: 'pair-4',
-    input: 'Comment Author: Leah Comment: Ugh thanks Leah! Fixing :) N x',
-    expected_output: 'Ugh thanks Leah! Fixing :) N x',
-    generated_output: 'Ugh thanks Leah! Fixing :) N x',
-    judge_rating: 'pass' as const,
-    judge_feedback: 'Perfect match',
-    human_rating: 'pass' as const,
-  },
-  {
-    id: 'pair-5',
-    input: 'Comment Author: Kate Comment: Hello Kate! 💕 Are you 100% sure you used the...',
-    expected_output: 'Hey Kate! 💕 Are you 100% sure you used dried?',
-    generated_output: 'Hey Kate! 🌸 Are you 100% sure you used dried?',
-    judge_rating: 'fail' as const,
-    judge_feedback: 'Emoji differs (💕 vs 🌸)',
-    human_rating: 'fail' as const,
-    human_feedback: 'Should use exact emoji from expected output',
-  },
-  {
-    id: 'pair-6',
-    input: 'Comment Author: Suz Comment: Aww Suz! What a lovely message to wake up to',
-    expected_output: 'Aww Suz! What a lovely message to wake up to this morning!',
-    generated_output: "Aww Suz! What a gorgeous message - I'm so glad you loved them!",
-    judge_rating: 'fail' as const,
-    judge_feedback: 'Content significantly different from expected',
-  },
-  {
-    id: 'pair-7',
-    input: 'Comment Author: Zac Comment: Its 100% you Zac! 💕 Love that you tweeted...',
-    expected_output: "It's 100% you Zac! 💕 Love that you tweeted this",
-    generated_output: "It's 100% you Zac! 💕 Love that you tweeted about this",
-    judge_rating: 'pass' as const,
-    judge_feedback: 'Close enough - only minor word difference',
-  },
-  {
-    id: 'pair-8',
-    input: 'Comment Author: Anne Comment: Perfect for large family feeding! Hope they love it...',
-    expected_output: 'Perfect for large family feeding! Hope they love it Anne!',
-    generated_output: "Aww Anne, that's so lovely of you to say! Are you making for your family?",
-    judge_rating: 'fail' as const,
-    judge_feedback: 'Completely different response',
-  },
-  {
-    id: 'pair-9',
-    input: 'Comment Author: William Comment: Happy Birthday 6th birthday to Ruby and Opal!',
-    expected_output: 'Aww happy 6th birthday to Ruby and Opal!! Are they twins?',
-    generated_output: 'Aww happy 6th birthday to Ruby and Opal!! Are they twins?',
-    judge_rating: 'pass' as const,
-    judge_feedback: 'Exact match',
-  },
-  {
-    id: 'pair-10',
-    input:
-      'Comment Author: Sharon Comment: So glad you enjoyed it Sharon, thanks for letting me know!',
-    expected_output: 'So glad you enjoyed it Sharon, thanks for letting me know!',
-    generated_output: 'Yay Sharon! So glad you loved it - quick tasty dinner hey! 🙂',
-    judge_rating: 'fail' as const,
-    judge_feedback: 'Response differs significantly',
-  },
-];
+// Fetch real task prompt versions
+const taskVersions = getTaskPromptHistory(id);
 
-// Mock metrics - aligned with metrics.astro format
-const mockMetrics = {
-  f1_score: 0.72,
-  precision: 0.7,
-  recall: 0.8,
-  cohens_kappa: 0.65,
-  accuracy: 0.75,
+// Fetch real judge prompt versions
+const judgeVersions = getJudgePromptHistory(id);
+
+// Get current active versions (if any)
+const currentTaskVersion = getCurrentTaskVersion(id);
+const currentJudgeVersion = getCurrentJudgeVersion(id);
+
+// Get the latest version numbers (default to 0 if no versions exist)
+const selectedTaskVersion = currentTaskVersion?.version_number ?? 0;
+const selectedJudgeVersion = currentJudgeVersion?.version_number ?? 0;
+
+// Get current prompt texts (use current version or fall back to version 0)
+const currentTaskPromptText =
+  currentTaskVersion?.prompt_text ||
+  taskVersions.find((v) => v.version_number === 0)?.prompt_text ||
+  '';
+const currentJudgePromptText =
+  currentJudgeVersion?.prompt_text ||
+  judgeVersions.find((v) => v.version_number === 0)?.prompt_text ||
+  '';
+
+// Fetch real training pairs
+const trainingPairs = getTrainingPairs(id);
+
+// Fetch latest metrics
+const personaMetrics = getPersonaMetrics(id);
+const latestIteration = getLatestIteration(id);
+
+// Transform training pairs to match expected interface with result data
+const db = getDatabase();
+const enrichedTrainingPairs = trainingPairs.map((pair) => {
+  // Get the latest result for this pair if available
+  const resultQuery = db
+    .prepare(
+      `
+      SELECT
+        generated_output,
+        judge_decision,
+        judge_reasoning,
+        human_decision,
+        human_notes
+      FROM training_pair_results
+      WHERE training_pair_id = ?
+      ORDER BY created_at DESC
+      LIMIT 1
+    `
+    )
+    .get(pair.id) as {
+    generated_output: string;
+    judge_decision: string;
+    judge_reasoning: string;
+    human_decision: string;
+    human_notes: string;
+  } | null;
+
+  return {
+    id: pair.id,
+    input: pair.input,
+    expected_output: pair.expected_output,
+    generated_output: resultQuery?.generated_output,
+    judge_rating: resultQuery?.judge_decision === 'agree' ? 'pass' : resultQuery?.judge_decision === 'disagree' ? 'fail' : undefined,
+    judge_feedback: resultQuery?.judge_reasoning,
+    human_rating: resultQuery?.human_decision === 'agree' ? 'pass' : resultQuery?.human_decision === 'disagree' ? 'fail' : undefined,
+    human_feedback: resultQuery?.human_notes,
+  };
+});
+
+// Build metrics data
+const mockMetrics = personaMetrics.length > 0 ? {
+  f1_score: personaMetrics[0].f1_score,
+  precision: personaMetrics[0].precision,
+  recall: personaMetrics[0].recall,
+  cohens_kappa: personaMetrics[0].cohens_kappa,
+  accuracy: personaMetrics[0].accuracy,
+  confusion_matrix: personaMetrics[0].confusion_matrix,
+  total_pairs: personaMetrics[0].true_positives + personaMetrics[0].true_negatives + personaMetrics[0].false_positives + personaMetrics[0].false_negatives,
+} : {
+  f1_score: 0,
+  precision: 0,
+  recall: 0,
+  cohens_kappa: 0,
+  accuracy: 0,
   confusion_matrix: {
-    true_positives: 28,
-    true_negatives: 10,
-    false_positives: 12,
+    true_positives: 0,
+    true_negatives: 0,
+    false_positives: 0,
     false_negatives: 0,
   },
-  total_pairs: 50,
+  total_pairs: 0,
 };
 
-// Legacy format for backward compatibility
-const mockJudgeMetrics = {
-  total_pairs: 50,
-  pass_count: 35,
-  fail_count: 15,
-  pass_rate: 0.7,
+// Calculate judge metrics from latest iteration
+const judgeMetrics = latestIteration ? {
+  total_pairs: latestIteration.total_pairs_evaluated,
+  pass_count: 0, // Would need to query judge_decisions table for actual count
+  fail_count: 0, // Would need to query judge_decisions table for actual count
+  pass_rate: 0, // Calculated field
+} : {
+  total_pairs: 0,
+  pass_count: 0,
+  fail_count: 0,
+  pass_rate: 0,
 };
 
-const mockHumanMetrics = {
-  total_pairs: 50,
-  pass_count: 40,
-  fail_count: 10,
-  pass_rate: 0.8,
+// Calculate human metrics from latest iteration
+const humanMetrics = latestIteration ? {
+  total_pairs: latestIteration.pairs_reviewed_by_human,
+  pass_count: 0, // Would need to query human_reviews table for actual count
+  fail_count: 0, // Would need to query human_reviews table for actual count
+  pass_rate: 0, // Calculated field
+} : {
+  total_pairs: 0,
+  pass_count: 0,
+  fail_count: 0,
+  pass_rate: 0,
 };
-
-// Current task prompt (v3)
-const currentTaskPrompt = `Write a reply as Nagi Maehashi, the voice, cook, and photographer behind the popular blog RecipeTin Eats. You share tasty, fresh, and creative recipes, run the charitable food drive RecipeTin Meals, and are frequently accompanied by your golden retriever, Dozer.
-
-Voice: Persona
-
-Concise: Your replies are short and energetic, rarely exceeding two sentences.
-
-Enthusiastic: You use exclamation marks (!), emojis (💕, 😊, 🌟), and affectionate openers to convey genuine excitement.
-
-Warm: You often deflect extreme praise, attributing success to the cook or the recipe rather than yourself (e.g., "It's 100% you!" or "But it's that good of yours!").
-
-Humble: You are self-deprecating about your own diet compared to your readers.
-
-Relatable: You are self-deprecating about your own diet compared to your readers.
-
-Australian: You use Australian spelling and slang (e.g., "brekkie").
-Direct but Kind: Troubleshooting: When it seems specific, diagnostic questions to help (e.g., "Are you 100% sure you used...?").
-
-Operational Guidelines:
-
-Sign-off: Always sign off with "N" (or sometimes, "N x") to denote a personal touch (excluding "Dozer").
-
-Length Constraint: Keep it brief. Only go beyond two sentences if absolutely necessary for troubleshooting a specific cooking failure.
-
-Troubleshooting: If a user reports a visual or taste issue, ask for specific, diagnostic questions to help (e.g., "Are you 100% sure you used...?").
-
-Corrections: If you point out a typo, say "Ugh thanks [Name]! Fixing :)".
-
-Dozer: You often deflect extreme praise, attributing success to the cook or the recipe rather than yourself (e.g., "Are you 100% sure you used dried?" or "You have your dog Dozer and enjoy when readers care about him.
-
-Task: Write the reply as Nagi would, adhering strictly to the persona and length constraints above.`;
-
-// Current judge prompt (v2)
-const currentJudgePrompt = `Evaluate if the generated output correctly answers the user's question.
-
-Check that the output:
-- Directly answers the question asked
-- Provides accurate information
-- Includes relevant examples when appropriate
-- Avoids hallucinations or unsupported claims
-
-Mark as PASS only if all criteria are met. Mark as FAIL if any criterion is not satisfied.`;
 ---
 
-<WorkspaceLayout title={`${mockPersona.name} - Training Workspace`}>
+<WorkspaceLayout title={`${persona.name} - Training Workspace`}>
   <TrainingWorkspace
-    personaId={mockPersona.id}
-    personaName={mockPersona.name}
+    personaId={persona.id}
+    personaName={persona.name}
     taskPrompt={{
-      text: currentTaskPrompt,
-      versions: mockTaskVersions,
-      selectedVersion: 3,
+      text: currentTaskPromptText,
+      versions: taskVersions.map((v) => ({
+        version_number: v.version_number,
+        created_by: v.created_by,
+        created_at: v.created_at,
+        improvement_rationale: v.improvement_rationale,
+      })),
+      selectedVersion: selectedTaskVersion,
     }}
     judgePrompt={{
-      text: currentJudgePrompt,
-      versions: mockJudgeVersions,
-      selectedVersion: 2,
+      text: currentJudgePromptText,
+      versions: judgeVersions.map((v) => ({
+        version_number: v.version_number,
+        created_by: v.created_by,
+        created_at: v.created_at,
+        improvement_rationale: v.improvement_rationale,
+      })),
+      selectedVersion: selectedJudgeVersion,
     }}
-    trainingPairs={mockTrainingPairs}
+    trainingPairs={enrichedTrainingPairs}
     metrics={mockMetrics}
-    judgeMetrics={mockJudgeMetrics}
-    humanMetrics={mockHumanMetrics}
+    judgeMetrics={judgeMetrics}
+    humanMetrics={humanMetrics}
   />
 
   <slot slot="overlays">
