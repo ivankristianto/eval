@@ -30,7 +30,7 @@ const promptVersions = db
   .prepare(
     `SELECT * FROM task_prompt_versions
      WHERE persona_id = ?
-     ORDER BY iteration_number DESC`
+     ORDER BY version_number DESC`
   )
   .all(id) as any[];
 
@@ -107,7 +107,7 @@ const breadcrumbItems = [
         {
           promptVersions.length > 0 && (
             <div class="text-xs text-base-content/60 mt-2">
-              Last updated: Iteration {promptVersions[0].iteration_number} (
+              Last updated: Iteration {promptVersions[0].version_number} (
               {new Date(promptVersions[0].created_at).toLocaleDateString()})
             </div>
           )
@@ -151,7 +151,7 @@ const breadcrumbItems = [
                     {/* Version Header */}
                     <div class="flex items-center justify-between mb-3">
                       <div class="flex items-center gap-3">
-                        <h3 class="font-semibold text-lg">Iteration {version.iteration_number}</h3>
+                        <h3 class="font-semibold text-lg">Iteration {version.version_number}</h3>
                         {isLatest && (
                           <Badge variant="primary" size="sm">
                             Current
@@ -196,10 +196,10 @@ const breadcrumbItems = [
                           class="btn btn-sm btn-outline view-diff-btn"
                           data-current-id={version.id}
                           data-previous-id={previousVersion.id}
-                          data-current-iteration={version.iteration_number}
-                          data-previous-iteration={previousVersion.iteration_number}
+                          data-current-iteration={version.version_number}
+                          data-previous-iteration={previousVersion.version_number}
                         >
-                          Compare with Iteration {previousVersion.iteration_number}
+                          Compare with Iteration {previousVersion.version_number}
                         </button>
                       </div>
                     )}
@@ -225,13 +225,13 @@ const breadcrumbItems = [
                 <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
               </form>
               <h3 class="font-bold text-lg mb-4">
-                Comparing Iteration {previousVersion.iteration_number} → {version.iteration_number}
+                Comparing Iteration {previousVersion.version_number} → {version.version_number}
               </h3>
               <PromptDiffViewer
                 beforePrompt={previousVersion.prompt_text}
                 afterPrompt={version.prompt_text}
-                beforeLabel={`Iteration ${previousVersion.iteration_number}`}
-                afterLabel={`Iteration ${version.iteration_number}`}
+                beforeLabel={`Iteration ${previousVersion.version_number}`}
+                afterLabel={`Iteration ${version.version_number}`}
               />
             </div>
             <form method="dialog" class="modal-backdrop">
