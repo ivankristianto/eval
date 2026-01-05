@@ -63,9 +63,9 @@ npm run typecheck
 **Before committing ANY code**, you MUST run:
 
 ```bash
-bun run lint         # ESLint check
+npm run lint         # ESLint check
 npm run typecheck    # Typeheck
-bun run format:fix    # Prettier auto-format
+npm run format:fix    # Prettier auto-format
 ```
 
 ## Testing Status
@@ -116,17 +116,36 @@ Latest coverage (vitest `npm test -- --coverage`):
 - Only fall back to custom CSS when Tailwind utilities cannot achieve the desired result
 - When custom CSS is necessary, document why Tailwind was insufficient
 
-## Recent Changes
+## Development Workflow
 
-- 001-eval-ai-models: Added TypeScript 5.6+ on Node.js 22+ + Astro 5.x (SSR),
-  Tailwind CSS 4.x, better-sqlite3, OpenAI SDK, Anthropic SDK, Google
-  Generative AI SDK
-- 001-eval-ai-models: Added JavaScript/TypeScript (Node.js 18+) + TypeScript
-  for type safety + Astro, Tailwind CSS, SQLite3, node-sqlite3/better-sqlite3
-- 002-update-ui-style: Added TypeScript 5.6.0+, Node.js >= 22.0.0 + Astro
-  5.16.6, Tailwind CSS 4.0.0, daisyui (v5 beta/latest compatible with TW v4)
-- 007-llm-as-judge: Added JSDoc linting requirements for public APIs via
-  eslint-plugin-jsdoc
+**ALWAYS FOLLOW THIS COLLABORATION WORKFLOW**
+
+### Single Task Workflow
+
+1. Run `bd ready` to find available work
+2. Create feature branch: `git checkout -b feature/<name>`
+3. Make changes
+4. Run quality gates: `npm run typecheck && npm run lint && npm run format:fix`
+5. Commit and push
+6. Create PR for review
+7. Run code-review-specialist agent for PR review, Agent comments on PR (review only, no changes)
+8. After merge, close the issue with `bd close <id>`
+
+### Group Task Workflow
+
+For multiple related tasks (see AGENTS.md for full details):
+
+1. Group tasks by domain or per user instruction
+2. Create feature branch: `git checkout -b feature/<name>`
+3. For each task:
+   - Implement
+   - Run quality gates (typecheck, lint, format): `npm run typecheck && npm run lint && npm run format:fix`
+   - Commit and push
+4. Continue until all tasks complete
+5. Create PR with descriptive title and summary
+6. Run code-review-specialist agent for PR review, Agent comments on PR (review only, no changes)
+7. Report completion summary to user.
+8. After merge, close the issue with `bd close <id>`
 
 ## Landing the Plane (Session Completion)
 

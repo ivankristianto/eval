@@ -39,7 +39,9 @@
       "Bash(npm run test:e2e:*)",
       "Bash(bd show:*)",
       "Bash(bd sync)",
-      "Bash(bd close:*)"
+      "Bash(bd close:*)",
+      "Bash(gh pr comment:*)",
+      "Bash(__NEW_LINE__)"
     ]
   },
   "gitAttribution": false
