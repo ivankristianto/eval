@@ -163,6 +163,7 @@ export function createPersona(
       input.created_by || null
     );
 
+    const taskPromptVersionId = uuidv4();
     const taskPromptVersionStmt = transactionDb.prepare(`
       INSERT INTO task_prompt_versions (
         id, persona_id, version_number, prompt_text,
@@ -171,7 +172,7 @@ export function createPersona(
     `);
 
     taskPromptVersionStmt.run(
-      uuidv4(),
+      taskPromptVersionId,
       id,
       0,
       input.initial_task_prompt,
@@ -180,6 +181,7 @@ export function createPersona(
       now
     );
 
+    const judgePromptVersionId = uuidv4();
     const judgePromptVersionStmt = transactionDb.prepare(`
       INSERT INTO judge_prompt_versions (
         id, persona_id, version_number, prompt_text,
@@ -188,7 +190,7 @@ export function createPersona(
     `);
 
     judgePromptVersionStmt.run(
-      uuidv4(),
+      judgePromptVersionId,
       id,
       0,
       input.initial_judge_prompt,
@@ -196,6 +198,15 @@ export function createPersona(
       'human',
       now
     );
+
+    // Update persona with current prompt version IDs
+    const updatePersonaStmt = transactionDb.prepare(`
+      UPDATE personas
+      SET current_task_prompt_version_id = ?, current_judge_prompt_version_id = ?
+      WHERE id = ?
+    `);
+
+    updatePersonaStmt.run(taskPromptVersionId, judgePromptVersionId, id);
 
     return getPersona(id, transactionDb)!;
   }, dbInstance);
