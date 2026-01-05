@@ -9,6 +9,7 @@
 import WorkspaceLayout from '@layouts/WorkspaceLayout.astro';
 import TrainingWorkspace from '@components/training/TrainingWorkspace.astro';
 import LoadingStates from '@components/training/LoadingStates.astro';
+import { getDatabase } from '@lib/db';
 import {
   getPersona,
   getTrainingPairs,
@@ -18,7 +19,6 @@ import {
   getCurrentJudgeVersion,
   getPersonaMetrics,
   getLatestIteration,
-  getDatabase,
 } from '@lib/db/persona-db';
 
 // Get persona ID from URL
