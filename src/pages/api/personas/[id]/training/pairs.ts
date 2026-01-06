@@ -5,7 +5,7 @@
  */
 
 import type { APIRoute } from 'astro';
-import { getPersona, createTrainingPair } from '@lib/db/persona-db';
+import { getPersona, createTrainingPairs } from '@lib/db/persona-db';
 import { getDatabase } from '@lib/db';
 import { badRequest, notFound, createErrorResponse } from '@lib/api-error-handler';
 import { createLogger } from '@lib/logger';
@@ -145,7 +145,10 @@ export const POST: APIRoute = async ({ params, request }) => {
     }
 
     // Create training pair
-    const pair = createTrainingPair(id, input.trim(), expected_output.trim());
+    const pairs = createTrainingPairs(id, [{ input: input.trim(), expected_output: expected_output.trim() }]);
+
+    // Get the newly created pair (it should be the last one since we're sorting by created_at)
+    const pair = pairs[pairs.length - 1];
 
     logger.info('Training pair created', {
       personaId: id,
