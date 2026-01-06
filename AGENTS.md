@@ -7,7 +7,7 @@ Auto-generated from CLAUDE.md and GEMINI.md. Last updated: 2025-12-27.
 **Before any task, read the constitution.**
 
 ```
-1. Read `constitution.md` — understand principles and fences
+1. Read `docs/constitution.md` — understand principles and fences
 2. Read task context (spec, plan, or issue)
 3. Then execute
 ```

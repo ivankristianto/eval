@@ -11,6 +11,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Development Commands
 
 ### Essential Commands
+
 ```bash
 npm run dev              # Start dev server on port 3000
 npm run build            # Build for production
@@ -40,6 +41,7 @@ npm run check            # Astro type checking
 ```
 
 ### Running Single Tests
+
 ```bash
 # Vitest (unit/integration)
 npm test -- path/to/test.test.ts
@@ -54,6 +56,7 @@ npx playwright test --debug  # Debug mode
 ## Architecture Overview
 
 ### Request Flow: Evaluation
+
 ```
 POST /api/evaluate
   → validateCreateEvaluation()
@@ -69,6 +72,7 @@ POST /api/evaluate
 ```
 
 ### Request Flow: Judge Training
+
 ```
 POST /api/personas/[id]/training/upload
   → parseCSV() → insertTrainingPairs()
@@ -88,6 +92,7 @@ POST /api/personas/[id]/training/start
 ### Core Architectural Patterns
 
 **Separation of Concerns**:
+
 1. **Database Layer** (`src/lib/db/`): Raw SQL, CRUD operations, transactions
 2. **Validation Layer** (`src/lib/validation/`): Input validation before DB/API
 3. **Business Logic** (`src/lib/evaluation/`, `src/lib/training/`): Orchestration, algorithms
@@ -95,16 +100,19 @@ POST /api/personas/[id]/training/start
 5. **UI Layer** (`src/components/`, `src/pages/`): Presentation
 
 **Multi-Provider Architecture**:
+
 - `ClientFactory` creates provider-specific clients via adapter pattern
 - Unified `ModelClient` interface: `evaluate()`, `testConnection()`
 - Configuration: provider + model_name + encrypted API key
 
 **Async Execution**:
+
 - Evaluations run in background; API returns evaluation_id immediately
 - Client polls for status/results
 - Training loops use state machine with pause/resume via checkpoints
 
 **Database Transactions**:
+
 - Use `withTransaction()` wrapper from `persona-db.ts` for multi-step operations
 - Foreign key constraints enabled with CASCADE/RESTRICT
 - WAL mode for concurrent read/write
@@ -112,6 +120,7 @@ POST /api/personas/[id]/training/start
 ## Key File Locations
 
 ### Core Business Logic
+
 - `src/lib/evaluation/evaluator.ts` - Evaluation orchestration, concurrency, timeouts
 - `src/lib/evaluation/accuracy.ts` - Rubric scoring (exact match, partial credit, semantic)
 - `src/lib/evaluation/metrics.ts` - F1, precision, recall, Cohen's Kappa calculation
@@ -120,27 +129,32 @@ POST /api/personas/[id]/training/start
 - `src/lib/utils/api-clients.ts` - Provider abstraction (OpenAI, Anthropic, Google)
 
 ### Database
+
 - `db/schema.sql` - 13 tables (models, evaluations, personas, training)
 - `src/lib/db/db.ts` - Core database access layer
 - `src/lib/db/persona-db.ts` - Judge persona operations with transactions
 
 ### Validation
+
 - `src/lib/validation/validators.ts` - Manual runtime validators
 - `src/lib/validation/persona-validator.ts` - Persona-specific validation
 
 ### API Routes
+
 - `src/pages/api/evaluate.ts` - Create evaluation
 - `src/pages/api/personas/` - Persona CRUD
 - `src/pages/api/personas/[id]/training/` - Training operations
 - `src/pages/api/personas/[id]/iterations/[num]/` - Iteration feedback/metrics
 
 ### Types
+
 - `src/lib/utils/types.ts` - Core domain types (Evaluation, Result, ModelConfiguration)
 - `src/types/training.ts` - Judge training types (Persona, TrainingIteration)
 
 ## Critical Development Patterns
 
 ### Path Aliases (Vite/Astro)
+
 ```typescript
 import { evaluateInstruction } from '@lib/evaluation/evaluator';
 import { Button } from '@components/ui/Button.astro';
@@ -148,6 +162,7 @@ import { database } from '@db/init';
 ```
 
 ### API Error Handling
+
 ```typescript
 import { createErrorResponse, badRequest } from '@lib/api/api-error-handler';
 
@@ -166,6 +181,7 @@ export async function POST({ request }) {
 ```
 
 ### Database Transactions
+
 ```typescript
 import { withTransaction } from '@lib/db/persona-db';
 
@@ -177,6 +193,7 @@ const result = withTransaction(db, () => {
 ```
 
 ### API Key Encryption
+
 ```typescript
 import { encryptApiKey, decryptApiKey } from '@lib/utils/encryption';
 
@@ -188,6 +205,7 @@ const plain = decryptApiKey(model.api_key_encrypted);
 ```
 
 ### Evaluation Status Polling Pattern
+
 ```typescript
 // Server: Return evaluation_id immediately
 return new Response(JSON.stringify({ evaluation_id }), { status: 201 });
@@ -207,15 +225,18 @@ const pollStatus = async () => {
 ## Testing Requirements
 
 ### Coverage Targets
+
 - **Critical paths** (validators, accuracy, evaluator, metrics): **>80% coverage**
 - Current coverage: validators 84.29%, accuracy 92.85%, evaluator 93.05%
 
 ### Test Structure
+
 - **Unit tests** (`tests/unit/`): Pure logic, metrics calculation, encryption
 - **Integration tests** (`tests/integration/`): Database operations, API handlers
 - **E2E tests** (`tests/e2e/`): Full user workflows with Playwright
 
 ### E2E Database Isolation
+
 ```bash
 # E2E tests use separate DB via EVAL_DB_PATH environment variable
 # Database: db/evaluation.e2e-test.db
@@ -223,7 +244,9 @@ const pollStatus = async () => {
 ```
 
 ### Test-First Development
+
 Per project constitution: **Tests are written first for all critical paths**. When adding features:
+
 1. Write test cases first
 2. Implement functionality
 3. Verify coverage meets targets
@@ -231,6 +254,7 @@ Per project constitution: **Tests are written first for all critical paths**. Wh
 ## Environment Configuration
 
 ### Required Environment Variables
+
 ```bash
 # .env (copy from .env.example)
 ENCRYPTION_KEY=<32-byte-hex>  # Generate: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
@@ -246,11 +270,13 @@ EVAL_DB_PATH=./db/evaluation.db  # Override database path
 ```
 
 ### Mock Judge Mode
+
 When `MOCK_JUDGE_MODE=true`, training loop uses mock responses instead of real LLM calls to reduce token costs during development.
 
 ## Code Style & Quality
 
 ### Style Rules
+
 - **Formatter**: Prettier (double quotes, semicolons, 2-space indent, 100 char line width)
 - **Linter**: ESLint 9 flat config with TypeScript, Astro, JSDoc plugins
 - **TypeScript**: Strict mode (`strictNullChecks`, `noImplicitAny`, `noImplicitReturns`)
@@ -258,7 +284,9 @@ When `MOCK_JUDGE_MODE=true`, training loop uses mock responses instead of real L
 - **JSDoc**: Required for public functions/methods/classes
 
 ### Pre-Commit Checklist
+
 **MANDATORY before every commit**:
+
 ```bash
 npm run typecheck    # Must pass
 npm run lint         # Must pass
@@ -268,6 +296,7 @@ npm run format       # Auto-format code
 ## Database Schema Notes
 
 ### Key Tables
+
 - **ModelConfiguration**: AI provider configs with encrypted API keys
 - **Evaluation**: Evaluation sessions with status tracking
 - **Result**: Model outputs with metrics (accuracy, latency, tokens)
@@ -280,6 +309,7 @@ npm run format       # Auto-format code
 - **judge_prompt_versions**: Judge prompt version history
 
 ### Important Constraints
+
 - Foreign keys with CASCADE/RESTRICT for referential integrity
 - Unique constraints on (persona_id, version_number) for prompts
 - Indexes on status, created_at, persona_id, f1_score for query performance
@@ -295,26 +325,10 @@ npm run format       # Auto-format code
 7. **Path aliases**: Use `@lib`, `@components`, etc. Don't use relative imports for cross-directory references
 8. **Tailwind v4 syntax**: Use modern Tailwind v4 features (e.g., `@theme` directive) not v3 patterns
 
-## Development Workflow
-
-### Single Task
-1. Check available work: `bd ready`
-2. Create feature branch: `git checkout -b feature/<name>`
-3. Make changes
-4. Run quality gates: `npm run typecheck && npm run lint && npm run format`
-5. Commit and push
-6. Create PR
-7. After merge: `bd close <id>`
-
-### Group Tasks
-1. Group related tasks by domain
-2. Create feature branch
-3. For each task: implement → quality gates → commit
-4. Create PR with summary
-5. After merge: `bd close <id1> <id2> ...`
-
 ### Session Completion (CRITICAL)
+
 Work is NOT complete until pushed to remote:
+
 ```bash
 git pull --rebase
 bd sync
