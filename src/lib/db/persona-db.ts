@@ -1338,3 +1338,79 @@ export function getLatestCheckpoint(
   `);
   return stmt.get(sessionId) as TrainingLoopCheckpoint | null;
 }
+
+// ===== Training Pair Results Metrics (Workspace Redesign) =====
+
+/**
+ * Get judge metrics from training_pair_results table for a persona.
+ * @param personaId - Persona ID
+ * @param db - Optional database instance
+ * @returns Judge metrics object with pass/fail counts and rate
+ */
+export function getJudgeMetricsFromResults(
+  personaId: string,
+  db?: Database.Database
+): { total_pairs: number; pass_count: number; fail_count: number; pass_rate: number } {
+  const database = db || getTrainingDatabase();
+
+  const passStmt = database.prepare(`
+    SELECT COUNT(*) as count FROM training_pair_results
+    WHERE persona_id = ? AND judge_rating = 'pass'
+  `);
+  const passResult = passStmt.get(personaId) as { count: number };
+  const passCount = passResult.count;
+
+  const failStmt = database.prepare(`
+    SELECT COUNT(*) as count FROM training_pair_results
+    WHERE persona_id = ? AND judge_rating = 'fail'
+  `);
+  const failResult = failStmt.get(personaId) as { count: number };
+  const failCount = failResult.count;
+
+  const total = passCount + failCount;
+  const passRate = total > 0 ? passCount / total : 0;
+
+  return {
+    total_pairs: total,
+    pass_count: passCount,
+    fail_count: failCount,
+    pass_rate: passRate,
+  };
+}
+
+/**
+ * Get human metrics from training_pair_results table for a persona.
+ * @param personaId - Persona ID
+ * @param db - Optional database instance
+ * @returns Human metrics object with pass/fail counts and rate
+ */
+export function getHumanMetricsFromResults(
+  personaId: string,
+  db?: Database.Database
+): { total_pairs: number; pass_count: number; fail_count: number; pass_rate: number } {
+  const database = db || getTrainingDatabase();
+
+  const passStmt = database.prepare(`
+    SELECT COUNT(*) as count FROM training_pair_results
+    WHERE persona_id = ? AND human_rating = 'pass'
+  `);
+  const passResult = passStmt.get(personaId) as { count: number };
+  const passCount = passResult.count;
+
+  const failStmt = database.prepare(`
+    SELECT COUNT(*) as count FROM training_pair_results
+    WHERE persona_id = ? AND human_rating = 'fail'
+  `);
+  const failResult = failStmt.get(personaId) as { count: number };
+  const failCount = failResult.count;
+
+  const total = passCount + failCount;
+  const passRate = total > 0 ? passCount / total : 0;
+
+  return {
+    total_pairs: total,
+    pass_count: passCount,
+    fail_count: failCount,
+    pass_rate: passRate,
+  };
+}

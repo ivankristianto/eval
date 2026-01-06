@@ -18,7 +18,8 @@ import {
   getCurrentTaskVersion,
   getCurrentJudgeVersion,
   getPersonaMetrics,
-  getLatestIteration,
+  getJudgeMetricsFromResults,
+  getHumanMetricsFromResults,
 } from '@lib/db/persona-db';
 
 // Get persona ID from URL
@@ -64,7 +65,6 @@ const trainingPairs = getTrainingPairs(id);
 
 // Fetch latest metrics
 const personaMetrics = getPersonaMetrics(id);
-const latestIteration = getLatestIteration(id);
 
 // Transform training pairs to match expected interface with result data
 const db = getDatabase();
@@ -115,8 +115,8 @@ const enrichedTrainingPairs = trainingPairs.map((pair) => {
   };
 });
 
-// Build metrics data
-const mockMetrics =
+// Build metrics data from persona_metrics table
+const personaMetricsData =
   personaMetrics.length > 0
     ? {
         f1_score: personaMetrics[0].f1_score,
@@ -146,35 +146,11 @@ const mockMetrics =
         total_pairs: 0,
       };
 
-// Calculate judge metrics from latest iteration
-const judgeMetrics = latestIteration
-  ? {
-      total_pairs: latestIteration.total_pairs_evaluated,
-      pass_count: 0, // Would need to query judge_decisions table for actual count
-      fail_count: 0, // Would need to query judge_decisions table for actual count
-      pass_rate: 0, // Calculated field
-    }
-  : {
-      total_pairs: 0,
-      pass_count: 0,
-      fail_count: 0,
-      pass_rate: 0,
-    };
+// Get judge metrics from training_pair_results table
+const judgeMetrics = getJudgeMetricsFromResults(id);
 
-// Calculate human metrics from latest iteration
-const humanMetrics = latestIteration
-  ? {
-      total_pairs: latestIteration.pairs_reviewed_by_human,
-      pass_count: 0, // Would need to query human_reviews table for actual count
-      fail_count: 0, // Would need to query human_reviews table for actual count
-      pass_rate: 0, // Calculated field
-    }
-  : {
-      total_pairs: 0,
-      pass_count: 0,
-      fail_count: 0,
-      pass_rate: 0,
-    };
+// Get human metrics from training_pair_results table
+const humanMetrics = getHumanMetricsFromResults(id);
 ---
 
 <WorkspaceLayout title={`${persona.name} - Training Workspace`}>
@@ -202,7 +178,7 @@ const humanMetrics = latestIteration
       selectedVersion: selectedJudgeVersion,
     }}
     trainingPairs={enrichedTrainingPairs}
-    metrics={mockMetrics}
+    metrics={personaMetricsData}
     judgeMetrics={judgeMetrics}
     humanMetrics={humanMetrics}
   />
