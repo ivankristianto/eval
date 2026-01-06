@@ -22,7 +22,10 @@
       "Bash(test:*)",
       "Bash(__NEW_LINE__)",
       "Skill(frontend-design:frontend-design)",
-      "Skill(speckit.specify)"
+      "Skill(speckit.specify)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
     ]
   },
   "gitAttribution": false
