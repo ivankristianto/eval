@@ -98,14 +98,24 @@ export const POST: APIRoute = async ({ params, request }) => {
 
   try {
     if (!id) {
-      logger.logApiRequest('POST', '/api/personas/[id]/training/pairs', 400, Date.now() - startTime);
+      logger.logApiRequest(
+        'POST',
+        '/api/personas/[id]/training/pairs',
+        400,
+        Date.now() - startTime
+      );
       return badRequest('Persona ID is required', 'INVALID_INPUT');
     }
 
     // Verify persona exists
     const persona = getPersona(id);
     if (!persona) {
-      logger.logApiRequest('POST', `/api/personas/${id}/training/pairs`, 404, Date.now() - startTime);
+      logger.logApiRequest(
+        'POST',
+        `/api/personas/${id}/training/pairs`,
+        404,
+        Date.now() - startTime
+      );
       return notFound('Persona');
     }
 
@@ -115,12 +125,22 @@ export const POST: APIRoute = async ({ params, request }) => {
 
     // Validate input
     if (!input || typeof input !== 'string') {
-      logger.logApiRequest('POST', `/api/personas/${id}/training/pairs`, 400, Date.now() - startTime);
+      logger.logApiRequest(
+        'POST',
+        `/api/personas/${id}/training/pairs`,
+        400,
+        Date.now() - startTime
+      );
       return badRequest('Input is required and must be a string', 'INVALID_INPUT');
     }
 
     if (!expected_output || typeof expected_output !== 'string') {
-      logger.logApiRequest('POST', `/api/personas/${id}/training/pairs`, 400, Date.now() - startTime);
+      logger.logApiRequest(
+        'POST',
+        `/api/personas/${id}/training/pairs`,
+        400,
+        Date.now() - startTime
+      );
       return badRequest('Expected output is required and must be a string', 'INVALID_INPUT');
     }
 

@@ -27,18 +27,12 @@
 <script>
   // Toast Notification System
   class ToastManager {
-    private container: HTMLElement;
-    private toastQueue: HTMLElement[] = [];
-
     constructor() {
-      this.container = document.getElementById('toast-container')!;
+      this.container = document.getElementById('toast-container');
+      this.toastQueue = [];
     }
 
-    show(
-      message: string,
-      type: 'success' | 'error' | 'info' | 'warning' = 'info',
-      duration = 3000
-    ) {
+    show(message, type = 'info', duration = 3000) {
       const toast = this.createToast(message, type);
       this.container.appendChild(toast);
       this.toastQueue.push(toast);
@@ -56,7 +50,7 @@
       }, duration);
     }
 
-    private createToast(message: string, type: string): HTMLElement {
+    createToast(message, type) {
       const toast = document.createElement('div');
       toast.className = `alert alert-${type} shadow-lg max-w-md`;
 
@@ -71,14 +65,14 @@
       };
 
       toast.innerHTML = `
-        ${iconMap[type as keyof typeof iconMap]}
+        ${iconMap[type] || iconMap.info}
         <span>${message}</span>
       `;
 
       return toast;
     }
 
-    private removeToast(toast: HTMLElement) {
+    removeToast(toast) {
       const index = this.toastQueue.indexOf(toast);
       if (index > -1) {
         this.toastQueue.splice(index, 1);
@@ -89,15 +83,15 @@
 
   // Initialize global toast manager
   const toastManager = new ToastManager();
-  (window as any).toast = {
-    success: (msg: string) => toastManager.show(msg, 'success'),
-    error: (msg: string) => toastManager.show(msg, 'error'),
-    info: (msg: string) => toastManager.show(msg, 'info'),
-    warning: (msg: string) => toastManager.show(msg, 'warning'),
+  window.toast = {
+    success: (msg) => toastManager.show(msg, 'success'),
+    error: (msg) => toastManager.show(msg, 'error'),
+    info: (msg) => toastManager.show(msg, 'info'),
+    warning: (msg) => toastManager.show(msg, 'warning'),
   };
 
   // Loading Spinner Utility
-  (window as any).showLoading = (targetSelector: string, message = 'Loading...') => {
+  window.showLoading = (targetSelector, message = 'Loading...') => {
     const target = document.querySelector(targetSelector);
     if (!target) return;
 
@@ -112,7 +106,7 @@
     target.appendChild(loadingDiv);
   };
 
-  (window as any).hideLoading = (targetSelector: string) => {
+  window.hideLoading = (targetSelector) => {
     const target = document.querySelector(targetSelector);
     if (!target) return;
 
@@ -123,11 +117,11 @@
   };
 
   // Skeleton Loader Utility
-  (window as any).showSkeleton = (tableBodySelector: string, rowCount = 5) => {
+  window.showSkeleton = (tableBodySelector, rowCount = 5) => {
     const tbody = document.querySelector(tableBodySelector);
     if (!tbody) return;
 
-    const template = document.getElementById('skeleton-row-template') as HTMLTemplateElement;
+    const template = document.getElementById('skeleton-row-template');
     if (!template) return;
 
     tbody.innerHTML = '';
@@ -138,8 +132,8 @@
   };
 
   // Progress Bar Utility
-  (window as any).updateProgress = (percentage: number, targetSelector = '#progress-bar') => {
-    const progressBar = document.querySelector(targetSelector) as HTMLProgressElement;
+  window.updateProgress = (percentage, targetSelector = '#progress-bar') => {
+    const progressBar = document.querySelector(targetSelector);
     if (progressBar) {
       progressBar.value = percentage;
     }
