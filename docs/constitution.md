@@ -1,6 +1,15 @@
 # Development Constitution v2.0.0
 
-## I. User-First Development
+## I. Code Quality
+
+Clarity over cleverness.
+
+- **SRP**: One function = one responsibility
+- **Naming**: Variables describe their purpose explicitly
+- **Commits**: Document _what_ and _why_ in commit messages
+- **Tech debt**: Track explicitly in backlog, don't hide it
+
+## II. User-First Development
 
 Build what users see and touch first.
 
@@ -14,7 +23,7 @@ Build what users see and touch first.
 
 **Why**: Working UI validates assumptions early. Mock data unblocks frontend. Services stay framework-agnostic.
 
-## II. Fences (Quality Gates)
+## III. Fences (Quality Gates)
 
 Automated checks run on every change. No exceptions.
 
@@ -35,9 +44,27 @@ Automated checks run on every change. No exceptions.
 **Testing Strategy**:
 
 - Unit tests: Write first, fail first
+- Integration tests: Required for user-facing features
+- Coverage: >80% on critical paths
 - E2E tests: Last priority (high cost, low frequency)
 
-## III. Continuous Refactoring
+## IV. UX Consistency
+
+Users build mental models. Don't break them.
+
+- **Patterns**: Similar actions behave the same way
+- **Error messages**: User-friendly, actionable, no jargon
+- **Design**: Follow established visual/interactive patterns
+
+## V. Performance
+
+Performance is a feature, not an afterthought.
+
+- **Targets upfront**: Define before implementation (e.g., <200ms p95)
+- **Profile hot paths**: Measure, don't guess
+- **Justify tradeoffs**: Document if trading perf for convenience
+
+## VI. Continuous Refactoring
 
 Refactor each loop, not at the end.
 
@@ -49,7 +76,7 @@ Refactor each loop, not at the end.
 4. **Consistency** - Follows existing patterns?
 5. **Abstraction** - Right level? Not premature?
 
-## IV. Workflow
+## VII. Workflow
 
 ### Single Task
 
@@ -66,12 +93,15 @@ bd ready → branch → [implement → gates → commit]× → PR → review →
 **PR Requirements**:
 
 - Follow PR template
+- Reference which principles this PR satisfies
 - Run code-review-specialist agent
 - Agent comments only (no direct changes)
 
 ## Governance
 
 **Amendments**: Propose → Document impact → Version bump → Update templates
+
+**Template Propagation**: On amendment, audit and update: spec-template.md, plan-template.md, tasks-template.md
 
 **Version Scheme**:
 
