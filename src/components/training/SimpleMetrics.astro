@@ -42,7 +42,7 @@ interface Props {
 }
 
 // Support both new metrics format and legacy judge/human format
-const { metrics, judgeMetrics, humanMetrics, showComparison = true } = Astro.props;
+const { metrics, judgeMetrics, humanMetrics } = Astro.props;
 
 // Use new metrics if provided, otherwise fall back to legacy format
 const displayMetrics = metrics || {

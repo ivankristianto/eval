@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
+    "check": "astro check",
     "preview": "astro preview",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
@@ -25,6 +26,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.30.0",
+    "@astrojs/check": "^0.9.6",
     "@astrojs/node": "^9.5.1",
     "@google/generative-ai": "^0.21.0",
     "@tailwindcss/vite": "^4.0.0",
@@ -50,6 +52,7 @@
     "@types/uuid": "^10.0.0",
     "@typescript-eslint/eslint-plugin": "^8.0.0",
     "@typescript-eslint/parser": "^8.0.0",
+    "@vitest/browser-playwright": "^4.0.16",
     "@vitest/coverage-v8": "^4.0.16",
     "eslint": "^9.0.0",
     "eslint-config-prettier": "^10.1.8",
@@ -61,9 +64,8 @@
     "prettier": "^3.7.4",
     "prettier-plugin-astro": "^0.14.1",
     "storybook": "^10.1.10",
-    "typescript": "^5.6.0",
-    "vitest": "^4.0.16",
-    "@vitest/browser-playwright": "^4.0.16"
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.16"
   },
   "engines": {
     "node": ">=22.0.0"

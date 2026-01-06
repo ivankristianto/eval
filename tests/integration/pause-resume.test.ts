@@ -1,13 +1,16 @@
 /**
  * Integration test for pause/resume training flow
  * Tests TrainingStateManager and IterativeTrainingLoop pause/resume functionality
+ *
+ * NOTE: This test uses deprecated training modules.
+ * The training-loop and training-state modules have been moved to @lib/training/deprecated/
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import type Database from 'better-sqlite3';
 import { initTestDb, cleanupTestDb } from '../setup';
-import { TrainingStateManager } from '@lib/training/training-state';
-import { IterativeTrainingLoop } from '@lib/training/training-loop';
+import { TrainingStateManager } from '@lib/training/deprecated/training-state';
+import { IterativeTrainingLoop } from '@lib/training/deprecated/training-loop';
 import crypto from 'crypto';
 
 /** Type for training_loop_state database record */
@@ -85,20 +88,19 @@ describe('Pause/Resume Training Integration', () => {
     sessionId = crypto.randomUUID();
 
     db.prepare(
-      `INSERT INTO personas (id, name, description, task_prompt, task_model_id, judge_model_id, prompt_engineer_model_id, status, target_f1_score, max_iterations, current_iteration)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO personas (id, name, description, task_model_id, judge_model_id, prompt_engineer_model_id, status, target_pass_rate, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
       personaId,
       'Test Pause/Resume Persona',
       'Testing pause/resume functionality',
-      'Evaluate code quality',
       taskModelId,
       judgeModelId,
       engineerModelId,
       'training',
       0.8,
-      5,
-      1
+      new Date().toISOString(),
+      new Date().toISOString()
     );
 
     // Create training pairs (at least 10 for meaningful metrics)
@@ -331,14 +333,13 @@ describe('Pause/Resume Training Integration', () => {
     // This is iteration 2, which can pause/resume without human review intervention
     db.prepare(
       `INSERT INTO training_loop_state
-       (session_id, persona_id, current_iteration, total_iterations,
+       (session_id, persona_id, total_iterations,
         status, task_model_id, judge_model_id, prompt_engineer_model_id,
         task_results_evaluated, pause_reason, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
       testSessionId,
       personaId,
-      2,
       5,
       'paused',
       taskModelId,

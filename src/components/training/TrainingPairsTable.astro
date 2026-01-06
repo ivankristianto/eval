@@ -36,14 +36,11 @@ const { pairs, selectable = true, showActions = true, pageSize = 10, personaId }
 
 // Pagination state (will be managed by client-side script)
 const totalPages = Math.max(1, Math.ceil(pairs.length / pageSize));
-
-const truncateText = (text: string, maxLength: number = 100) => {
-  if (text.length <= maxLength) return text;
-  return text.substring(0, maxLength) + '...';
-};
 ---
 
-<div class="card bg-base-100/90 backdrop-blur-sm border border-base-300/50 shadow-lg rounded-xl overflow-hidden">
+<div
+  class="card bg-base-100/90 backdrop-blur-sm border border-base-300/50 shadow-lg rounded-xl overflow-hidden"
+>
   <div class="card-body p-3">
     <!-- Table Header Actions -->
     <div class="flex items-center justify-between px-1 py-2 border-b border-base-300/80">
@@ -88,7 +85,12 @@ const truncateText = (text: string, maxLength: number = 100) => {
           accept=".csv"
           data-action="csv-file-input"
         />
-        <button class="btn btn-sm btn-primary shadow-md hover:shadow-lg transition-all" data-action="evaluate-selected" data-persona-id={personaId} disabled>
+        <button
+          class="btn btn-sm btn-primary shadow-md hover:shadow-lg transition-all"
+          data-action="evaluate-selected"
+          data-persona-id={personaId}
+          disabled
+        >
           <svg
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
@@ -114,9 +116,18 @@ const truncateText = (text: string, maxLength: number = 100) => {
         <thead class="bg-base-200/80">
           <tr>
             {selectable && <th class="w-12" />}
-            <th class="min-w-[200px] max-w-[300px] sticky left-0 z-10 bg-base-200/90 hover:bg-base-300">Input</th>
-            <th class="min-w-[200px] max-w-[300px] sticky left-[12rem] z-10 bg-base-200/90 hover:bg-base-300">Expected Output</th>
-            <th class="min-w-[200px] max-w-[300px] sticky left-[24rem] z-10 bg-base-200/90 hover:bg-base-300">Generated Output</th>
+            <th
+              class="min-w-[200px] max-w-[300px] sticky left-0 z-10 bg-base-200/90 hover:bg-base-300"
+              >Input</th
+            >
+            <th
+              class="min-w-[200px] max-w-[300px] sticky left-[12rem] z-10 bg-base-200/90 hover:bg-base-300"
+              >Expected Output</th
+            >
+            <th
+              class="min-w-[200px] max-w-[300px] sticky left-[24rem] z-10 bg-base-200/90 hover:bg-base-300"
+              >Generated Output</th
+            >
             <th class="w-24 text-center">Human Rating</th>
             <th class="min-w-[150px]">Human Feedback</th>
             <th class="w-24 text-center">Judge Rating</th>
@@ -127,20 +138,18 @@ const truncateText = (text: string, maxLength: number = 100) => {
         <tbody id="training-pairs-body">
           <!-- New editable row (shown by default) -->
           <tr class="new-row bg-primary/10" data-new-row="true">
-            {selectable && <td></td>}
+            {selectable && <td />}
             <td class="sticky left-0 z-10 align-top">
               <textarea
                 class="textarea textarea-xs w-full min-h-[60px] resize-y"
                 placeholder="Enter input..."
-                data-new-field="input"
-              ></textarea>
+                data-new-field="input"></textarea>
             </td>
             <td class="sticky left-[12rem] z-10 align-top">
               <textarea
                 class="textarea textarea-xs w-full min-h-[60px] resize-y"
                 placeholder="Enter expected output..."
-                data-new-field="expected_output"
-              ></textarea>
+                data-new-field="expected_output"></textarea>
             </td>
             <td class="sticky left-[24rem] z-10 align-top">
               <span class="text-sm opacity-50 italic">Auto-generated</span>
@@ -162,19 +171,32 @@ const truncateText = (text: string, maxLength: number = 100) => {
             <td class="align-top">
               <span class="text-sm opacity-50 italic">-</span>
             </td>
-            {showActions && (
-              <td>
-                <button
-                  class="btn btn-ghost btn-xs btn-circle text-success hover:bg-success/20"
-                  data-action="save-new-row"
-                  title="Save new row"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                  </svg>
-                </button>
-              </td>
-            )}
+            {
+              showActions && (
+                <td>
+                  <button
+                    class="btn btn-ghost btn-xs btn-circle text-success hover:bg-success/20"
+                    data-action="save-new-row"
+                    title="Save new row"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke-width="2"
+                      stroke="currentColor"
+                      class="w-4 h-4"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M12 4.5v15m7.5-7.5h-15"
+                      />
+                    </svg>
+                  </button>
+                </td>
+              )
+            }
           </tr>
           {
             pairs.map((pair) => (
@@ -189,18 +211,27 @@ const truncateText = (text: string, maxLength: number = 100) => {
                   </td>
                 )}
                 <td class="sticky left-0 z-10 sticky-col align-top">
-                  <div class="text-sm whitespace-pre-wrap break-words max-h-20 overflow-y-auto" title={pair.input}>
+                  <div
+                    class="text-sm whitespace-pre-wrap break-words max-h-20 overflow-y-auto"
+                    title={pair.input}
+                  >
                     {pair.input}
                   </div>
                 </td>
                 <td class="sticky left-[12rem] z-10 sticky-col align-top">
-                  <div class="text-sm whitespace-pre-wrap break-words max-h-20 overflow-y-auto" title={pair.expected_output}>
+                  <div
+                    class="text-sm whitespace-pre-wrap break-words max-h-20 overflow-y-auto"
+                    title={pair.expected_output}
+                  >
                     {pair.expected_output}
                   </div>
                 </td>
                 <td class="sticky left-[24rem] z-10 sticky-col align-top">
                   {pair.generated_output ? (
-                    <div class="text-sm whitespace-pre-wrap break-words max-h-20 overflow-y-auto" title={pair.generated_output}>
+                    <div
+                      class="text-sm whitespace-pre-wrap break-words max-h-20 overflow-y-auto"
+                      title={pair.generated_output}
+                    >
                       {pair.generated_output}
                     </div>
                   ) : (
@@ -235,7 +266,10 @@ const truncateText = (text: string, maxLength: number = 100) => {
                 </td>
                 <td class="align-top">
                   {pair.human_feedback ? (
-                    <div class="text-sm opacity-70 whitespace-pre-wrap break-words max-h-20 overflow-y-auto" title={pair.human_feedback}>
+                    <div
+                      class="text-sm opacity-70 whitespace-pre-wrap break-words max-h-20 overflow-y-auto"
+                      title={pair.human_feedback}
+                    >
                       {pair.human_feedback}
                     </div>
                   ) : (
@@ -253,7 +287,10 @@ const truncateText = (text: string, maxLength: number = 100) => {
                 </td>
                 <td class="align-top">
                   {pair.judge_feedback ? (
-                    <div class="text-sm opacity-70 whitespace-pre-wrap break-words max-h-20 overflow-y-auto" title={pair.judge_feedback}>
+                    <div
+                      class="text-sm opacity-70 whitespace-pre-wrap break-words max-h-20 overflow-y-auto"
+                      title={pair.judge_feedback}
+                    >
                       {pair.judge_feedback}
                     </div>
                   ) : (
@@ -299,18 +336,28 @@ const truncateText = (text: string, maxLength: number = 100) => {
     <!-- Pagination -->
     <div class="flex items-center justify-between px-2 py-2 border-t border-base-300/80">
       <div class="text-sm text-base-content/60 font-medium">
-        <span id="pagination-info">Showing 1-{Math.min(pageSize, pairs.length)} of {pairs.length} pairs</span>
+        <span id="pagination-info"
+          >Showing 1-{Math.min(pageSize, pairs.length)} of {pairs.length} pairs</span
+        >
       </div>
       <div class="join">
         <button class="join-item btn btn-xs btn-ghost" data-action="prev-page" disabled>«</button>
         <button class="join-item btn btn-xs btn-active" data-page="1">1</button>
-        {totalPages > 1 && (
-          <button class="join-item btn btn-xs btn-ghost" data-page="2">2</button>
-        )}
+        {
+          totalPages > 1 && (
+            <button class="join-item btn btn-xs btn-ghost" data-page="2">
+              2
+            </button>
+          )
+        }
         {totalPages > 2 && <span class="join-item btn btn-xs btn-disabled btn-ghost">...</span>}
-        {totalPages > 2 && (
-          <button class="join-item btn btn-xs btn-ghost" data-page={totalPages}>{totalPages}</button>
-        )}
+        {
+          totalPages > 2 && (
+            <button class="join-item btn btn-xs btn-ghost" data-page={totalPages}>
+              {totalPages}
+            </button>
+          )
+        }
         <button class="join-item btn btn-xs btn-ghost" data-action="next-page" disabled>»</button>
       </div>
     </div>
@@ -365,18 +412,14 @@ const truncateText = (text: string, maxLength: number = 100) => {
   const totalPages = Math.max(1, Math.ceil(totalPairs / pageSize));
 
   // Select all functionality
-  const selectAllCheckbox = document.getElementById('select-all-pairs') as HTMLInputElement;
-  const evaluateSelectedBtn = document.querySelector(
-    '[data-action="evaluate-selected"]'
-  ) as HTMLButtonElement;
+  const selectAllCheckbox = document.getElementById('select-all-pairs');
+  const evaluateSelectedBtn = document.querySelector('[data-action="evaluate-selected"]');
 
   function updateCheckboxes() {
-    const pairCheckboxes = document.querySelectorAll(
-      '.pair-checkbox'
-    ) as NodeListOf<HTMLInputElement>;
+    const pairCheckboxes = document.querySelectorAll('.pair-checkbox');
 
     selectAllCheckbox?.addEventListener('change', (e) => {
-      const isChecked = (e.target as HTMLInputElement).checked;
+      const isChecked = e.target.checked;
       pairCheckboxes.forEach((checkbox) => {
         checkbox.checked = isChecked;
       });
@@ -391,7 +434,7 @@ const truncateText = (text: string, maxLength: number = 100) => {
   }
 
   function updateEvaluateButton() {
-    const pairCheckboxes = document.querySelectorAll('.pair-checkbox') as NodeListOf<HTMLInputElement>;
+    const pairCheckboxes = document.querySelectorAll('.pair-checkbox');
     const selectedCount = Array.from(pairCheckboxes).filter((cb) => cb.checked).length;
     if (evaluateSelectedBtn) {
       evaluateSelectedBtn.disabled = selectedCount === 0;
@@ -418,15 +461,15 @@ const truncateText = (text: string, maxLength: number = 100) => {
     });
 
     // Update prev/next buttons
-    const prevBtn = document.querySelector('[data-action="prev-page"]') as HTMLButtonElement;
-    const nextBtn = document.querySelector('[data-action="next-page"]') as HTMLButtonElement;
+    const prevBtn = document.querySelector('[data-action="prev-page"]');
+    const nextBtn = document.querySelector('[data-action="next-page"]');
     if (prevBtn) prevBtn.disabled = currentPage === 1;
     if (nextBtn) nextBtn.disabled = currentPage === totalPages;
   }
 
   document.querySelectorAll('[data-page]').forEach((btn) => {
     btn.addEventListener('click', (e) => {
-      const target = e.target as HTMLElement;
+      const target = e.target;
       const page = parseInt(target.dataset.page || '1');
       currentPage = page;
       updatePagination();
@@ -439,7 +482,7 @@ const truncateText = (text: string, maxLength: number = 100) => {
     });
   });
 
-  document.querySelector('[data-action="prev-page"]")?.addEventListener('click', () => {
+  document.querySelector('[data-action="prev-page"]')?.addEventListener('click', () => {
     if (currentPage > 1) {
       currentPage--;
       updatePagination();
@@ -458,7 +501,7 @@ const truncateText = (text: string, maxLength: number = 100) => {
   // Human rating buttons
   document.querySelectorAll('[data-action="human-rate"]').forEach((btn) => {
     btn.addEventListener('click', (e) => {
-      const button = e.currentTarget as HTMLElement;
+      const button = e.currentTarget;
       const pairId = button.dataset.pairId;
       const rating = button.dataset.rating;
       console.log(`Human rated pair ${pairId} as ${rating}`);
@@ -481,7 +524,7 @@ const truncateText = (text: string, maxLength: number = 100) => {
   // Add feedback input handler
   document.querySelectorAll('[data-action="add-feedback"]').forEach((input) => {
     input.addEventListener('change', (e) => {
-      const target = e.target as HTMLInputElement;
+      const target = e.target;
       const pairId = target.dataset.pairId;
       const feedback = target.value;
       if (feedback) {
@@ -503,7 +546,7 @@ const truncateText = (text: string, maxLength: number = 100) => {
     });
 
     input.addEventListener('blur', (e) => {
-      const target = e.target as HTMLInputElement;
+      const target = e.target;
       const pairId = target.dataset.pairId;
       const feedback = target.value;
       if (feedback) {
@@ -514,11 +557,11 @@ const truncateText = (text: string, maxLength: number = 100) => {
 
   // Evaluate selected button
   evaluateSelectedBtn?.addEventListener('click', async () => {
-    const pairCheckboxes = document.querySelectorAll('.pair-checkbox') as NodeListOf<HTMLInputElement>;
+    const pairCheckboxes = document.querySelectorAll('.pair-checkbox');
     const selectedIds = Array.from(pairCheckboxes)
       .filter((cb) => cb.checked)
       .map((cb) => cb.dataset.pairId)
-      .filter((id): id is string => id !== undefined);
+      .filter((id) => id !== undefined);
 
     if (selectedIds.length === 0) {
       console.log('No pairs selected');
@@ -566,15 +609,15 @@ const truncateText = (text: string, maxLength: number = 100) => {
       document.dispatchEvent(new CustomEvent('operation-started'));
 
       // Show success notification
-      if ((window as any).toast) {
-        (window as any).toast.success(
+      if (window.toast) {
+        window.toast.success(
           `Evaluated ${result.evaluated_results} pairs successfully! Watching for updates...`
         );
       }
     } catch (error) {
       console.error('Evaluate selected error:', error);
-      if ((window as any).toast) {
-        (window as any).toast.error(
+      if (window.toast) {
+        window.toast.error(
           error instanceof Error ? error.message : 'Failed to evaluate selected pairs'
         );
       }
@@ -585,8 +628,8 @@ const truncateText = (text: string, maxLength: number = 100) => {
   });
 
   // CSV import button
-  const importCsvBtn = document.querySelector('[data-action="import-csv"]') as HTMLLabelElement;
-  const csvFileInput = document.querySelector('[data-action="csv-file-input"]') as HTMLInputElement;
+  const importCsvBtn = document.querySelector('[data-action="import-csv"]');
+  const csvFileInput = document.querySelector('[data-action="csv-file-input"]');
 
   importCsvBtn?.addEventListener('click', () => {
     console.log('Import CSV clicked');
@@ -596,7 +639,7 @@ const truncateText = (text: string, maxLength: number = 100) => {
   });
 
   csvFileInput?.addEventListener('change', (e) => {
-    const target = e.target as HTMLInputElement;
+    const target = e.target;
     const file = target.files?.[0];
     if (file) {
       console.log('CSV file selected:', file.name);
@@ -614,11 +657,11 @@ const truncateText = (text: string, maxLength: number = 100) => {
   // Save new row button
   document.querySelectorAll('[data-action="save-new-row"]').forEach((btn) => {
     btn.addEventListener('click', (e) => {
-      const button = e.currentTarget as HTMLElement;
-      const row = button.closest('[data-new-row]') as HTMLElement;
-      const input = row.querySelector('[data-new-field="input"]') as HTMLTextAreaElement;
-      const expectedOutput = row.querySelector('[data-new-field="expected_output"]') as HTMLTextAreaElement;
-      const feedback = row.querySelector('[data-new-field="feedback"]') as HTMLInputElement;
+      const button = e.currentTarget;
+      const row = button.closest('[data-new-row]');
+      const input = row.querySelector('[data-new-field="input"]');
+      const expectedOutput = row.querySelector('[data-new-field="expected_output"]');
+      const feedback = row.querySelector('[data-new-field="feedback"]');
 
       const inputValue = input?.value?.trim();
       const expectedValue = expectedOutput?.value?.trim();

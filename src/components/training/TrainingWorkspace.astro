@@ -220,7 +220,7 @@ const {
   // Generate outputs action
   document.querySelectorAll('[data-action="generate-outputs"]').forEach((btn) => {
     btn.addEventListener('click', async (e) => {
-      const button = e.currentTarget as HTMLElement;
+      const button = e.currentTarget;
       const personaId = button.dataset.personaId;
 
       // Show loading state
@@ -242,8 +242,8 @@ const {
         }
 
         // Show success notification
-        if ((window as any).toast) {
-          (window as any).toast.success(
+        if (window.toast) {
+          window.toast.success(
             `Generated ${result.processed_pairs} outputs successfully! Watching for updates...`
           );
         }
@@ -252,10 +252,8 @@ const {
         document.dispatchEvent(new CustomEvent('operation-started'));
       } catch (error) {
         console.error('Generate outputs error:', error);
-        if ((window as any).toast) {
-          (window as any).toast.error(
-            error instanceof Error ? error.message : 'Failed to generate outputs'
-          );
+        if (window.toast) {
+          window.toast.error(error instanceof Error ? error.message : 'Failed to generate outputs');
         }
       } finally {
         button.classList.remove('loading');
@@ -268,7 +266,7 @@ const {
   // Generate judge decision action
   document.querySelectorAll('[data-action="generate-judge"]').forEach((btn) => {
     btn.addEventListener('click', async (e) => {
-      const button = e.currentTarget as HTMLElement;
+      const button = e.currentTarget;
       const personaId = button.dataset.personaId;
 
       // Show loading state
@@ -290,8 +288,8 @@ const {
         }
 
         // Show success notification
-        if ((window as any).toast) {
-          (window as any).toast.success(
+        if (window.toast) {
+          window.toast.success(
             `Evaluated ${result.evaluated_results} results with judge! Watching for updates...`
           );
         }
@@ -300,8 +298,8 @@ const {
         document.dispatchEvent(new CustomEvent('operation-started'));
       } catch (error) {
         console.error('Generate judge error:', error);
-        if ((window as any).toast) {
-          (window as any).toast.error(
+        if (window.toast) {
+          window.toast.error(
             error instanceof Error ? error.message : 'Failed to generate judge decisions'
           );
         }
@@ -316,7 +314,7 @@ const {
   // Evaluate all action (generate outputs + judge decisions)
   document.querySelectorAll('[data-action="evaluate-all"]').forEach((btn) => {
     btn.addEventListener('click', async (e) => {
-      const button = e.currentTarget as HTMLElement;
+      const button = e.currentTarget;
       const personaId = button.dataset.personaId;
 
       // Show loading state
@@ -338,8 +336,8 @@ const {
           throw new Error(generateResult.message || 'Failed to generate outputs');
         }
 
-        if ((window as any).toast) {
-          (window as any).toast.info(
+        if (window.toast) {
+          window.toast.info(
             `Generated ${generateResult.processed_pairs} outputs. Now evaluating with judge...`
           );
         }
@@ -358,8 +356,8 @@ const {
         }
 
         // Show success notification
-        if ((window as any).toast) {
-          (window as any).toast.success(
+        if (window.toast) {
+          window.toast.success(
             `Evaluation complete! Processed ${judgeResult.evaluated_results} results. Watching for updates...`
           );
         }
@@ -368,10 +366,8 @@ const {
         document.dispatchEvent(new CustomEvent('operation-started'));
       } catch (error) {
         console.error('Evaluate all error:', error);
-        if ((window as any).toast) {
-          (window as any).toast.error(
-            error instanceof Error ? error.message : 'Failed to evaluate all'
-          );
+        if (window.toast) {
+          window.toast.error(error instanceof Error ? error.message : 'Failed to evaluate all');
         }
       } finally {
         button.classList.remove('loading');
@@ -383,8 +379,7 @@ const {
 
   // Handle prompt optimization events from PromptEditor
   document.addEventListener('prompt-optimize', async (e: Event) => {
-    const customEvent = e as CustomEvent;
-    const { type, currentText } = customEvent.detail;
+    const { type, currentText } = e.detail;
 
     try {
       const response = await fetch('/api/prompts/optimize', {
@@ -415,31 +410,29 @@ const {
         if (suggestedCodeEl) suggestedCodeEl.textContent = result.suggested_prompt;
 
         // Show the modal
-        const modalCheckbox = document.getElementById(modalId) as HTMLInputElement;
+        const modalCheckbox = document.getElementById(modalId);
         if (modalCheckbox) modalCheckbox.checked = true;
       }
 
-      if ((window as any).toast) {
-        (window as any).toast.success('Optimization suggestion ready!');
+      if (window.toast) {
+        window.toast.success('Optimization suggestion ready!');
       }
     } catch (error) {
       console.error('Optimize prompt error:', error);
-      if ((window as any).toast) {
-        (window as any).toast.error(
-          error instanceof Error ? error.message : 'Failed to optimize prompt'
-        );
+      if (window.toast) {
+        window.toast.error(error instanceof Error ? error.message : 'Failed to optimize prompt');
       }
     }
   });
 
   // Real-time polling for training pairs updates
-  let pollingInterval: ReturnType<typeof setInterval> | null = null;
+  let pollingInterval = null;
   let isPolling = false;
 
   /**
    * Start polling for training pairs updates
    */
-  function startPolling(personaId: string) {
+  function startPolling(personaId) {
     if (isPolling) return;
 
     isPolling = true;
@@ -465,8 +458,8 @@ const {
 
         if (allHaveResults) {
           stopPolling();
-          if ((window as any).toast) {
-            (window as any).toast.success('All results updated!');
+          if (window.toast) {
+            window.toast.success('All results updated!');
           }
         }
       } catch (error) {
@@ -490,18 +483,7 @@ const {
   /**
    * Update the training pairs table with new data
    */
-  function updateTrainingPairsTable(
-    pairs: Array<{
-      id: string;
-      input: string;
-      expected_output: string;
-      generated_output?: string;
-      judge_rating?: string;
-      judge_feedback?: string;
-      human_rating?: string;
-      human_feedback?: string;
-    }>
-  ) {
+  function updateTrainingPairsTable(pairs) {
     const tbody = document.querySelector('#training-pairs-body');
     if (!tbody) return;
 
@@ -510,7 +492,7 @@ const {
 
     // Update each row with new data
     pairs.forEach((pair, index) => {
-      const row = existingRows[index] as HTMLElement;
+      const row = existingRows[index];
       if (!row) return;
 
       // Update generated output column
@@ -544,6 +526,55 @@ const {
       }
     });
   }
+
+  // Handle new row save event from TrainingPairsTable
+  document.addEventListener('new-row-save', async (e: Event) => {
+    const { input, expected_output } = e.detail;
+
+    // Get persona ID from the page
+    const personaIdElement = document.querySelector('[data-persona-id]');
+    const personaId = personaIdElement?.dataset.personaId;
+
+    if (!personaId) {
+      console.error('No persona_id found on page');
+      if (window.toast) {
+        window.toast.error('Failed to save training pair: Missing persona ID');
+      }
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/personas/${personaId}/training/pairs`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ input, expected_output }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || 'Failed to create training pair');
+      }
+
+      // Show success notification
+      if (window.toast) {
+        window.toast.success('Training pair created successfully!');
+      }
+
+      // Start polling for real-time updates
+      document.dispatchEvent(new CustomEvent('operation-started'));
+
+      // Optionally reload the page after a short delay to show the new row
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    } catch (error) {
+      console.error('Save training pair error:', error);
+      if (window.toast) {
+        window.toast.error(error instanceof Error ? error.message : 'Failed to save training pair');
+      }
+    }
+  });
 
   // Start polling when generate/evaluate actions are triggered
   // We'll trigger polling after successful API calls

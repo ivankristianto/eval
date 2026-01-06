@@ -34,13 +34,18 @@ import {
 /**
  * Helper function to create a test persona with the current schema
  */
-function createTestPersona(db: Database): { id: string } {
+function createTestPersona(
+  db: Database,
+  overrides?: { name?: string; description?: string }
+): { id: string } {
   const taskModelId = createTestModelConfig(db, 'openai');
   const judgeModelId = createTestModelConfig(db, 'anthropic');
   const promptEngineerModelId = createTestModelConfig(db, 'google');
 
   const id = uuidv4();
   const now = new Date().toISOString();
+  const name = overrides?.name || `Test Persona ${id.slice(0, 8)}`;
+  const description = overrides?.description || 'Test description';
 
   db.prepare(
     `
@@ -50,17 +55,7 @@ function createTestPersona(db: Database): { id: string } {
       status, created_at, updated_at
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `
-  ).run(
-    id,
-    `Test Persona ${id.slice(0, 8)}`,
-    'Test description',
-    taskModelId,
-    judgeModelId,
-    promptEngineerModelId,
-    'draft',
-    now,
-    now
-  );
+  ).run(id, name, description, taskModelId, judgeModelId, promptEngineerModelId, 'draft', now, now);
 
   return { id };
 }
@@ -150,8 +145,6 @@ describe('Version Manager', () => {
       const persona2 = createTestPersona(db, {
         name: 'Second Persona',
         description: 'Another test persona',
-        task_prompt: 'Different task prompt',
-        initial_judge_prompt: 'Different judge prompt',
       });
 
       // Create versions for first persona
@@ -261,8 +254,6 @@ describe('Version Manager', () => {
       const persona2 = createTestPersona(db, {
         name: 'Second Persona',
         description: 'Another test persona',
-        task_prompt: 'Different task prompt',
-        initial_judge_prompt: 'Different judge prompt',
       });
 
       // Create versions for first persona
@@ -728,8 +719,6 @@ describe('Version Manager', () => {
       const persona2 = createTestPersona(db, {
         name: 'Empty Persona',
         description: 'No versions',
-        task_prompt: 'Task prompt',
-        initial_judge_prompt: 'Judge prompt',
       });
 
       const currentTask = getCurrentTaskPromptVersion(persona2.id, db);
@@ -745,8 +734,6 @@ describe('Version Manager', () => {
       const persona2 = createTestPersona(db, {
         name: 'New Persona',
         description: 'No versions yet',
-        task_prompt: 'Task prompt',
-        initial_judge_prompt: 'Judge prompt',
       });
 
       const nextVersion = getNextTaskVersionNumber(persona2.id, db);
@@ -757,8 +744,6 @@ describe('Version Manager', () => {
       const persona2 = createTestPersona(db, {
         name: 'New Persona',
         description: 'No versions yet',
-        task_prompt: 'Task prompt',
-        initial_judge_prompt: 'Judge prompt',
       });
 
       const nextVersion = getNextJudgeVersionNumber(persona2.id, db);

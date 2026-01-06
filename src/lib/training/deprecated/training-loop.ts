@@ -108,6 +108,12 @@ export class IterativeTrainingLoop {
         throw new TrainingStateError(`Persona not found: ${this.personaId}`);
       }
 
+      // Type assertion for deprecated properties that no longer exist in Persona type
+      const personaWithDeprecated = persona as typeof persona & {
+        initial_task_prompt?: string;
+        max_iterations?: number;
+      };
+
       // Create training loop state if doesn't exist
       const existingState = this.db
         .prepare('SELECT * FROM training_loop_state WHERE session_id = ?')
@@ -119,17 +125,16 @@ export class IterativeTrainingLoop {
           .prepare(
             `
             INSERT INTO training_loop_state
-            (session_id, persona_id, current_iteration, total_iterations,
+            (session_id, persona_id, total_iterations,
              status, task_model_id, judge_model_id, prompt_engineer_model_id,
              task_results_evaluated, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           `
           )
           .run(
             this.sessionId,
             this.personaId,
-            0,
-            persona.max_iterations || 5,
+            personaWithDeprecated.max_iterations || 5,
             'in_progress',
             persona.task_model_id,
             persona.judge_model_id,
@@ -153,15 +158,16 @@ export class IterativeTrainingLoop {
         sessionId: this.sessionId,
         personaId: this.personaId,
         startIteration,
-        maxIterations: persona.max_iterations,
+        maxIterations: personaWithDeprecated.max_iterations || 5,
       });
 
       // Run training loop with iteration 1 special handling
       let converged = false;
       let awaitingHumanReview = false;
+      const maxIterations = personaWithDeprecated.max_iterations || 5;
       for (
         let iterationNumber = startIteration;
-        iterationNumber <= persona.max_iterations && !this.isStopped && !this.isPaused;
+        iterationNumber <= maxIterations && !this.isStopped && !this.isPaused;
         iterationNumber++
       ) {
         logger.logIterationStart(this.personaId, iterationNumber);
@@ -231,7 +237,7 @@ export class IterativeTrainingLoop {
         }
 
         // Refine prompts for next iteration (if not converged and not at max)
-        if (iterationNumber < persona.max_iterations) {
+        if (iterationNumber < (persona as any).max_iterations) {
           await this.refinePrompts(result.iterationId);
         }
       }
@@ -305,7 +311,7 @@ export class IterativeTrainingLoop {
       )
       .get(this.personaId) as { prompt_text: string } | undefined;
 
-    const judgePromptText = judgePrompt?.prompt_text || persona.task_prompt;
+    const judgePromptText = judgePrompt?.prompt_text || (persona as any).initial_task_prompt || '';
 
     // Get current task prompt (from latest version or initial persona prompt)
     const taskPrompt = this.db
@@ -314,7 +320,7 @@ export class IterativeTrainingLoop {
       )
       .get(this.personaId) as { prompt_text: string } | undefined;
 
-    const taskPromptText = taskPrompt?.prompt_text || persona.task_prompt;
+    const taskPromptText = taskPrompt?.prompt_text || (persona as any).initial_task_prompt || '';
 
     this.db
       .prepare(
@@ -337,10 +343,8 @@ export class IterativeTrainingLoop {
         new Date().toISOString()
       );
 
-    // Update persona current iteration
-    this.db
-      .prepare('UPDATE personas SET current_iteration = ?, updated_at = ? WHERE id = ?')
-      .run(iterationNumber, new Date().toISOString(), this.personaId);
+    // Note: current_iteration removed from personas table
+    // Training loop state now tracks iteration number
 
     // Generate judge decisions for all training pairs
     await this.generateJudgeDecisions(iterationId);
@@ -393,7 +397,7 @@ export class IterativeTrainingLoop {
       .run('completed', new Date().toISOString(), iterationId);
 
     // Check convergence
-    const converged = metrics.f1_score >= persona.target_f1_score;
+    const converged = metrics.f1_score >= persona.target_pass_rate;
 
     // Store prompt versions for this iteration (both task and judge prompts)
     this.storeTaskPromptVersion(iterationNumber, taskPromptText, 'ai', metrics);
@@ -458,7 +462,7 @@ export class IterativeTrainingLoop {
         taskModelOutput = await this.callTaskModel(
           persona.task_model_id,
           pair.input,
-          persona.task_prompt
+          (persona as any).initial_task_prompt || ''
         );
 
         // Step 2: Call judge model to evaluate the output
@@ -566,9 +570,9 @@ export class IterativeTrainingLoop {
   private async callTaskModel(
     taskModelId: string,
     input: string,
-    taskPrompt: string
+    _taskPrompt: string
   ): Promise<string> {
-    const systemPrompt = buildTaskModelSystemPrompt(taskPrompt);
+    const systemPrompt = buildTaskModelSystemPrompt(_taskPrompt);
     const instruction = buildTaskModelInstruction(input);
 
     try {
@@ -690,8 +694,10 @@ export class IterativeTrainingLoop {
   private async refinePrompts(iterationId: string): Promise<void> {
     // Get persona's prompt engineer model ID and fallback task prompt
     const persona = this.db
-      .prepare('SELECT task_prompt, prompt_engineer_model_id FROM personas WHERE id = ?')
-      .get(this.personaId) as { task_prompt: string; prompt_engineer_model_id: string } | undefined;
+      .prepare('SELECT initial_task_prompt, prompt_engineer_model_id FROM personas WHERE id = ?')
+      .get(this.personaId) as
+      | { initial_task_prompt?: string; prompt_engineer_model_id: string }
+      | undefined;
 
     if (!persona) {
       return;
@@ -737,7 +743,7 @@ export class IterativeTrainingLoop {
       )
       .get(this.personaId, iteration.iteration_number) as { prompt_text: string } | undefined;
 
-    const currentTaskPrompt = taskPromptVersion?.prompt_text || persona.task_prompt;
+    const currentTaskPrompt = taskPromptVersion?.prompt_text || persona.initial_task_prompt || '';
 
     // Build failure context from ground truth comparison
     // This requires fetching judge decisions with expected outputs
@@ -857,7 +863,7 @@ export class IterativeTrainingLoop {
         });
       } else {
         // Keep current task prompt if refinement failed
-        this.storeTaskPromptVersion(nextIterationNumber, persona.task_prompt, 'ai', {
+        this.storeTaskPromptVersion(nextIterationNumber, persona.initial_task_prompt || '', 'ai', {
           f1_score: iteration.f1_score ?? 0,
           precision: iteration.precision ?? 0,
           recall: iteration.recall ?? 0,
@@ -931,7 +937,7 @@ export class IterativeTrainingLoop {
           false_negatives: iteration.false_negatives ?? 0,
         },
       });
-      this.storeTaskPromptVersion(nextIterationNumber, persona.task_prompt, 'ai', {
+      this.storeTaskPromptVersion(nextIterationNumber, persona.initial_task_prompt || '', 'ai', {
         f1_score: iteration.f1_score ?? 0,
         precision: iteration.precision ?? 0,
         recall: iteration.recall ?? 0,
@@ -1227,14 +1233,10 @@ export class IterativeTrainingLoop {
       f1Score: metrics.f1_score,
     });
 
-    // Get persona to check max_iterations
-    const persona = this.db
-      .prepare('SELECT max_iterations FROM personas WHERE id = ?')
-      .get(this.personaId) as { max_iterations: number } | undefined;
-
+    // Note: max_iterations removed from personas table
     logger.info('Continuing training with iterations 2+', {
       personaId: this.personaId,
-      maxIterations: persona?.max_iterations,
+      maxIterations: 5, // Default value
     });
 
     // Continue with iterations 2+
@@ -1421,7 +1423,7 @@ export class IterativeTrainingLoop {
 
       const result = await refineBothPromptsFromHumanFeedback(
         {
-          current_task_prompt: persona.task_prompt,
+          current_task_prompt: (persona as any).initial_task_prompt || '',
           current_judge_prompt: iteration.judge_prompt_text,
           human_disagreements: humanDisagreements,
           metrics,
@@ -1474,7 +1476,7 @@ export class IterativeTrainingLoop {
         iterationId,
       });
       // Fallback: keep current prompts for iteration 2
-      this.storeTaskPromptVersion(2, persona.task_prompt, 'ai', metrics);
+      this.storeTaskPromptVersion(2, (persona as any).initial_task_prompt || '', 'ai', metrics);
       this.storeJudgePromptVersion(2, iteration.judge_prompt_text, 'ai', metrics);
     }
   }

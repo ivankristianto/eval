@@ -3,10 +3,7 @@
 
 import type { APIRoute } from 'astro';
 import { getDatabase } from '@lib/db';
-import {
-  getLatestMetrics,
-  getMetricsHistory,
-} from '@lib/training/metrics-calculator';
+import { getLatestMetrics, getMetricsHistory } from '@lib/training/metrics-calculator';
 import { badRequest, notFound, createErrorResponse } from '@lib/api-error-handler';
 import { createLogger } from '@lib/logger';
 
@@ -57,7 +54,12 @@ export const GET: APIRoute = async ({ url }) => {
     // Verify persona exists
     const persona = db.prepare('SELECT id, name FROM personas WHERE id = ?').get(personaId);
     if (!persona) {
-      logger.logApiRequest('GET', `/api/metrics?persona_id=${personaId}`, 404, Date.now() - startTime);
+      logger.logApiRequest(
+        'GET',
+        `/api/metrics?persona_id=${personaId}`,
+        404,
+        Date.now() - startTime
+      );
       return notFound('Persona');
     }
 
@@ -65,7 +67,12 @@ export const GET: APIRoute = async ({ url }) => {
     if (history) {
       const metricsHistory = getMetricsHistory(personaId, db);
 
-      logger.logApiRequest('GET', `/api/metrics?persona_id=${personaId}&history=true`, 200, Date.now() - startTime);
+      logger.logApiRequest(
+        'GET',
+        `/api/metrics?persona_id=${personaId}&history=true`,
+        200,
+        Date.now() - startTime
+      );
 
       return new Response(
         JSON.stringify({
@@ -86,7 +93,12 @@ export const GET: APIRoute = async ({ url }) => {
         .get(runId, personaId);
 
       if (!run) {
-        logger.logApiRequest('GET', `/api/metrics?persona_id=${personaId}&run_id=${runId}`, 404, Date.now() - startTime);
+        logger.logApiRequest(
+          'GET',
+          `/api/metrics?persona_id=${personaId}&run_id=${runId}`,
+          404,
+          Date.now() - startTime
+        );
         return notFound('Evaluation run');
       }
 
@@ -94,7 +106,12 @@ export const GET: APIRoute = async ({ url }) => {
         m.calculateRunMetrics(runId, db)
       );
 
-      logger.logApiRequest('GET', `/api/metrics?persona_id=${personaId}&run_id=${runId}`, 200, Date.now() - startTime);
+      logger.logApiRequest(
+        'GET',
+        `/api/metrics?persona_id=${personaId}&run_id=${runId}`,
+        200,
+        Date.now() - startTime
+      );
 
       return new Response(JSON.stringify(runMetrics), {
         status: 200,
@@ -115,7 +132,12 @@ export const GET: APIRoute = async ({ url }) => {
         fail_percentage: 0,
       };
 
-      logger.logApiRequest('GET', `/api/metrics?persona_id=${personaId}`, 200, Date.now() - startTime);
+      logger.logApiRequest(
+        'GET',
+        `/api/metrics?persona_id=${personaId}`,
+        200,
+        Date.now() - startTime
+      );
 
       return new Response(JSON.stringify(emptyMetrics), {
         status: 200,
@@ -123,7 +145,12 @@ export const GET: APIRoute = async ({ url }) => {
       });
     }
 
-    logger.logApiRequest('GET', `/api/metrics?persona_id=${personaId}`, 200, Date.now() - startTime);
+    logger.logApiRequest(
+      'GET',
+      `/api/metrics?persona_id=${personaId}`,
+      200,
+      Date.now() - startTime
+    );
 
     return new Response(JSON.stringify(latestMetrics), {
       status: 200,

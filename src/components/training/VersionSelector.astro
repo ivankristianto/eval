@@ -34,10 +34,6 @@ const getCreatedByIcon = (createdBy: 'human' | 'ai') => {
   return createdBy === 'ai' ? '✦' : '●';
 };
 
-const getCreatedByColor = (createdBy: 'human' | 'ai') => {
-  return createdBy === 'ai' ? 'text-info' : 'text-warning';
-};
-
 const formatDate = (dateStr: string) => {
   return new Date(dateStr).toLocaleDateString('en-US', {
     month: 'short',
