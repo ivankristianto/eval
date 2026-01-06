@@ -136,7 +136,7 @@ Latest coverage (vitest `npm test -- --coverage`):
 
 ## Development Workflow
 
-**ALWAYS FOLLOW THIS COLLABORATION WORKFLOW**
+**ALWAYS FOLLOW THIS IMPLEMENTATION WORKFLOW**
 
 ### Single Task Workflow
 

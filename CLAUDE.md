@@ -53,6 +53,37 @@ npx playwright test --grep "specific test name"
 npx playwright test --debug  # Debug mode
 ```
 
+## Development Workflow
+
+**ALWAYS FOLLOW THIS WORKFLOW**
+
+### Single Task Workflow
+
+1. Run `bd ready` to find available work
+2. Create feature branch: `git checkout -b feature/<name>`
+3. Make changes
+4. Run quality gates: `npm run typecheck && npm run lint && npm run format:fix`
+5. Commit and push
+6. Create PR for review follow the GitHub Pull Request Template
+7. Run code-review-specialist agent for PR review, Agent comments on PR (review only, no changes)
+8. After merge, close the issue with `bd close <id>`
+
+### Group Task Workflow
+
+For multiple related tasks (see AGENTS.md for full details):
+
+1. Group tasks by domain or per user instruction
+2. Create feature branch: `git checkout -b feature/<name>`
+3. For each task:
+   - Implement
+   - Run quality gates (typecheck, lint, format): `npm run typecheck && npm run lint && npm run format:fix`
+   - Commit and push
+4. Continue until all tasks complete
+5. Create PR with descriptive title and summary, follow the GitHub Pull Request Template
+6. Run code-review-specialist agent for PR review, Agent comments on PR (review only, no changes)
+7. Report completion summary to user.
+8. After merge, close the issue with `bd close <id>`
+
 ## Architecture Overview
 
 ### Request Flow: Evaluation
