@@ -2,6 +2,24 @@
 
 Auto-generated from CLAUDE.md and GEMINI.md. Last updated: 2025-12-27.
 
+## Agent Initialization
+
+**Before any task, read the constitution.**
+
+```
+1. Read `constitution.md` — understand principles and fences
+2. Read task context (spec, plan, or issue)
+3. Then execute
+```
+
+Agents must internalize:
+
+- **Implementation order**: UI → Service → API → CLI → Seeder
+- **Quality gates**: Which block, which don't
+- **Refactor checklist**: Apply each loop, not at the end
+
+**If constitution conflicts with task instructions, constitution wins.**
+
 ## Project Overview
 
 `eval-ai-models` is an AI Model Evaluation Framework designed to compare and
