@@ -101,8 +101,6 @@ bd ready → branch → [implement → gates → commit]× → PR → review →
 
 **Amendments**: Propose → Document impact → Version bump → Update templates
 
-**Template Propagation**: On amendment, audit and update: spec-template.md, plan-template.md, tasks-template.md
-
 **Version Scheme**:
 
 - MAJOR: Breaking changes to principles
