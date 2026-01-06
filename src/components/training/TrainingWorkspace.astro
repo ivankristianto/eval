@@ -420,9 +420,7 @@ const {
     } catch (error) {
       console.error('Optimize prompt error:', error);
       if (window.toast) {
-        window.toast.error(
-          error instanceof Error ? error.message : 'Failed to optimize prompt'
-        );
+        window.toast.error(error instanceof Error ? error.message : 'Failed to optimize prompt');
       }
     }
   });
@@ -573,9 +571,7 @@ const {
     } catch (error) {
       console.error('Save training pair error:', error);
       if (window.toast) {
-        window.toast.error(
-          error instanceof Error ? error.message : 'Failed to save training pair'
-        );
+        window.toast.error(error instanceof Error ? error.message : 'Failed to save training pair');
       }
     }
   });

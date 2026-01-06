@@ -51,9 +51,7 @@ export const POST: APIRoute = async ({ request }) => {
     const db = getDatabase();
 
     // Verify result exists
-    const result = db
-      .prepare('SELECT * FROM training_pair_results WHERE id = ?')
-      .get(result_id) as
+    const result = db.prepare('SELECT * FROM training_pair_results WHERE id = ?').get(result_id) as
       | {
           id: string;
           persona_id: string;
@@ -77,7 +75,9 @@ export const POST: APIRoute = async ({ request }) => {
     ).run(human_rating, human_feedback ?? null, updated_at, result_id);
 
     // Get updated result
-    const updatedResult = db.prepare('SELECT * FROM training_pair_results WHERE id = ?').get(result_id);
+    const updatedResult = db
+      .prepare('SELECT * FROM training_pair_results WHERE id = ?')
+      .get(result_id);
 
     logger.logApiRequest('POST', '/api/feedback', 200, Date.now() - startTime);
 
@@ -150,7 +150,10 @@ export const PUT: APIRoute = async ({ request }) => {
 
       if (!item.human_rating || (item.human_rating !== 'pass' && item.human_rating !== 'fail')) {
         logger.logApiRequest('PUT', '/api/feedback', 400, Date.now() - startTime);
-        return badRequest('Each feedback item must have human_rating as "pass" or "fail"', 'INVALID_REQUEST');
+        return badRequest(
+          'Each feedback item must have human_rating as "pass" or "fail"',
+          'INVALID_REQUEST'
+        );
       }
     }
 
@@ -179,7 +182,9 @@ export const PUT: APIRoute = async ({ request }) => {
          WHERE id = ?`
       ).run(item.human_rating, item.human_feedback ?? null, updated_at, item.result_id);
 
-      const updatedResult = db.prepare('SELECT * FROM training_pair_results WHERE id = ?').get(item.result_id);
+      const updatedResult = db
+        .prepare('SELECT * FROM training_pair_results WHERE id = ?')
+        .get(item.result_id);
       updatedResults.push(updatedResult);
     }
 

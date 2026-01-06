@@ -59,7 +59,9 @@ export const POST: APIRoute = async ({ request }) => {
     // Verify persona exists and has prompt_engineer_model_id
     const persona = db
       .prepare('SELECT id, name, prompt_engineer_model_id FROM personas WHERE id = ?')
-      .get(persona_id) as { id: string; name: string; prompt_engineer_model_id: string } | undefined;
+      .get(persona_id) as
+      | { id: string; name: string; prompt_engineer_model_id: string }
+      | undefined;
 
     if (!persona) {
       logger.logApiRequest('POST', '/api/prompts/optimize-judge', 404, Date.now() - startTime);
@@ -68,14 +70,20 @@ export const POST: APIRoute = async ({ request }) => {
 
     if (!persona.prompt_engineer_model_id) {
       logger.logApiRequest('POST', '/api/prompts/optimize-judge', 400, Date.now() - startTime);
-      return badRequest('Persona does not have a prompt_engineer_model_id configured', 'NO_PROMPT_ENGINEER');
+      return badRequest(
+        'Persona does not have a prompt_engineer_model_id configured',
+        'NO_PROMPT_ENGINEER'
+      );
     }
 
     // Verify persona has current judge prompt
     const currentVersion = getCurrentJudgePromptVersion(persona_id, db);
     if (!currentVersion) {
       logger.logApiRequest('POST', '/api/prompts/optimize-judge', 400, Date.now() - startTime);
-      return badRequest('Persona does not have a current judge prompt version', 'NO_CURRENT_PROMPT');
+      return badRequest(
+        'Persona does not have a current judge prompt version',
+        'NO_CURRENT_PROMPT'
+      );
     }
 
     // Run prompt optimization

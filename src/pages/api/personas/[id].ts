@@ -113,9 +113,12 @@ export const PATCH: APIRoute = async ({ params, request }) => {
     if (body.description !== undefined) updates.description = body.description;
     if (body.status !== undefined) updates.status = body.status;
     if (body.best_pass_rate !== undefined) updates.best_pass_rate = body.best_pass_rate;
-    if (body.best_pass_rate_updated_at !== undefined) updates.best_pass_rate_updated_at = body.best_pass_rate_updated_at;
-    if (body.current_task_prompt_version_id !== undefined) updates.current_task_prompt_version_id = body.current_task_prompt_version_id;
-    if (body.current_judge_prompt_version_id !== undefined) updates.current_judge_prompt_version_id = body.current_judge_prompt_version_id;
+    if (body.best_pass_rate_updated_at !== undefined)
+      updates.best_pass_rate_updated_at = body.best_pass_rate_updated_at;
+    if (body.current_task_prompt_version_id !== undefined)
+      updates.current_task_prompt_version_id = body.current_task_prompt_version_id;
+    if (body.current_judge_prompt_version_id !== undefined)
+      updates.current_judge_prompt_version_id = body.current_judge_prompt_version_id;
 
     // updatePersona will validate and throw on error
     const updated = updatePersona(id, updates);

@@ -58,7 +58,8 @@ describe('Human-Driven Prompt Refiner Integration', () => {
     const persona = createTestPersona(db, {
       name: 'Integration Test Persona',
       description: 'Persona for testing human-driven prompt refinement',
-      task_prompt: 'Evaluate customer support responses for accuracy, completeness, and tone',
+      initial_task_prompt:
+        'Evaluate customer support responses for accuracy, completeness, and tone',
       task_model_id: modelTaskId,
       judge_model_id: modelJudgeId,
       prompt_engineer_model_id: modelEngineerId,

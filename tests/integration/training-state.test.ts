@@ -1,6 +1,9 @@
 /**
  * Integration tests for training state manager
  * Tests simulated crash recovery scenarios and state persistence
+ *
+ * NOTE: This test uses the deprecated training-state module.
+ * The module has been moved to @lib/training/deprecated/training-state
  */
 
 import { describe, it, expect, beforeAll, beforeEach, afterAll } from 'vitest';
@@ -11,7 +14,7 @@ import {
   closeTestDatabase,
   createTestPersona,
 } from '../setup';
-import { TrainingStateManager } from '@lib/training/training-state';
+import { TrainingStateManager } from '@lib/training/deprecated/training-state';
 import type { CheckpointData, TrainingLoopState } from '../../src/types/training';
 
 describe('Training State Manager - Integration Tests', () => {

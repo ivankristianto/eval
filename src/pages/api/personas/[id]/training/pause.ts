@@ -211,8 +211,7 @@ export const POST: APIRoute = async ({ params, request }) => {
         )
         .get(id) as { prompt_text: string } | undefined;
 
-      const currentPrompt =
-        judgePrompt?.prompt_text || 'No prompt available';
+      const currentPrompt = judgePrompt?.prompt_text || 'No prompt available';
 
       // Build checkpoint data
       const checkpointData = {

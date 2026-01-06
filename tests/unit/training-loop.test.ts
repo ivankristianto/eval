@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
-import { IterativeTrainingLoop } from '@lib/training/training-loop';
+import { IterativeTrainingLoop } from '@lib/training/deprecated/training-loop';
 import { getTestDatabase, initializeTestDatabase, cleanTestDatabase } from '../setup';
 import { v4 as uuidv4 } from 'uuid';
 

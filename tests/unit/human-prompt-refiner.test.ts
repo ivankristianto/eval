@@ -77,7 +77,7 @@ describe('Human-Driven Prompt Refiner', () => {
     const persona = createTestPersona(db, {
       name: 'Test Human Refiner Persona',
       description: 'Test description for human refiner',
-      task_prompt: 'Evaluate customer support quality',
+      initial_task_prompt: 'Evaluate customer support quality',
       task_model_id: modelTaskId,
       judge_model_id: modelJudgeId,
       prompt_engineer_model_id: modelEngineerId,

@@ -58,7 +58,7 @@ describe('Prompt Version Manager', () => {
     const persona = createTestPersona(db, {
       name: 'Test Persona for Prompt Version Manager',
       description: 'Test description',
-      task_prompt: 'Evaluate customer support',
+      initial_task_prompt: 'Evaluate customer support',
       initial_judge_prompt: 'Initial judge prompt for testing',
     });
     personaId = persona.id;

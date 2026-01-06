@@ -60,7 +60,7 @@ describe.skip('Prompt Refinement API Integration', () => {
     const persona = createTestPersona(db, {
       name: 'Test Persona',
       description: 'Customer support evaluation',
-      task_prompt: 'Evaluate customer support quality',
+      initial_task_prompt: 'Evaluate customer support quality',
       task_model_id: modelTaskId,
       judge_model_id: modelJudgeId,
       prompt_engineer_model_id: modelEngineerId,

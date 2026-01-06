@@ -5,12 +5,7 @@
  */
 interface Props {
   personaId: string;
-  activeTab:
-    | 'overview'
-    | 'workspace'
-    | 'task-prompts'
-    | 'judge-prompts'
-    | 'settings';
+  activeTab: 'overview' | 'workspace' | 'task-prompts' | 'judge-prompts' | 'settings';
 }
 
 const { personaId, activeTab } = Astro.props;

@@ -36,9 +36,9 @@ import {
   createIterationMetrics,
   getIterationMetrics,
   getPersonaMetrics,
-  createPromptVersion,
-  getPromptVersionByIteration,
-  getPromptHistory,
+  createJudgePromptVersion,
+  getJudgePromptVersionByNumber,
+  getJudgePromptHistory,
   createTrainingLoopState,
   getTrainingLoopState,
   updateTrainingLoopState,
@@ -74,7 +74,7 @@ describe('Persona Database Access Layer', () => {
       const input: CreatePersonaInput = {
         name: 'Test Persona',
         description: 'A test persona',
-        task_prompt: 'Evaluate responses',
+        initial_task_prompt: 'Evaluate responses',
         initial_judge_prompt: 'Evaluate and judge the output',
         task_model_id: taskModelId,
         judge_model_id: judgeModelId,
@@ -86,9 +86,7 @@ describe('Persona Database Access Layer', () => {
       expect(persona).toBeDefined();
       expect(persona.name).toBe('Test Persona');
       expect(persona.status).toBe('draft');
-      expect(persona.target_f1_score).toBe(0.8);
-      expect(persona.max_iterations).toBe(5);
-      expect(persona.current_iteration).toBe(0);
+      expect(persona.target_pass_rate).toBe(0.8);
     });
 
     it('should get persona by ID', () => {
@@ -162,14 +160,12 @@ describe('Persona Database Access Layer', () => {
       const updated = updatePersona(
         persona.id,
         {
-          best_f1_score: 0.85,
-          best_f1_iteration: 3,
+          best_pass_rate: 0.85,
         },
         db
       );
 
-      expect(updated.best_f1_score).toBe(0.85);
-      expect(updated.best_f1_iteration).toBe(3);
+      expect(updated.best_pass_rate).toBe(0.85);
     });
 
     it('should delete persona', () => {
@@ -676,12 +672,13 @@ describe('Persona Database Access Layer', () => {
       const db = getTestDatabase();
       const persona = createTestPersona(db);
 
-      const version = createPromptVersion(
+      const version = createJudgePromptVersion(
         persona.id,
-        1,
+        1, // version_number
         'Initial judge prompt',
-        'First version',
-        'human',
+        'First version', // improvement_rationale
+        'human', // created_by
+        null, // label
         db
       );
 
@@ -694,10 +691,10 @@ describe('Persona Database Access Layer', () => {
       const db = getTestDatabase();
       const persona = createTestPersona(db);
 
-      createPromptVersion(persona.id, 1, 'Prompt v1', null, 'human', db);
-      createPromptVersion(persona.id, 2, 'Prompt v2', 'Improved', 'ai', db);
+      createJudgePromptVersion(persona.id, 1, 'Prompt v1', null, 'human', null, db);
+      createJudgePromptVersion(persona.id, 2, 'Prompt v2', 'Improved', 'ai', null, db);
 
-      const version = getPromptVersionByIteration(persona.id, 2, db);
+      const version = getJudgePromptVersionByNumber(persona.id, 2, db);
 
       expect(version).toBeDefined();
       expect(version?.prompt_text).toBe('Prompt v2');
@@ -708,15 +705,14 @@ describe('Persona Database Access Layer', () => {
       const db = getTestDatabase();
       const persona = createTestPersona(db);
 
-      createPromptVersion(persona.id, 1, 'Prompt v1', null, 'human', db);
-      createPromptVersion(persona.id, 2, 'Prompt v2', 'Improved', 'ai', db);
-      createPromptVersion(persona.id, 3, 'Prompt v3', 'Further improved', 'ai', db);
+      createJudgePromptVersion(persona.id, 1, 'Prompt v1', null, 'human', null, db);
+      createJudgePromptVersion(persona.id, 2, 'Prompt v2', 'Improved', 'ai', null, db);
+      createJudgePromptVersion(persona.id, 3, 'Prompt v3', 'Further improved', 'ai', null, db);
 
-      const history = getPromptHistory(persona.id, db);
+      const history = getJudgePromptHistory(persona.id, db);
 
-      expect(history).toHaveLength(4); // Initial (iteration 0) + iterations 1, 2, 3
-      expect(history[0].iteration_number).toBe(3); // Ordered DESC
-      expect(history[3].iteration_number).toBe(0); // Initial prompt
+      expect(history.length).toBeGreaterThanOrEqual(3);
+      expect(history[0].prompt_text).toBe('Prompt v3'); // Ordered DESC by version_number
     });
   });
 

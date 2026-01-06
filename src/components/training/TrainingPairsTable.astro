@@ -36,11 +36,6 @@ const { pairs, selectable = true, showActions = true, pageSize = 10, personaId }
 
 // Pagination state (will be managed by client-side script)
 const totalPages = Math.max(1, Math.ceil(pairs.length / pageSize));
-
-const truncateText = (text: string, maxLength: number = 100) => {
-  if (text.length <= maxLength) return text;
-  return text.substring(0, maxLength) + '...';
-};
 ---
 
 <div

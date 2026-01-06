@@ -118,37 +118,33 @@ export function createTestPersona(
   const input: CreatePersonaInput = {
     name: `Test Persona ${id.slice(0, 8)}`,
     description: 'Test persona for automated tests',
-    task_prompt: 'Evaluate customer support responses',
+    initial_task_prompt: 'Evaluate customer support responses',
     initial_judge_prompt: 'Judge the quality of the response',
     task_model_id: taskModelId,
     judge_model_id: judgeModelId,
     prompt_engineer_model_id: promptEngineerModelId,
-    target_f1_score: 0.8,
-    max_iterations: 5,
+    target_pass_rate: 0.8,
     ...overrides,
   };
 
   const stmt = db.prepare(`
     INSERT INTO personas (
-      id, name, description, task_prompt,
+      id, name, description,
       task_model_id, judge_model_id, prompt_engineer_model_id,
-      status, target_f1_score, max_iterations, current_iteration,
+      status, target_pass_rate,
       created_at, updated_at, created_by
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   stmt.run(
     id,
     input.name,
     input.description || null,
-    input.task_prompt,
     input.task_model_id,
     input.judge_model_id,
     input.prompt_engineer_model_id,
     'draft',
-    input.target_f1_score || 0.8,
-    input.max_iterations || 5,
-    0,
+    input.target_pass_rate || 0.8,
     now,
     now,
     input.created_by || null

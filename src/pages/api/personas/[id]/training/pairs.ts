@@ -145,7 +145,9 @@ export const POST: APIRoute = async ({ params, request }) => {
     }
 
     // Create training pair
-    const pairs = createTrainingPairs(id, [{ input: input.trim(), expected_output: expected_output.trim() }]);
+    const pairs = createTrainingPairs(id, [
+      { input: input.trim(), expected_output: expected_output.trim() },
+    ]);
 
     // Get the newly created pair (it should be the last one since we're sorting by created_at)
     const pair = pairs[pairs.length - 1];

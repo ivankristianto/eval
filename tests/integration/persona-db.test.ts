@@ -27,8 +27,10 @@ import {
   getIterationReviews,
   createIterationMetrics,
   getIterationMetrics,
-  createPromptVersion,
-  getPromptHistory,
+  createTaskPromptVersion,
+  getTaskPromptHistory,
+  createJudgePromptVersion,
+  getJudgePromptHistory,
   createTrainingLoopState,
   getTrainingLoopState,
   createCheckpoint,
@@ -68,7 +70,7 @@ describe('Persona Database Integration Tests', () => {
 
           const input: CreatePersonaInput = {
             name: 'Test Persona',
-            task_prompt: 'Test prompt',
+            initial_task_prompt: 'Test prompt',
             initial_judge_prompt: 'Evaluate the output',
             task_model_id: taskModelId,
             judge_model_id: judgeModelId,
@@ -86,14 +88,12 @@ describe('Persona Database Integration Tests', () => {
           stmt.run(
             'test-id',
             input.name,
-            input.task_prompt,
+            input.initial_task_prompt,
             input.task_model_id,
             input.judge_model_id,
             input.prompt_engineer_model_id,
             'draft',
             0.8,
-            5,
-            0,
             new Date().toISOString(),
             new Date().toISOString()
           );
@@ -102,14 +102,12 @@ describe('Persona Database Integration Tests', () => {
           stmt.run(
             'test-id', // Same ID - should violate PRIMARY KEY constraint
             'Another Persona',
-            input.task_prompt,
+            input.initial_task_prompt,
             input.task_model_id,
             input.judge_model_id,
             input.prompt_engineer_model_id,
             'draft',
             0.8,
-            5,
-            0,
             new Date().toISOString(),
             new Date().toISOString()
           );
@@ -364,7 +362,7 @@ describe('Persona Database Integration Tests', () => {
         db
       );
 
-      createPromptVersion(persona.id, 1, 'Prompt v1', 'Initial', 'human', db);
+      createJudgePromptVersion(persona.id, 1, 'Prompt v1', 'Initial', 'human', null, db);
 
       // Verify all data exists
       expect(getTrainingPairs(persona.id, db)).toHaveLength(2);
@@ -372,7 +370,7 @@ describe('Persona Database Integration Tests', () => {
       expect(getIterationDecisions(iteration.id, db)).toHaveLength(2);
       expect(getIterationReviews(iteration.id, db)).toHaveLength(2);
       expect(getIterationMetrics(iteration.id, db)).toBeDefined();
-      expect(getPromptHistory(persona.id, db)).toHaveLength(2); // Initial (iteration 0) + iteration 1
+      expect(getJudgePromptHistory(persona.id, db)).toHaveLength(2); // Initial (iteration 0) + iteration 1
 
       // Delete persona
       deletePersona(persona.id, db);
@@ -383,7 +381,7 @@ describe('Persona Database Integration Tests', () => {
       expect(getIterationDecisions(iteration.id, db)).toHaveLength(0);
       expect(getIterationReviews(iteration.id, db)).toHaveLength(0);
       expect(getIterationMetrics(iteration.id, db)).toBeNull();
-      expect(getPromptHistory(persona.id, db)).toHaveLength(0);
+      expect(getJudgePromptHistory(persona.id, db)).toHaveLength(0);
     });
   });
 
@@ -556,12 +554,13 @@ describe('Persona Database Integration Tests', () => {
       expect(metrics.f1_score).toBe(0.75);
 
       // 7. Save prompt version
-      createPromptVersion(
+      createJudgePromptVersion(
         persona.id,
         1,
         'Initial judge prompt',
         'First iteration baseline',
         'human',
+        null,
         db
       );
 
@@ -577,12 +576,13 @@ describe('Persona Database Integration Tests', () => {
       expect(iteration2.iteration_number).toBe(2);
 
       // 9. Save improved prompt version
-      createPromptVersion(
+      createJudgePromptVersion(
         persona.id,
         2,
         'Improved judge prompt based on feedback',
         'Addressed false negatives from iteration 1',
         'ai',
+        null,
         db
       );
 
@@ -590,7 +590,7 @@ describe('Persona Database Integration Tests', () => {
       const allIterations = listIterations(persona.id, db);
       expect(allIterations).toHaveLength(2);
 
-      const promptHistory = getPromptHistory(persona.id, db);
+      const promptHistory = getJudgePromptHistory(persona.id, db);
       expect(promptHistory).toHaveLength(3); // Initial (iteration 0) + iterations 1 and 2
     });
 
@@ -725,8 +725,6 @@ describe('Persona Database Integration Tests', () => {
           promptEngineerModelId,
           'draft',
           0.8,
-          5,
-          0,
           new Date().toISOString(),
           new Date().toISOString()
         );
