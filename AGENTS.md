@@ -77,12 +77,6 @@ Latest coverage (vitest `npm test -- --coverage`):
 - Other coverage: api-clients.ts 64.38%, db.ts 62.62%
 - Constitution Principle II satisfied for critical paths; improve api-clients/db coverage toward targets
 
-## Operating Constraints
-
-**STRICTLY READ-ONLY**: Do **not** modify any files. Output a structured analysis report. Offer an optional remediation plan (user must explicitly approve before any follow-up editing commands would be invoked manually).
-
-**Constitution Authority**: The project constitution (`docs/CONSTITUTION.md`) is **non-negotiable** within this analysis scope. Constitution conflicts are automatically CRITICAL and require adjustment of the spec, plan, or tasks—not dilution, reinterpretation, or silent ignoring of the principle. If a principle itself needs to change, that must occur in a separate, explicit constitution update outside current analysis.
-
 ## Development Conventions
 
 - Type safety: strict TypeScript usage is enforced.
