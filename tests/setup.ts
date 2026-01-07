@@ -150,10 +150,10 @@ export function createTestPersona(
     input.created_by || null
   );
 
-  // Create initial judge prompt version (iteration 0)
+  // Create initial judge prompt version (version 0)
   const promptVersionStmt = db.prepare(`
     INSERT INTO judge_prompt_versions (
-      id, persona_id, iteration_number, prompt_text,
+      id, persona_id, version_number, prompt_text,
       improvement_rationale, created_by, created_at
     ) VALUES (?, ?, ?, ?, ?, ?, ?)
   `);
@@ -161,7 +161,7 @@ export function createTestPersona(
   promptVersionStmt.run(
     uuidv4(),
     id,
-    0, // iteration 0 is the initial prompt
+    0, // version 0 is the initial prompt
     input.initial_judge_prompt,
     'Initial judge prompt provided during persona creation',
     'human',

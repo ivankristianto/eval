@@ -1342,31 +1342,34 @@ export function getLatestCheckpoint(
 // ===== Training Pair Results Metrics (Workspace Redesign) =====
 
 /**
- * Get judge metrics from training_pair_results table for a persona.
+ * Get metrics from training_pair_results table for a persona.
+ * @private
  * @param personaId - Persona ID
+ * @param ratingColumn - Either 'judge_rating' or 'human_rating'
  * @param db - Optional database instance
- * @returns Judge metrics object with pass/fail counts and rate
+ * @returns Metrics object with pass/fail counts and rate
  */
-export function getJudgeMetricsFromResults(
+function getMetricsFromResults(
   personaId: string,
+  ratingColumn: 'judge_rating' | 'human_rating',
   db?: Database.Database
 ): { total_pairs: number; pass_count: number; fail_count: number; pass_rate: number } {
   const database = db || getTrainingDatabase();
 
-  const passStmt = database.prepare(`
-    SELECT COUNT(*) as count FROM training_pair_results
-    WHERE persona_id = ? AND judge_rating = 'pass'
+  // Combined query using FILTER to get all metrics in a single database round-trip
+  const stmt = database.prepare(`
+    SELECT
+      COUNT(*) FILTER (WHERE ${ratingColumn} = 'pass') as pass_count,
+      COUNT(*) FILTER (WHERE ${ratingColumn} = 'fail') as fail_count
+    FROM training_pair_results
+    WHERE persona_id = ?
   `);
-  const passResult = passStmt.get(personaId) as { count: number };
-  const passCount = passResult.count;
 
-  const failStmt = database.prepare(`
-    SELECT COUNT(*) as count FROM training_pair_results
-    WHERE persona_id = ? AND judge_rating = 'fail'
-  `);
-  const failResult = failStmt.get(personaId) as { count: number };
-  const failCount = failResult.count;
+  const result = stmt.get(personaId) as { pass_count: number; fail_count: number };
+  const passCount = result.pass_count;
+  const failCount = result.fail_count;
 
+  // total_pairs counts only rated pairs (excludes NULL ratings)
   const total = passCount + failCount;
   const passRate = total > 0 ? passCount / total : 0;
 
@@ -1379,7 +1382,24 @@ export function getJudgeMetricsFromResults(
 }
 
 /**
+ * Get judge metrics from training_pair_results table for a persona.
+ * Only counts pairs that have been rated (excludes NULL judge_rating).
+ *
+ * @param personaId - Persona ID
+ * @param db - Optional database instance
+ * @returns Judge metrics object with pass/fail counts and rate
+ */
+export function getJudgeMetricsFromResults(
+  personaId: string,
+  db?: Database.Database
+): { total_pairs: number; pass_count: number; fail_count: number; pass_rate: number } {
+  return getMetricsFromResults(personaId, 'judge_rating', db);
+}
+
+/**
  * Get human metrics from training_pair_results table for a persona.
+ * Only counts pairs that have been rated (excludes NULL human_rating).
+ *
  * @param personaId - Persona ID
  * @param db - Optional database instance
  * @returns Human metrics object with pass/fail counts and rate
@@ -1388,29 +1408,5 @@ export function getHumanMetricsFromResults(
   personaId: string,
   db?: Database.Database
 ): { total_pairs: number; pass_count: number; fail_count: number; pass_rate: number } {
-  const database = db || getTrainingDatabase();
-
-  const passStmt = database.prepare(`
-    SELECT COUNT(*) as count FROM training_pair_results
-    WHERE persona_id = ? AND human_rating = 'pass'
-  `);
-  const passResult = passStmt.get(personaId) as { count: number };
-  const passCount = passResult.count;
-
-  const failStmt = database.prepare(`
-    SELECT COUNT(*) as count FROM training_pair_results
-    WHERE persona_id = ? AND human_rating = 'fail'
-  `);
-  const failResult = failStmt.get(personaId) as { count: number };
-  const failCount = failResult.count;
-
-  const total = passCount + failCount;
-  const passRate = total > 0 ? passCount / total : 0;
-
-  return {
-    total_pairs: total,
-    pass_count: passCount,
-    fail_count: failCount,
-    pass_rate: passRate,
-  };
+  return getMetricsFromResults(personaId, 'human_rating', db);
 }
