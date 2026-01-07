@@ -88,13 +88,34 @@ export const POST: APIRoute = async ({ request }) => {
       }
     }
 
-    // Verify we have a task prompt version to use
+    // Fallback: if current_task_prompt_version_id is null, try to find initial task prompt (version 0)
     if (!taskPromptVersionId) {
-      logger.logApiRequest('POST', '/api/task/generate', 400, Date.now() - startTime);
-      return badRequest(
-        'No task prompt version available. Please provide task_prompt_text.',
-        'NO_TASK_PROMPT'
+      logger.info('No current task prompt version set, falling back to initial version', {
+        persona_id,
+      });
+
+      const initialVersionStmt = db.prepare(
+        'SELECT id FROM task_prompt_versions WHERE persona_id = ? AND version_number = 0'
       );
+      const initialVersion = initialVersionStmt.get(persona_id) as { id: string } | undefined;
+
+      if (initialVersion) {
+        taskPromptVersionId = initialVersion.id;
+        // Update persona to set the current version
+        db.prepare(
+          'UPDATE personas SET current_task_prompt_version_id = ?, updated_at = ? WHERE id = ?'
+        ).run(taskPromptVersionId, new Date().toISOString(), persona_id);
+        logger.info('Repaired persona: set current_task_prompt_version_id to initial version', {
+          persona_id,
+          version_id: taskPromptVersionId,
+        });
+      } else {
+        logger.logApiRequest('POST', '/api/task/generate', 400, Date.now() - startTime);
+        return badRequest(
+          'No task prompt version available. Please provide task_prompt_text.',
+          'NO_TASK_PROMPT'
+        );
+      }
     }
 
     // Generate task outputs
