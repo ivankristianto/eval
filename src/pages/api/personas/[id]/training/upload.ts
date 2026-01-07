@@ -15,6 +15,21 @@ import { createLogger } from '@lib/logger';
 
 const logger = createLogger('API:Training:Upload');
 
+// Maximum file size: 10MB
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
+
+// Maximum training pairs per persona (prevents database performance issues)
+const MAX_TRAINING_PAIRS = 500;
+
+/**
+ * Extract MIME type from Content-Type header, ignoring parameters.
+ * @param contentType - Full Content-Type header value (e.g., "multipart/form-data; boundary=...")
+ * @returns Pure MIME type (e.g., "multipart/form-data")
+ */
+function extractMimeType(contentType: string): string {
+  return contentType.split(';')[0].trim().toLowerCase();
+}
+
 /**
  * POST /api/personas/[id]/training/upload
  * Upload CSV file with training pairs
@@ -62,10 +77,11 @@ export const POST: APIRoute = async ({ params, request }) => {
 
     // Parse multipart form data
     const contentType = request.headers.get('content-type') || '';
+    const mimeType = extractMimeType(contentType);
 
     let fileContent: string;
 
-    if (contentType.includes('multipart/form-data')) {
+    if (mimeType === 'multipart/form-data') {
       // Handle multipart/form-data
       const formData = await request.formData();
       const file = formData.get('file') as File | null;
@@ -83,8 +99,36 @@ export const POST: APIRoute = async ({ params, request }) => {
         );
       }
 
+      // Validate file size before processing
+      if (file.size > MAX_FILE_SIZE) {
+        logger.logApiRequest(
+          'POST',
+          `/api/personas/${id}/training/upload`,
+          413,
+          Date.now() - startTime
+        );
+        return badRequest(
+          `File too large. Maximum size is ${MAX_FILE_SIZE / 1024 / 1024}MB`,
+          'FILE_TOO_LARGE'
+        );
+      }
+
       fileContent = await file.text();
-    } else if (contentType.includes('application/json')) {
+
+      // Double-check file content size after reading (for compressed content)
+      if (fileContent.length > MAX_FILE_SIZE) {
+        logger.logApiRequest(
+          'POST',
+          `/api/personas/${id}/training/upload`,
+          413,
+          Date.now() - startTime
+        );
+        return badRequest(
+          `CSV content too large after processing. Maximum size is ${MAX_FILE_SIZE / 1024 / 1024}MB`,
+          'CONTENT_TOO_LARGE'
+        );
+      }
+    } else if (mimeType === 'application/json') {
       // Handle JSON payload with CSV content
       const body = await request.json();
       fileContent = body.csv || body.content || '';
@@ -101,9 +145,37 @@ export const POST: APIRoute = async ({ params, request }) => {
           'INVALID_INPUT'
         );
       }
+
+      // Validate content size
+      if (fileContent.length > MAX_FILE_SIZE) {
+        logger.logApiRequest(
+          'POST',
+          `/api/personas/${id}/training/upload`,
+          413,
+          Date.now() - startTime
+        );
+        return badRequest(
+          `CSV content too large. Maximum size is ${MAX_FILE_SIZE / 1024 / 1024}MB`,
+          'CONTENT_TOO_LARGE'
+        );
+      }
     } else {
       // Assume raw CSV content
       fileContent = await request.text();
+
+      // Validate content size for raw text
+      if (fileContent.length > MAX_FILE_SIZE) {
+        logger.logApiRequest(
+          'POST',
+          `/api/personas/${id}/training/upload`,
+          413,
+          Date.now() - startTime
+        );
+        return badRequest(
+          `CSV content too large. Maximum size is ${MAX_FILE_SIZE / 1024 / 1024}MB`,
+          'CONTENT_TOO_LARGE'
+        );
+      }
     }
 
     // Parse CSV
@@ -117,6 +189,20 @@ export const POST: APIRoute = async ({ params, request }) => {
         Date.now() - startTime
       );
       return badRequest('CSV validation failed', 'CSV_VALIDATION_ERROR', errors);
+    }
+
+    // Validate row count (prevent database performance issues)
+    if (rows.length > MAX_TRAINING_PAIRS) {
+      logger.logApiRequest(
+        'POST',
+        `/api/personas/${id}/training/upload`,
+        413,
+        Date.now() - startTime
+      );
+      return badRequest(
+        `Too many training pairs. Maximum is ${MAX_TRAINING_PAIRS} pairs. Got ${rows.length}.`,
+        'TOO_MANY_ROWS'
+      );
     }
 
     // Insert training pairs in transaction

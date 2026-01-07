@@ -222,13 +222,14 @@ const {
     btn.addEventListener('click', async (e) => {
       const button = e.currentTarget;
       const personaId = button.dataset.personaId;
-
-      // Show loading state
-      button.classList.add('loading');
-      button.setAttribute('disabled', 'true');
+      const buttonSelector = '[data-action="generate-outputs"]';
       const originalContent = button.innerHTML;
 
       try {
+        // Show loading state
+        button.classList.add('loading');
+        button.setAttribute('disabled', 'true');
+
         const response = await fetch('/api/task/generate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -256,9 +257,13 @@ const {
           window.toast.error(error instanceof Error ? error.message : 'Failed to generate outputs');
         }
       } finally {
-        button.classList.remove('loading');
-        button.removeAttribute('disabled');
-        button.innerHTML = originalContent;
+        // Re-query to get current DOM element (fixes race condition)
+        const currentButton = document.querySelector(buttonSelector);
+        if (currentButton) {
+          currentButton.classList.remove('loading');
+          currentButton.removeAttribute('disabled');
+          currentButton.innerHTML = originalContent;
+        }
       }
     });
   });
@@ -268,13 +273,14 @@ const {
     btn.addEventListener('click', async (e) => {
       const button = e.currentTarget;
       const personaId = button.dataset.personaId;
-
-      // Show loading state
-      button.classList.add('loading');
-      button.setAttribute('disabled', 'true');
+      const buttonSelector = '[data-action="generate-judge"]';
       const originalContent = button.innerHTML;
 
       try {
+        // Show loading state
+        button.classList.add('loading');
+        button.setAttribute('disabled', 'true');
+
         const response = await fetch('/api/judge/evaluate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -304,9 +310,13 @@ const {
           );
         }
       } finally {
-        button.classList.remove('loading');
-        button.removeAttribute('disabled');
-        button.innerHTML = originalContent;
+        // Re-query to get current DOM element (fixes race condition)
+        const currentButton = document.querySelector(buttonSelector);
+        if (currentButton) {
+          currentButton.classList.remove('loading');
+          currentButton.removeAttribute('disabled');
+          currentButton.innerHTML = originalContent;
+        }
       }
     });
   });
@@ -316,13 +326,14 @@ const {
     btn.addEventListener('click', async (e) => {
       const button = e.currentTarget;
       const personaId = button.dataset.personaId;
-
-      // Show loading state
-      button.classList.add('loading');
-      button.setAttribute('disabled', 'true');
+      const buttonSelector = '[data-action="evaluate-all"]';
       const originalContent = button.innerHTML;
 
       try {
+        // Show loading state
+        button.classList.add('loading');
+        button.setAttribute('disabled', 'true');
+
         // Step 1: Generate task outputs
         const generateResponse = await fetch('/api/task/generate', {
           method: 'POST',
@@ -370,9 +381,13 @@ const {
           window.toast.error(error instanceof Error ? error.message : 'Failed to evaluate all');
         }
       } finally {
-        button.classList.remove('loading');
-        button.removeAttribute('disabled');
-        button.innerHTML = originalContent;
+        // Re-query to get current DOM element (fixes race condition)
+        const currentButton = document.querySelector(buttonSelector);
+        if (currentButton) {
+          currentButton.classList.remove('loading');
+          currentButton.removeAttribute('disabled');
+          currentButton.innerHTML = originalContent;
+        }
       }
     });
   });
@@ -592,16 +607,33 @@ const {
       return;
     }
 
-    // Show loading state
-    const importBtn = document.querySelector('[data-action="import-csv"]');
-    if (importBtn) {
-      importBtn.classList.add('loading');
-      importBtn.setAttribute('disabled', 'true');
+    // Validate file size before processing (10MB limit)
+    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+    if (file.size > MAX_FILE_SIZE) {
+      if (window.toast) {
+        window.toast.error('File too large. Maximum size is 10MB');
+      }
+      return;
     }
 
     try {
+      // Show loading state (inside try block so finally always executes)
+      let importBtn = document.querySelector('[data-action="import-csv"]');
+      if (importBtn) {
+        importBtn.classList.add('loading');
+        importBtn.setAttribute('disabled', 'true');
+      }
+
       // Read file content
       const fileContent = await file.text();
+
+      // Double-check file content size after reading (for compressed content)
+      if (fileContent.length > MAX_FILE_SIZE) {
+        if (window.toast) {
+          window.toast.error('CSV content too large after processing');
+        }
+        return;
+      }
 
       // Upload to API
       const response = await fetch(`/api/personas/${personaId}/training/upload`, {
@@ -638,7 +670,8 @@ const {
         window.toast.error(error instanceof Error ? error.message : 'Failed to import CSV');
       }
     } finally {
-      // Remove loading state
+      // Remove loading state - re-query to get current DOM element (fixes race condition)
+      const importBtn = document.querySelector('[data-action="import-csv"]');
       if (importBtn) {
         importBtn.classList.remove('loading');
         importBtn.removeAttribute('disabled');
