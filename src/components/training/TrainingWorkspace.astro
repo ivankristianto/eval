@@ -592,6 +592,15 @@ const {
       return;
     }
 
+    // Validate file size before processing (10MB limit)
+    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+    if (file.size > MAX_FILE_SIZE) {
+      if (window.toast) {
+        window.toast.error('File too large. Maximum size is 10MB.');
+      }
+      return;
+    }
+
     // Show loading state
     const importBtn = document.querySelector('[data-action="import-csv"]');
     if (importBtn) {
@@ -602,6 +611,14 @@ const {
     try {
       // Read file content
       const fileContent = await file.text();
+
+      // Double-check file content size after reading (for compressed content)
+      if (fileContent.length > MAX_FILE_SIZE) {
+        if (window.toast) {
+          window.toast.error('CSV content too large after processing.');
+        }
+        return;
+      }
 
       // Upload to API
       const response = await fetch(`/api/personas/${personaId}/training/upload`, {
@@ -638,7 +655,8 @@ const {
         window.toast.error(error instanceof Error ? error.message : 'Failed to import CSV');
       }
     } finally {
-      // Remove loading state
+      // Remove loading state - re-query to get current DOM element (fixes race condition)
+      const importBtn = document.querySelector('[data-action="import-csv"]');
       if (importBtn) {
         importBtn.classList.remove('loading');
         importBtn.removeAttribute('disabled');

@@ -15,6 +15,9 @@ import { createLogger } from '@lib/logger';
 
 const logger = createLogger('API:Training:Upload');
 
+// Maximum file size: 10MB
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
+
 /**
  * POST /api/personas/[id]/training/upload
  * Upload CSV file with training pairs
@@ -83,7 +86,35 @@ export const POST: APIRoute = async ({ params, request }) => {
         );
       }
 
+      // Validate file size before processing
+      if (file.size > MAX_FILE_SIZE) {
+        logger.logApiRequest(
+          'POST',
+          `/api/personas/${id}/training/upload`,
+          413,
+          Date.now() - startTime
+        );
+        return badRequest(
+          `File too large. Maximum size is ${MAX_FILE_SIZE / 1024 / 1024}MB.`,
+          'FILE_TOO_LARGE'
+        );
+      }
+
       fileContent = await file.text();
+
+      // Double-check file content size after reading (for compressed content)
+      if (fileContent.length > MAX_FILE_SIZE) {
+        logger.logApiRequest(
+          'POST',
+          `/api/personas/${id}/training/upload`,
+          413,
+          Date.now() - startTime
+        );
+        return badRequest(
+          `CSV content too large after processing. Maximum size is ${MAX_FILE_SIZE / 1024 / 1024}MB.`,
+          'CONTENT_TOO_LARGE'
+        );
+      }
     } else if (contentType.includes('application/json')) {
       // Handle JSON payload with CSV content
       const body = await request.json();
@@ -101,9 +132,37 @@ export const POST: APIRoute = async ({ params, request }) => {
           'INVALID_INPUT'
         );
       }
+
+      // Validate content size
+      if (fileContent.length > MAX_FILE_SIZE) {
+        logger.logApiRequest(
+          'POST',
+          `/api/personas/${id}/training/upload`,
+          413,
+          Date.now() - startTime
+        );
+        return badRequest(
+          `CSV content too large. Maximum size is ${MAX_FILE_SIZE / 1024 / 1024}MB.`,
+          'CONTENT_TOO_LARGE'
+        );
+      }
     } else {
       // Assume raw CSV content
       fileContent = await request.text();
+
+      // Validate content size for raw text
+      if (fileContent.length > MAX_FILE_SIZE) {
+        logger.logApiRequest(
+          'POST',
+          `/api/personas/${id}/training/upload`,
+          413,
+          Date.now() - startTime
+        );
+        return badRequest(
+          `CSV content too large. Maximum size is ${MAX_FILE_SIZE / 1024 / 1024}MB.`,
+          'CONTENT_TOO_LARGE'
+        );
+      }
     }
 
     // Parse CSV
