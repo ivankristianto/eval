@@ -13,6 +13,7 @@ import { parseJsonBody } from '@lib/api-error-handler';
 import { createLogger } from '@lib/logger';
 
 const logger = createLogger('API:Task:Generate');
+const INITIAL_TASK_VERSION = 0;
 
 /**
  * POST /api/task/generate
@@ -94,22 +95,85 @@ export const POST: APIRoute = async ({ request }) => {
         persona_id,
       });
 
-      const initialVersionStmt = db.prepare(
-        'SELECT id FROM task_prompt_versions WHERE persona_id = ? AND version_number = 0'
-      );
-      const initialVersion = initialVersionStmt.get(persona_id) as { id: string } | undefined;
+      // Use transaction for atomic read-repair operation to prevent race condition
+      const repairTx = db.transaction(() => {
+        // Re-verify persona still needs repair (handles concurrent requests)
+        const personaCheckStmt = db.prepare(
+          'SELECT current_task_prompt_version_id FROM personas WHERE id = ?'
+        );
+        const personaCheck = personaCheckStmt.get(persona_id) as
+          | {
+              current_task_prompt_version_id: string | null;
+            }
+          | undefined;
 
-      if (initialVersion) {
-        taskPromptVersionId = initialVersion.id;
-        // Update persona to set the current version
-        db.prepare(
-          'UPDATE personas SET current_task_prompt_version_id = ?, updated_at = ? WHERE id = ?'
-        ).run(taskPromptVersionId, new Date().toISOString(), persona_id);
-        logger.info('Repaired persona: set current_task_prompt_version_id to initial version', {
-          persona_id,
-          version_id: taskPromptVersionId,
-        });
-      } else {
+        if (!personaCheck) {
+          return null; // Persona was deleted
+        }
+
+        // If another request already repaired it, use that value
+        if (personaCheck.current_task_prompt_version_id) {
+          return personaCheck.current_task_prompt_version_id;
+        }
+
+        // Find initial task prompt version
+        const initialVersionStmt = db.prepare(
+          'SELECT id FROM task_prompt_versions WHERE persona_id = ? AND version_number = ?'
+        );
+        const initialVersion = initialVersionStmt.get(persona_id, INITIAL_TASK_VERSION) as
+          | { id: string }
+          | undefined;
+
+        if (initialVersion) {
+          // Update persona to set the current version
+          const updateResult = db
+            .prepare(
+              'UPDATE personas SET current_task_prompt_version_id = ?, updated_at = ? WHERE id = ?'
+            )
+            .run(initialVersion.id, new Date().toISOString(), persona_id);
+
+          // Verify the update succeeded (persona might have been deleted)
+          if (updateResult.changes === 0) {
+            return null;
+          }
+
+          logger.info('Repaired persona: set current_task_prompt_version_id to initial version', {
+            persona_id,
+            version_id: initialVersion.id,
+          });
+
+          // If user provided task_prompt_text, create a new version after repair
+          if (task_prompt_text) {
+            logger.info(
+              'task_prompt_text provided but persona was repaired to version 0; creating new version',
+              { persona_id }
+            );
+
+            const newVersion = createTaskPromptVersion(
+              {
+                persona_id,
+                prompt_text: task_prompt_text,
+                created_by: 'human',
+              },
+              db
+            );
+
+            logger.info('New task prompt version created', {
+              persona_id,
+              version_id: newVersion.id,
+            });
+            return newVersion.id;
+          }
+
+          return initialVersion.id;
+        }
+
+        return null;
+      });
+
+      taskPromptVersionId = repairTx();
+
+      if (!taskPromptVersionId) {
         logger.logApiRequest('POST', '/api/task/generate', 400, Date.now() - startTime);
         return badRequest(
           'No task prompt version available. Please provide task_prompt_text.',
