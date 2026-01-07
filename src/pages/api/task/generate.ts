@@ -95,7 +95,17 @@ export const POST: APIRoute = async ({ request }) => {
         persona_id,
       });
 
-      // Use transaction for atomic read-repair operation to prevent race condition
+      /**
+       * Repair transaction: Auto-repair persona with null current_task_prompt_version_id
+       *
+       * Implements atomic read-repair operation with:
+       * 1. Re-verify persona still needs repair (handles concurrent requests)
+       * 2. Find initial task prompt version (version 0)
+       * 3. Update persona to point to initial version
+       * 4. If task_prompt_text provided, create new version after repair
+       *
+       * @returns The task prompt version ID to use, or null if repair failed
+       */
       const repairTx = db.transaction(() => {
         // Re-verify persona still needs repair (handles concurrent requests)
         const personaCheckStmt = db.prepare(
