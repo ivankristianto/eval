@@ -13,6 +13,7 @@ import { parseJsonBody } from '@lib/api-error-handler';
 import { createLogger } from '@lib/logger';
 
 const logger = createLogger('API:Judge:Evaluate');
+const INITIAL_JUDGE_VERSION = 0;
 
 /**
  * POST /api/judge/evaluate
@@ -88,13 +89,107 @@ export const POST: APIRoute = async ({ request }) => {
       }
     }
 
-    // Verify we have a judge prompt version to use
+    // Fallback: if current_judge_prompt_version_id is null, try to find initial judge prompt (version 0)
     if (!judgePromptVersionId) {
-      logger.logApiRequest('POST', '/api/judge/evaluate', 400, Date.now() - startTime);
-      return badRequest(
-        'No judge prompt version available. Please provide judge_prompt_text.',
-        'NO_JUDGE_PROMPT'
-      );
+      logger.info('No current judge prompt version set, falling back to initial version', {
+        persona_id,
+      });
+
+      /**
+       * Repair transaction: Auto-repair persona with null current_judge_prompt_version_id
+       *
+       * Implements atomic read-repair operation with:
+       * 1. Re-verify persona still needs repair (handles concurrent requests)
+       * 2. Find initial judge prompt version (version 0)
+       * 3. Update persona to point to initial version
+       * 4. If judge_prompt_text provided, create new version after repair
+       *
+       * @returns The judge prompt version ID to use, or null if repair failed
+       */
+      const repairTx = db.transaction(() => {
+        // Re-verify persona still needs repair (handles concurrent requests)
+        const personaCheckStmt = db.prepare(
+          'SELECT current_judge_prompt_version_id FROM personas WHERE id = ?'
+        );
+        const personaCheck = personaCheckStmt.get(persona_id) as
+          | {
+              current_judge_prompt_version_id: string | null;
+            }
+          | undefined;
+
+        if (!personaCheck) {
+          return null; // Persona was deleted
+        }
+
+        // If another request already repaired it, use that value
+        if (personaCheck.current_judge_prompt_version_id) {
+          return personaCheck.current_judge_prompt_version_id;
+        }
+
+        // Find initial judge prompt version
+        const initialVersionStmt = db.prepare(
+          'SELECT id FROM judge_prompt_versions WHERE persona_id = ? AND version_number = ?'
+        );
+        const initialVersion = initialVersionStmt.get(persona_id, INITIAL_JUDGE_VERSION) as
+          | { id: string }
+          | undefined;
+
+        if (initialVersion) {
+          // Update persona to set the current version
+          const updateResult = db
+            .prepare(
+              'UPDATE personas SET current_judge_prompt_version_id = ?, updated_at = ? WHERE id = ?'
+            )
+            .run(initialVersion.id, new Date().toISOString(), persona_id);
+
+          // Verify the update succeeded (persona might have been deleted)
+          if (updateResult.changes === 0) {
+            return null;
+          }
+
+          logger.info('Repaired persona: set current_judge_prompt_version_id to initial version', {
+            persona_id,
+            version_id: initialVersion.id,
+          });
+
+          // If user provided judge_prompt_text, create a new version after repair
+          if (judge_prompt_text) {
+            logger.info(
+              'judge_prompt_text provided but persona was repaired to version 0; creating new version',
+              { persona_id }
+            );
+
+            const newVersion = createJudgePromptVersion(
+              {
+                persona_id,
+                prompt_text: judge_prompt_text,
+                created_by: 'human',
+              },
+              db
+            );
+
+            logger.info('New judge prompt version created', {
+              persona_id,
+              version_id: newVersion.id,
+            });
+            return newVersion.id;
+          }
+
+          return initialVersion.id;
+        }
+
+        return null;
+      });
+
+      judgePromptVersionId = repairTx();
+
+      if (!judgePromptVersionId) {
+        logger.logApiRequest('POST', '/api/judge/evaluate', 400, Date.now() - startTime);
+        return badRequest(
+          'No judge prompt version available. Please provide judge_prompt_text.',
+          'NO_JUDGE_PROMPT'
+        );
+      }
     }
 
     // Evaluate with judge
