@@ -56,8 +56,8 @@ const totalPages = Math.max(1, Math.ceil(pairs.length / pageSize));
         <span class="text-sm text-base-content/60 font-medium">{pairs.length} pairs</span>
       </div>
       <div class="flex items-center gap-2">
-        <label
-          for="csv-upload-input"
+        <button
+          type="button"
           class="btn btn-sm btn-ghost border border-base-300 hover:bg-base-200 transition-all"
           data-action="import-csv"
           title="Import CSV"
@@ -77,7 +77,7 @@ const totalPages = Math.max(1, Math.ceil(pairs.length / pageSize));
             ></path>
           </svg>
           Import CSV
-        </label>
+        </button>
         <input
           type="file"
           id="csv-upload-input"

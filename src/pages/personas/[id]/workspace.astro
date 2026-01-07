@@ -75,10 +75,11 @@ const enrichedTrainingPairs = trainingPairs.map((pair) => {
       `
       SELECT
         generated_output,
-        judge_decision,
+        judge_rating,
+        judge_feedback,
         judge_reasoning,
-        human_decision,
-        human_notes
+        human_rating,
+        human_feedback
       FROM training_pair_results
       WHERE training_pair_id = ?
       ORDER BY created_at DESC
@@ -87,10 +88,11 @@ const enrichedTrainingPairs = trainingPairs.map((pair) => {
     )
     .get(pair.id) as {
     generated_output: string;
-    judge_decision: string;
+    judge_rating: string;
+    judge_feedback: string;
     judge_reasoning: string;
-    human_decision: string;
-    human_notes: string;
+    human_rating: string;
+    human_feedback: string;
   } | null;
 
   return {
@@ -98,20 +100,10 @@ const enrichedTrainingPairs = trainingPairs.map((pair) => {
     input: pair.input,
     expected_output: pair.expected_output,
     generated_output: resultQuery?.generated_output,
-    judge_rating:
-      resultQuery?.judge_decision === 'agree'
-        ? 'pass'
-        : resultQuery?.judge_decision === 'disagree'
-          ? 'fail'
-          : undefined,
-    judge_feedback: resultQuery?.judge_reasoning,
-    human_rating:
-      resultQuery?.human_decision === 'agree'
-        ? 'pass'
-        : resultQuery?.human_decision === 'disagree'
-          ? 'fail'
-          : undefined,
-    human_feedback: resultQuery?.human_notes,
+    judge_rating: resultQuery?.judge_rating as 'pass' | 'fail' | undefined,
+    judge_feedback: resultQuery?.judge_feedback || resultQuery?.judge_reasoning,
+    human_rating: resultQuery?.human_rating as 'pass' | 'fail' | undefined,
+    human_feedback: resultQuery?.human_feedback,
   };
 });
 
