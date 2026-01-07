@@ -51,3 +51,8 @@ test-results/
 
 # Git Worktrees
 .worktrees/
+
+# bv (beads viewer) local config and caches
+.bv/
+.beads/.bv.lock
+.beads/last-touched
