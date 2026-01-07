@@ -1338,3 +1338,75 @@ export function getLatestCheckpoint(
   `);
   return stmt.get(sessionId) as TrainingLoopCheckpoint | null;
 }
+
+// ===== Training Pair Results Metrics (Workspace Redesign) =====
+
+/**
+ * Get metrics from training_pair_results table for a persona.
+ * @private
+ * @param personaId - Persona ID
+ * @param ratingColumn - Either 'judge_rating' or 'human_rating'
+ * @param db - Optional database instance
+ * @returns Metrics object with pass/fail counts and rate
+ */
+function getMetricsFromResults(
+  personaId: string,
+  ratingColumn: 'judge_rating' | 'human_rating',
+  db?: Database.Database
+): { total_pairs: number; pass_count: number; fail_count: number; pass_rate: number } {
+  const database = db || getTrainingDatabase();
+
+  // Combined query using FILTER to get all metrics in a single database round-trip
+  const stmt = database.prepare(`
+    SELECT
+      COUNT(*) FILTER (WHERE ${ratingColumn} = 'pass') as pass_count,
+      COUNT(*) FILTER (WHERE ${ratingColumn} = 'fail') as fail_count
+    FROM training_pair_results
+    WHERE persona_id = ?
+  `);
+
+  const result = stmt.get(personaId) as { pass_count: number; fail_count: number };
+  const passCount = result.pass_count;
+  const failCount = result.fail_count;
+
+  // total_pairs counts only rated pairs (excludes NULL ratings)
+  const total = passCount + failCount;
+  const passRate = total > 0 ? passCount / total : 0;
+
+  return {
+    total_pairs: total,
+    pass_count: passCount,
+    fail_count: failCount,
+    pass_rate: passRate,
+  };
+}
+
+/**
+ * Get judge metrics from training_pair_results table for a persona.
+ * Only counts pairs that have been rated (excludes NULL judge_rating).
+ *
+ * @param personaId - Persona ID
+ * @param db - Optional database instance
+ * @returns Judge metrics object with pass/fail counts and rate
+ */
+export function getJudgeMetricsFromResults(
+  personaId: string,
+  db?: Database.Database
+): { total_pairs: number; pass_count: number; fail_count: number; pass_rate: number } {
+  return getMetricsFromResults(personaId, 'judge_rating', db);
+}
+
+/**
+ * Get human metrics from training_pair_results table for a persona.
+ * Only counts pairs that have been rated (excludes NULL human_rating).
+ *
+ * @param personaId - Persona ID
+ * @param db - Optional database instance
+ * @returns Human metrics object with pass/fail counts and rate
+ */
+export function getHumanMetricsFromResults(
+  personaId: string,
+  db?: Database.Database
+): { total_pairs: number; pass_count: number; fail_count: number; pass_rate: number } {
+  return getMetricsFromResults(personaId, 'human_rating', db);
+}

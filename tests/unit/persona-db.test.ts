@@ -4,6 +4,8 @@
  */
 
 import { describe, it, expect, beforeAll, beforeEach, afterAll } from 'vitest';
+import Database from 'better-sqlite3';
+import { v4 as uuidv4 } from 'uuid';
 import {
   getTestDatabase,
   initializeTestDatabase,
@@ -44,6 +46,8 @@ import {
   updateTrainingLoopState,
   createCheckpoint,
   getLatestCheckpoint,
+  getJudgeMetricsFromResults,
+  getHumanMetricsFromResults,
 } from '@lib/db/persona-db';
 import type {
   CreatePersonaInput,
@@ -840,6 +844,312 @@ describe('Persona Database Access Layer', () => {
       expect(latest).toBeDefined();
       expect(latest?.iteration_number).toBe(3);
       expect(latest?.id).toBe(checkpoint3.id);
+    });
+  });
+
+  describe('Training Pair Results Metrics', () => {
+    /**
+     * Helper to create training pair results for testing
+     */
+    function createTrainingPairResult(
+      db: Database.Database,
+      personaId: string,
+      trainingPairId: string,
+      judgeRating: 'pass' | 'fail' | null,
+      humanRating: 'pass' | 'fail' | null
+    ): void {
+      const id = uuidv4();
+      const now = new Date().toISOString();
+      const stmt = db.prepare(`
+        INSERT INTO training_pair_results (
+          id, persona_id, training_pair_id, generated_output,
+          judge_rating, human_rating, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `);
+      stmt.run(
+        id,
+        personaId,
+        trainingPairId,
+        'Generated output',
+        judgeRating,
+        humanRating,
+        now,
+        now
+      );
+    }
+
+    describe('getJudgeMetricsFromResults', () => {
+      it('should calculate judge metrics correctly with mixed ratings', () => {
+        const db = getTestDatabase();
+        const persona = createTestPersona(db);
+        const pairs = createTrainingPairs(
+          persona.id,
+          [
+            { input: 'Input 1', expected_output: 'Output 1' },
+            { input: 'Input 2', expected_output: 'Output 2' },
+            { input: 'Input 3', expected_output: 'Output 3' },
+            { input: 'Input 4', expected_output: 'Output 4' },
+            { input: 'Input 5', expected_output: 'Output 5' },
+          ],
+          db
+        );
+
+        // Create results: 3 pass, 2 fail
+        createTrainingPairResult(db, persona.id, pairs[0].id, 'pass', null);
+        createTrainingPairResult(db, persona.id, pairs[1].id, 'pass', null);
+        createTrainingPairResult(db, persona.id, pairs[2].id, 'pass', null);
+        createTrainingPairResult(db, persona.id, pairs[3].id, 'fail', null);
+        createTrainingPairResult(db, persona.id, pairs[4].id, 'fail', null);
+
+        const metrics = getJudgeMetricsFromResults(persona.id, db);
+
+        expect(metrics.total_pairs).toBe(5);
+        expect(metrics.pass_count).toBe(3);
+        expect(metrics.fail_count).toBe(2);
+        expect(metrics.pass_rate).toBe(0.6);
+      });
+
+      it('should return zeros when no results exist', () => {
+        const db = getTestDatabase();
+        const persona = createTestPersona(db);
+
+        const metrics = getJudgeMetricsFromResults(persona.id, db);
+
+        expect(metrics.total_pairs).toBe(0);
+        expect(metrics.pass_count).toBe(0);
+        expect(metrics.fail_count).toBe(0);
+        expect(metrics.pass_rate).toBe(0);
+      });
+
+      it('should handle NULL judge ratings correctly', () => {
+        const db = getTestDatabase();
+        const persona = createTestPersona(db);
+        const pairs = createTrainingPairs(
+          persona.id,
+          [
+            { input: 'Input 1', expected_output: 'Output 1' },
+            { input: 'Input 2', expected_output: 'Output 2' },
+            { input: 'Input 3', expected_output: 'Output 3' },
+          ],
+          db
+        );
+
+        // Create results: 1 pass, 1 fail, 1 NULL (unrated)
+        createTrainingPairResult(db, persona.id, pairs[0].id, 'pass', null);
+        createTrainingPairResult(db, persona.id, pairs[1].id, 'fail', null);
+        createTrainingPairResult(db, persona.id, pairs[2].id, null, null); // Unrated
+
+        const metrics = getJudgeMetricsFromResults(persona.id, db);
+
+        // NULL ratings are excluded from total_pairs
+        expect(metrics.total_pairs).toBe(2);
+        expect(metrics.pass_count).toBe(1);
+        expect(metrics.fail_count).toBe(1);
+        expect(metrics.pass_rate).toBe(0.5);
+      });
+
+      it('should handle all pass ratings', () => {
+        const db = getTestDatabase();
+        const persona = createTestPersona(db);
+        const pairs = createTrainingPairs(
+          persona.id,
+          [
+            { input: 'Input 1', expected_output: 'Output 1' },
+            { input: 'Input 2', expected_output: 'Output 2' },
+          ],
+          db
+        );
+
+        createTrainingPairResult(db, persona.id, pairs[0].id, 'pass', null);
+        createTrainingPairResult(db, persona.id, pairs[1].id, 'pass', null);
+
+        const metrics = getJudgeMetricsFromResults(persona.id, db);
+
+        expect(metrics.total_pairs).toBe(2);
+        expect(metrics.pass_count).toBe(2);
+        expect(metrics.fail_count).toBe(0);
+        expect(metrics.pass_rate).toBe(1.0);
+      });
+
+      it('should handle all fail ratings', () => {
+        const db = getTestDatabase();
+        const persona = createTestPersona(db);
+        const pairs = createTrainingPairs(
+          persona.id,
+          [{ input: 'Input 1', expected_output: 'Output 1' }],
+          db
+        );
+
+        createTrainingPairResult(db, persona.id, pairs[0].id, 'fail', null);
+
+        const metrics = getJudgeMetricsFromResults(persona.id, db);
+
+        expect(metrics.total_pairs).toBe(1);
+        expect(metrics.pass_count).toBe(0);
+        expect(metrics.fail_count).toBe(1);
+        expect(metrics.pass_rate).toBe(0);
+      });
+
+      it('should only count results for the specified persona', () => {
+        const db = getTestDatabase();
+        const persona1 = createTestPersona(db, { name: 'Persona 1' });
+        const persona2 = createTestPersona(db, { name: 'Persona 2' });
+
+        const pairs1 = createTrainingPairs(
+          persona1.id,
+          [{ input: 'Input 1', expected_output: 'Output 1' }],
+          db
+        );
+        const pairs2 = createTrainingPairs(
+          persona2.id,
+          [{ input: 'Input 2', expected_output: 'Output 2' }],
+          db
+        );
+
+        createTrainingPairResult(db, persona1.id, pairs1[0].id, 'pass', null);
+        createTrainingPairResult(db, persona2.id, pairs2[0].id, 'fail', null);
+
+        const metrics1 = getJudgeMetricsFromResults(persona1.id, db);
+        const metrics2 = getJudgeMetricsFromResults(persona2.id, db);
+
+        expect(metrics1.total_pairs).toBe(1);
+        expect(metrics1.pass_count).toBe(1);
+        expect(metrics2.total_pairs).toBe(1);
+        expect(metrics2.fail_count).toBe(1);
+      });
+    });
+
+    describe('getHumanMetricsFromResults', () => {
+      it('should calculate human metrics correctly with mixed ratings', () => {
+        const db = getTestDatabase();
+        const persona = createTestPersona(db);
+        const pairs = createTrainingPairs(
+          persona.id,
+          [
+            { input: 'Input 1', expected_output: 'Output 1' },
+            { input: 'Input 2', expected_output: 'Output 2' },
+            { input: 'Input 3', expected_output: 'Output 3' },
+            { input: 'Input 4', expected_output: 'Output 4' },
+            { input: 'Input 5', expected_output: 'Output 5' },
+          ],
+          db
+        );
+
+        // Create results: 4 pass, 1 fail
+        createTrainingPairResult(db, persona.id, pairs[0].id, null, 'pass');
+        createTrainingPairResult(db, persona.id, pairs[1].id, null, 'pass');
+        createTrainingPairResult(db, persona.id, pairs[2].id, null, 'pass');
+        createTrainingPairResult(db, persona.id, pairs[3].id, null, 'pass');
+        createTrainingPairResult(db, persona.id, pairs[4].id, null, 'fail');
+
+        const metrics = getHumanMetricsFromResults(persona.id, db);
+
+        expect(metrics.total_pairs).toBe(5);
+        expect(metrics.pass_count).toBe(4);
+        expect(metrics.fail_count).toBe(1);
+        expect(metrics.pass_rate).toBe(0.8);
+      });
+
+      it('should return zeros when no results exist', () => {
+        const db = getTestDatabase();
+        const persona = createTestPersona(db);
+
+        const metrics = getHumanMetricsFromResults(persona.id, db);
+
+        expect(metrics.total_pairs).toBe(0);
+        expect(metrics.pass_count).toBe(0);
+        expect(metrics.fail_count).toBe(0);
+        expect(metrics.pass_rate).toBe(0);
+      });
+
+      it('should handle NULL human ratings correctly', () => {
+        const db = getTestDatabase();
+        const persona = createTestPersona(db);
+        const pairs = createTrainingPairs(
+          persona.id,
+          [
+            { input: 'Input 1', expected_output: 'Output 1' },
+            { input: 'Input 2', expected_output: 'Output 2' },
+            { input: 'Input 3', expected_output: 'Output 3' },
+            { input: 'Input 4', expected_output: 'Output 4' },
+          ],
+          db
+        );
+
+        // Create results: 2 pass, 1 fail, 1 NULL (unreviewed)
+        createTrainingPairResult(db, persona.id, pairs[0].id, null, 'pass');
+        createTrainingPairResult(db, persona.id, pairs[1].id, null, 'pass');
+        createTrainingPairResult(db, persona.id, pairs[2].id, null, 'fail');
+        createTrainingPairResult(db, persona.id, pairs[3].id, null, null); // Unreviewed
+
+        const metrics = getHumanMetricsFromResults(persona.id, db);
+
+        // NULL ratings are excluded from total_pairs
+        expect(metrics.total_pairs).toBe(3);
+        expect(metrics.pass_count).toBe(2);
+        expect(metrics.fail_count).toBe(1);
+        expect(metrics.pass_rate).toBeCloseTo(0.667, 3);
+      });
+
+      it('should handle both judge and human ratings', () => {
+        const db = getTestDatabase();
+        const persona = createTestPersona(db);
+        const pairs = createTrainingPairs(
+          persona.id,
+          [
+            { input: 'Input 1', expected_output: 'Output 1' },
+            { input: 'Input 2', expected_output: 'Output 2' },
+            { input: 'Input 3', expected_output: 'Output 3' },
+          ],
+          db
+        );
+
+        // Create results with both ratings
+        createTrainingPairResult(db, persona.id, pairs[0].id, 'pass', 'pass');
+        createTrainingPairResult(db, persona.id, pairs[1].id, 'fail', 'pass');
+        createTrainingPairResult(db, persona.id, pairs[2].id, 'pass', 'fail');
+
+        const judgeMetrics = getJudgeMetricsFromResults(persona.id, db);
+        const humanMetrics = getHumanMetricsFromResults(persona.id, db);
+
+        // Judge metrics: 2 pass, 1 fail
+        expect(judgeMetrics.total_pairs).toBe(3);
+        expect(judgeMetrics.pass_count).toBe(2);
+        expect(judgeMetrics.fail_count).toBe(1);
+
+        // Human metrics: 2 pass, 1 fail
+        expect(humanMetrics.total_pairs).toBe(3);
+        expect(humanMetrics.pass_count).toBe(2);
+        expect(humanMetrics.fail_count).toBe(1);
+      });
+
+      it('should only count results for the specified persona', () => {
+        const db = getTestDatabase();
+        const persona1 = createTestPersona(db, { name: 'Persona 1' });
+        const persona2 = createTestPersona(db, { name: 'Persona 2' });
+
+        const pairs1 = createTrainingPairs(
+          persona1.id,
+          [{ input: 'Input 1', expected_output: 'Output 1' }],
+          db
+        );
+        const pairs2 = createTrainingPairs(
+          persona2.id,
+          [{ input: 'Input 2', expected_output: 'Output 2' }],
+          db
+        );
+
+        createTrainingPairResult(db, persona1.id, pairs1[0].id, null, 'pass');
+        createTrainingPairResult(db, persona2.id, pairs2[0].id, null, 'fail');
+
+        const metrics1 = getHumanMetricsFromResults(persona1.id, db);
+        const metrics2 = getHumanMetricsFromResults(persona2.id, db);
+
+        expect(metrics1.total_pairs).toBe(1);
+        expect(metrics1.pass_count).toBe(1);
+        expect(metrics2.total_pairs).toBe(1);
+        expect(metrics2.fail_count).toBe(1);
+      });
     });
   });
 });

@@ -138,32 +138,20 @@ Latest coverage (vitest `npm test -- --coverage`):
 
 **ALWAYS FOLLOW THIS IMPLEMENTATION WORKFLOW**
 
-### Single Task Workflow
-
-1. Run `bd ready` to find available work
-2. Create feature branch: `git checkout -b feature/<name>`
-3. Make changes
-4. Run quality gates: `npm run typecheck && npm run lint && npm run format:fix`
-5. Commit and push
-6. Create PR for review
-7. Run code-review-specialist agent for PR review, Agent comments on PR (review only, no changes)
-8. After merge, close the issue with `bd close <id>`
-
-### Group Task Workflow
-
-For multiple related tasks (see AGENTS.md for full details):
-
-1. Group tasks by domain or per user instruction
-2. Create feature branch: `git checkout -b feature/<name>`
-3. For each task:
-   - Implement
-   - Run quality gates (typecheck, lint, format): `npm run typecheck && npm run lint && npm run format:fix`
-   - Commit and push
-4. Continue until all tasks complete
-5. Create PR with descriptive title and summary
-6. Run code-review-specialist agent for PR review, Agent comments on PR (review only, no changes)
-7. Report completion summary to user.
-8. After merge, close the issue with `bd close <id>`
+1. **Find work:** Run `bd ready` to find unblocked tasks
+2. **Claim:** Run `bd update <id> --status in_progress` for each task
+3. **Branch:** `git checkout -b feature/<descriptive-name>`
+4. **Implement:** For each task:
+   - Write code following component guidelines and design tokens
+   - Run `npm run typecheck && npm run lint && npm run format:fix`
+   - Commit with clear message: `git commit -m "feat: descriptive message"`
+   - Push: `git push`
+5. **PR:** Create Pull Request following the GitHub PR template
+6. **Review:** Invoke **code-review-specialist** agent to review (comments only, no code changes)
+7. **Complete:** After merge:
+   - Run `bd close <id>` for each completed task
+   - Run `bd sync`
+8. **Report:** Provide summary with PR link, tasks completed, review status, and any recommendations
 
 ## Landing the Plane (Session Completion)
 
