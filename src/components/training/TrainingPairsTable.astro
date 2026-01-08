@@ -210,35 +210,46 @@ const totalPages = Math.max(1, Math.ceil(pairs.length / pageSize));
                     />
                   </td>
                 )}
-                <td class="sticky left-0 z-10 sticky-col align-top">
+                <td class="sticky left-0 z-10 sticky-col align-top" data-cell-type="input">
                   <div
                     class="text-sm whitespace-pre-wrap break-words max-h-20 overflow-y-auto"
                     title={pair.input}
+                    data-content
                   >
                     {pair.input}
                   </div>
                 </td>
-                <td class="sticky left-[12rem] z-10 sticky-col align-top">
+                <td
+                  class="sticky left-[12rem] z-10 sticky-col align-top"
+                  data-cell-type="expected-output"
+                >
                   <div
                     class="text-sm whitespace-pre-wrap break-words max-h-20 overflow-y-auto"
                     title={pair.expected_output}
+                    data-content
                   >
                     {pair.expected_output}
                   </div>
                 </td>
-                <td class="sticky left-[24rem] z-10 sticky-col align-top">
+                <td
+                  class="sticky left-[24rem] z-10 sticky-col align-top"
+                  data-cell-type="generated-output"
+                >
                   {pair.generated_output ? (
                     <div
                       class="text-sm whitespace-pre-wrap break-words max-h-20 overflow-y-auto"
                       title={pair.generated_output}
+                      data-content
                     >
                       {pair.generated_output}
                     </div>
                   ) : (
-                    <span class="text-sm opacity-50 italic">Not generated</span>
+                    <span class="text-sm opacity-50 italic" data-placeholder>
+                      Not generated
+                    </span>
                   )}
                 </td>
-                <td class="text-center align-middle">
+                <td class="text-center align-middle" data-cell-type="human-rating">
                   {pair.human_rating ? (
                     <PassFailBadge rating={pair.human_rating} size="sm" />
                   ) : (
@@ -264,11 +275,12 @@ const totalPages = Math.max(1, Math.ceil(pairs.length / pageSize));
                     </div>
                   )}
                 </td>
-                <td class="align-top">
+                <td class="align-top" data-cell-type="human-feedback">
                   {pair.human_feedback ? (
                     <div
                       class="text-sm opacity-70 whitespace-pre-wrap break-words max-h-20 overflow-y-auto"
                       title={pair.human_feedback}
+                      data-content
                     >
                       {pair.human_feedback}
                     </div>
@@ -282,19 +294,22 @@ const totalPages = Math.max(1, Math.ceil(pairs.length / pageSize));
                     />
                   )}
                 </td>
-                <td class="text-center align-middle">
+                <td class="text-center align-middle" data-cell-type="judge-rating">
                   <PassFailBadge rating={pair.judge_rating} size="sm" />
                 </td>
-                <td class="align-top">
+                <td class="align-top" data-cell-type="judge-feedback">
                   {pair.judge_feedback ? (
                     <div
                       class="text-sm opacity-70 whitespace-pre-wrap break-words max-h-20 overflow-y-auto"
                       title={pair.judge_feedback}
+                      data-content
                     >
                       {pair.judge_feedback}
                     </div>
                   ) : (
-                    <span class="text-sm opacity-50 italic">-</span>
+                    <span class="text-sm opacity-50 italic" data-placeholder>
+                      -
+                    </span>
                   )}
                 </td>
                 {showActions && (
