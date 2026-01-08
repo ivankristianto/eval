@@ -4,6 +4,7 @@
  */
 
 import { describe, it, expect, beforeAll, beforeEach, afterAll, vi } from 'vitest';
+import type { Database } from 'better-sqlite3';
 import {
   getTestDatabase,
   initializeTestDatabase,
