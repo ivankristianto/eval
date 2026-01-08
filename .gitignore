@@ -56,3 +56,5 @@ test-results/
 .bv/
 .beads/.bv.lock
 .beads/last-touched
+# bd worktree
+eval-ui-improvements/
