@@ -61,6 +61,7 @@ const totalPages = Math.max(1, Math.ceil(pairs.length / pageSize));
           class="btn btn-sm btn-ghost border border-base-300 hover:bg-base-200 transition-all"
           data-action="import-csv"
           title="Import CSV"
+          aria-label="Import CSV file"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -84,6 +85,7 @@ const totalPages = Math.max(1, Math.ceil(pairs.length / pageSize));
           class="hidden"
           accept=".csv"
           data-action="csv-file-input"
+          aria-label="CSV file upload"
         />
         <button
           class="btn btn-sm btn-primary shadow-md hover:shadow-lg transition-all"
