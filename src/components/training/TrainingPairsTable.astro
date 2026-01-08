@@ -438,7 +438,12 @@ const totalPages = Math.max(1, Math.ceil(pairs.length / pageSize));
     selectAllCheckbox?.addEventListener('change', (e) => {
       const isChecked = e.target.checked;
       pairCheckboxes.forEach((checkbox) => {
-        checkbox.checked = isChecked;
+        // Only update checkboxes for visible rows (not hidden by pagination)
+        const row = checkbox.closest('tr');
+        const isVisible = row && row.style.display !== 'none';
+        if (isVisible) {
+          checkbox.checked = isChecked;
+        }
       });
       updateEvaluateButton();
     });
@@ -452,7 +457,11 @@ const totalPages = Math.max(1, Math.ceil(pairs.length / pageSize));
 
   function updateEvaluateButton() {
     const pairCheckboxes = document.querySelectorAll('.pair-checkbox');
-    const selectedCount = Array.from(pairCheckboxes).filter((cb) => cb.checked).length;
+    // Count only selected checkboxes that are in visible rows
+    const selectedCount = Array.from(pairCheckboxes).filter((cb) => {
+      const row = cb.closest('tr');
+      return cb.checked && row && row.style.display !== 'none';
+    }).length;
     if (evaluateSelectedBtn) {
       evaluateSelectedBtn.disabled = selectedCount === 0;
     }
