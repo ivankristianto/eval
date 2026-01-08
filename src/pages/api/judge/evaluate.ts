@@ -8,6 +8,7 @@ import {
   createJudgePromptVersion,
   getCurrentJudgePromptVersion,
 } from '@lib/training/version-manager';
+import { repairJudgePromptVersion } from '@lib/training/persona-repair';
 import { badRequest, notFound, createErrorResponse } from '@lib/api-error-handler';
 import { parseJsonBody } from '@lib/api-error-handler';
 import { createLogger } from '@lib/logger';
@@ -88,13 +89,53 @@ export const POST: APIRoute = async ({ request }) => {
       }
     }
 
-    // Verify we have a judge prompt version to use
+    // Fallback: if current_judge_prompt_version_id is null, attempt auto-repair
     if (!judgePromptVersionId) {
-      logger.logApiRequest('POST', '/api/judge/evaluate', 400, Date.now() - startTime);
-      return badRequest(
-        'No judge prompt version available. Please provide judge_prompt_text.',
-        'NO_JUDGE_PROMPT'
-      );
+      logger.info('No current judge prompt version set, attempting auto-repair', {
+        persona_id,
+      });
+
+      const repairResult = repairJudgePromptVersion(db, {
+        personaId: persona_id,
+        promptText: judge_prompt_text,
+      });
+
+      if (!repairResult.success) {
+        logger.logApiRequest('POST', '/api/judge/evaluate', 400, Date.now() - startTime);
+
+        // Provide specific error messages based on failure reason
+        switch (repairResult.reason) {
+          case 'version_0_missing': {
+            // Check if any versions exist at all
+            const hasAnyVersions = db
+              .prepare('SELECT COUNT(*) as count FROM judge_prompt_versions WHERE persona_id = ?')
+              .get(persona_id) as { count: number };
+
+            if (hasAnyVersions.count === 0) {
+              return badRequest(
+                'No judge prompt versions exist for this persona.',
+                'NO_JUDGE_VERSIONS'
+              );
+            }
+
+            // Version 0 specifically missing - potential data corruption
+            logger.error('Judge prompt version 0 missing, data corruption suspected', undefined, { persona_id });
+            return badRequest(
+              'Judge prompt version 0 is missing. Please reinitialize the persona.',
+              'CORRUPTED_DATA'
+            );
+          }
+          case 'persona_deleted':
+            return badRequest('Persona not found.', 'PERSONA_NOT_FOUND');
+          default:
+            return badRequest(
+              'No judge prompt version available. Please provide judge_prompt_text.',
+              'NO_JUDGE_PROMPT'
+            );
+        }
+      }
+
+      judgePromptVersionId = repairResult.versionId;
     }
 
     // Evaluate with judge

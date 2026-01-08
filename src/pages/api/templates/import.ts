@@ -13,6 +13,13 @@ import { badRequest, createErrorResponse } from '@lib/api-error-handler';
 import { createLogger } from '@lib/logger';
 
 const logger = createLogger('API:Templates:Import');
+const API_PATH = '/api/templates/import';
+
+// Maximum file size: 10MB (matches training/upload.ts)
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
+
+// Maximum templates per import (prevents database performance issues)
+const MAX_TEMPLATES = 500;
 
 /**
  * POST /api/templates/import - Import templates from CSV file.
@@ -28,30 +35,60 @@ export const POST: APIRoute = async ({ request }) => {
     const file = formData.get('file') as File | null;
 
     if (!file) {
-      logger.logApiRequest('POST', '/api/templates/import', 400, Date.now() - startTime);
-      return badRequest('No file provided. Expected multipart/form-data with "file" field.', 'INVALID_INPUT');
+      logger.logApiRequest('POST', API_PATH, 400, Date.now() - startTime);
+      return badRequest(
+        'No file provided. Expected multipart/form-data with "file" field.',
+        'INVALID_INPUT'
+      );
+    }
+
+    // Validate file size before processing (prevents DoS/memory issues)
+    if (file.size > MAX_FILE_SIZE) {
+      logger.logApiRequest('POST', API_PATH, 413, Date.now() - startTime);
+      return badRequest(
+        `File too large. Maximum size is ${MAX_FILE_SIZE / 1024 / 1024}MB`,
+        'FILE_TOO_LARGE'
+      );
     }
 
     // Validate file type
     if (!file.name.endsWith('.csv') && file.type !== 'text/csv') {
-      logger.logApiRequest('POST', '/api/templates/import', 400, Date.now() - startTime);
+      logger.logApiRequest('POST', API_PATH, 400, Date.now() - startTime);
       return badRequest('File must be a CSV file', 'INVALID_FILE_TYPE');
     }
 
     // Read file content
     const text = await file.text();
 
+    // Validate content size after reading (for compressed content)
+    if (text.length > MAX_FILE_SIZE) {
+      logger.logApiRequest('POST', API_PATH, 413, Date.now() - startTime);
+      return badRequest(
+        `CSV content too large after processing. Maximum size is ${MAX_FILE_SIZE / 1024 / 1024}MB`,
+        'CONTENT_TOO_LARGE'
+      );
+    }
+
     // Parse CSV
     const result = parseCSV(text);
 
     if (result.errors.length > 0) {
-      logger.logApiRequest('POST', '/api/templates/import', 400, Date.now() - startTime);
-      return badRequest('Failed to parse CSV file', 'CSV_PARSE_ERROR', result.errors);
+      logger.logApiRequest('POST', API_PATH, 400, Date.now() - startTime);
+      return badRequest('Failed to parse CSV file', 'CSV_VALIDATION_ERROR', result.errors);
     }
 
     if (result.templates.length === 0) {
-      logger.logApiRequest('POST', '/api/templates/import', 400, Date.now() - startTime);
-      return badRequest('CSV file contains no valid template rows', 'EMPTY_CSV');
+      logger.logApiRequest('POST', API_PATH, 400, Date.now() - startTime);
+      return badRequest('CSV file contains no valid template rows', 'VALIDATION_ERROR');
+    }
+
+    // Validate template count (prevent database performance issues)
+    if (result.templates.length > MAX_TEMPLATES) {
+      logger.logApiRequest('POST', API_PATH, 413, Date.now() - startTime);
+      return badRequest(
+        `Too many templates. Maximum is ${MAX_TEMPLATES} templates. Got ${result.templates.length}.`,
+        'TOO_MANY_ROWS'
+      );
     }
 
     // Import templates
@@ -62,7 +99,7 @@ export const POST: APIRoute = async ({ request }) => {
       failed: importResult.failed,
       skipped: importResult.skipped,
     });
-    logger.logApiRequest('POST', '/api/templates/import', 200, Date.now() - startTime);
+    logger.logApiRequest('POST', API_PATH, 201, Date.now() - startTime);
 
     return new Response(
       JSON.stringify({
@@ -72,12 +109,12 @@ export const POST: APIRoute = async ({ request }) => {
         errors: importResult.errors,
       }),
       {
-        status: 200,
+        status: 201,
         headers: { 'Content-Type': 'application/json' },
       }
     );
   } catch (error) {
-    logger.logApiError('POST', '/api/templates/import', error as Error);
+    logger.logApiError('POST', API_PATH, error as Error);
     return createErrorResponse(error);
   }
 };
