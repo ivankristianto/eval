@@ -9,6 +9,10 @@ import {
   validateTemperature,
 } from '@lib/validation/validators';
 import type { RubricType } from '@lib/utils/types';
+import { badRequest, createErrorResponse } from '@lib/api-error-handler';
+import { createLogger } from '@lib/logger';
+
+const logger = createLogger('API:Templates:Import');
 
 /**
  * POST /api/templates/import - Import templates from CSV file.
@@ -16,36 +20,22 @@ import type { RubricType } from '@lib/utils/types';
  * @returns JSON response with import results
  */
 export const POST: APIRoute = async ({ request }) => {
+  const startTime = Date.now();
+
   try {
     // Parse multipart form data
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
 
     if (!file) {
-      return new Response(
-        JSON.stringify({
-          error: 'INVALID_INPUT',
-          message: 'No file provided',
-        }),
-        {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+      logger.logApiRequest('POST', '/api/templates/import', 400, Date.now() - startTime);
+      return badRequest('No file provided. Expected multipart/form-data with "file" field.', 'INVALID_INPUT');
     }
 
     // Validate file type
     if (!file.name.endsWith('.csv') && file.type !== 'text/csv') {
-      return new Response(
-        JSON.stringify({
-          error: 'INVALID_FILE_TYPE',
-          message: 'File must be a CSV file',
-        }),
-        {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+      logger.logApiRequest('POST', '/api/templates/import', 400, Date.now() - startTime);
+      return badRequest('File must be a CSV file', 'INVALID_FILE_TYPE');
     }
 
     // Read file content
@@ -55,34 +45,24 @@ export const POST: APIRoute = async ({ request }) => {
     const result = parseCSV(text);
 
     if (result.errors.length > 0) {
-      return new Response(
-        JSON.stringify({
-          error: 'CSV_PARSE_ERROR',
-          message: 'Failed to parse CSV file',
-          details: result.errors,
-        }),
-        {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+      logger.logApiRequest('POST', '/api/templates/import', 400, Date.now() - startTime);
+      return badRequest('Failed to parse CSV file', 'CSV_PARSE_ERROR', result.errors);
     }
 
     if (result.templates.length === 0) {
-      return new Response(
-        JSON.stringify({
-          error: 'EMPTY_CSV',
-          message: 'CSV file contains no valid template rows',
-        }),
-        {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+      logger.logApiRequest('POST', '/api/templates/import', 400, Date.now() - startTime);
+      return badRequest('CSV file contains no valid template rows', 'EMPTY_CSV');
     }
 
     // Import templates
     const importResult = await importTemplates(result.templates);
+
+    logger.info('Templates imported', {
+      imported: importResult.imported,
+      failed: importResult.failed,
+      skipped: importResult.skipped,
+    });
+    logger.logApiRequest('POST', '/api/templates/import', 200, Date.now() - startTime);
 
     return new Response(
       JSON.stringify({
@@ -97,17 +77,8 @@ export const POST: APIRoute = async ({ request }) => {
       }
     );
   } catch (error) {
-    console.error('POST /api/templates/import error:', error);
-    return new Response(
-      JSON.stringify({
-        error: 'INTERNAL_ERROR',
-        message: error instanceof Error ? error.message : 'Internal server error',
-      }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
+    logger.logApiError('POST', '/api/templates/import', error as Error);
+    return createErrorResponse(error);
   }
 };
 
