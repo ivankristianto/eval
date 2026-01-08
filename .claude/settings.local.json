@@ -28,7 +28,12 @@
       "Bash(git push:*)",
       "Bash(gh pr view:*)",
       "Bash(gh pr diff:*)",
-      "Bash(git pull:*)"
+      "Bash(git pull:*)",
+      "mcp__plugin_playwright_playwright__browser_click",
+      "mcp__plugin_playwright_playwright__browser_close",
+      "Bash(gh pr checks:*)",
+      "Bash(git fetch:*)",
+      "Bash(git checkout:*)"
     ]
   },
   "gitAttribution": false
