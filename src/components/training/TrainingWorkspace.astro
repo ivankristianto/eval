@@ -652,18 +652,31 @@ const {
         throw new Error(result.message || 'Failed to upload CSV');
       }
 
-      // Show success notification
+      // Show success notification with countdown
       if (window.toast) {
-        window.toast.success(`Uploaded ${result.count} training pairs successfully!`);
+        const COUNTDOWN_SECONDS = 3;
+        let countdown = COUNTDOWN_SECONDS;
+        const toast = window.toast.success(
+          `Uploaded ${result.count} training pairs successfully! Reloading in ${countdown}...`
+        );
+
+        // Start countdown
+        const interval = setInterval(() => {
+          countdown--;
+          if (countdown > 0) {
+            window.toast.update(
+              toast,
+              `Uploaded ${result.count} training pairs successfully! Reloading in ${countdown}...`
+            );
+          } else {
+            clearInterval(interval);
+            window.location.reload();
+          }
+        }, 1000);
       }
 
       // Start polling for real-time updates
       document.dispatchEvent(new CustomEvent('operation-started'));
-
-      // Reload the page after a short delay to show the new data
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
     } catch (error) {
       console.error('CSV import error:', error);
       if (window.toast) {

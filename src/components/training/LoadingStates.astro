@@ -41,13 +41,18 @@
       setTimeout(() => toast.classList.add('animate-reveal'), 10);
 
       // Auto-remove
-      setTimeout(() => {
+      const timeoutId = setTimeout(() => {
         toast.classList.remove('animate-reveal');
         toast.classList.add('opacity-0', 'transition-opacity');
         setTimeout(() => {
           this.removeToast(toast);
         }, 300);
       }, duration);
+
+      // Store timeout ID for potential cancellation
+      toast.dataset.timeoutId = timeoutId.toString();
+
+      return toast;
     }
 
     createToast(message, type) {
@@ -66,10 +71,22 @@
 
       toast.innerHTML = `
         ${iconMap[type] || iconMap.info}
-        <span>${message}</span>
+        <span data-toast-message>${message}</span>
       `;
 
       return toast;
+    }
+
+    update(toast, message, type = null) {
+      const messageSpan = toast.querySelector('[data-toast-message]');
+      if (messageSpan) {
+        messageSpan.textContent = message;
+      }
+
+      if (type) {
+        // Remove old alert type classes and add new one
+        toast.className = toast.className.replace(/alert-\w+/, `alert-${type}`);
+      }
     }
 
     removeToast(toast) {
@@ -77,6 +94,12 @@
       if (index > -1) {
         this.toastQueue.splice(index, 1);
       }
+
+      // Clear timeout if exists
+      if (toast.dataset.timeoutId) {
+        clearTimeout(parseInt(toast.dataset.timeoutId));
+      }
+
       toast.remove();
     }
   }
@@ -88,6 +111,8 @@
     error: (msg) => toastManager.show(msg, 'error'),
     info: (msg) => toastManager.show(msg, 'info'),
     warning: (msg) => toastManager.show(msg, 'warning'),
+    update: (toast, message, type = null) => toastManager.update(toast, message, type),
+    remove: (toast) => toastManager.removeToast(toast),
   };
 
   // Loading Spinner Utility
