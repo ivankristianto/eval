@@ -641,3 +641,60 @@ export function validateTemperature(value: number | null | undefined): Validatio
 
   return { valid: true };
 }
+
+/**
+ * Type guard for validating rating values from the database.
+ *
+ * Provides runtime validation for judge_rating and human_rating values,
+ * ensuring they are either 'pass', 'fail', null, or undefined.
+ *
+ * While the database schema has CHECK constraints, this validation provides
+ * defensive programming against data migration issues, manual database edits,
+ * or other unexpected states.
+ *
+ * @param value - The rating value to validate (from database)
+ * @returns True if the value is a valid rating type
+ *
+ * @example
+ * ```typescript
+ * const resultQuery = { judge_rating: 'pass' };
+ * if (isValidRating(resultQuery.judge_rating)) {
+ *   // TypeScript knows this is 'pass' | 'fail'
+ *   console.log(resultQuery.judge_rating.toUpperCase());
+ * }
+ * ```
+ */
+export function isValidRating(
+  value: unknown
+): value is 'pass' | 'fail' | null | undefined {
+  if (value === null || value === undefined) {
+    return true;
+  }
+  return value === 'pass' || value === 'fail';
+}
+
+/**
+ * Safely parses a rating value from the database.
+ *
+ * This is a convenience wrapper around isValidRating that returns a typed value
+ * or undefined for invalid ratings. Useful for array methods and object transforms.
+ *
+ * @param value - The rating value from the database
+ * @returns The validated rating ('pass' | 'fail' | null | undefined)
+ *
+ * @example
+ * ```typescript
+ * const enriched = data.map(item => ({
+ *   ...item,
+ *   judge_rating: parseRating(item.judge_rating),
+ * }));
+ * ```
+ */
+export function parseRating(
+  value: unknown
+): 'pass' | 'fail' | null | undefined {
+  if (isValidRating(value)) {
+    return value;
+  }
+  return undefined;
+}

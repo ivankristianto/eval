@@ -21,6 +21,7 @@ import {
   getJudgeMetricsFromResults,
   getHumanMetricsFromResults,
 } from '@lib/db/persona-db';
+import { parseRating } from '@lib/validation/validators';
 
 // Get persona ID from URL
 const { id } = Astro.params;
@@ -100,9 +101,9 @@ const enrichedTrainingPairs = trainingPairs.map((pair) => {
     input: pair.input,
     expected_output: pair.expected_output,
     generated_output: resultQuery?.generated_output,
-    judge_rating: resultQuery?.judge_rating as 'pass' | 'fail' | undefined,
+    judge_rating: parseRating(resultQuery?.judge_rating),
     judge_feedback: resultQuery?.judge_feedback || resultQuery?.judge_reasoning,
-    human_rating: resultQuery?.human_rating as 'pass' | 'fail' | undefined,
+    human_rating: parseRating(resultQuery?.human_rating),
     human_feedback: resultQuery?.human_feedback,
   };
 });
