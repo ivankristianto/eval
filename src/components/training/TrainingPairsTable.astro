@@ -39,11 +39,11 @@ const totalPages = Math.max(1, Math.ceil(pairs.length / pageSize));
 ---
 
 <div
-  class="card bg-base-100/90 backdrop-blur-sm border border-base-300/50 shadow-lg rounded-xl overflow-hidden"
+  class="card bg-base-100/90 backdrop-blur-sm border border-base-300/50 shadow-lg rounded-xl overflow-hidden flex flex-col"
 >
-  <div class="card-body p-3">
+  <div class="card-body p-3 flex flex-col min-h-0">
     <!-- Table Header Actions -->
-    <div class="flex items-center justify-between px-1 py-2 border-b border-base-300/80">
+    <div class="flex items-center justify-between px-1 py-2 border-b border-base-300/80 flex-shrink-0">
       <div class="flex items-center gap-3">
         {
           selectable && (
@@ -113,7 +113,7 @@ const totalPages = Math.max(1, Math.ceil(pairs.length / pageSize));
     </div>
 
     <!-- Table with vertical scrolling -->
-    <div class="overflow-y-auto max-h-96 overflow-x-auto rounded-lg border border-base-300/50">
+    <div class="overflow-y-auto overflow-x-auto rounded-lg border border-base-300/50 flex-1 min-h-0">
       <table class="table table-sm" id="training-pairs-table">
         <thead class="bg-base-200/80 sticky top-0 z-20">
           <tr>
@@ -351,7 +351,7 @@ const totalPages = Math.max(1, Math.ceil(pairs.length / pageSize));
     </div>
 
     <!-- Pagination -->
-    <div class="flex items-center justify-between px-2 py-2 border-t border-base-300/80">
+    <div class="flex items-center justify-between px-2 py-2 border-t border-base-300/80 flex-shrink-0">
       <div class="text-sm text-base-content/60 font-medium">
         <span id="pagination-info"
           >Showing 1-{Math.min(pageSize, pairs.length)} of {pairs.length} pairs</span
@@ -482,6 +482,17 @@ const totalPages = Math.max(1, Math.ceil(pairs.length / pageSize));
     const nextBtn = document.querySelector('[data-action="next-page"]');
     if (prevBtn) prevBtn.disabled = currentPage === 1;
     if (nextBtn) nextBtn.disabled = currentPage === totalPages;
+
+    // Show/hide rows based on current page
+    const tbody = document.querySelector('#training-pairs-body');
+    if (tbody) {
+      const rows = tbody.querySelectorAll('tr:not([data-new-row])');
+      rows.forEach((row, index) => {
+        const rowNumber = index + 1;
+        const shouldShow = rowNumber >= start && rowNumber <= end;
+        row.style.display = shouldShow ? '' : 'none';
+      });
+    }
   }
 
   document.querySelectorAll('[data-page]').forEach((btn) => {
@@ -730,6 +741,9 @@ const totalPages = Math.max(1, Math.ceil(pairs.length / pageSize));
 
   // Initialize checkboxes on load
   updateCheckboxes();
+
+  // Initialize pagination on load
+  updatePagination();
 </script>
 
 <style>
