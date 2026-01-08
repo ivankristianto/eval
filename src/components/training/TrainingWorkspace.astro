@@ -460,6 +460,26 @@ const {
   const MAX_CONSECUTIVE_ERRORS = 5;
 
   /**
+   * Helper to add flash animation with proper timer cleanup
+   * Prevents memory leaks by clearing previous timers
+   */
+  function flashElement(element: Element, className = 'bg-success/10', duration = 1000) {
+    // Clear any existing timer on this element
+    if ((element as any)._animationTimer) {
+      clearTimeout((element as any)._animationTimer);
+    }
+
+    // Add the flash class
+    element.classList.add(className);
+
+    // Set timer to remove it
+    (element as any)._animationTimer = setTimeout(() => {
+      element.classList.remove(className);
+      (element as any)._animationTimer = null;
+    }, duration);
+  }
+
+  /**
    * Show/hide polling status indicator
    */
   function setPollingStatus(visible: boolean, progress?: string) {
@@ -581,13 +601,23 @@ const {
     const tbody = document.querySelector('#training-pairs-body');
     if (!tbody) return;
 
+    // Validate input
+    if (!pairs || !Array.isArray(pairs)) {
+      console.error('Invalid pairs data:', pairs);
+      return;
+    }
+
     // Find all existing data rows (excluding the new-row template)
     const existingRows = tbody.querySelectorAll('tr:not([data-new-row])');
 
     // Update each row with new data
-    pairs.forEach((pair, index) => {
-      const row = existingRows[index];
-      if (!row) return;
+    pairs.forEach((pair) => {
+      // Find row by pair ID instead of index to prevent race conditions
+      const row = Array.from(existingRows).find((r) => r.dataset.pairId === pair.id);
+      if (!row) {
+        console.warn(`Row not found for pair ${pair.id}`);
+        return;
+      }
 
       // Update generated output column
       const generatedOutputCell = row.querySelector('[data-cell-type="generated-output"]');
@@ -604,15 +634,13 @@ const {
           newDiv.textContent = pair.generated_output;
           generatedOutputCell.appendChild(newDiv);
 
-          // Add flash animation
-          newDiv.classList.add('bg-success/10');
-          setTimeout(() => newDiv.classList.remove('bg-success/10'), 1000);
+          // Add flash animation with timer cleanup
+          flashElement(newDiv);
         } else if (contentDiv) {
           // Update existing div if content changed
           if (contentDiv.textContent !== pair.generated_output) {
             contentDiv.textContent = pair.generated_output;
-            contentDiv.classList.add('bg-success/10');
-            setTimeout(() => contentDiv.classList.remove('bg-success/10'), 1000);
+            flashElement(contentDiv);
           }
         }
       }
@@ -626,8 +654,7 @@ const {
           if (badge.className !== newClassName) {
             badge.className = newClassName;
             badge.textContent = pair.judge_rating;
-            badge.classList.add('bg-success/20');
-            setTimeout(() => badge.classList.remove('bg-success/20'), 1000);
+            flashElement(badge, 'bg-success/20');
           }
         }
       }
@@ -648,15 +675,13 @@ const {
           newDiv.textContent = pair.judge_feedback;
           judgeFeedbackCell.appendChild(newDiv);
 
-          // Add flash animation
-          newDiv.classList.add('bg-success/10');
-          setTimeout(() => newDiv.classList.remove('bg-success/10'), 1000);
+          // Add flash animation with timer cleanup
+          flashElement(newDiv);
         } else if (contentDiv) {
           // Update existing div if content changed
           if (contentDiv.textContent !== pair.judge_feedback) {
             contentDiv.textContent = pair.judge_feedback;
-            contentDiv.classList.add('bg-success/10');
-            setTimeout(() => contentDiv.classList.remove('bg-success/10'), 1000);
+            flashElement(contentDiv);
           }
         }
       }
@@ -845,12 +870,20 @@ const {
     }
   });
 
-  // Clean up polling on page unload
+  // Clean up polling on page unload and visibility change
   window.addEventListener('beforeunload', () => {
     stopPolling();
     // Clear CSV upload countdown interval if exists
     if (window.__csvUploadInterval) {
       clearInterval(window.__csvUploadInterval);
+    }
+  });
+
+  // Stop polling when page is hidden (SPA navigation, tab switch)
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden && isPolling) {
+      console.log('Page hidden, stopping polling to save resources');
+      stopPolling();
     }
   });
 </script>
