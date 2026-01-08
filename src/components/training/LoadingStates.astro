@@ -33,6 +33,11 @@
     }
 
     show(message, type = 'info', duration = 3000) {
+      if (!this.container) {
+        console.error('Toast container not found');
+        return null;
+      }
+
       const toast = this.createToast(message, type);
       this.container.appendChild(toast);
       this.toastQueue.push(toast);
@@ -78,6 +83,12 @@
     }
 
     update(toast, message, type = null) {
+      // Validate toast still exists in DOM
+      if (!toast || !document.body.contains(toast)) {
+        console.warn('Toast element no longer exists in DOM');
+        return;
+      }
+
       const messageSpan = toast.querySelector('[data-toast-message]');
       if (messageSpan) {
         messageSpan.textContent = message;

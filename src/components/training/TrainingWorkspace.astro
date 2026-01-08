@@ -664,15 +664,26 @@ const {
         const interval = setInterval(() => {
           countdown--;
           if (countdown > 0) {
-            window.toast.update(
-              toast,
-              `Uploaded ${result.count} training pairs successfully! Reloading in ${countdown}...`
-            );
+            // Check if toast still exists before updating
+            if (toast && document.body.contains(toast)) {
+              window.toast.update(
+                toast,
+                `Uploaded ${result.count} training pairs successfully! Reloading in ${countdown}...`
+              );
+            } else {
+              clearInterval(interval);
+            }
           } else {
             clearInterval(interval);
-            window.location.reload();
+            // Small delay to allow final update to render
+            setTimeout(() => {
+              window.location.reload();
+            }, 100);
           }
         }, 1000);
+
+        // Store interval for cleanup on page unload
+        window.__csvUploadInterval = interval;
       }
 
       // Start polling for real-time updates
@@ -716,6 +727,10 @@ const {
   // Clean up polling on page unload
   window.addEventListener('beforeunload', () => {
     stopPolling();
+    // Clear CSV upload countdown interval if exists
+    if (window.__csvUploadInterval) {
+      clearInterval(window.__csvUploadInterval);
+    }
   });
 </script>
 
