@@ -6,6 +6,8 @@ import {
   validateUpdateModel,
   validateSystemPrompt,
   validateTemperature,
+  isValidRating,
+  parseRating,
 } from '@lib/validation/validators';
 
 const validUuid = '11111111-1111-4111-8111-111111111111';
@@ -357,5 +359,93 @@ describe('validateTemperature', () => {
     expect(result.valid).toBe(false);
     expect(result.error?.field).toBe('temperature');
     expect(result.error?.error).toBe('INVALID_INPUT');
+  });
+});
+
+describe('isValidRating', () => {
+  it('accepts "pass" rating', () => {
+    expect(isValidRating('pass')).toBe(true);
+  });
+
+  it('accepts "fail" rating', () => {
+    expect(isValidRating('fail')).toBe(true);
+  });
+
+  it('accepts null (unrated)', () => {
+    expect(isValidRating(null)).toBe(true);
+  });
+
+  it('accepts undefined (unrated)', () => {
+    expect(isValidRating(undefined)).toBe(true);
+  });
+
+  it('rejects invalid string values', () => {
+    expect(isValidRating('pending')).toBe(false);
+    expect(isValidRating('review')).toBe(false);
+    expect(isValidRating('')).toBe(false);
+    expect(isValidRating('Pass')).toBe(false); // case sensitive
+    expect(isValidRating('FAIL')).toBe(false); // case sensitive
+  });
+
+  it('rejects non-string values', () => {
+    expect(isValidRating(123)).toBe(false);
+    expect(isValidRating(true)).toBe(false);
+    expect(isValidRating(false)).toBe(false);
+    expect(isValidRating({})).toBe(false);
+    expect(isValidRating([])).toBe(false);
+  });
+
+  it('provides type narrowing for valid ratings', () => {
+    const value = 'pass' as unknown;
+    if (isValidRating(value)) {
+      // TypeScript should know value is 'pass' | 'fail' | null | undefined
+      expect(value === 'pass' || value === 'fail' || value === null || value === undefined).toBe(true);
+    }
+  });
+});
+
+describe('parseRating', () => {
+  it('returns "pass" for valid pass rating', () => {
+    expect(parseRating('pass')).toBe('pass');
+  });
+
+  it('returns "fail" for valid fail rating', () => {
+    expect(parseRating('fail')).toBe('fail');
+  });
+
+  it('returns null for null (unrated)', () => {
+    expect(parseRating(null)).toBe(null);
+  });
+
+  it('returns undefined for undefined', () => {
+    expect(parseRating(undefined)).toBe(undefined);
+  });
+
+  it('returns undefined for invalid string values', () => {
+    expect(parseRating('pending')).toBe(undefined);
+    expect(parseRating('review')).toBe(undefined);
+    expect(parseRating('')).toBe(undefined);
+    expect(parseRating('Pass')).toBe(undefined); // case sensitive
+  });
+
+  it('returns undefined for non-string values', () => {
+    expect(parseRating(123)).toBe(undefined);
+    expect(parseRating(true)).toBe(undefined);
+    expect(parseRating(false)).toBe(undefined);
+    expect(parseRating({})).toBe(undefined);
+    expect(parseRating([])).toBe(undefined);
+  });
+
+  it('works correctly in array map operations', () => {
+    const data = [
+      { id: 1, rating: 'pass' },
+      { id: 2, rating: 'fail' },
+      { id: 3, rating: null },
+      { id: 4, rating: 'invalid' },
+      { id: 5, rating: undefined },
+    ];
+
+    const result = data.map((item) => parseRating(item.rating));
+    expect(result).toEqual(['pass', 'fail', null, undefined, undefined]);
   });
 });
