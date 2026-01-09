@@ -76,20 +76,6 @@ Refactor each loop, not at the end.
 4. **Consistency** - Follows existing patterns?
 5. **Abstraction** - Right level? Not premature?
 
-## VII. Workflow
-
-### Single Task
-
-```
-bd ready → branch → implement → gates → commit → PR → review → merge → bd close
-```
-
-### Group Tasks
-
-```
-bd ready → branch → [implement → gates → commit]× → PR → review → merge → bd close
-```
-
 **PR Requirements**:
 
 - Follow PR template
