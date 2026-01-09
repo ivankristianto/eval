@@ -387,6 +387,16 @@ describe('TrainingSessionManager', () => {
       expect(resumed).toBeNull();
     });
 
+    it('should return null when session exists but has no checkpoints', () => {
+      const sessionId = 'session-no-checkpoints';
+
+      // Create a session without saving any checkpoints
+      manager.createSession(sessionId, personaId, 3);
+
+      const resumed = manager.resume(sessionId);
+      expect(resumed).toBeNull();
+    });
+
     it('should resume from running state', () => {
       const sessionId = 'session-running';
 
@@ -505,6 +515,38 @@ describe('TrainingSessionManager', () => {
       expect(isValid).toBe(false);
     });
 
+    it('should return null when resume encounters corrupted JSON', () => {
+      const sessionId = 'session-json-error';
+
+      manager.saveCheckpoint(sessionId, personaId, {
+        iterationNumber: 1,
+        evaluatedResultCount: 10,
+        metricsSnapshot: {
+          f1_score: 0.75,
+          precision: 0.8,
+          recall: 0.7,
+          accuracy: 0.75,
+          cohens_kappa: 0.6,
+          confusion_matrix: {
+            true_positives: 4,
+            true_negatives: 3,
+            false_positives: 1,
+            false_negatives: 2,
+          },
+        },
+        evaluatedResultIds: ['id1'],
+        currentPrompt: 'Test',
+      });
+
+      // Corrupt the metrics_snapshot JSON
+      db.prepare(
+        'UPDATE training_loop_checkpoints SET metrics_snapshot = ? WHERE session_id = ?'
+      ).run('INVALID JSON', sessionId);
+
+      const resumed = manager.resume(sessionId);
+      expect(resumed).toBeNull();
+    });
+
     it('should verify checkpoint has all required fields', () => {
       const sessionId = 'session-fields';
 
@@ -533,6 +575,115 @@ describe('TrainingSessionManager', () => {
       db.prepare(
         'UPDATE training_loop_checkpoints SET metrics_snapshot = ? WHERE session_id = ?'
       ).run(corruptedMetrics, sessionId);
+
+      const isValid = manager.verifyCheckpointIntegrity(sessionId);
+      expect(isValid).toBe(false);
+    });
+
+    it('should detect missing current_prompt field', () => {
+      const sessionId = 'session-missing-prompt';
+
+      manager.saveCheckpoint(sessionId, personaId, {
+        iterationNumber: 1,
+        evaluatedResultCount: 10,
+        metricsSnapshot: {
+          f1_score: 0.75,
+          precision: 0.8,
+          recall: 0.7,
+          accuracy: 0.75,
+          cohens_kappa: 0.6,
+          confusion_matrix: {
+            true_positives: 4,
+            true_negatives: 3,
+            false_positives: 1,
+            false_negatives: 2,
+          },
+        },
+        evaluatedResultIds: ['id1'],
+        currentPrompt: 'Test',
+      });
+
+      // Set current_prompt to empty string (falsy but not null due to DB constraint)
+      db.prepare(
+        'UPDATE training_loop_checkpoints SET current_prompt = ? WHERE session_id = ?'
+      ).run('', sessionId);
+
+      const isValid = manager.verifyCheckpointIntegrity(sessionId);
+      expect(isValid).toBe(false);
+    });
+
+    it('should detect invalid confusion_matrix structure', () => {
+      const sessionId = 'session-invalid-matrix';
+
+      manager.saveCheckpoint(sessionId, personaId, {
+        iterationNumber: 1,
+        evaluatedResultCount: 10,
+        metricsSnapshot: {
+          f1_score: 0.75,
+          precision: 0.8,
+          recall: 0.7,
+          accuracy: 0.75,
+          cohens_kappa: 0.6,
+          confusion_matrix: {
+            true_positives: 4,
+            true_negatives: 3,
+            false_positives: 1,
+            false_negatives: 2,
+          },
+        },
+        evaluatedResultIds: ['id1'],
+        currentPrompt: 'Test',
+      });
+
+      // Corrupt confusion_matrix by removing a required field
+      const corruptedMetrics = JSON.stringify({
+        f1_score: 0.75,
+        precision: 0.8,
+        recall: 0.7,
+        accuracy: 0.75,
+        cohens_kappa: 0.6,
+        confusion_matrix: {
+          true_positives: 4,
+          true_negatives: 3,
+          false_positives: 1,
+          // Missing false_negatives
+        },
+      });
+      db.prepare(
+        'UPDATE training_loop_checkpoints SET metrics_snapshot = ? WHERE session_id = ?'
+      ).run(corruptedMetrics, sessionId);
+
+      const isValid = manager.verifyCheckpointIntegrity(sessionId);
+      expect(isValid).toBe(false);
+    });
+
+    it('should detect evaluated_result_ids that is not an array', () => {
+      const sessionId = 'session-invalid-ids';
+
+      manager.saveCheckpoint(sessionId, personaId, {
+        iterationNumber: 1,
+        evaluatedResultCount: 10,
+        metricsSnapshot: {
+          f1_score: 0.75,
+          precision: 0.8,
+          recall: 0.7,
+          accuracy: 0.75,
+          cohens_kappa: 0.6,
+          confusion_matrix: {
+            true_positives: 4,
+            true_negatives: 3,
+            false_positives: 1,
+            false_negatives: 2,
+          },
+        },
+        evaluatedResultIds: ['id1'],
+        currentPrompt: 'Test',
+      });
+
+      // Set evaluated_result_ids to a non-array value
+      db.prepare(
+        'UPDATE training_loop_checkpoints SET evaluated_result_ids = ? WHERE session_id = ?'
+      ).run(JSON.stringify('not-an-array'), sessionId);
 
       const isValid = manager.verifyCheckpointIntegrity(sessionId);
       expect(isValid).toBe(false);

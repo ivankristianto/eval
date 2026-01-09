@@ -1,11 +1,30 @@
 /**
  * Training Session Manager
- * Manages checkpoint save/resume, pause/resume, and state integrity for training sessions
+ *
+ * Manages checkpoint save/resume, pause/resume, and state integrity for training sessions.
+ * This class provides ACID-compliant checkpoint management and session state control,
+ * using the current Persona schema fields and versioned prompt tables.
  *
  * This replaces the deprecated TrainingStateManager class (moved to deprecated/training-state.ts)
  * with current Persona schema alignment.
+ *
+ * @example
+ * ```typescript
+ * const manager = new TrainingSessionManager(db);
+ *
+ * // Create a new session
+ * manager.createSession('session-123', 'persona-456', 5);
+ *
+ * // Save checkpoint
+ * manager.saveCheckpoint('session-123', 'persona-456', checkpointData);
+ *
+ * // Pause and resume
+ * manager.pause('session-123', 'User requested pause');
+ * const resumed = manager.resume('session-123');
+ * ```
+ *
+ * @see {@link https://github.com/ivankristianto/eval | Project Documentation}
  */
-
 import type { Database } from 'better-sqlite3';
 import type { CheckpointData, MetricsResult, TrainingLoopState } from '@src-types/training';
 import { TrainingStateError } from './training-errors';
@@ -16,29 +35,58 @@ import { TrainingStateError } from './training-errors';
 const DEFAULT_MAX_ITERATIONS = 5;
 
 /**
- * TrainingSessionManager class
- * Provides ACID-compliant checkpoint management and session state control
- * Uses current Persona schema fields and versioned prompt tables
+ * Training Session Manager
+ *
+ * Manages checkpoint save/resume, pause/resume, and state integrity for training sessions.
+ * Provides ACID-compliant checkpoint management and session state control using
+ * the current Persona schema fields and versioned prompt tables.
+ *
+ * @class
+ * @example
+ * ```typescript
+ * const manager = new TrainingSessionManager(db);
+ * manager.createSession('session-123', 'persona-456', 5);
+ * manager.saveCheckpoint('session-123', 'persona-456', checkpointData);
+ * manager.pause('session-123', 'User requested pause');
+ * const resumed = manager.resume('session-123');
+ * ```
  */
 export class TrainingSessionManager {
   private readonly db: Database;
 
   /**
-   * Initializes a new training session manager.
-   * @param db - Database instance (required)
+   * Creates a new TrainingSessionManager instance.
+   *
+   * @param db - Database instance (required). Must be a better-sqlite3 Database instance.
+   * @throws {TypeError} If db is not provided or is not a valid Database instance
    */
   constructor(db: Database) {
     this.db = db;
   }
 
   /**
-   * Save checkpoint with ACID transaction guarantee
-   * Creates training loop state if it doesn't exist
+   * Saves a training checkpoint with ACID transaction guarantee.
    *
-   * @param sessionId - Unique session identifier
-   * @param personaId - Persona being trained
-   * @param checkpoint - Checkpoint data to save
-   * @throws {TrainingStateError} If persona not found or transaction fails
+   * Creates training loop state if it doesn't exist and updates the checkpoint
+   * for the current iteration. This method is transactional - all operations
+   * succeed or all fail together.
+   *
+   * @param sessionId - Unique session identifier (e.g., UUID)
+   * @param personaId - ID of the persona being trained
+   * @param checkpoint - Checkpoint data including iteration number, metrics, and evaluated results
+   * @throws {TrainingStateError} If persona is not found or transaction fails
+   *
+   * @example
+   * ```typescript
+   * const checkpoint: CheckpointData = {
+   *   iterationNumber: 1,
+   *   evaluatedResultCount: 10,
+   *   metricsSnapshot: { f1_score: 0.8, ... },
+   *   evaluatedResultIds: ['result-1', 'result-2'],
+   *   currentPrompt: 'Evaluate this response...'
+   * };
+   * manager.saveCheckpoint('session-123', 'persona-456', checkpoint);
+   * ```
    */
   saveCheckpoint(sessionId: string, personaId: string, checkpoint: CheckpointData): void {
     const transaction = this.db.transaction(() => {
@@ -167,12 +215,19 @@ export class TrainingSessionManager {
   }
 
   /**
-   * Pause training session
-   * Updates state to 'paused' with reason
+   * Pauses a training session.
    *
-   * @param sessionId - Session to pause
-   * @param reason - Reason for pausing
-   * @throws {TrainingStateError} If session not found or not in pausable state
+   * Updates the session status to 'paused' and records the reason for pausing.
+   * Only sessions with status 'in_progress' can be paused.
+   *
+   * @param sessionId - Unique session identifier to pause
+   * @param reason - Human-readable reason for pausing (e.g., 'User requested', 'Maintenance')
+   * @throws {TrainingStateError} If session is not found or not in a pausable state
+   *
+   * @example
+   * ```typescript
+   * manager.pause('session-123', 'User requested pause');
+   * ```
    */
   pause(sessionId: string, reason: string): void {
     const state = this.db
@@ -198,11 +253,24 @@ export class TrainingSessionManager {
   }
 
   /**
-   * Resume training session from latest checkpoint
-   * Returns checkpoint data to continue training
+   * Resumes a training session from the latest checkpoint.
    *
-   * @param sessionId - Session to resume
-   * @returns CheckpointData or null if no checkpoint exists
+   * Retrieves the most recent checkpoint data for the session, allowing
+   * training to continue from where it left off. Returns null if the session
+   * doesn't exist or has no checkpoints.
+   *
+   * @param sessionId - Unique session identifier to resume
+   * @returns Checkpoint data from the latest iteration, or null if session/checkpoint not found
+   *
+   * @example
+   * ```typescript
+   * const checkpoint = manager.resume('session-123');
+   * if (checkpoint) {
+   *   console.log(`Resuming from iteration ${checkpoint.iterationNumber}`);
+   * } else {
+   *   console.log('No checkpoint found');
+   * }
+   * ```
    */
   resume(sessionId: string): CheckpointData | null {
     const state = this.db
@@ -249,11 +317,26 @@ export class TrainingSessionManager {
   }
 
   /**
-   * Verify checkpoint integrity
-   * Checks that checkpoint data is complete and valid
+   * Verifies the integrity of the latest checkpoint for a session.
    *
-   * @param sessionId - Session to verify
-   * @returns true if checkpoint is intact, false otherwise
+   * Checks that checkpoint data is complete and valid by verifying:
+   * - Checkpoint exists
+   * - Required fields are present (current_prompt, metrics_snapshot, evaluated_result_ids)
+   * - JSON fields can be parsed successfully
+   * - Metrics snapshot contains all required numeric fields
+   * - Confusion matrix exists and has required numeric fields
+   * - Evaluated result IDs is an array
+   *
+   * @param sessionId - Unique session identifier to verify
+   * @returns true if checkpoint is intact and valid, false otherwise
+   *
+   * @example
+   * ```typescript
+   * const isValid = manager.verifyCheckpointIntegrity('session-123');
+   * if (!isValid) {
+   *   console.error('Checkpoint data is corrupted or incomplete');
+   * }
+   * ```
    */
   verifyCheckpointIntegrity(sessionId: string): boolean {
     try {
@@ -317,10 +400,21 @@ export class TrainingSessionManager {
   }
 
   /**
-   * Get training session state
+   * Retrieves the current state of a training session.
    *
-   * @param sessionId - Session to query
-   * @returns TrainingLoopState or null if not found
+   * Returns the complete training loop state including status, iteration numbers,
+   * model IDs, and metadata. Returns null if the session doesn't exist.
+   *
+   * @param sessionId - Unique session identifier to query
+   * @returns Training loop state object, or null if session not found
+   *
+   * @example
+   * ```typescript
+   * const state = manager.getSessionState('session-123');
+   * if (state) {
+   *   console.log(`Status: ${state.status}, Iteration: ${state.current_iteration}`);
+   * }
+   * ```
    */
   getSessionState(sessionId: string): TrainingLoopState | null {
     const state = this.db
@@ -331,12 +425,20 @@ export class TrainingSessionManager {
   }
 
   /**
-   * Create a new training session state
+   * Creates a new training session.
    *
-   * @param sessionId - Unique session identifier
-   * @param personaId - Persona being trained
-   * @param maxIterations - Maximum iterations (defaults to DEFAULT_MAX_ITERATIONS)
-   * @throws {TrainingStateError} If persona not found
+   * Initializes a new training session state with the given parameters.
+   * The session starts in 'pending' status with current_iteration set to 1.
+   *
+   * @param sessionId - Unique session identifier (e.g., UUID)
+   * @param personaId - ID of the persona to train
+   * @param maxIterations - Maximum number of training iterations (defaults to 5)
+   * @throws {TrainingStateError} If persona is not found
+   *
+   * @example
+   * ```typescript
+   * manager.createSession('session-123', 'persona-456', 10);
+   * ```
    */
   createSession(
     sessionId: string,
@@ -387,12 +489,21 @@ export class TrainingSessionManager {
   }
 
   /**
-   * Update training session status
+   * Updates the status of a training session.
    *
-   * @param sessionId - Session to update
-   * @param status - New status
-   * @param errorMessage - Optional error message for failed status
-   * @throws {TrainingStateError} If session not found
+   * Changes the session status and optionally adds an error message.
+   * Common statuses: 'pending', 'in_progress', 'paused', 'completed', 'failed'.
+   *
+   * @param sessionId - Unique session identifier to update
+   * @param status - New status value (must be a valid TrainingLoopState status)
+   * @param errorMessage - Optional error message (typically used when status is 'failed')
+   * @throws {TrainingStateError} If session is not found
+   *
+   * @example
+   * ```typescript
+   * manager.updateSessionStatus('session-123', 'in_progress');
+   * manager.updateSessionStatus('session-123', 'failed', 'API timeout');
+   * ```
    */
   updateSessionStatus(
     sessionId: string,
@@ -420,12 +531,21 @@ export class TrainingSessionManager {
   }
 
   /**
-   * Get the current prompt version for a persona
-   * Uses versioned prompt tables (task_prompt_versions or judge_prompt_versions)
+   * Retrieves the current prompt version for a persona.
    *
-   * @param personaId - Persona ID
-   * @param promptType - Type of prompt ('task' or 'judge')
-   * @returns Current prompt text or null if not found
+   * Fetches the latest prompt text from the versioned prompt tables
+   * (task_prompt_versions or judge_prompt_versions). Returns the most
+   * recent version based on version_number.
+   *
+   * @param personaId - ID of the persona
+   * @param promptType - Type of prompt to retrieve: 'task' or 'judge'
+   * @returns Current prompt text, or null if no prompt exists
+   *
+   * @example
+   * ```typescript
+   * const taskPrompt = manager.getCurrentPrompt('persona-123', 'task');
+   * const judgePrompt = manager.getCurrentPrompt('persona-123', 'judge');
+   * ```
    */
   getCurrentPrompt(personaId: string, promptType: 'task' | 'judge'): string | null {
     const tableName = promptType === 'task' ? 'task_prompt_versions' : 'judge_prompt_versions';
@@ -440,10 +560,22 @@ export class TrainingSessionManager {
   }
 
   /**
-   * Get all checkpoints for a session
+   * Retrieves all checkpoints for a session.
    *
-   * @param sessionId - Session to query
-   * @returns Array of checkpoints sorted by iteration number
+   * Returns an array of all checkpoints for the given session, sorted by
+   * iteration number in ascending order. Each checkpoint includes the
+   * iteration data, metrics, and creation timestamp.
+   *
+   * @param sessionId - Unique session identifier to query
+   * @returns Array of checkpoint objects sorted by iteration number (empty array if none found)
+   *
+   * @example
+   * ```typescript
+   * const checkpoints = manager.getCheckpoints('session-123');
+   * checkpoints.forEach(cp => {
+   *   console.log(`Iteration ${cp.iterationNumber}: F1=${cp.metricsSnapshot.f1_score}`);
+   * });
+   * ```
    */
   getCheckpoints(sessionId: string): Array<{
     iterationNumber: number;
@@ -477,11 +609,27 @@ export class TrainingSessionManager {
   }
 
   /**
-   * Delete a training session and all its checkpoints
-   * Use with caution - this is irreversible
+   * Deletes a training session and all its checkpoints.
    *
-   * @param sessionId - Session to delete
-   * @returns true if session was deleted, false if not found
+   * **WARNING:** This operation is irreversible. All session data including
+   * checkpoints will be permanently deleted from the database.
+   *
+   * The deletion is performed within a transaction to ensure atomicity.
+   * Checkpoints are deleted first due to foreign key constraints, then
+   * the session state is removed.
+   *
+   * @param sessionId - Unique session identifier to delete
+   * @returns true if session was deleted, false if session was not found
+   *
+   * @example
+   * ```typescript
+   * const deleted = manager.deleteSession('session-123');
+   * if (deleted) {
+   *   console.log('Session and all checkpoints deleted');
+   * } else {
+   *   console.log('Session not found');
+   * }
+   * ```
    */
   deleteSession(sessionId: string): boolean {
     const state = this.getSessionState(sessionId);
