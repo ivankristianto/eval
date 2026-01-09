@@ -51,7 +51,8 @@
       "Skill(speckit.specify)",
       "mcp__plugin_playwright_playwright__browser_click",
       "mcp__plugin_playwright_playwright__browser_close",
-      "Bash(npx eslint:*)"
+      "Bash(npx eslint:*)",
+      "Bash(bd close:*)"
     ]
   },
   "gitAttribution": false
