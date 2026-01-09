@@ -5,8 +5,8 @@
 
 import type { APIRoute } from 'astro';
 import { getDatabase } from '@lib/db';
-import type { TrainingIteration, Persona } from '@src-types/training';
-import { TrainingStateManager } from '@lib/training/deprecated/training-state';
+import type { TrainingIteration } from '@src-types/training';
+import { TrainingSessionManager } from '@lib/training/training-session-manager';
 import { badRequest, notFound, createErrorResponse } from '@lib/api-error-handler';
 import { createLogger } from '@lib/logger';
 
@@ -174,7 +174,7 @@ export const POST: APIRoute = async ({ params, request }) => {
     }
 
     // Create checkpoint before pausing
-    const stateManager = new TrainingStateManager(db);
+    const stateManager = new TrainingSessionManager(db);
 
     // Get current iteration data for checkpoint
     const iteration = db
@@ -254,7 +254,7 @@ export const POST: APIRoute = async ({ params, request }) => {
 
     // Perform all database operations in a transaction
     const transaction = db.transaction(() => {
-      // Pause the training session
+      // Pause the training session using TrainingSessionManager
       stateManager.pause(activeSession.session_id, pauseReason);
 
       // Update current iteration status to paused

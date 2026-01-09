@@ -6,7 +6,7 @@
 import type { APIRoute } from 'astro';
 import { getDatabase } from '@lib/db';
 import type { Persona } from '@src-types/training';
-import { IterativeTrainingLoop } from '@lib/training/deprecated/training-loop';
+import { TrainingLoopManager } from '@lib/training/training-loop-manager';
 import { v4 as uuidv4 } from 'uuid';
 import { badRequest, notFound, createErrorResponse } from '@lib/api-error-handler';
 import { createLogger } from '@lib/logger';
@@ -113,14 +113,14 @@ export const POST: APIRoute = async ({ params }) => {
 
     // Create session and start training loop
     const sessionId = uuidv4();
-    const trainingLoop = new IterativeTrainingLoop(sessionId, id, db);
+    const trainingLoop = new TrainingLoopManager({ sessionId, personaId: id }, db);
 
     logger.info('Starting training loop', { sessionId, personaId: id });
 
     // Execute training loop (for MVP, run synchronously to ensure decisions are created)
     // In production, this would be fire-and-forget with background job processing
     // NOTE: For iteration 1, execute() will stop after judge evaluation and wait for human review
-    await trainingLoop.execute([]);
+    await trainingLoop.execute();
 
     // Get the created iteration info after execute completes
     const createdIteration = db

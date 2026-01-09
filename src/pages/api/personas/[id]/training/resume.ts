@@ -6,7 +6,7 @@
 import type { APIRoute } from 'astro';
 import { getDatabase } from '@lib/db';
 import type { TrainingIteration } from '@src-types/training';
-import { TrainingStateManager } from '@lib/training/deprecated/training-state';
+import { TrainingSessionManager } from '@lib/training/training-session-manager';
 import { badRequest, notFound, internalError, createErrorResponse } from '@lib/api-error-handler';
 import { createLogger } from '@lib/logger';
 
@@ -94,7 +94,7 @@ export const POST: APIRoute = async ({ params }) => {
     }
 
     // Load checkpoint and verify integrity (before transaction)
-    const stateManager = new TrainingStateManager(db);
+    const stateManager = new TrainingSessionManager(db);
 
     // Find paused training session and perform state transition in transaction
     // This prevents race conditions from concurrent resume requests

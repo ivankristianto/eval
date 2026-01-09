@@ -13,7 +13,7 @@ import type { APIRoute } from 'astro';
 import { getDatabase } from '@lib/db';
 import type { Persona, TrainingIteration } from '@src-types/training';
 import { storePromptVersion } from '@lib/training/prompt-version-manager';
-import { IterativeTrainingLoop } from '@lib/training/deprecated/training-loop';
+import { TrainingLoopManager } from '@lib/training/training-loop-manager';
 import { badRequest, notFound, createErrorResponse } from '@lib/api-error-handler';
 import { createLogger } from '@lib/logger';
 
@@ -137,7 +137,7 @@ export const POST: APIRoute = async ({ params, request }) => {
       }
 
       // Create training loop instance and accept prompts
-      const loop = new IterativeTrainingLoop(state.session_id, id, db);
+      const loop = new TrainingLoopManager({ sessionId: state.session_id, personaId: id }, db);
 
       logger.info('Accepting iteration 1 prompts and continuing training', {
         personaId: id,

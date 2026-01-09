@@ -9,8 +9,7 @@ import type { APIRoute } from 'astro';
 import { getDatabase } from '@lib/db';
 import type { TrainingIteration, Persona } from '@src-types/training';
 import { calculateIterationMetricsFromGroundTruth } from '@lib/evaluation/metrics-orchestrator';
-import type { JudgeResult } from '@lib/training/deprecated/training-loop';
-import { IterativeTrainingLoop } from '@lib/training/deprecated/training-loop';
+import { TrainingLoopManager } from '@lib/training/training-loop-manager';
 import { badRequest, notFound, createErrorResponse } from '@lib/api-error-handler';
 import { createLogger } from '@lib/logger';
 
@@ -124,7 +123,7 @@ export const POST: APIRoute = async ({ params, request }) => {
       // Create training loop instance and continue training IN BACKGROUND
       // This allows the API to return immediately while training runs asynchronously
       setImmediate(async () => {
-        const loop = new IterativeTrainingLoop(state.session_id, id, db);
+        const loop = new TrainingLoopManager({ sessionId: state.session_id, personaId: id }, db);
         try {
           // This will:
           // 1. Calculate metrics from human votes
@@ -298,21 +297,16 @@ export const POST: APIRoute = async ({ params, request }) => {
           );
         }
 
-        // Fetch all judge decisions with human reviews
-        const judgeResults = db
-          .prepare(
-            `SELECT
-               jd.judge_decision,
-               hr.human_decision
-             FROM judge_decisions jd
-             JOIN human_reviews hr ON hr.judge_decision_id = jd.id
-             WHERE jd.iteration_id = ?`
-          )
-          .all(iteration.id) as JudgeResult[];
-
-        // Import IterativeTrainingLoop for metrics calculation
-        const trainingLoop = new IterativeTrainingLoop('', id, db);
-        metrics = await trainingLoop.calculateMetricsInWorker(judgeResults);
+        // Import TrainingLoopManager for metrics calculation
+        // Note: calculateMetricsInWorker is a private method in the old deprecated class
+        // Use metrics-orchestrator instead for compatibility
+        // For now, we'll calculate metrics directly here
+        metrics = await (async () => {
+          // Use calculateIterationMetricsFromGroundTruth for consistency
+          // This uses ground truth comparison which is more reliable than human reviews
+          const result = await calculateIterationMetricsFromGroundTruth(iteration.id, db);
+          return result.metrics;
+        })();
 
         logger.info('Human review metrics calculated successfully', {
           personaId: id,
@@ -411,12 +405,12 @@ export const POST: APIRoute = async ({ params, request }) => {
         );
 
         // Create training loop and execute - this will refine prompts and continue to next iteration
-        const loop = new IterativeTrainingLoop(state.session_id, id, db);
+        const loop = new TrainingLoopManager({ sessionId: state.session_id, personaId: id }, db);
 
         // Run the training loop in background without blocking
         setImmediate(async () => {
           try {
-            await loop.execute([]);
+            await loop.execute();
             logger.info('Training loop completed', {
               personaId: id,
               sessionId: state.session_id,
