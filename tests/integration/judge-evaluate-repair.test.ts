@@ -161,14 +161,14 @@ describe('Judge Evaluate Auto-Repair', () => {
       });
 
       // Only first should have wasRepaired: true, rest should have wasRepaired: false
-      const repairedCount = results.filter(
-        (r) => r.success && r.wasRepaired === true
-      ).length;
+      const repairedCount = results.filter((r) => r.success && r.wasRepaired === true).length;
       expect(repairedCount).toBe(1);
 
       // All should point to the same version
       const versionIds = new Set(
-        results.filter((r) => r.success).map((r) => (r as { success: true; versionId: string }).versionId)
+        results
+          .filter((r) => r.success)
+          .map((r) => (r as { success: true; versionId: string }).versionId)
       );
       expect(versionIds.size).toBe(1);
       expect(versionIds.has(initialVersionId)).toBe(true);

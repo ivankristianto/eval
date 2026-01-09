@@ -55,10 +55,7 @@ export interface RepairOptions {
  * }
  * ```
  */
-export function repairTaskPromptVersion(
-  db: Database,
-  options: RepairOptions
-): RepairResult {
+export function repairTaskPromptVersion(db: Database, options: RepairOptions): RepairResult {
   const { personaId, promptText } = options;
 
   const repairTx = db.transaction((): RepairResult => {
@@ -170,10 +167,7 @@ export function repairTaskPromptVersion(
  * }
  * ```
  */
-export function repairJudgePromptVersion(
-  db: Database,
-  options: RepairOptions
-): RepairResult {
+export function repairJudgePromptVersion(db: Database, options: RepairOptions): RepairResult {
   const { personaId, promptText } = options;
 
   const repairTx = db.transaction((): RepairResult => {
