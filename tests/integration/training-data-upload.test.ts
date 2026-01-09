@@ -30,22 +30,22 @@ describe('Training Data Upload API', () => {
         id TEXT PRIMARY KEY,
         name TEXT NOT NULL UNIQUE,
         description TEXT,
+        task_prompt TEXT NOT NULL,
         task_model_id TEXT NOT NULL,
         judge_model_id TEXT NOT NULL,
         prompt_engineer_model_id TEXT NOT NULL,
-        current_task_prompt_version_id TEXT,
-        current_judge_prompt_version_id TEXT,
-        status TEXT NOT NULL CHECK(status IN ('draft', 'training', 'awaiting_human_review', 'trained', 'incomplete')),
-        target_pass_rate REAL NOT NULL DEFAULT 0.80 CHECK(target_pass_rate >= 0.0 AND target_pass_rate <= 1.0),
-        best_pass_rate REAL DEFAULT NULL,
-        best_pass_rate_updated_at TEXT,
+        status TEXT NOT NULL CHECK(status IN ('draft', 'training', 'trained', 'incomplete')),
+        target_f1_score REAL NOT NULL DEFAULT 0.80,
+        max_iterations INTEGER NOT NULL DEFAULT 5,
+        current_iteration INTEGER DEFAULT 0,
+        best_f1_score REAL DEFAULT NULL,
+        best_f1_iteration INTEGER DEFAULT NULL,
         created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
         updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
         created_by TEXT,
-        CHECK (task_model_id != '' AND judge_model_id != '' AND prompt_engineer_model_id != ''),
-        FOREIGN KEY (task_model_id) REFERENCES ModelConfiguration(id) ON DELETE RESTRICT,
-        FOREIGN KEY (judge_model_id) REFERENCES ModelConfiguration(id) ON DELETE RESTRICT,
-        FOREIGN KEY (prompt_engineer_model_id) REFERENCES ModelConfiguration(id) ON DELETE RESTRICT
+        FOREIGN KEY (task_model_id) REFERENCES ModelConfiguration(id),
+        FOREIGN KEY (judge_model_id) REFERENCES ModelConfiguration(id),
+        FOREIGN KEY (prompt_engineer_model_id) REFERENCES ModelConfiguration(id)
       );
 
       CREATE TABLE IF NOT EXISTS training_pairs (
@@ -74,12 +74,13 @@ describe('Training Data Upload API', () => {
 
     // Insert test persona
     db.prepare(
-      `INSERT INTO personas (id, name, description, task_model_id, judge_model_id, prompt_engineer_model_id, status)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO personas (id, name, description, task_prompt, task_model_id, judge_model_id, prompt_engineer_model_id, status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
       'persona-test',
       'Test Persona',
       'Test description',
+      'Test task prompt',
       'model-openai',
       'model-anthropic',
       'model-google',
@@ -274,12 +275,13 @@ describe('Training Data Upload API', () => {
     it('should return empty array for persona with no training pairs', () => {
       // Create new persona without pairs
       db.prepare(
-        `INSERT INTO personas (id, name, description, task_model_id, judge_model_id, prompt_engineer_model_id, status)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`
+        `INSERT INTO personas (id, name, description, task_prompt, task_model_id, judge_model_id, prompt_engineer_model_id, status)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
       ).run(
         'persona-empty',
         'Empty Persona',
         'No pairs',
+        'Test prompt',
         'model-openai',
         'model-anthropic',
         'model-google',

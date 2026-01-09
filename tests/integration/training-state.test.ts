@@ -1,9 +1,9 @@
 /**
- * Integration tests for TrainingSessionManager
+ * Integration tests for training state manager
  * Tests simulated crash recovery scenarios and state persistence
  *
- * Uses the new TrainingSessionManager which replaces the deprecated
- * TrainingSessionManager class with current Persona schema alignment.
+ * NOTE: This test uses the deprecated training-state module.
+ * The module has been moved to @lib/training/deprecated/training-state
  */
 
 import { describe, it, expect, beforeAll, beforeEach, afterAll } from 'vitest';
@@ -14,10 +14,10 @@ import {
   closeTestDatabase,
   createTestPersona,
 } from '../setup';
-import { TrainingSessionManager } from '@lib/training/training-session-manager';
+import { TrainingStateManager } from '@lib/training/deprecated/training-state';
 import type { CheckpointData, TrainingLoopState } from '../../src/types/training';
 
-describe('Training Session Manager - Integration Tests', () => {
+describe('Training State Manager - Integration Tests', () => {
   beforeAll(() => {
     initializeTestDatabase();
   });
@@ -34,7 +34,7 @@ describe('Training Session Manager - Integration Tests', () => {
     it('should recover from crash during checkpoint save', () => {
       const db = getTestDatabase();
       const persona = createTestPersona(db);
-      const manager = new TrainingSessionManager(db);
+      const manager = new TrainingStateManager(db);
 
       const sessionId = 'session-crash-during-save';
 
@@ -107,7 +107,7 @@ describe('Training Session Manager - Integration Tests', () => {
     it('should recover from crash after checkpoint save', () => {
       const db = getTestDatabase();
       const persona = createTestPersona(db);
-      const manager = new TrainingSessionManager(db);
+      const manager = new TrainingStateManager(db);
 
       const sessionId = 'session-crash-after-save';
 
@@ -134,7 +134,7 @@ describe('Training Session Manager - Integration Tests', () => {
 
       // Simulate process termination by creating new manager instance
       // (simulates restart after crash)
-      const managerAfterCrash = new TrainingSessionManager(db);
+      const managerAfterCrash = new TrainingStateManager(db);
 
       // Should be able to resume from saved checkpoint
       const resumed = managerAfterCrash.resume(sessionId);
@@ -147,7 +147,7 @@ describe('Training Session Manager - Integration Tests', () => {
     it('should recover from crash during multi-iteration training', () => {
       const db = getTestDatabase();
       const persona = createTestPersona(db);
-      const manager = new TrainingSessionManager(db);
+      const manager = new TrainingStateManager(db);
 
       const sessionId = 'session-multi-iter-crash';
 
@@ -214,7 +214,7 @@ describe('Training Session Manager - Integration Tests', () => {
 
       // Simulate crash during iteration 4 (before checkpoint saved)
       // New manager instance after restart
-      const managerAfterCrash = new TrainingSessionManager(db);
+      const managerAfterCrash = new TrainingStateManager(db);
 
       // Should resume from iteration 3 (last successful checkpoint)
       const resumed = managerAfterCrash.resume(sessionId);
@@ -249,7 +249,7 @@ describe('Training Session Manager - Integration Tests', () => {
     it('should handle crash during pause operation', () => {
       const db = getTestDatabase();
       const persona = createTestPersona(db);
-      const manager = new TrainingSessionManager(db);
+      const manager = new TrainingStateManager(db);
 
       const sessionId = 'session-crash-during-pause';
 
@@ -278,7 +278,7 @@ describe('Training Session Manager - Integration Tests', () => {
       manager.pause(sessionId, 'User requested');
 
       // Simulate crash and restart
-      const managerAfterCrash = new TrainingSessionManager(db);
+      const managerAfterCrash = new TrainingStateManager(db);
 
       // Should still be able to resume from paused state
       const resumed = managerAfterCrash.resume(sessionId);
@@ -320,16 +320,16 @@ describe('Training Session Manager - Integration Tests', () => {
       };
 
       // Instance 1: Save checkpoint
-      const manager1 = new TrainingSessionManager(db);
+      const manager1 = new TrainingStateManager(db);
       manager1.saveCheckpoint(sessionId, persona.id, checkpoint);
 
       // Instance 2: Resume and verify
-      const manager2 = new TrainingSessionManager(db);
+      const manager2 = new TrainingStateManager(db);
       const resumed = manager2.resume(sessionId);
       expect(resumed).toEqual(checkpoint);
 
       // Instance 3: Pause
-      const manager3 = new TrainingSessionManager(db);
+      const manager3 = new TrainingStateManager(db);
       manager3.pause(sessionId, 'Testing persistence');
 
       // Verify still paused
@@ -345,7 +345,7 @@ describe('Training Session Manager - Integration Tests', () => {
       const sessionId = 'session-integrity';
 
       // Save checkpoint with specific data
-      const manager1 = new TrainingSessionManager(db);
+      const manager1 = new TrainingStateManager(db);
       manager1.saveCheckpoint(sessionId, persona.id, {
         iterationNumber: 3,
         evaluatedResultCount: 50,
@@ -370,7 +370,7 @@ describe('Training Session Manager - Integration Tests', () => {
       expect(manager1.verifyCheckpointIntegrity(sessionId)).toBe(true);
 
       // Simulate restart with new manager
-      const manager2 = new TrainingSessionManager(db);
+      const manager2 = new TrainingStateManager(db);
 
       // Verify integrity after restart
       expect(manager2.verifyCheckpointIntegrity(sessionId)).toBe(true);
@@ -390,7 +390,7 @@ describe('Training Session Manager - Integration Tests', () => {
       const db = getTestDatabase();
       const persona1 = createTestPersona(db, { name: 'Persona 1' });
       const persona2 = createTestPersona(db, { name: 'Persona 2' });
-      const manager = new TrainingSessionManager(db);
+      const manager = new TrainingStateManager(db);
 
       // Start two concurrent sessions
       manager.saveCheckpoint('session-1', persona1.id, {
@@ -457,7 +457,7 @@ describe('Training Session Manager - Integration Tests', () => {
       const db = getTestDatabase();
       const persona1 = createTestPersona(db, { name: 'Persona A' });
       const persona2 = createTestPersona(db, { name: 'Persona B' });
-      const manager = new TrainingSessionManager(db);
+      const manager = new TrainingStateManager(db);
 
       // Session 1: Save multiple checkpoints
       for (let i = 1; i <= 3; i++) {
@@ -530,7 +530,7 @@ describe('Training Session Manager - Integration Tests', () => {
     it('should handle rapid successive checkpoint updates', () => {
       const db = getTestDatabase();
       const persona = createTestPersona(db);
-      const manager = new TrainingSessionManager(db);
+      const manager = new TrainingStateManager(db);
 
       const sessionId = 'session-rapid-updates';
 
@@ -572,7 +572,7 @@ describe('Training Session Manager - Integration Tests', () => {
     it('should detect and handle corrupted state after recovery', () => {
       const db = getTestDatabase();
       const persona = createTestPersona(db);
-      const manager = new TrainingSessionManager(db);
+      const manager = new TrainingStateManager(db);
 
       const sessionId = 'session-corrupted';
 
@@ -613,7 +613,7 @@ describe('Training Session Manager - Integration Tests', () => {
     it('should handle empty result IDs array', () => {
       const db = getTestDatabase();
       const persona = createTestPersona(db);
-      const manager = new TrainingSessionManager(db);
+      const manager = new TrainingStateManager(db);
 
       const sessionId = 'session-empty-results';
 
