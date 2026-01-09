@@ -7,7 +7,7 @@
 import type { Database } from 'better-sqlite3';
 import { calculateMetrics, buildConfusionMatrix } from './metrics';
 import type { MetricsResult, FailureCase } from '@src-types/training';
-import { MetricsCalculationError } from '@lib/training/deprecated/training-errors';
+import { MetricsCalculationError } from '@lib/training/training-errors';
 import { evaluateByAtomicFacts } from '@lib/training/prompt-engineer';
 import { createLogger } from '@lib/logger';
 

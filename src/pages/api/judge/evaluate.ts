@@ -119,7 +119,9 @@ export const POST: APIRoute = async ({ request }) => {
             }
 
             // Version 0 specifically missing - potential data corruption
-            logger.error('Judge prompt version 0 missing, data corruption suspected', undefined, { persona_id });
+            logger.error('Judge prompt version 0 missing, data corruption suspected', undefined, {
+              persona_id,
+            });
             return badRequest(
               'Judge prompt version 0 is missing. Please reinitialize the persona.',
               'CORRUPTED_DATA'

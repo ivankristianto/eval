@@ -399,7 +399,9 @@ describe('isValidRating', () => {
     const value = 'pass' as unknown;
     if (isValidRating(value)) {
       // TypeScript should know value is 'pass' | 'fail' | null | undefined
-      expect(value === 'pass' || value === 'fail' || value === null || value === undefined).toBe(true);
+      expect(value === 'pass' || value === 'fail' || value === null || value === undefined).toBe(
+        true
+      );
     }
   });
 });
