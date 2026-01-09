@@ -33,7 +33,8 @@
       "mcp__plugin_playwright_playwright__browser_close",
       "Bash(gh pr checks:*)",
       "Bash(git fetch:*)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Skill(k2-dev:planner)"
     ]
   },
   "gitAttribution": false
