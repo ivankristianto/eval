@@ -1,0 +1,109 @@
+---
+/**
+ * ConfusionMatrix Component
+ *
+ * Displays a 2x2 confusion matrix visualization for metrics display.
+ * Shows True Positives, True Negatives, False Positives, and False Negatives.
+ *
+ * @param truePositives - Count of true positives
+ * @param trueNegatives - Count of true negatives
+ * @param falsePositives - Count of false positives (Type I errors)
+ * @param falseNegatives - Count of false negatives (Type II errors)
+ */
+
+export interface Props {
+  truePositives: number;
+  trueNegatives: number;
+  falsePositives: number;
+  falseNegatives: number;
+}
+
+const { truePositives, trueNegatives, falsePositives, falseNegatives } = Astro.props;
+
+const total = truePositives + trueNegatives + falsePositives + falseNegatives;
+const accuracy = total > 0 ? (((truePositives + trueNegatives) / total) * 100).toFixed(1) : '0';
+---
+
+<div class="confusion-matrix-container">
+  <div class="overflow-x-auto">
+    <table class="confusion-matrix table table-bordered w-full max-w-md mx-auto">
+      <thead>
+        <tr>
+          <th class="text-center bg-base-200 align-middle" colspan="2" rowspan="2"></th>
+          <th class="text-center bg-base-200" colspan="2">Predicted</th>
+        </tr>
+        <tr>
+          <th class="text-center bg-success/20">Agree (Positive)</th>
+          <th class="text-center bg-error/20">Disagree (Negative)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th class="text-center bg-success/20 align-middle" rowspan="2">Actual</th>
+          <th class="text-center bg-success/20 align-middle">Correct (Positive)</th>
+          <td class="text-center bg-success/30 p-6 align-middle">
+            <div class="text-3xl font-bold">{truePositives}</div>
+            <div class="text-xs text-base-content/60">True Positives</div>
+            <div class="text-xs mt-1">(TP)</div>
+          </td>
+          <td class="text-center bg-warning/30 p-6 align-middle">
+            <div class="text-3xl font-bold">{falseNegatives}</div>
+            <div class="text-xs text-base-content/60">False Negatives</div>
+            <div class="text-xs mt-1">(FN)</div>
+          </td>
+        </tr>
+        <tr>
+          <th class="text-center bg-error/20">Incorrect (Negative)</th>
+          <td class="text-center bg-warning/30 p-6 align-middle">
+            <div class="text-3xl font-bold">{falsePositives}</div>
+            <div class="text-xs text-base-content/60">False Positives</div>
+            <div class="text-xs mt-1">(FP)</div>
+          </td>
+          <td class="text-center bg-error/30 p-6 align-middle">
+            <div class="text-3xl font-bold">{trueNegatives}</div>
+            <div class="text-xs text-base-content/60">True Negatives</div>
+            <div class="text-xs mt-1">(TN)</div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Legend -->
+  <div class="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+    <div class="flex items-center gap-2">
+      <div class="w-4 h-4 bg-success/30 rounded"></div>
+      <span><strong>TP:</strong> Judge agreed when output was correct</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <div class="w-4 h-4 bg-error/30 rounded"></div>
+      <span><strong>TN:</strong> Judge disagreed when output was wrong</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <div class="w-4 h-4 bg-warning/30 rounded"></div>
+      <span><strong>FP:</strong> Judge agreed when output was wrong (Type I)</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <div class="w-4 h-4 bg-warning/30 rounded"></div>
+      <span><strong>FN:</strong> Judge disagreed when output was correct (Type II)</span>
+    </div>
+  </div>
+
+  <!-- Summary Stats -->
+  <div class="mt-4 p-4 bg-base-200 rounded-lg">
+    <div class="flex flex-wrap gap-6 text-sm">
+      <div>
+        <span class="text-base-content/60">Total Evaluations:</span>
+        <span class="font-semibold ml-2">{total}</span>
+      </div>
+      <div>
+        <span class="text-base-content/60">Correct Predictions:</span>
+        <span class="font-semibold ml-2 text-success">{truePositives + trueNegatives}</span>
+      </div>
+      <div>
+        <span class="text-base-content/60">Accuracy:</span>
+        <span class="font-semibold ml-2">{accuracy}%</span>
+      </div>
+    </div>
+  </div>
+</div>

@@ -5,8 +5,8 @@ import {
   PATCH as patchModel,
   DELETE as deleteModel,
 } from '../../src/pages/api/models/[id]';
-import { ClientFactory } from '../../src/lib/api-clients';
-import * as db from '../../src/lib/db';
+import { ClientFactory } from '@lib/utils/api-clients';
+import * as db from '@lib/db';
 import { createMockDb } from '../helpers/mock-db';
 import { createJsonRequest, readJson } from '../helpers/requests';
 

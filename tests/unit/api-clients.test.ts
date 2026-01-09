@@ -1,10 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-  AnthropicClient,
-  ClientFactory,
-  GoogleClient,
-  OpenAIClient,
-} from '../../src/lib/api-clients';
+import { AnthropicClient, ClientFactory, GoogleClient, OpenAIClient } from '@lib/utils/api-clients';
 
 const sdkMocks = vi.hoisted(() => ({
   openaiCreate: vi.fn(),

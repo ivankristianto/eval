@@ -1,6 +1,7 @@
 ---
 /**
- * Confirmation modal for user actions requiring confirmation
+ * ConfirmationModal component.
+ * Provides a standardized dialog for critical actions requiring user confirmation (e.g., deletions).
  *
  * @example
  * <ConfirmationModal
@@ -38,7 +39,9 @@ const {
 
 <dialog id={id} class="modal" aria-labelledby={`${id}-title`}>
   <div class="modal-box">
-    <h3 id={`${id}-title`} class="font-display text-2xl font-semibold mb-4 text-gold-accessible">{title}</h3>
+    <h3 id={`${id}-title`} class="font-display text-2xl font-semibold mb-4 text-gold-accessible">
+      {title}
+    </h3>
     <p class="py-4 text-base-content/80 leading-relaxed">{message}</p>
     <div class="modal-action">
       <form method="dialog" class="flex gap-3 w-full justify-end">

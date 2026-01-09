@@ -1,0 +1,84 @@
+---
+/**
+ * WorkspaceLayout Component
+ *
+ * Full-screen layout for training workspace pages.
+ * Includes Navbar for consistency with Layout.astro.
+ *
+ * Features:
+ * - Full viewport height with hidden overflow
+ * - Navbar from Layout.astro for consistency
+ * - Flex column layout for header + content
+ * - Professional research terminal aesthetic
+ *
+ * @param title - Page title for browser tab
+ * @param personaId - Optional persona ID for breadcrumbs
+ * @param personaName - Optional persona name for header
+ */
+
+import '../styles/global.css';
+import Navbar from '../components/layout/Navbar.astro';
+import { TYPOGRAPHY } from '@lib/ui/typography';
+
+export interface Props {
+  title?: string;
+  personaId?: string;
+  personaName?: string;
+}
+
+// eslint-disable-next-line no-unused-vars
+const { title = 'Training Workspace', personaId, personaName } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en" data-theme="dim">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>{title}</title>
+
+    <!-- Terminal Luxe Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Prevent FOUC -->
+    <script is:inline>
+      const prefsKey = 'eval_user_prefs';
+
+      /**
+       * Reads user preferences from local storage.
+       * @returns Parsed preferences or empty object
+       */
+      const readPrefs = () => {
+        try {
+          return JSON.parse(localStorage.getItem(prefsKey) || '{}');
+        } catch {
+          return {};
+        }
+      };
+
+      const prefsTheme = readPrefs()?.theme;
+      const storedTheme = prefsTheme || localStorage.getItem('theme');
+      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches
+        ? 'dark'
+        : 'light';
+      document.documentElement.setAttribute('data-theme', storedTheme || systemTheme);
+    </script>
+  </head>
+  <body
+    class={`bg-base-100 h-screen overflow-hidden flex flex-col font-sans antialiased ${TYPOGRAPHY.body}`}
+  >
+    <Navbar />
+
+    <!-- Main content slot -->
+    <slot class="flex-1 overflow-hidden" />
+
+    <!-- Optional overlays slot - for modals, drawers, etc. -->
+    <slot name="overlays" />
+  </body>
+</html>

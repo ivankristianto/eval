@@ -6,8 +6,8 @@ import {
   DELETE as deleteTemplate,
 } from '../../src/pages/api/templates/[id]';
 import { POST as runTemplate } from '../../src/pages/api/templates/[id]/run';
-import * as db from '../../src/lib/db';
-import * as evaluator from '../../src/lib/evaluator';
+import * as db from '@lib/db';
+import * as evaluator from '@lib/evaluation/evaluator';
 import { createMockDb } from '../helpers/mock-db';
 import { createJsonRequest, readJson } from '../helpers/requests';
 

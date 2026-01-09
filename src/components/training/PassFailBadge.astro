@@ -1,0 +1,51 @@
+---
+/**
+ * PassFailBadge Component
+ *
+ * Displays a visual badge for Pass/Fail status with appropriate styling.
+ *
+ * @param rating - 'pass', 'fail', or null/undefined for no rating
+ * @param size - 'sm', 'md', 'lg' (default: 'md')
+ */
+
+interface Props {
+  rating: 'pass' | 'fail' | null | undefined;
+  size?: 'sm' | 'md' | 'lg';
+}
+
+const { rating, size = 'md' } = Astro.props;
+
+const sizeClasses = {
+  sm: 'text-xs px-2.5 py-0.5',
+  md: 'text-sm px-3 py-1',
+  lg: 'text-base px-4 py-1.5',
+};
+
+const getWrapperClass = () => {
+  if (!rating) return 'bg-base-200 text-base-content/50';
+  return rating === 'pass'
+    ? 'bg-success/10 text-success border border-success/20'
+    : 'bg-error/10 text-error border border-error/20';
+};
+
+const getIcon = () => {
+  if (!rating) return '○';
+  return rating === 'pass' ? '✓' : '✕';
+};
+
+const getBadgeText = () => {
+  if (!rating) return 'Not Rated';
+  return rating === 'pass' ? 'Pass' : 'Fail';
+};
+---
+
+<span
+  class:list={[
+    'inline-flex items-center gap-1.5 rounded-lg font-semibold shadow-sm transition-all duration-200',
+    getWrapperClass(),
+    sizeClasses[size],
+  ]}
+>
+  <span class="text-[0.7em] opacity-80">{getIcon()}</span>
+  {getBadgeText()}
+</span>

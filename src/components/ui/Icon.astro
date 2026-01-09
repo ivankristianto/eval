@@ -1,6 +1,11 @@
 ---
-import { ICON_PATHS, ICON_SIZES } from '../../lib/icons';
-import type { IconName } from '../../lib/icons';
+/**
+ * Icon component.
+ * Renders a standardized SVG icon from the unified icon registry.
+ * Supports configurable sizes and custom CSS classes.
+ */
+import { ICON_PATHS, ICON_SIZES } from '@lib/ui/icons';
+import type { IconName } from '@lib/ui/icons';
 
 export interface Props {
   /**
@@ -27,10 +32,5 @@ const sizeClass = ICON_SIZES[size];
   fill="none"
   viewBox="0 0 24 24"
 >
-  <path
-    stroke-linecap="round"
-    stroke-linejoin="round"
-    stroke-width="2"
-    d={ICON_PATHS[name]}
-  ></path>
+  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d={ICON_PATHS[name]}></path>
 </svg>

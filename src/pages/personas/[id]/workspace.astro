@@ -1,0 +1,182 @@
+---
+/**
+ * Training Workspace Page
+ *
+ * Main page for training a persona with version-based workflow.
+ * Connected to database for real data.
+ */
+
+import WorkspaceLayout from '@layouts/WorkspaceLayout.astro';
+import TrainingWorkspace from '@components/training/TrainingWorkspace.astro';
+import LoadingStates from '@components/training/LoadingStates.astro';
+import { getDatabase } from '@lib/db';
+import {
+  getPersona,
+  getTrainingPairs,
+  getTaskPromptHistory,
+  getJudgePromptHistory,
+  getCurrentTaskVersion,
+  getCurrentJudgeVersion,
+  getPersonaMetrics,
+  getJudgeMetricsFromResults,
+  getHumanMetricsFromResults,
+} from '@lib/db/persona-db';
+import { parseRating } from '@lib/validation/validators';
+
+// Get persona ID from URL
+const { id } = Astro.params;
+
+if (!id) {
+  return Astro.redirect('/personas');
+}
+
+// Fetch real persona data
+const persona = getPersona(id);
+
+if (!persona) {
+  return Astro.redirect('/personas');
+}
+
+// Fetch real task prompt versions
+const taskVersions = getTaskPromptHistory(id);
+
+// Fetch real judge prompt versions
+const judgeVersions = getJudgePromptHistory(id);
+
+// Get current active versions (if any)
+const currentTaskVersion = getCurrentTaskVersion(id);
+const currentJudgeVersion = getCurrentJudgeVersion(id);
+
+// Get the latest version numbers (default to 0 if no versions exist)
+const selectedTaskVersion = currentTaskVersion?.version_number ?? 0;
+const selectedJudgeVersion = currentJudgeVersion?.version_number ?? 0;
+
+// Get current prompt texts (use current version or fall back to version 0)
+const currentTaskPromptText =
+  currentTaskVersion?.prompt_text ||
+  taskVersions.find((v) => v.version_number === 0)?.prompt_text ||
+  '';
+const currentJudgePromptText =
+  currentJudgeVersion?.prompt_text ||
+  judgeVersions.find((v) => v.version_number === 0)?.prompt_text ||
+  '';
+
+// Fetch real training pairs
+const trainingPairs = getTrainingPairs(id);
+
+// Fetch latest metrics
+const personaMetrics = getPersonaMetrics(id);
+
+// Transform training pairs to match expected interface with result data
+const db = getDatabase();
+const enrichedTrainingPairs = trainingPairs.map((pair) => {
+  // Get the latest result for this pair if available
+  const resultQuery = db
+    .prepare(
+      `
+      SELECT
+        generated_output,
+        judge_rating,
+        judge_feedback,
+        judge_reasoning,
+        human_rating,
+        human_feedback
+      FROM training_pair_results
+      WHERE training_pair_id = ?
+      ORDER BY created_at DESC
+      LIMIT 1
+    `
+    )
+    .get(pair.id) as {
+    generated_output: string;
+    judge_rating: string;
+    judge_feedback: string;
+    judge_reasoning: string;
+    human_rating: string;
+    human_feedback: string;
+  } | null;
+
+  return {
+    id: pair.id,
+    input: pair.input,
+    expected_output: pair.expected_output,
+    generated_output: resultQuery?.generated_output,
+    judge_rating: parseRating(resultQuery?.judge_rating),
+    judge_feedback: resultQuery?.judge_feedback || resultQuery?.judge_reasoning,
+    human_rating: parseRating(resultQuery?.human_rating),
+    human_feedback: resultQuery?.human_feedback,
+  };
+});
+
+// Build metrics data from persona_metrics table
+const personaMetricsData =
+  personaMetrics.length > 0
+    ? {
+        f1_score: personaMetrics[0].f1_score,
+        precision: personaMetrics[0].precision,
+        recall: personaMetrics[0].recall,
+        cohens_kappa: personaMetrics[0].cohens_kappa,
+        accuracy: personaMetrics[0].accuracy,
+        confusion_matrix: personaMetrics[0].confusion_matrix,
+        total_pairs:
+          personaMetrics[0].true_positives +
+          personaMetrics[0].true_negatives +
+          personaMetrics[0].false_positives +
+          personaMetrics[0].false_negatives,
+      }
+    : {
+        f1_score: 0,
+        precision: 0,
+        recall: 0,
+        cohens_kappa: 0,
+        accuracy: 0,
+        confusion_matrix: {
+          true_positives: 0,
+          true_negatives: 0,
+          false_positives: 0,
+          false_negatives: 0,
+        },
+        total_pairs: 0,
+      };
+
+// Get judge metrics from training_pair_results table
+const judgeMetrics = getJudgeMetricsFromResults(id);
+
+// Get human metrics from training_pair_results table
+const humanMetrics = getHumanMetricsFromResults(id);
+---
+
+<WorkspaceLayout title={`${persona.name} - Training Workspace`}>
+  <TrainingWorkspace
+    personaId={persona.id}
+    personaName={persona.name}
+    taskPrompt={{
+      text: currentTaskPromptText,
+      versions: taskVersions.map((v) => ({
+        version_number: v.version_number,
+        created_by: v.created_by,
+        created_at: v.created_at,
+        improvement_rationale: v.improvement_rationale,
+      })),
+      selectedVersion: selectedTaskVersion,
+    }}
+    judgePrompt={{
+      text: currentJudgePromptText,
+      versions: judgeVersions.map((v) => ({
+        version_number: v.version_number,
+        created_by: v.created_by,
+        created_at: v.created_at,
+        improvement_rationale: v.improvement_rationale,
+      })),
+      selectedVersion: selectedJudgeVersion,
+    }}
+    trainingPairs={enrichedTrainingPairs}
+    metrics={personaMetricsData}
+    judgeMetrics={judgeMetrics}
+    humanMetrics={humanMetrics}
+  />
+
+  <slot slot="overlays">
+    <LoadingStates />
+  </slot>
+</WorkspaceLayout>

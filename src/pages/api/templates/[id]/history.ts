@@ -2,38 +2,35 @@
 // Get template evaluation history
 
 import type { APIRoute } from 'astro';
-import { getTemplateById, getTemplateHistory } from '../../../../lib/db';
+import { getTemplateById, getTemplateHistory } from '@lib/db';
+import { badRequest, notFound, createErrorResponse } from '@lib/api-error-handler';
+import { createLogger } from '@lib/logger';
 
+const logger = createLogger('API:Templates:History');
+
+/**
+ * GET /api/templates/:id/history
+ * Retrieves evaluation run history for a template.
+ * @param root0
+ * @param root0.params
+ * @param root0.url
+ * @returns {Promise<Response>}
+ */
 export const GET: APIRoute = async ({ params, url }) => {
-  try {
-    const { id } = params;
+  const startTime = Date.now();
+  const { id } = params;
 
+  try {
     if (!id) {
-      return new Response(
-        JSON.stringify({
-          error: 'INVALID_INPUT',
-          message: 'Template ID is required',
-        }),
-        {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+      logger.logApiRequest('GET', '/api/templates/:id/history', 400, Date.now() - startTime);
+      return badRequest('Template ID is required', 'INVALID_INPUT');
     }
 
     const template = getTemplateById(id);
 
     if (!template) {
-      return new Response(
-        JSON.stringify({
-          error: 'TEMPLATE_NOT_FOUND',
-          message: 'Template does not exist',
-        }),
-        {
-          status: 404,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+      logger.logApiRequest('GET', `/api/templates/${id}/history`, 404, Date.now() - startTime);
+      return notFound('Template');
     }
 
     // Parse pagination params
@@ -41,6 +38,8 @@ export const GET: APIRoute = async ({ params, url }) => {
     const offset = Math.max(0, parseInt(url.searchParams.get('offset') || '0', 10));
 
     const history = getTemplateHistory(id, limit, offset);
+
+    logger.logApiRequest('GET', `/api/templates/${id}/history`, 200, Date.now() - startTime);
 
     return new Response(
       JSON.stringify({
@@ -55,16 +54,7 @@ export const GET: APIRoute = async ({ params, url }) => {
       }
     );
   } catch (error) {
-    console.error('GET /api/templates/:id/history error:', error);
-    return new Response(
-      JSON.stringify({
-        error: 'INTERNAL_ERROR',
-        message: error instanceof Error ? error.message : 'Internal server error',
-      }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
+    logger.logApiError('GET', `/api/templates/${id}/history`, error as Error);
+    return createErrorResponse(error);
   }
 };

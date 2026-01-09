@@ -1,0 +1,165 @@
+---
+/**
+ * PromptDiffViewer Component
+ * Side-by-side comparison of two prompt versions with highlighted differences
+ *
+ * @param beforePrompt - Previous version of the prompt
+ * @param afterPrompt - Current version of the prompt
+ * @param beforeLabel - Label for the before column (default: "Before")
+ * @param afterLabel - Label for the after column (default: "After")
+ * @param showLineNumbers - Whether to show line numbers (default: false)
+ */
+
+export interface Props {
+  beforePrompt: string;
+  afterPrompt: string;
+  beforeLabel?: string;
+  afterLabel?: string;
+  showLineNumbers?: boolean;
+}
+
+const {
+  beforePrompt,
+  afterPrompt,
+  beforeLabel = 'Before',
+  afterLabel = 'After',
+  showLineNumbers = false,
+} = Astro.props;
+
+// Simple line-by-line diff
+const beforeLines = beforePrompt.split('\n');
+const afterLines = afterPrompt.split('\n');
+
+// Calculate changes summary
+const maxLines = Math.max(beforeLines.length, afterLines.length);
+let linesAdded = 0;
+let linesRemoved = 0;
+let linesModified = 0;
+
+for (let i = 0; i < maxLines; i++) {
+  const beforeLine = beforeLines[i];
+  const afterLine = afterLines[i];
+
+  if (beforeLine === undefined && afterLine !== undefined) {
+    linesAdded++;
+  } else if (beforeLine !== undefined && afterLine === undefined) {
+    linesRemoved++;
+  } else if (beforeLine !== afterLine) {
+    linesModified++;
+  }
+}
+
+const noChanges = linesAdded === 0 && linesRemoved === 0 && linesModified === 0;
+---
+
+<div class="prompt-diff-viewer">
+  <!-- Summary -->
+  <div class="mb-4">
+    {
+      noChanges ? (
+        <div class="alert">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            class="stroke-info shrink-0 w-6 h-6"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+          <span>No changes detected between versions</span>
+        </div>
+      ) : (
+        <div class="stats shadow">
+          {linesAdded > 0 && (
+            <div class="stat">
+              <div class="stat-title">Lines Added</div>
+              <div class="stat-value text-success">{linesAdded}</div>
+            </div>
+          )}
+          {linesRemoved > 0 && (
+            <div class="stat">
+              <div class="stat-title">Lines Removed</div>
+              <div class="stat-value text-error">{linesRemoved}</div>
+            </div>
+          )}
+          {linesModified > 0 && (
+            <div class="stat">
+              <div class="stat-title">Lines Modified</div>
+              <div class="stat-value text-warning">{linesModified}</div>
+            </div>
+          )}
+        </div>
+      )
+    }
+  </div>
+
+  <!-- Side-by-side diff -->
+  <div class="grid grid-cols-2 gap-4">
+    <!-- Before (Left) -->
+    <div class="diff-column">
+      <div class="bg-base-300 rounded-t-lg p-2">
+        <div class="font-semibold text-sm">{beforeLabel}</div>
+      </div>
+      <div class="bg-base-200 rounded-b-lg p-3 overflow-x-auto">
+        <pre
+          class="text-xs font-mono whitespace-pre-wrap">{beforeLines.map((line, idx) => {
+            const lineNum = showLineNumbers ? `${(idx + 1).toString().padStart(3, ' ')} | ` : '';
+            return `${lineNum}${line}`;
+          }).join('\n')}</pre>
+      </div>
+    </div>
+
+    <!-- After (Right) -->
+    <div class="diff-column">
+      <div class="bg-base-300 rounded-t-lg p-2">
+        <div class="font-semibold text-sm">{afterLabel}</div>
+      </div>
+      <div class="bg-base-200 rounded-b-lg p-3 overflow-x-auto">
+        <pre
+          class="text-xs font-mono whitespace-pre-wrap">{afterLines.map((line, idx) => {
+            const lineNum = showLineNumbers ? `${(idx + 1).toString().padStart(3, ' ')} | ` : '';
+            return `${lineNum}${line}`;
+          }).join('\n')}</pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Character count comparison -->
+  <div class="mt-4 text-xs text-base-content/60">
+    <div class="flex justify-between">
+      <span>{beforeLabel}: {beforePrompt.length} characters</span>
+      <span>{afterLabel}: {afterPrompt.length} characters</span>
+    </div>
+    <div class="mt-1">
+      {
+        afterPrompt.length > beforePrompt.length ? (
+          <span class="text-success">
+            +{afterPrompt.length - beforePrompt.length} characters added
+          </span>
+        ) : afterPrompt.length < beforePrompt.length ? (
+          <span class="text-error">
+            -{beforePrompt.length - afterPrompt.length} characters removed
+          </span>
+        ) : (
+          <span>Same length</span>
+        )
+      }
+    </div>
+  </div>
+</div>
+
+<style>
+  .prompt-diff-viewer {
+    width: 100%;
+  }
+
+  .diff-column pre {
+    margin: 0;
+    min-height: 100px;
+  }
+</style>

@@ -1,0 +1,16 @@
+---
+/**
+ * DEPRECATED: Metrics Page
+ * This route has been replaced by the Training Workspace.
+ * Redirects to /personas/[id]/workspace
+ */
+
+const { id } = Astro.params;
+
+if (!id) {
+  return Astro.redirect('/personas');
+}
+
+// Redirect to workspace
+return Astro.redirect(`/personas/${id}/workspace`);
+---

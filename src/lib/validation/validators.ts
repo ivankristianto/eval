@@ -1,0 +1,700 @@
+// src/lib/validators.ts
+// Input validation functions for AI Model Evaluation Framework
+
+import type { Provider, RubricType, ApiError } from '@lib/utils/types';
+
+const VALID_PROVIDERS: Provider[] = ['openai', 'anthropic', 'google'];
+const VALID_RUBRIC_TYPES: RubricType[] = ['exact_match', 'partial_credit', 'semantic_similarity'];
+const MAX_INSTRUCTION_LENGTH = 10000;
+const MAX_NAME_LENGTH = 100;
+const MAX_DESCRIPTION_LENGTH = 500;
+
+export interface ValidationResult {
+  valid: boolean;
+  error?: ApiError;
+}
+
+/**
+ * Validates that an instruction is a non-empty string within length limits.
+ * @param instruction - The instruction text to validate
+ * @returns Validation result
+ */
+export function validateInstruction(instruction: unknown): ValidationResult {
+  if (typeof instruction !== 'string' || instruction.trim().length === 0) {
+    return {
+      valid: false,
+      error: {
+        error: 'INVALID_INPUT',
+        message: 'instruction must be a non-empty string',
+        field: 'instruction',
+      },
+    };
+  }
+
+  if (instruction.length > MAX_INSTRUCTION_LENGTH) {
+    return {
+      valid: false,
+      error: {
+        error: 'INVALID_INPUT',
+        message: `instruction must be max ${MAX_INSTRUCTION_LENGTH} characters`,
+        field: 'instruction',
+      },
+    };
+  }
+
+  return { valid: true };
+}
+
+/**
+ * Validates that a rubric type is one of the supported values.
+ * @param rubricType - The rubric type string to validate
+ * @returns Validation result
+ */
+export function validateRubricType(rubricType: unknown): ValidationResult {
+  if (!VALID_RUBRIC_TYPES.includes(rubricType as RubricType)) {
+    return {
+      valid: false,
+      error: {
+        error: 'INVALID_RUBRIC',
+        message: `accuracy_rubric must be one of: ${VALID_RUBRIC_TYPES.join(', ')}`,
+        field: 'accuracy_rubric',
+      },
+    };
+  }
+
+  return { valid: true };
+}
+
+/**
+ * Validates that at least one model ID is provided and all are valid UUIDs.
+ * @param modelIds - Array of model IDs to validate
+ * @returns Validation result
+ */
+export function validateModelIds(modelIds: unknown): ValidationResult {
+  if (!Array.isArray(modelIds) || modelIds.length === 0) {
+    return {
+      valid: false,
+      error: {
+        error: 'INVALID_MODEL_SELECTION',
+        message: 'At least one model must be selected',
+        field: 'model_ids',
+      },
+    };
+  }
+
+  for (const id of modelIds) {
+    if (typeof id !== 'string' || !isValidUuid(id)) {
+      return {
+        valid: false,
+        error: {
+          error: 'INVALID_MODEL_SELECTION',
+          message: 'All model_ids must be valid UUIDs',
+          field: 'model_ids',
+        },
+      };
+    }
+  }
+
+  return { valid: true };
+}
+
+/**
+ * Validates that a provider is one of the supported AI providers.
+ * @param provider - The provider name to validate
+ * @returns Validation result
+ */
+export function validateProvider(provider: unknown): ValidationResult {
+  if (!VALID_PROVIDERS.includes(provider as Provider)) {
+    return {
+      valid: false,
+      error: {
+        error: 'INVALID_PROVIDER',
+        message: `provider must be one of: ${VALID_PROVIDERS.join(', ')}`,
+        field: 'provider',
+      },
+    };
+  }
+
+  return { valid: true };
+}
+
+/**
+ * Validates the format of an API key based on its provider.
+ * @param apiKey - The API key to validate
+ * @param provider - The provider the key belongs to
+ * @returns Validation result
+ */
+export function validateApiKeyFormat(apiKey: unknown, provider: Provider): ValidationResult {
+  if (typeof apiKey !== 'string' || apiKey.trim().length === 0) {
+    return {
+      valid: false,
+      error: {
+        error: 'INVALID_API_KEY',
+        message: 'API key must be a non-empty string',
+        field: 'api_key',
+      },
+    };
+  }
+
+  // Provider-specific format validation
+  switch (provider) {
+    case 'openai':
+      if (!apiKey.startsWith('sk-')) {
+        return {
+          valid: false,
+          error: {
+            error: 'INVALID_API_KEY',
+            message: 'OpenAI API key must start with "sk-"',
+            field: 'api_key',
+            details: { provider: 'openai', reason: 'key does not match expected format' },
+          },
+        };
+      }
+      break;
+    case 'anthropic':
+      if (!apiKey.startsWith('sk-ant-')) {
+        return {
+          valid: false,
+          error: {
+            error: 'INVALID_API_KEY',
+            message: 'Anthropic API key must start with "sk-ant-"',
+            field: 'api_key',
+            details: { provider: 'anthropic', reason: 'key does not match expected format' },
+          },
+        };
+      }
+      break;
+    case 'google':
+      // Google API keys don't have a specific prefix requirement
+      if (apiKey.length < 10) {
+        return {
+          valid: false,
+          error: {
+            error: 'INVALID_API_KEY',
+            message: 'Google API key appears too short',
+            field: 'api_key',
+            details: { provider: 'google', reason: 'key does not match expected format' },
+          },
+        };
+      }
+      break;
+  }
+
+  return { valid: true };
+}
+
+/**
+ * Validates that a model name is a non-empty string within length limits.
+ * @param modelName - The model name to validate
+ * @returns Validation result
+ */
+export function validateModelName(modelName: unknown): ValidationResult {
+  if (typeof modelName !== 'string' || modelName.trim().length === 0) {
+    return {
+      valid: false,
+      error: {
+        error: 'INVALID_INPUT',
+        message: 'model_name must be a non-empty string',
+        field: 'model_name',
+      },
+    };
+  }
+
+  if (modelName.length > MAX_NAME_LENGTH) {
+    return {
+      valid: false,
+      error: {
+        error: 'INVALID_INPUT',
+        message: `model_name must be max ${MAX_NAME_LENGTH} characters`,
+        field: 'model_name',
+      },
+    };
+  }
+
+  return { valid: true };
+}
+
+/**
+ * Validates that a template name is a non-empty string within length limits.
+ * @param name - The template name to validate
+ * @returns Validation result
+ */
+export function validateTemplateName(name: unknown): ValidationResult {
+  if (typeof name !== 'string' || name.trim().length === 0) {
+    return {
+      valid: false,
+      error: {
+        error: 'INVALID_INPUT',
+        message: 'name must be a non-empty string',
+        field: 'name',
+      },
+    };
+  }
+
+  if (name.length > MAX_NAME_LENGTH) {
+    return {
+      valid: false,
+      error: {
+        error: 'INVALID_INPUT',
+        message: `name must be max ${MAX_NAME_LENGTH} characters`,
+        field: 'name',
+      },
+    };
+  }
+
+  return { valid: true };
+}
+
+/**
+ * Validates that a description is within length limits.
+ * @param description - The description text to validate
+ * @returns Validation result
+ */
+export function validateDescription(description: unknown): ValidationResult {
+  if (description === undefined || description === null) {
+    return { valid: true }; // Optional field
+  }
+
+  if (typeof description !== 'string') {
+    return {
+      valid: false,
+      error: {
+        error: 'INVALID_INPUT',
+        message: 'description must be a string',
+        field: 'description',
+      },
+    };
+  }
+
+  if (description.length > MAX_DESCRIPTION_LENGTH) {
+    return {
+      valid: false,
+      error: {
+        error: 'INVALID_INPUT',
+        message: `description must be max ${MAX_DESCRIPTION_LENGTH} characters`,
+        field: 'description',
+      },
+    };
+  }
+
+  return { valid: true };
+}
+
+/**
+ * Validates that key concepts are provided when using partial credit rubric.
+ * @param concepts - Array of concept strings
+ * @param rubricType - The selected rubric type
+ * @returns Validation result
+ */
+export function validatePartialCreditConcepts(
+  concepts: unknown,
+  rubricType: RubricType
+): ValidationResult {
+  if (rubricType !== 'partial_credit') {
+    return { valid: true }; // Only required for partial_credit
+  }
+
+  if (!Array.isArray(concepts) || concepts.length === 0) {
+    return {
+      valid: false,
+      error: {
+        error: 'MISSING_RUBRIC_CONFIG',
+        message: "partial_credit_concepts required when rubric_type is 'partial_credit'",
+        field: 'partial_credit_concepts',
+      },
+    };
+  }
+
+  for (const concept of concepts) {
+    if (typeof concept !== 'string' || concept.trim().length === 0) {
+      return {
+        valid: false,
+        error: {
+          error: 'INVALID_INPUT',
+          message: 'All concepts must be non-empty strings',
+          field: 'partial_credit_concepts',
+        },
+      };
+    }
+  }
+
+  return { valid: true };
+}
+
+/**
+ * Validates that expected output is provided.
+ * @param expectedOutput - The ground truth output text
+ * @param _rubricType - Rubric type (currently unused but reserved for future specificity)
+ * @returns Validation result
+ */
+export function validateExpectedOutput(
+  expectedOutput: unknown,
+  _rubricType: RubricType
+): ValidationResult {
+  // null/undefined is valid (optional field)
+  if (expectedOutput === null || expectedOutput === undefined) {
+    return { valid: true };
+  }
+
+  // If provided, must be a non-empty string
+  if (typeof expectedOutput !== 'string' || expectedOutput.trim().length === 0) {
+    return {
+      valid: false,
+      error: {
+        error: 'INVALID_INPUT',
+        message: 'expected_output must be a non-empty string if provided',
+        field: 'expected_output',
+      },
+    };
+  }
+
+  return { valid: true };
+}
+
+/**
+ * Validates a string as a valid UUID.
+ * @param id - String to validate
+ * @returns Validation result
+ */
+export function validateUuid(id: unknown): ValidationResult {
+  if (typeof id !== 'string' || !isValidUuid(id)) {
+    return {
+      valid: false,
+      error: {
+        error: 'INVALID_INPUT',
+        message: 'Invalid UUID format',
+        field: 'id',
+      },
+    };
+  }
+
+  return { valid: true };
+}
+
+// Helper function to validate UUID format
+function isValidUuid(str: string): boolean {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(str);
+}
+
+/**
+ * Composite validation for evaluation creation requests.
+ * @param data - Raw request body
+ * @returns Combined validation result
+ */
+export function validateCreateEvaluation(data: unknown): ValidationResult {
+  if (!data || typeof data !== 'object') {
+    return {
+      valid: false,
+      error: {
+        error: 'INVALID_INPUT',
+        message: 'Request body must be a valid JSON object',
+      },
+    };
+  }
+
+  const body = data as Record<string, unknown>;
+
+  const instructionResult = validateInstruction(body.instruction);
+  if (!instructionResult.valid) return instructionResult;
+
+  const rubricResult = validateRubricType(body.rubric_type);
+  if (!rubricResult.valid) return rubricResult;
+
+  const modelIdsResult = validateModelIds(body.model_ids);
+  if (!modelIdsResult.valid) return modelIdsResult;
+
+  const expectedOutputResult = validateExpectedOutput(
+    body.expected_output,
+    body.rubric_type as RubricType
+  );
+  if (!expectedOutputResult.valid) return expectedOutputResult;
+
+  const conceptsResult = validatePartialCreditConcepts(
+    body.partial_credit_concepts,
+    body.rubric_type as RubricType
+  );
+  if (!conceptsResult.valid) return conceptsResult;
+
+  return { valid: true };
+}
+
+/**
+ * Composite validation for model creation requests.
+ * @param data - Raw request body
+ * @returns Combined validation result
+ */
+export function validateCreateModel(data: unknown): ValidationResult {
+  if (!data || typeof data !== 'object') {
+    return {
+      valid: false,
+      error: {
+        error: 'INVALID_INPUT',
+        message: 'Request body must be a valid JSON object',
+      },
+    };
+  }
+
+  const body = data as Record<string, unknown>;
+
+  const providerResult = validateProvider(body.provider);
+  if (!providerResult.valid) return providerResult;
+
+  const modelNameResult = validateModelName(body.model_name);
+  if (!modelNameResult.valid) return modelNameResult;
+
+  const apiKeyResult = validateApiKeyFormat(body.api_key, body.provider as Provider);
+  if (!apiKeyResult.valid) return apiKeyResult;
+
+  return { valid: true };
+}
+
+/**
+ * Validation for partial updates to a model configuration.
+ * @param data - Raw request body
+ * @returns Combined validation result
+ */
+export function validateUpdateModel(data: unknown): ValidationResult {
+  if (!data || typeof data !== 'object') {
+    return {
+      valid: false,
+      error: {
+        error: 'INVALID_INPUT',
+        message: 'Request body must be a valid JSON object',
+      },
+    };
+  }
+
+  const body = data as Record<string, unknown>;
+
+  if (body.is_active !== undefined && typeof body.is_active !== 'boolean') {
+    return {
+      valid: false,
+      error: {
+        error: 'INVALID_INPUT',
+        message: 'is_active must be a boolean',
+        field: 'is_active',
+      },
+    };
+  }
+
+  if (body.notes !== undefined && typeof body.notes !== 'string') {
+    return {
+      valid: false,
+      error: {
+        error: 'INVALID_INPUT',
+        message: 'notes must be a string',
+        field: 'notes',
+      },
+    };
+  }
+
+  if (body.api_key !== undefined) {
+    if (typeof body.api_key !== 'string' || body.api_key.trim().length === 0) {
+      return {
+        valid: false,
+        error: {
+          error: 'INVALID_API_KEY',
+          message: 'API key must be a non-empty string',
+          field: 'api_key',
+        },
+      };
+    }
+  }
+
+  return { valid: true };
+}
+
+/**
+ * Composite validation for template creation requests.
+ * @param data - Raw request body
+ * @returns Combined validation result
+ */
+export function validateCreateTemplate(data: unknown): ValidationResult {
+  if (!data || typeof data !== 'object') {
+    return {
+      valid: false,
+      error: {
+        error: 'INVALID_INPUT',
+        message: 'Request body must be a valid JSON object',
+      },
+    };
+  }
+
+  const body = data as Record<string, unknown>;
+
+  const nameResult = validateTemplateName(body.name);
+  if (!nameResult.valid) return nameResult;
+
+  const descriptionResult = validateDescription(body.description);
+  if (!descriptionResult.valid) return descriptionResult;
+
+  const instructionResult = validateInstruction(body.instruction_text);
+  if (!instructionResult.valid) return instructionResult;
+
+  const rubricResult = validateRubricType(body.accuracy_rubric);
+  if (!rubricResult.valid) return rubricResult;
+
+  const modelIdsResult = validateModelIds(body.model_ids);
+  if (!modelIdsResult.valid) return modelIdsResult;
+
+  const expectedOutputResult = validateExpectedOutput(
+    body.expected_output,
+    body.accuracy_rubric as RubricType
+  );
+  if (!expectedOutputResult.valid) return expectedOutputResult;
+
+  const conceptsResult = validatePartialCreditConcepts(
+    body.partial_credit_concepts,
+    body.accuracy_rubric as RubricType
+  );
+  if (!conceptsResult.valid) return conceptsResult;
+
+  return { valid: true };
+}
+
+/**
+ * Validates system prompt text
+ *
+ * Rules (FR-016):
+ * - Must be <= 4,000 characters if provided
+ * - Empty strings are rejected
+ * - null/undefined are allowed (optional field)
+ *
+ * @param text - System prompt text to validate
+ * @returns Validation result with error message if invalid
+ */
+export function validateSystemPrompt(text: string | null | undefined): ValidationResult {
+  // null/undefined is valid (optional field)
+  if (text === null || text === undefined) {
+    return { valid: true };
+  }
+
+  // Empty string is invalid if provided
+  if (typeof text === 'string' && text.trim() === '') {
+    return {
+      valid: false,
+      error: {
+        error: 'INVALID_INPUT',
+        message:
+          'System prompt cannot be empty. Please enter text or disable the system prompt checkbox.',
+        field: 'system_prompt',
+      },
+    };
+  }
+
+  // Check maximum length (4,000 characters)
+  if (typeof text === 'string' && text.length > 4000) {
+    return {
+      valid: false,
+      error: {
+        error: 'INVALID_INPUT',
+        message: `System prompt exceeds maximum length of 4,000 characters (current: ${text.length} characters)`,
+        field: 'system_prompt',
+      },
+    };
+  }
+
+  return { valid: true };
+}
+
+/**
+ * Validates temperature parameter
+ *
+ * Rules (FR-013):
+ * - Must be a number
+ * - Must be in range [0.0, 2.0]
+ * - null/undefined defaults to 0.3
+ *
+ * @param value - Temperature value to validate
+ * @returns Validation result with error message if invalid
+ */
+export function validateTemperature(value: number | null | undefined): ValidationResult {
+  // null/undefined is valid (will default to 0.3)
+  if (value === null || value === undefined) {
+    return { valid: true };
+  }
+
+  // Type check
+  if (typeof value !== 'number' || isNaN(value)) {
+    return {
+      valid: false,
+      error: {
+        error: 'INVALID_INPUT',
+        message: 'Temperature must be a valid number',
+        field: 'temperature',
+      },
+    };
+  }
+
+  // Range check [0.0, 2.0]
+  if (value < 0.0 || value > 2.0) {
+    return {
+      valid: false,
+      error: {
+        error: 'INVALID_INPUT',
+        message: `Temperature must be between 0.0 and 2.0 (current: ${value})`,
+        field: 'temperature',
+      },
+    };
+  }
+
+  return { valid: true };
+}
+
+/**
+ * Type guard for validating rating values from the database.
+ *
+ * Provides runtime validation for judge_rating and human_rating values,
+ * ensuring they are either 'pass', 'fail', null, or undefined.
+ *
+ * While the database schema has CHECK constraints, this validation provides
+ * defensive programming against data migration issues, manual database edits,
+ * or other unexpected states.
+ *
+ * @param value - The rating value to validate (from database)
+ * @returns True if the value is a valid rating type
+ *
+ * @example
+ * ```typescript
+ * const resultQuery = { judge_rating: 'pass' };
+ * if (isValidRating(resultQuery.judge_rating)) {
+ *   // TypeScript knows this is 'pass' | 'fail'
+ *   console.log(resultQuery.judge_rating.toUpperCase());
+ * }
+ * ```
+ */
+export function isValidRating(
+  value: unknown
+): value is 'pass' | 'fail' | null | undefined {
+  if (value === null || value === undefined) {
+    return true;
+  }
+  return value === 'pass' || value === 'fail';
+}
+
+/**
+ * Safely parses a rating value from the database.
+ *
+ * This is a convenience wrapper around isValidRating that returns a typed value
+ * or undefined for invalid ratings. Useful for array methods and object transforms.
+ *
+ * @param value - The rating value from the database
+ * @returns The validated rating ('pass' | 'fail' | null | undefined)
+ *
+ * @example
+ * ```typescript
+ * const enriched = data.map(item => ({
+ *   ...item,
+ *   judge_rating: parseRating(item.judge_rating),
+ * }));
+ * ```
+ */
+export function parseRating(
+  value: unknown
+): 'pass' | 'fail' | null | undefined {
+  if (isValidRating(value)) {
+    return value;
+  }
+  return undefined;
+}

@@ -2,8 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { POST as createEvaluation } from '../../src/pages/api/evaluate';
 import { GET as getStatus } from '../../src/pages/api/evaluation-status';
 import { POST as cancelEvaluation } from '../../src/pages/api/cancel-evaluation';
-import * as db from '../../src/lib/db';
-import * as evaluator from '../../src/lib/evaluator';
+import * as db from '@lib/db';
+import * as evaluator from '@lib/evaluation/evaluator';
 import { createMockDb } from '../helpers/mock-db';
 import { createJsonRequest, readJson } from '../helpers/requests';
 

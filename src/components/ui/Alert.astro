@@ -1,9 +1,7 @@
 ---
-import Icon from './Icon.astro';
-import { cn } from '../../lib/component-classes';
-
 /**
- * Alert component for displaying contextual notifications
+ * Alert component.
+ * Displays contextual feedback messages (info, success, warning, error).
  *
  * @example
  * <Alert variant="success" title="Operation completed">
@@ -14,6 +12,8 @@ import { cn } from '../../lib/component-classes';
  * @param title - Optional heading text displayed in bold
  * @param class - Additional CSS classes to apply
  */
+import { cn } from '@lib/ui/component-classes';
+import Icon from './Icon.astro';
 export interface Props {
   variant?: 'info' | 'success' | 'warning' | 'error';
   class?: string;

@@ -1,0 +1,378 @@
+---
+/**
+ * Prompt Refinement Review Page
+ * Shows AI-generated refined prompt after iteration completes
+ * Allows user to accept, edit, or skip the suggestion
+ */
+import Layout from '@layouts/Layout.astro';
+import { getDatabase } from '@lib/db';
+import MetricCard from '@components/MetricCard.astro';
+
+const { id } = Astro.params;
+const iterationNum = Astro.url.searchParams.get('iteration');
+
+if (!id || !iterationNum) {
+  return Astro.redirect('/personas');
+}
+
+const db = getDatabase();
+
+// Fetch persona
+const persona = db.prepare('SELECT * FROM personas WHERE id = ?').get(id) as any;
+
+if (!persona) {
+  return Astro.redirect('/personas');
+}
+
+const iterationNumber = parseInt(iterationNum, 10);
+
+// Fetch iteration
+const iteration = db
+  .prepare('SELECT * FROM training_iterations WHERE persona_id = ? AND iteration_number = ?')
+  .get(id, iterationNumber) as any;
+
+if (!iteration) {
+  return Astro.redirect(`/personas/${id}`);
+}
+
+// Fetch iteration metrics
+const metrics = db
+  .prepare('SELECT * FROM iteration_metrics WHERE iteration_id = ?')
+  .get(iteration.id) as any;
+
+// Check if refinement already generated (stored in session or similar)
+// For MVP, we'll trigger refinement on page load via client-side fetch
+---
+
+<Layout title={`Refine Prompt - ${persona.name}`}>
+  <div class="container mx-auto px-4 py-8">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-6">
+      <div>
+        <h1 class="text-3xl font-bold mb-2">Prompt Refinement</h1>
+        <p class="text-base-content/60">
+          {persona.name} - Iteration {iterationNumber}
+        </p>
+      </div>
+      <a href={`/personas/${id}/workspace`} class="btn btn-outline"> ← Back to Training </a>
+    </div>
+
+    <!-- Current Metrics -->
+    {
+      metrics && (
+        <div class="mb-6">
+          <h2 class="text-xl font-bold mb-4">Current Performance</h2>
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <MetricCard
+              label="F1 Score"
+              value={metrics.f1_score}
+              format="percentage"
+              trend={null}
+            />
+            <MetricCard
+              label="Precision"
+              value={metrics.precision}
+              format="percentage"
+              trend={null}
+            />
+            <MetricCard label="Recall" value={metrics.recall} format="percentage" trend={null} />
+            <MetricCard
+              label="Cohen's Kappa"
+              value={metrics.cohens_kappa}
+              format="decimal"
+              trend={null}
+            />
+          </div>
+        </div>
+      )
+    }
+
+    <!-- Refinement Status -->
+    <div id="refinement-container">
+      <!-- Loading state (shown initially) -->
+      <div id="loading-state" class="card bg-base-200 shadow-lg">
+        <div class="card-body">
+          <div class="flex items-center gap-3">
+            <span class="loading loading-spinner loading-lg"></span>
+            <div>
+              <h3 class="font-semibold text-lg">Analyzing iteration failures...</h3>
+              <p class="text-sm text-base-content/60">
+                The AI is reviewing judge decisions and generating an improved prompt
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Error state (hidden initially) -->
+      <div id="error-state" class="alert alert-error hidden">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="stroke-current shrink-0 h-6 w-6"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        <div>
+          <h3 class="font-bold">Failed to generate refined prompt</h3>
+          <div id="error-message" class="text-sm"></div>
+        </div>
+        <div class="flex gap-2">
+          <button id="retry-btn" class="btn btn-sm">Retry</button>
+          <a href={`/personas/${id}/judge-prompts`} class="btn btn-sm btn-outline">
+            Edit Manually
+          </a>
+        </div>
+      </div>
+
+      <!-- Success state (hidden initially) -->
+      <div id="success-state" class="hidden">
+        <!-- Current vs Improved Prompt Comparison -->
+        <div class="card bg-base-200 shadow-lg mb-6">
+          <div class="card-body">
+            <h2 class="card-title mb-4">AI-Generated Improvement</h2>
+
+            <!-- Rationale -->
+            <div class="mb-4">
+              <div class="text-sm font-semibold text-base-content/60 uppercase tracking-wide mb-2">
+                Why This Change?
+              </div>
+              <div class="bg-base-300 rounded-lg p-3">
+                <p id="refinement-rationale" class="text-sm"></p>
+              </div>
+            </div>
+
+            <!-- Expected Impact -->
+            <div class="mb-4">
+              <div class="text-sm font-semibold text-base-content/60 uppercase tracking-wide mb-2">
+                Expected Impact
+              </div>
+              <div class="bg-base-300 rounded-lg p-3">
+                <p id="refinement-impact" class="text-sm"></p>
+              </div>
+            </div>
+
+            <!-- Prompt Comparison -->
+            <div class="mb-4">
+              <div class="text-sm font-semibold text-base-content/60 uppercase tracking-wide mb-2">
+                Prompt Comparison
+              </div>
+              <div id="diff-viewer-container"></div>
+            </div>
+
+            <!-- Actions -->
+            <div class="card-actions justify-end mt-6">
+              <button id="skip-btn" class="btn btn-outline">Skip (Keep Current)</button>
+              <button id="edit-btn" class="btn btn-secondary">Edit Before Accepting</button>
+              <button id="accept-btn" class="btn btn-primary">Accept Improved Prompt</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Hidden data -->
+        <input type="hidden" id="improved-prompt-data" value="" />
+        <input type="hidden" id="current-prompt-data" value="" />
+      </div>
+    </div>
+
+    <!-- Edit Modal -->
+    <dialog id="edit-modal" class="modal">
+      <div class="modal-box max-w-3xl">
+        <form method="dialog">
+          <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+        </form>
+        <h3 class="font-bold text-lg mb-4">Edit Prompt</h3>
+        <div class="form-control">
+          <label class="label">
+            <span class="label-text">Judge Prompt</span>
+          </label>
+          <textarea
+            id="edit-prompt-textarea"
+            class="textarea textarea-bordered h-64 font-mono text-sm"
+            placeholder="Enter your judge prompt..."></textarea>
+        </div>
+        <div class="modal-action">
+          <form method="dialog">
+            <button class="btn btn-outline">Cancel</button>
+          </form>
+          <button id="save-edited-btn" class="btn btn-primary">Save and Use This Prompt</button>
+        </div>
+      </div>
+    </dialog>
+  </div>
+</Layout>
+
+<script define:vars={{ personaId: id, iterationNumber }}>
+  let refinementData = null;
+
+  /**
+   * Fetches the AI-generated refined prompt for the current iteration.
+   * Updates the UI with loading, success, or error states.
+   */
+  async function fetchRefinement() {
+    const loadingState = document.getElementById('loading-state');
+    const errorState = document.getElementById('error-state');
+    const successState = document.getElementById('success-state');
+
+    try {
+      const response = await fetch(
+        `/api/personas/${personaId}/iterations/${iterationNumber}/refine-prompt`,
+        { method: 'POST' }
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to refine prompt');
+      }
+
+      refinementData = await response.json();
+
+      // Hide loading, show success
+      loadingState?.classList.add('hidden');
+      successState?.classList.remove('hidden');
+
+      // Populate UI
+      document.getElementById('refinement-rationale')!.textContent = refinementData.rationale;
+      document.getElementById('refinement-impact')!.textContent = refinementData.expected_impact;
+      document
+        .getElementById('improved-prompt-data')!
+        .setAttribute('value', refinementData.improved_prompt);
+      document
+        .getElementById('current-prompt-data')!
+        .setAttribute('value', refinementData.current_prompt);
+
+      // Render diff viewer
+      renderDiffViewer(refinementData.current_prompt, refinementData.improved_prompt);
+    } catch (error) {
+      console.error('Refinement failed:', error);
+
+      // Hide loading, show error
+      loadingState?.classList.add('hidden');
+      errorState?.classList.remove('hidden');
+      document.getElementById('error-message')!.textContent =
+        error instanceof Error ? error.message : 'Unknown error';
+    }
+  }
+
+  /**
+   * Renders a side-by-side comparison of current and improved prompts.
+   * @param beforePrompt - The existing judge prompt
+   * @param afterPrompt - The AI-generated improved prompt
+   */
+  function renderDiffViewer(beforePrompt, afterPrompt) {
+    const container = document.getElementById('diff-viewer-container');
+    if (!container) return;
+
+    container.innerHTML = `
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <div class="bg-base-300 rounded-t-lg p-2">
+            <div class="font-semibold text-sm">Current Prompt</div>
+          </div>
+          <div class="bg-base-200 rounded-b-lg p-3 overflow-x-auto">
+            <pre class="text-xs font-mono whitespace-pre-wrap">${escapeHtml(beforePrompt)}</pre>
+          </div>
+        </div>
+        <div>
+          <div class="bg-primary/20 rounded-t-lg p-2">
+            <div class="font-semibold text-sm">Improved Prompt</div>
+          </div>
+          <div class="bg-base-200 rounded-b-lg p-3 overflow-x-auto">
+            <pre class="text-xs font-mono whitespace-pre-wrap">${escapeHtml(afterPrompt)}</pre>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  /**
+   * Sends the accepted prompt to the API to store as a new version.
+   * @param promptText - The prompt content to store
+   * @param reason - Change reason ('ai-generated' or 'manual-edit')
+   */
+  async function acceptPrompt(promptText, reason) {
+    try {
+      const response = await fetch(
+        `/api/personas/${personaId}/iterations/${iterationNumber}/accept-prompt`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            prompt_text: promptText,
+            reason: reason,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to accept prompt');
+      }
+
+      // Success - redirect to workspace
+      window.location.href = `/personas/${personaId}/workspace`;
+    } catch (error) {
+      console.error('Accept prompt failed:', error);
+      alert(`Failed to accept prompt: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  // Event handlers
+  document.getElementById('accept-btn')?.addEventListener('click', () => {
+    const improvedPrompt = document.getElementById('improved-prompt-data')?.getAttribute('value');
+    if (improvedPrompt) {
+      acceptPrompt(improvedPrompt, 'ai-generated');
+    }
+  });
+
+  document.getElementById('skip-btn')?.addEventListener('click', () => {
+    if (confirm('Are you sure you want to skip this refinement and keep the current prompt?')) {
+      window.location.href = `/personas/${personaId}/workspace`;
+    }
+  });
+
+  document.getElementById('edit-btn')?.addEventListener('click', () => {
+    const improvedPrompt = document.getElementById('improved-prompt-data')?.getAttribute('value');
+    const textarea = document.getElementById('edit-prompt-textarea') as HTMLTextAreaElement;
+    if (textarea && improvedPrompt) {
+      textarea.value = improvedPrompt;
+    }
+    const modal = document.getElementById('edit-modal') as HTMLDialogElement;
+    modal?.showModal();
+  });
+
+  document.getElementById('save-edited-btn')?.addEventListener('click', () => {
+    const textarea = document.getElementById('edit-prompt-textarea') as HTMLTextAreaElement;
+    if (textarea?.value) {
+      acceptPrompt(textarea.value, 'manual-edit');
+    }
+  });
+
+  document.getElementById('retry-btn')?.addEventListener('click', () => {
+    document.getElementById('error-state')?.classList.add('hidden');
+    document.getElementById('loading-state')?.classList.remove('hidden');
+    fetchRefinement();
+  });
+
+  /**
+   * Escapes HTML special characters.
+   * @param unsafe - Unescaped string
+   * @returns Safe HTML string
+   */
+  function escapeHtml(unsafe) {
+    return unsafe
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  // Initialize
+  fetchRefinement();
+</script>

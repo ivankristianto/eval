@@ -1,0 +1,244 @@
+---
+/**
+ * LoadingStates Component
+ *
+ * Reusable loading indicators, skeleton loaders, and toast notifications.
+ * Import this component to add various loading states to your pages.
+ */
+---
+
+<!-- Toast Container (for notifications) -->
+<div id="toast-container" class="toast toast-top toast-end z-50"></div>
+
+<!-- Skeleton Loaders -->
+<template id="skeleton-row-template">
+  <tr class="animate-pulse">
+    <td><div class="h-3 bg-base-300 rounded w-8"></div></td>
+    <td><div class="h-3 bg-base-300 rounded w-full"></div></td>
+    <td><div class="h-3 bg-base-300 rounded w-full"></div></td>
+    <td><div class="h-3 bg-base-300 rounded w-full"></div></td>
+    <td><div class="h-6 bg-base-300 rounded w-16 mx-auto"></div></td>
+    <td><div class="h-3 bg-base-300 rounded w-3/4"></div></td>
+    <td><div class="h-6 bg-base-300 rounded w-16 mx-auto"></div></td>
+    <td><div class="h-3 bg-base-300 rounded w-1/2"></div></td>
+  </tr>
+</template>
+
+<script>
+  // Toast Notification System
+  class ToastManager {
+    constructor() {
+      this.container = document.getElementById('toast-container');
+      this.toastQueue = [];
+    }
+
+    show(message, type = 'info', duration = 3000) {
+      if (!this.container) {
+        console.error('Toast container not found');
+        return null;
+      }
+
+      const toast = this.createToast(message, type);
+      this.container.appendChild(toast);
+      this.toastQueue.push(toast);
+
+      // Trigger animation
+      setTimeout(() => toast.classList.add('animate-reveal'), 10);
+
+      // Auto-remove
+      const timeoutId = setTimeout(() => {
+        toast.classList.remove('animate-reveal');
+        toast.classList.add('opacity-0', 'transition-opacity');
+        setTimeout(() => {
+          this.removeToast(toast);
+        }, 300);
+      }, duration);
+
+      // Store timeout ID for potential cancellation
+      toast.dataset.timeoutId = timeoutId.toString();
+
+      return toast;
+    }
+
+    createToast(message, type) {
+      const toast = document.createElement('div');
+      toast.className = `alert alert-${type} shadow-lg max-w-md`;
+
+      const iconMap = {
+        success:
+          '<svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>',
+        error:
+          '<svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>',
+        warning:
+          '<svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>',
+        info: '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 h-6 w-6"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>',
+      };
+
+      toast.innerHTML = `
+        ${iconMap[type] || iconMap.info}
+        <span data-toast-message>${message}</span>
+      `;
+
+      return toast;
+    }
+
+    update(toast, message, type = null) {
+      // Validate toast still exists in DOM
+      if (!toast || !document.body.contains(toast)) {
+        console.warn('Toast element no longer exists in DOM');
+        return;
+      }
+
+      const messageSpan = toast.querySelector('[data-toast-message]');
+      if (messageSpan) {
+        messageSpan.textContent = message;
+      }
+
+      if (type) {
+        // Remove old alert type classes and add new one
+        toast.className = toast.className.replace(/alert-\w+/, `alert-${type}`);
+      }
+    }
+
+    removeToast(toast) {
+      const index = this.toastQueue.indexOf(toast);
+      if (index > -1) {
+        this.toastQueue.splice(index, 1);
+      }
+
+      // Clear timeout if exists
+      if (toast.dataset.timeoutId) {
+        clearTimeout(parseInt(toast.dataset.timeoutId));
+      }
+
+      toast.remove();
+    }
+  }
+
+  // Initialize global toast manager
+  const toastManager = new ToastManager();
+  window.toast = {
+    success: (msg) => toastManager.show(msg, 'success'),
+    error: (msg) => toastManager.show(msg, 'error'),
+    info: (msg) => toastManager.show(msg, 'info'),
+    warning: (msg) => toastManager.show(msg, 'warning'),
+    update: (toast, message, type = null) => toastManager.update(toast, message, type),
+    remove: (toast) => toastManager.removeToast(toast),
+  };
+
+  // Loading Spinner Utility
+  window.showLoading = (targetSelector, message = 'Loading...') => {
+    const target = document.querySelector(targetSelector);
+    if (!target) return;
+
+    const loadingDiv = document.createElement('div');
+    loadingDiv.className = 'flex flex-col items-center justify-center p-12';
+    loadingDiv.innerHTML = `
+      <span class="loading loading-spinner loading-lg text-primary"></span>
+      <p class="mt-4 text-sm text-base-content/70">${message}</p>
+    `;
+    loadingDiv.setAttribute('data-loading-indicator', 'true');
+
+    target.appendChild(loadingDiv);
+  };
+
+  window.hideLoading = (targetSelector) => {
+    const target = document.querySelector(targetSelector);
+    if (!target) return;
+
+    const loadingIndicator = target.querySelector('[data-loading-indicator]');
+    if (loadingIndicator) {
+      loadingIndicator.remove();
+    }
+  };
+
+  // Skeleton Loader Utility
+  window.showSkeleton = (tableBodySelector, rowCount = 5) => {
+    const tbody = document.querySelector(tableBodySelector);
+    if (!tbody) return;
+
+    const template = document.getElementById('skeleton-row-template');
+    if (!template) return;
+
+    tbody.innerHTML = '';
+    for (let i = 0; i < rowCount; i++) {
+      const clone = template.content.cloneNode(true);
+      tbody.appendChild(clone);
+    }
+  };
+
+  // Progress Bar Utility
+  window.updateProgress = (percentage, targetSelector = '#progress-bar') => {
+    const progressBar = document.querySelector(targetSelector);
+    if (progressBar) {
+      progressBar.value = percentage;
+    }
+  };
+
+  // Example usage in console for testing:
+  console.log('Loading utilities available:');
+  console.log('- window.toast.success("Message")');
+  console.log('- window.toast.error("Message")');
+  console.log('- window.toast.info("Message")');
+  console.log('- window.toast.warning("Message")');
+  console.log('- window.showLoading("#container", "Loading...")');
+  console.log('- window.hideLoading("#container")');
+  console.log('- window.showSkeleton("tbody", 5)');
+  console.log('- window.updateProgress(50, "#progress-bar")');
+</script>
+
+<style>
+  /* Fade-in animation */
+  @keyframes reveal {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-reveal {
+    animation: reveal 0.3s ease-out forwards;
+  }
+
+  /* Pulse animation for skeleton */
+  @keyframes pulse {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+  }
+
+  .animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  /* Loading spinner spin */
+  .loading-spinner {
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  /* Smooth transitions */
+  .transition-all {
+    transition: all 0.2s ease-in-out;
+  }
+
+  .transition-opacity {
+    transition: opacity 0.3s ease-in-out;
+  }
+</style>

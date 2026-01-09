@@ -14,6 +14,11 @@ db/evaluation.e2e-test.db
 db/evaluation.e2e-test.db-wal
 db/evaluation.e2e-test.db-shm
 
+# E2E Test Database
+db/evaluation.e2e-test.db
+db/evaluation.e2e-test.db-wal
+db/evaluation.e2e-test.db-shm
+
 # Environment files
 .env
 .env.local
@@ -38,6 +43,7 @@ Thumbs.db
 
 # Test coverage
 coverage/
+test-results/
 
 # Temporary files
 *.tmp
@@ -45,3 +51,8 @@ coverage/
 
 # Git Worktrees
 .worktrees/
+
+# bv (beads viewer) local config and caches
+.bv/
+.beads/.bv.lock
+.beads/last-touched

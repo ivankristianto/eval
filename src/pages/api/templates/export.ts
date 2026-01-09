@@ -4,7 +4,10 @@
 import type { APIRoute } from 'astro';
 import { getTemplates } from '../../../lib/db';
 
-// GET /api/templates/export - Export all templates as CSV
+/**
+ * GET /api/templates/export - Export all templates as CSV.
+ * @returns CSV file response with all templates
+ */
 export const GET: APIRoute = async () => {
   try {
     const templates = getTemplates('created', 'desc');
@@ -85,8 +88,10 @@ export const GET: APIRoute = async () => {
 };
 
 /**
- * Escape a CSV field by wrapping in quotes if it contains commas, quotes, or newlines
- * and escaping any existing quotes by doubling them.
+ * Escapes a CSV field by handling special characters and quoting when necessary.
+ * Wraps in quotes if it contains commas, quotes, or newlines, and escapes any existing quotes by doubling them.
+ * @param field - The field value to escape
+ * @returns The escaped CSV field value
  */
 export function escapeCSVField(field: string): string {
   if (field === null || field === undefined) {

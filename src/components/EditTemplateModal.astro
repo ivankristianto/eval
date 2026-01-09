@@ -41,7 +41,8 @@ try {
       <!-- Template Name -->
       <div class="form-control w-full">
         <label class="label" for="template-name">
-          <span class="label-text font-medium">Template Name <span class="text-error">*</span></span>
+          <span class="label-text font-medium">Template Name <span class="text-error">*</span></span
+          >
         </label>
         <input
           type="text"
@@ -89,7 +90,9 @@ try {
         <!-- Rubric Type -->
         <div class="form-control w-full">
           <label class="label" for="rubric_type">
-            <span class="label-text font-medium">Accuracy Rubric <span class="text-error">*</span></span>
+            <span class="label-text font-medium"
+              >Accuracy Rubric <span class="text-error">*</span></span
+            >
           </label>
           <select
             id="rubric_type"
@@ -106,7 +109,9 @@ try {
         <!-- Expected Output -->
         <div class="form-control w-full">
           <label class="label" for="expected_output">
-            <span class="label-text font-medium">Expected Output <span class="text-error">*</span></span>
+            <span class="label-text font-medium"
+              >Expected Output <span class="text-error">*</span></span
+            >
           </label>
           <input
             type="text"
@@ -186,7 +191,8 @@ try {
       <!-- Model Selection -->
       <div class="form-control w-full">
         <label class="label">
-          <span class="label-text font-medium">Select Models <span class="text-error">*</span></span>
+          <span class="label-text font-medium">Select Models <span class="text-error">*</span></span
+          >
         </label>
         {
           models.length > 0 ? (
@@ -229,11 +235,7 @@ try {
 
       <!-- Actions -->
       <div class="modal-action">
-        <button
-          type="button"
-          id="edit-template-cancel-btn"
-          class="btn btn-ghost min-w-28"
-        >
+        <button type="button" id="edit-template-cancel-btn" class="btn btn-ghost min-w-28">
           Cancel
         </button>
         <button
@@ -253,10 +255,10 @@ try {
 </dialog>
 
 <script>
-  import { addToast } from '../lib/toastStore';
-  import { initializeOnce } from '../lib/client-utils';
+  import { addToast } from '@lib/ui/toastStore';
+  import { initializeOnce } from '@lib/utils/client-utils';
 
-  interface TemplateData {
+  interface _TemplateData {
     id?: string;
     name?: string;
     description?: string;
@@ -287,7 +289,9 @@ try {
     const temperatureSlider = document.getElementById('temperature') as HTMLInputElement;
     const temperatureValue = document.getElementById('temperature-value') as HTMLSpanElement;
     const templateError = document.getElementById('edit-template-error') as HTMLDivElement;
-    const templateErrorText = document.getElementById('edit-template-error-text') as HTMLSpanElement;
+    const templateErrorText = document.getElementById(
+      'edit-template-error-text'
+    ) as HTMLSpanElement;
 
     if (!modal || !form) return;
 
@@ -341,8 +345,7 @@ try {
           }
 
           // Populate form with template data
-          if (data.name)
-            (form.elements.namedItem('name') as HTMLInputElement).value = data.name;
+          if (data.name) (form.elements.namedItem('name') as HTMLInputElement).value = data.name;
           if (data.description)
             (form.elements.namedItem('description') as HTMLTextAreaElement).value =
               data.description;
@@ -362,9 +365,8 @@ try {
           // Handle partial credit concepts
           if (data.partial_credit_concepts && data.partial_credit_concepts.length > 0) {
             conceptsContainer.classList.remove('hidden');
-            (form.elements.namedItem(
-              'partial_credit_concepts'
-            ) as HTMLTextAreaElement).value = data.partial_credit_concepts.join(', ');
+            (form.elements.namedItem('partial_credit_concepts') as HTMLTextAreaElement).value =
+              data.partial_credit_concepts.join(', ');
           }
 
           // Handle system prompt
@@ -392,9 +394,7 @@ try {
           submitBtn.textContent = 'Save Template';
           submitBtn.disabled = false;
         } catch (error) {
-          showEditTemplateError(
-            error instanceof Error ? error.message : 'Failed to load template'
-          );
+          showEditTemplateError(error instanceof Error ? error.message : 'Failed to load template');
           submitBtn.textContent = 'Save Template';
           submitBtn.disabled = false;
           return;
@@ -502,9 +502,7 @@ try {
         // Reload page to show updated template
         window.location.reload();
       } catch (error) {
-        showEditTemplateError(
-          error instanceof Error ? error.message : 'An error occurred'
-        );
+        showEditTemplateError(error instanceof Error ? error.message : 'An error occurred');
         submitBtn.disabled = false;
         submitBtn.textContent = isCreating ? 'Create Template' : 'Save Template';
       }

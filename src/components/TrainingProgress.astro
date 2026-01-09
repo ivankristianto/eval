@@ -1,0 +1,236 @@
+---
+/**
+ * TrainingProgress component for displaying training status and progress
+ *
+ * @param persona - Persona object with training state
+ * @param currentIteration - Current iteration details (optional)
+ * @param showActions - Whether to show action buttons (default: true)
+ */
+import Badge from './ui/Badge.astro';
+import type { Persona, TrainingIteration } from '@src-types/training';
+
+export interface Props {
+  persona: Persona;
+  currentIteration?: TrainingIteration | null;
+  showActions?: boolean;
+}
+
+const { persona, currentIteration, showActions = true } = Astro.props;
+
+// Calculate progress percentage
+const progressPercentage =
+  persona.max_iterations > 0
+    ? Math.round((persona.current_iteration / persona.max_iterations) * 100)
+    : 0;
+
+/**
+ * Maps persona status to DaisyUI color variants.
+ * @param status - Persona lifecycle status
+ * @returns Color variant string
+ */
+function getStatusVariant(status: string): 'warning' | 'info' | 'success' | 'error' {
+  switch (status) {
+    case 'draft':
+      return 'warning';
+    case 'training':
+      return 'info';
+    case 'trained':
+      return 'success';
+    case 'incomplete':
+      return 'error';
+    default:
+      return 'info';
+  }
+}
+
+/**
+ * Maps iteration status to DaisyUI color variants.
+ * @param status - Training iteration status
+ * @returns Color variant string
+ */
+function getIterationStatusVariant(status: string): 'warning' | 'info' | 'success' | 'error' {
+  switch (status) {
+    case 'in_progress':
+      return 'info';
+    case 'completed':
+      return 'success';
+    case 'paused':
+      return 'warning';
+    case 'failed':
+      return 'error';
+    default:
+      return 'info';
+  }
+}
+
+// Determine if training is active
+const hasMetrics = persona.best_pass_rate !== null;
+
+// Calculate F1 score progress
+const f1Progress = hasMetrics
+  ? Math.round((persona.best_pass_rate / persona.target_pass_rate) * 100)
+  : 0;
+
+// Check if target reached
+const targetReached = hasMetrics && persona.best_pass_rate >= persona.target_pass_rate;
+---
+
+<div class="card bg-base-200 shadow-lg">
+  <div class="card-body">
+    <div class="flex items-start justify-between mb-4">
+      <h3 class="card-title">Training Progress</h3>
+      <Badge variant={getStatusVariant(persona.status)} size="md">
+        {persona.status}
+      </Badge>
+    </div>
+
+    <!-- Iteration Progress -->
+    <div class="mb-6">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-sm font-semibold text-base-content/60 uppercase tracking-wide">
+          Iterations
+        </span>
+        <span class="font-mono font-bold">
+          {persona.current_iteration} / {persona.max_iterations}
+        </span>
+      </div>
+      <progress
+        class="progress progress-primary w-full"
+        value={persona.current_iteration}
+        max={persona.max_iterations}></progress>
+      <div class="text-xs text-base-content/60 text-right mt-1">{progressPercentage}% complete</div>
+    </div>
+
+    <!-- F1 Score Progress -->
+    {
+      hasMetrics && (
+        <div class="mb-6">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-sm font-semibold text-base-content/60 uppercase tracking-wide">
+              Best F1 Score
+            </span>
+            <span class="font-mono font-bold text-success">
+              {(persona.best_pass_rate * 100).toFixed(1)}%
+            </span>
+          </div>
+          <progress
+            class="progress progress-success w-full"
+            value={persona.best_pass_rate}
+            max={persona.target_pass_rate}
+          />
+          <div class="flex items-center justify-between text-xs mt-1">
+            <span class="text-base-content/60">
+              Target: {(persona.target_pass_rate * 100).toFixed(0)}%
+            </span>
+            {targetReached ? (
+              <span class="text-success font-semibold">✓ Target Reached!</span>
+            ) : (
+              <span class="text-base-content/60">{f1Progress}% of target</span>
+            )}
+          </div>
+        </div>
+      )
+    }
+
+    <!-- Current Iteration Status -->
+    {
+      currentIteration && (
+        <div class="mb-6 p-4 bg-base-300 rounded-lg">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-sm font-semibold">
+              Current Iteration #{currentIteration.iteration_number}
+            </span>
+            <Badge variant={getIterationStatusVariant(currentIteration.status)} size="sm">
+              {currentIteration.status}
+            </Badge>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <div class="text-xs text-base-content/60 uppercase tracking-wide mb-1">
+                Pairs Evaluated
+              </div>
+              <div class="font-mono font-semibold">{currentIteration.total_pairs_evaluated}</div>
+            </div>
+            <div>
+              <div class="text-xs text-base-content/60 uppercase tracking-wide mb-1">
+                Human Reviews
+              </div>
+              <div class="font-mono font-semibold">{currentIteration.pairs_reviewed_by_human}</div>
+            </div>
+          </div>
+
+          {currentIteration.pairs_reviewed_by_human < currentIteration.total_pairs_evaluated && (
+            <div class="mt-3">
+              <progress
+                class="progress progress-warning w-full"
+                value={currentIteration.pairs_reviewed_by_human}
+                max={currentIteration.total_pairs_evaluated}
+              />
+              <div class="text-xs text-base-content/60 text-center mt-1">
+                {currentIteration.total_pairs_evaluated - currentIteration.pairs_reviewed_by_human}{' '}
+                reviews pending
+              </div>
+            </div>
+          )}
+        </div>
+      )
+    }
+
+    <!-- Target Info -->
+    {
+      !hasMetrics && (
+        <div class="mb-6 p-4 bg-base-300 rounded-lg">
+          <div class="text-sm">
+            <div class="text-xs text-base-content/60 uppercase tracking-wide mb-1">Target</div>
+            <div>
+              Reach{' '}
+              <span class="font-mono font-bold text-primary">
+                {(persona.target_pass_rate * 100).toFixed(0)}%
+              </span>{' '}
+              F1 score within <span class="font-mono font-bold">{persona.max_iterations}</span>{' '}
+              iterations
+            </div>
+          </div>
+        </div>
+      )
+    }
+
+    <!-- Action Buttons -->
+    {
+      showActions && (
+        <div class="card-actions justify-end mt-4">
+          {currentIteration && (
+            <a
+              href={`/personas/${persona.id}/review/${currentIteration.iteration_number}`}
+              class="btn btn-sm btn-primary"
+            >
+              Review Iteration {currentIteration.iteration_number}
+            </a>
+          )}
+
+          {hasMetrics && (
+            <a href={`/personas/${persona.id}/metrics`} class="btn btn-sm btn-ghost">
+              View Metrics
+            </a>
+          )}
+
+          {persona.status === 'draft' && (
+            <button class="btn btn-sm btn-success start-training-btn" data-persona-id={persona.id}>
+              Start Training
+            </button>
+          )}
+
+          {persona.status === 'trained' && !targetReached && (
+            <button
+              class="btn btn-sm btn-warning continue-training-btn"
+              data-persona-id={persona.id}
+            >
+              Continue Training
+            </button>
+          )}
+        </div>
+      )
+    }
+  </div>
+</div>

@@ -5,22 +5,30 @@
  * Subscribes to the toast store and renders toast notifications
  * with proper accessibility attributes and DOM manipulation.
  *
- * @remarks
  * This component automatically manages toast lifecycle including
  * rendering, animations, and removal. No props required.
  */
 ---
 
-<div id="toast-container" role="status" aria-live="polite" aria-atomic="true" class="toast toast-end toast-bottom z-50"></div>
+<div
+  id="toast-container"
+  role="status"
+  aria-live="polite"
+  aria-atomic="true"
+  class="toast toast-end toast-bottom z-50"
+>
+</div>
 
 <script>
-  import { toasts, removeToast } from '../../lib/toastStore';
-  import type { Toast } from '../../lib/toastStore';
-  import { createIconElement } from '../../lib/icons';
-  import { initializeOnce } from '../../lib/client-utils';
+  import { toasts, removeToast } from '@lib/ui/toastStore';
+  import type { Toast } from '@lib/ui/toastStore';
+  import { createIconElement } from '@lib/ui/icons';
+  import { initializeOnce } from '@lib/utils/client-utils';
 
   /**
-   * Create toast alert element using DOM methods (no innerHTML for security)
+   * Create toast alert element using DOM methods (no innerHTML for security).
+   * @param toast - Toast message data
+   * @returns Configured alert HTMLElement
    */
   function createToastElement(toast: Toast): HTMLElement {
     const alertDiv = document.createElement('div');
@@ -59,7 +67,7 @@
   }
 
   /**
-   * Initialize toast container and subscribe to store updates
+   * Initialize toast container and subscribe to store updates.
    */
   function initToasts() {
     const container = document.getElementById('toast-container');

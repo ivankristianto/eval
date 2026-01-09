@@ -1,0 +1,221 @@
+---
+/**
+ * TrainingDashboard Component
+ * Displays complete training progress for a persona with metrics cards and visualization
+ *
+ * @param personaId - The persona ID to display dashboard for
+ * @param showChart - Whether to show the metrics chart (default: true)
+ */
+
+import MetricCard from './MetricCard.astro';
+import MetricsChart from './MetricsChart.astro';
+
+export interface Props {
+  personaId: string;
+  showChart?: boolean;
+}
+
+const { personaId, showChart = true } = Astro.props;
+
+// Fetch dashboard data from API
+const dashboardUrl = `/api/personas/${personaId}/dashboard`;
+let dashboardData: any = null;
+let error: string | null = null;
+
+try {
+  const response = await fetch(new URL(dashboardUrl, Astro.url.origin));
+
+  if (!response.ok) {
+    error = `Failed to load dashboard data: ${response.statusText}`;
+  } else {
+    dashboardData = await response.json();
+  }
+} catch (e) {
+  error = `Error fetching dashboard: ${e instanceof Error ? e.message : 'Unknown error'}`;
+}
+
+// Calculate trend for metrics (comparing last two iterations)
+function calculateTrend(
+  iterations: any[],
+  metricKey: string
+): 'up' | 'down' | 'stable' | undefined {
+  if (!iterations || iterations.length < 2) return undefined;
+
+  const latest = iterations[iterations.length - 1];
+  const previous = iterations[iterations.length - 2];
+
+  if (!latest || !previous) return undefined;
+
+  const latestValue = latest[metricKey];
+  const previousValue = previous[metricKey];
+
+  if (latestValue === previousValue) return 'stable';
+  return latestValue > previousValue ? 'up' : 'down';
+}
+
+// Get latest metrics
+const latestIteration = dashboardData?.iterations?.[dashboardData.iterations.length - 1];
+const latestMetrics = latestIteration || null;
+
+// Calculate trends
+const f1Trend = calculateTrend(dashboardData?.iterations || [], 'f1_score');
+const precisionTrend = calculateTrend(dashboardData?.iterations || [], 'precision');
+const recallTrend = calculateTrend(dashboardData?.iterations || [], 'recall');
+const kappaTrend = calculateTrend(dashboardData?.iterations || [], 'cohens_kappa');
+
+// Convergence status
+const converged = dashboardData?.convergence_achieved || false;
+const targetF1 = dashboardData?.persona?.target_pass_rate || 0.8;
+---
+
+<div class="training-dashboard space-y-6">
+  {
+    error && (
+      <div class="alert alert-error">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="stroke-current shrink-0 h-6 w-6"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+        </svg>
+        <span>{error}</span>
+      </div>
+    )
+  }
+
+  {
+    !error && dashboardData && (
+      <>
+        {/* Convergence Status Banner */}
+        {converged && (
+          <div class="alert alert-success">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="stroke-current shrink-0 h-6 w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            <div>
+              <h3 class="font-bold">Training Converged!</h3>
+              <div class="text-sm">
+                F1 score ≥ {(targetF1 * 100).toFixed(0)}% target achieved in{' '}
+                {dashboardData.persona.best_f1_iteration} iterations
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Current Iteration Status */}
+        {dashboardData.current_iteration_status &&
+          dashboardData.current_iteration_status.status === 'in_progress' && (
+            <div class="alert alert-info">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="stroke-current shrink-0 h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              <div>
+                <h3 class="font-bold">
+                  Iteration {dashboardData.current_iteration_status.iteration_number} In Progress
+                </h3>
+                <div class="text-sm">
+                  {dashboardData.current_iteration_status.total_pairs_evaluated} pairs evaluated,
+                  {dashboardData.current_iteration_status.pairs_reviewed_by_human} reviewed by human
+                </div>
+              </div>
+            </div>
+          )}
+
+        {/* Metrics Cards Grid */}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <MetricCard
+            label="F1 Score"
+            value={latestMetrics?.f1_score ?? null}
+            format="percentage"
+            description="Harmonic mean of precision and recall - primary convergence metric"
+            trend={f1Trend}
+            variant={converged ? 'success' : 'primary'}
+          />
+
+          <MetricCard
+            label="Precision"
+            value={latestMetrics?.precision ?? null}
+            format="percentage"
+            description="How many positive predictions were correct"
+            trend={precisionTrend}
+            variant="info"
+          />
+
+          <MetricCard
+            label="Recall"
+            value={latestMetrics?.recall ?? null}
+            format="percentage"
+            description="How many actual positives were found"
+            trend={recallTrend}
+            variant="info"
+          />
+
+          <MetricCard
+            label="Cohen's Kappa"
+            value={latestMetrics?.cohens_kappa ?? null}
+            format="percentage"
+            description="Inter-rater reliability (≥0.66 = substantial agreement)"
+            trend={kappaTrend}
+            variant="info"
+          />
+        </div>
+
+        {/* Metrics Chart */}
+        {showChart && dashboardData.iterations.length > 0 && (
+          <div class="card bg-base-200 shadow-md">
+            <div class="card-body">
+              <h2 class="card-title">Metrics Trend</h2>
+              <MetricsChart iterations={dashboardData.iterations} targetF1={targetF1} />
+            </div>
+          </div>
+        )}
+
+        {/* No Data State */}
+        {dashboardData.iterations.length === 0 && (
+          <div class="card bg-base-200 shadow-md">
+            <div class="card-body text-center py-12">
+              <h3 class="text-lg font-semibold text-base-content/60">No Training Data Yet</h3>
+              <p class="text-base-content/40 mt-2">
+                Complete at least one iteration to see metrics and progress visualization
+              </p>
+            </div>
+          </div>
+        )}
+      </>
+    )
+  }
+</div>
+
+<style>
+  .training-dashboard {
+    /* Ensure dashboard is full width */
+    width: 100%;
+  }
+</style>

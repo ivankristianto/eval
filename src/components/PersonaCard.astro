@@ -1,0 +1,136 @@
+---
+/**
+ * PersonaCard component for displaying persona summary in list view
+ *
+ * @param persona - Persona object with id, name, description, status, etc.
+ */
+import Badge from './ui/Badge.astro';
+import type { Persona } from '@src-types/training';
+
+export interface Props {
+  persona: Persona;
+}
+
+const { persona } = Astro.props;
+
+/**
+ * Maps persona status to DaisyUI color variants.
+ * @param status - Persona lifecycle status
+ * @returns Color variant string
+ */
+function getStatusVariant(status: string): 'warning' | 'info' | 'success' | 'error' {
+  switch (status) {
+    case 'draft':
+      return 'warning';
+    case 'training':
+      return 'info';
+    case 'trained':
+      return 'success';
+    case 'incomplete':
+      return 'error';
+    default:
+      return 'info';
+  }
+}
+
+// Format date
+const createdDate = new Date(persona.created_at).toLocaleDateString();
+---
+
+<div class="card bg-base-200 shadow-xl hover:shadow-2xl transition-shadow">
+  <div class="card-body">
+    <div class="flex items-start justify-between">
+      <a href={`/personas/${persona.id}`} class="flex-1">
+        <h3 class="card-title text-lg mb-2 hover:text-primary transition-colors">
+          {persona.name}
+        </h3>
+      </a>
+      <Badge variant={getStatusVariant(persona.status)} size="sm">
+        {persona.status}
+      </Badge>
+    </div>
+
+    {
+      persona.description && (
+        <p class="text-sm text-base-content/70 line-clamp-2 mb-4">{persona.description}</p>
+      )
+    }
+
+    <div class="grid grid-cols-2 gap-4 text-sm">
+      {
+        persona.status === 'trained' && persona.best_pass_rate !== null && (
+          <div>
+            <div class="text-base-content/60 text-xs uppercase tracking-wide mb-1">F1 Score</div>
+            <div class="font-mono font-semibold text-success">
+              {(persona.best_pass_rate * 100).toFixed(1)}%
+            </div>
+          </div>
+        )
+      }
+
+      {
+        (persona.status === 'training' ||
+          persona.status === 'trained' ||
+          persona.status === 'incomplete') && (
+          <div>
+            <div class="text-base-content/60 text-xs uppercase tracking-wide mb-1">Iterations</div>
+            <div class="font-mono font-semibold">
+              {persona.current_iteration} / {persona.max_iterations}
+            </div>
+          </div>
+        )
+      }
+
+      <div>
+        <div class="text-base-content/60 text-xs uppercase tracking-wide mb-1">Created</div>
+        <div class="text-base-content/80">{createdDate}</div>
+      </div>
+
+      <div>
+        <div class="text-base-content/60 text-xs uppercase tracking-wide mb-1">Target F1</div>
+        <div class="font-mono font-semibold">{(persona.target_pass_rate * 100).toFixed(0)}%</div>
+      </div>
+    </div>
+
+    <div class="card-actions justify-end mt-4">
+      <a href={`/personas/${persona.id}`} class="btn btn-sm btn-primary"> View Details </a>
+
+      {
+        persona.status === 'draft' && (
+          <button class="btn btn-sm btn-success start-training-btn" data-persona-id={persona.id}>
+            Start Training
+          </button>
+        )
+      }
+
+      <div class="dropdown dropdown-end">
+        <label tabindex="0" class="btn btn-sm btn-ghost">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-5 w-5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
+            ></path>
+          </svg>
+        </label>
+        <ul tabindex="0" class="dropdown-content z-1 menu p-2 shadow bg-base-100 rounded-box w-52">
+          <li>
+            <a href={`/personas/${persona.id}`}>Edit</a>
+          </li>
+          <li>
+            <button class="delete-persona-btn text-error" data-persona-id={persona.id}>
+              Delete
+            </button>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>

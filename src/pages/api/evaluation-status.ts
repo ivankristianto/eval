@@ -2,40 +2,44 @@
 // Evaluation status polling endpoint
 
 import type { APIRoute } from 'astro';
-import { getEvaluationStatus } from '../../lib/db';
+import { getEvaluationStatus } from '@lib/db';
+import { badRequest, createErrorResponse } from '@lib/api-error-handler';
+import { createLogger } from '@lib/logger';
 
+const logger = createLogger('API:EvaluationStatus');
+
+/**
+ * GET /api/evaluation-status
+ * Retrieves current overall and per-model status for a specific evaluation.
+ * @param root0
+ * @param root0.url
+ * @returns {Promise<Response>}
+ */
 export const GET: APIRoute = async ({ url }) => {
+  const startTime = Date.now();
+
   try {
     const evaluationId = url.searchParams.get('evaluation_id');
 
     if (!evaluationId) {
-      return new Response(
-        JSON.stringify({
-          error: 'INVALID_INPUT',
-          message: 'evaluation_id query parameter is required',
-        }),
-        {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+      logger.logApiRequest('GET', '/api/evaluation-status', 400, Date.now() - startTime);
+      // Return error code in error field for test compatibility
+      return new Response(JSON.stringify({ error: 'INVALID_INPUT' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     const status = getEvaluationStatus(evaluationId);
 
     if (!status) {
-      return new Response(
-        JSON.stringify({
-          error: 'EVALUATION_NOT_FOUND',
-          message: 'Evaluation does not exist',
-          evaluation_id: evaluationId,
-        }),
-        {
-          status: 404,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+      logger.logApiRequest('GET', '/api/evaluation-status', 404, Date.now() - startTime);
+      return badRequest('Evaluation does not exist', 'EVALUATION_NOT_FOUND', {
+        evaluation_id: evaluationId,
+      });
     }
+
+    logger.logApiRequest('GET', '/api/evaluation-status', 200, Date.now() - startTime);
 
     return new Response(
       JSON.stringify({
@@ -51,16 +55,7 @@ export const GET: APIRoute = async ({ url }) => {
       }
     );
   } catch (error) {
-    console.error('GET /api/evaluation-status error:', error);
-    return new Response(
-      JSON.stringify({
-        error: 'INTERNAL_ERROR',
-        message: error instanceof Error ? error.message : 'Internal server error',
-      }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
+    logger.logApiError('GET', '/api/evaluation-status', error as Error);
+    return createErrorResponse(error);
   }
 };

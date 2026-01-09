@@ -2,45 +2,52 @@
 // Evaluation results endpoint
 
 import type { APIRoute } from 'astro';
-import { getEvaluation, getResults } from '../../lib/db';
+import { getEvaluation, getResults } from '@lib/db';
+import { createErrorResponse } from '@lib/api-error-handler';
+import { createLogger } from '@lib/logger';
 
+const logger = createLogger('API:Results');
+
+/**
+ * GET /api/results
+ * Retrieves all model results for a specific evaluation.
+ * Results are sorted by accuracy score descending.
+ * @param root0
+ * @param root0.url
+ * @returns {Promise<Response>}
+ */
 export const GET: APIRoute = async ({ url }) => {
+  const startTime = Date.now();
+
   try {
     const evaluationId = url.searchParams.get('evaluation_id');
 
     if (!evaluationId) {
-      return new Response(
-        JSON.stringify({
-          error: 'INVALID_INPUT',
-          message: 'evaluation_id query parameter is required',
-        }),
-        {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+      logger.logApiRequest('GET', '/api/results', 400, Date.now() - startTime);
+      // Return error code in error field for test compatibility
+      return new Response(JSON.stringify({ error: 'INVALID_INPUT' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     const evaluation = getEvaluation(evaluationId);
 
     if (!evaluation) {
-      return new Response(
-        JSON.stringify({
-          error: 'EVALUATION_NOT_FOUND',
-          message: 'Evaluation does not exist',
-          evaluation_id: evaluationId,
-        }),
-        {
-          status: 404,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+      logger.logApiRequest('GET', '/api/results', 404, Date.now() - startTime);
+      // Return error code in error field for test compatibility
+      return new Response(JSON.stringify({ error: 'EVALUATION_NOT_FOUND' }), {
+        status: 404,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     const results = getResults(evaluationId);
 
     // Sort by accuracy descending (only for completed results)
     const sortedResults = results.sort((a, b) => (b.accuracy_score || 0) - (a.accuracy_score || 0));
+
+    logger.logApiRequest('GET', '/api/results', 200, Date.now() - startTime);
 
     return new Response(
       JSON.stringify({
@@ -71,16 +78,7 @@ export const GET: APIRoute = async ({ url }) => {
       }
     );
   } catch (error) {
-    console.error('GET /api/results error:', error);
-    return new Response(
-      JSON.stringify({
-        error: 'INTERNAL_ERROR',
-        message: error instanceof Error ? error.message : 'Internal server error',
-      }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
+    logger.logApiError('GET', '/api/results', error as Error);
+    return createErrorResponse(error);
   }
 };

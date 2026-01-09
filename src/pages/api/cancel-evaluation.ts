@@ -2,58 +2,56 @@
 // Cancel a running evaluation
 
 import type { APIRoute } from 'astro';
-import { getEvaluation } from '../../lib/db';
-import { cancelEvaluation } from '../../lib/evaluator';
+import { getEvaluation } from '@lib/db';
+import { cancelEvaluation } from '@lib/evaluation/evaluator';
+import { badRequest, createErrorResponse } from '@lib/api-error-handler';
+import { createLogger } from '@lib/logger';
 
+const logger = createLogger('API:CancelEvaluation');
+
+/**
+ * POST /api/cancel-evaluation
+ * Cancels a running evaluation process.
+ * @param root0
+ * @param root0.request
+ * @returns {Promise<Response>}
+ */
 export const POST: APIRoute = async ({ request }) => {
+  const startTime = Date.now();
+
   try {
     const body = await request.json();
     const { evaluation_id } = body;
 
     if (!evaluation_id) {
-      return new Response(
-        JSON.stringify({
-          error: 'INVALID_INPUT',
-          message: 'evaluation_id is required',
-        }),
-        {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+      logger.logApiRequest('POST', '/api/cancel-evaluation', 400, Date.now() - startTime);
+      return badRequest('evaluation_id is required', 'INVALID_INPUT');
     }
 
     const evaluation = getEvaluation(evaluation_id);
 
     if (!evaluation) {
-      return new Response(
-        JSON.stringify({
-          error: 'EVALUATION_NOT_FOUND',
-          message: 'Evaluation does not exist',
-          evaluation_id,
-        }),
-        {
-          status: 404,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+      logger.logApiRequest('POST', '/api/cancel-evaluation', 404, Date.now() - startTime);
+      return badRequest('Evaluation does not exist', 'EVALUATION_NOT_FOUND', {
+        evaluation_id,
+      });
     }
 
     if (evaluation.status === 'completed' || evaluation.status === 'failed') {
-      return new Response(
-        JSON.stringify({
-          error: 'CANNOT_CANCEL',
-          message: 'Evaluation already completed',
-          status: evaluation.status,
-        }),
-        {
-          status: 409,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+      logger.logApiRequest('POST', '/api/cancel-evaluation', 409, Date.now() - startTime);
+      // Return error code in error field and status at top level for test compatibility
+      return new Response(JSON.stringify({ error: 'CANNOT_CANCEL', status: evaluation.status }), {
+        status: 409,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
+    logger.info('Cancelling evaluation', { evaluationId: evaluation_id });
+
     cancelEvaluation(evaluation_id);
+
+    logger.info('Evaluation cancelled successfully', { evaluationId: evaluation_id });
+    logger.logApiRequest('POST', '/api/cancel-evaluation', 200, Date.now() - startTime);
 
     return new Response(
       JSON.stringify({
@@ -67,16 +65,7 @@ export const POST: APIRoute = async ({ request }) => {
       }
     );
   } catch (error) {
-    console.error('POST /api/cancel-evaluation error:', error);
-    return new Response(
-      JSON.stringify({
-        error: 'INTERNAL_ERROR',
-        message: error instanceof Error ? error.message : 'Internal server error',
-      }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
+    logger.logApiError('POST', '/api/cancel-evaluation', error as Error);
+    return createErrorResponse(error);
   }
 };

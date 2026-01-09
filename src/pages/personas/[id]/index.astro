@@ -1,0 +1,827 @@
+---
+import Layout from '@layouts/Layout.astro';
+import Breadcrumbs from '@components/ui/Breadcrumbs.astro';
+import Badge from '@components/ui/Badge.astro';
+import TrainingProgress from '@components/TrainingProgress.astro';
+import PersonaTabs from '@components/PersonaTabs.astro';
+import { getPersona } from '@lib/db/persona-db';
+import { getModels, getDatabase } from '@lib/db';
+import type { Persona } from '@src-types/training';
+
+const { id } = Astro.params;
+
+if (!id) {
+  return Astro.redirect('/personas');
+}
+
+// Fetch persona details directly from DB
+let persona: Persona | null = null;
+let error: string | null = null;
+let modelMap: Record<string, { name: string; provider: string }> = {};
+
+try {
+  persona = getPersona(id);
+
+  if (!persona) {
+    error = 'Persona not found';
+  } else {
+    // Fetch all models to map IDs to names
+    const models = getModels();
+    models.forEach((model) => {
+      modelMap[model.id] = {
+        name: model.model_name,
+        provider: model.provider,
+      };
+    });
+  }
+} catch (e) {
+  console.error('Error fetching persona:', e);
+  error = 'Failed to load persona';
+}
+
+if (error || !persona) {
+  return Astro.redirect('/personas');
+}
+
+// Fetch current iteration and training session for training-progress tab
+let currentIteration: any = null;
+let trainingSession: any = null;
+if (Astro.url.searchParams.get('tab') === 'training-progress') {
+  const db = getDatabase();
+  currentIteration = db
+    .prepare(
+      `SELECT * FROM training_iterations
+       WHERE persona_id = ?
+       ORDER BY iteration_number DESC
+       LIMIT 1`
+    )
+    .get(id) as any;
+
+  // Fetch active or paused training session
+  trainingSession = db
+    .prepare(
+      `SELECT * FROM training_loop_state
+       WHERE persona_id = ?
+       AND status IN ('in_progress', 'paused')
+       ORDER BY created_at DESC
+       LIMIT 1`
+    )
+    .get(id) as any;
+}
+
+/**
+ * Formats a model ID into a user-friendly name and provider string.
+ * @param modelId - UUID of the model configuration
+ * @returns Formatted model name (e.g., "gpt-4o (openai)")
+ */
+function getModelName(modelId: string) {
+  const model = modelMap[modelId];
+  if (model) {
+    return `${model.name} (${model.provider})`;
+  }
+  return modelId; // Fallback to ID if model not found
+}
+
+const breadcrumbItems = [
+  { label: 'Home', href: '/' },
+  { label: 'Personas', href: '/personas' },
+  { label: persona.name },
+];
+
+/**
+ * Maps persona status to DaisyUI color variants.
+ * @param status - Persona lifecycle status
+ * @returns Color variant string
+ */
+function getStatusVariant(status: string): 'warning' | 'info' | 'success' | 'error' {
+  switch (status) {
+    case 'draft':
+      return 'warning';
+    case 'training':
+      return 'info';
+    case 'trained':
+      return 'success';
+    case 'incomplete':
+      return 'error';
+    default:
+      return 'info';
+  }
+}
+
+// Get current tab from query param (default: overview)
+const currentTab = Astro.url.searchParams.get('tab') || 'overview';
+
+if (currentTab === 'prompts') {
+  return Astro.redirect(`/personas/${id}/judge-prompts`);
+}
+
+// Redirect removed training-progress tab to workspace
+if (currentTab === 'training-progress') {
+  return Astro.redirect(`/personas/${id}/workspace`);
+}
+---
+
+<Layout title={`${persona.name} - Persona Details`}>
+  <Breadcrumbs items={breadcrumbItems} />
+
+  <!-- Header -->
+  <div class="flex items-start justify-between mb-8 animate-reveal">
+    <div class="flex-1">
+      <div class="flex items-center gap-4 mb-4">
+        <h1
+          class="text-4xl md:text-5xl font-display font-semibold tracking-tight text-gradient-gold"
+        >
+          {persona.name}
+        </h1>
+        <Badge variant={getStatusVariant(persona.status)} size="lg">
+          {persona.status}
+        </Badge>
+      </div>
+      {
+        persona.description && (
+          <p class="text-base-content/70 text-lg max-w-3xl">{persona.description}</p>
+        )
+      }
+    </div>
+
+    <div class="flex gap-3">
+      {
+        persona.status === 'draft' && (
+          <button class="btn btn-success btn-lg" id="start-training-btn">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-6 w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
+              />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            Start Training
+          </button>
+        )
+      }
+
+      {
+        persona.status !== 'draft' && (
+          <a href={`/personas/${id}/workspace`} class="btn btn-primary btn-lg">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-6 w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+              />
+            </svg>
+            Open Workspace
+          </a>
+        )
+      }
+
+      <button class="btn btn-warning btn-outline" id="reset-persona-btn">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-6 w-6"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+          ></path>
+        </svg>
+        Reset Training
+      </button>
+
+      <button class="btn btn-error btn-outline" id="delete-persona-btn">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-6 w-6"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+          ></path>
+        </svg>
+        Delete
+      </button>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <PersonaTabs
+    personaId={id}
+    activeTab={currentTab === 'overview'
+      ? 'overview'
+      : currentTab === 'settings'
+        ? 'settings'
+        : 'overview'}
+  />
+
+  <!-- Tab Content -->
+  {
+    currentTab === 'overview' && (
+      <div class="space-y-8 animate-reveal delay-200">
+        {/* Persona Info Card */}
+        <div class="card bg-base-200 shadow-xl">
+          <div class="card-body">
+            <h2 class="card-title text-2xl mb-6">Persona Information</h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <div class="text-base-content/60 text-sm uppercase tracking-wide mb-2">
+                  Task Prompt
+                </div>
+                <p class="text-base-content bg-base-300 p-4 rounded-lg whitespace-pre-wrap">
+                  {persona.task_prompt}
+                </p>
+              </div>
+
+              <div class="space-y-4">
+                <div>
+                  <div class="text-base-content/60 text-sm uppercase tracking-wide mb-2">
+                    Target F1 Score
+                  </div>
+                  <div class="font-mono font-semibold text-2xl text-primary">
+                    {(persona.target_pass_rate * 100).toFixed(0)}%
+                  </div>
+                </div>
+
+                <div>
+                  <div class="text-base-content/60 text-sm uppercase tracking-wide mb-2">
+                    Max Iterations
+                  </div>
+                  <div class="font-mono font-semibold text-2xl">{persona.max_iterations}</div>
+                </div>
+
+                <div>
+                  <div class="text-base-content/60 text-sm uppercase tracking-wide mb-2">
+                    Current Iteration
+                  </div>
+                  <div class="font-mono font-semibold text-2xl">{persona.current_iteration}</div>
+                </div>
+
+                {persona.best_pass_rate !== null && (
+                  <div>
+                    <div class="text-base-content/60 text-sm uppercase tracking-wide mb-2">
+                      Best F1 Score
+                    </div>
+                    <div class="font-mono font-semibold text-2xl text-success">
+                      {(persona.best_pass_rate * 100).toFixed(1)}%
+                    </div>
+                    <div class="text-sm text-base-content/60">
+                      (Iteration {persona.best_f1_iteration})
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Model Configuration Card */}
+        <div class="card bg-base-200 shadow-xl">
+          <div class="card-body">
+            <h2 class="card-title text-2xl mb-6">Model Configuration</h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div>
+                <div class="text-base-content/60 text-sm uppercase tracking-wide mb-2">
+                  Task Model
+                </div>
+                <div class="font-mono text-lg">{getModelName(persona.task_model_id)}</div>
+              </div>
+
+              <div>
+                <div class="text-base-content/60 text-sm uppercase tracking-wide mb-2">
+                  Judge Model
+                </div>
+                <div class="font-mono text-lg">{getModelName(persona.judge_model_id)}</div>
+              </div>
+
+              <div>
+                <div class="text-base-content/60 text-sm uppercase tracking-wide mb-2">
+                  Prompt Engineer Model
+                </div>
+                <div class="font-mono text-lg">
+                  {getModelName(persona.prompt_engineer_model_id)}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Metadata Card */}
+        <div class="card bg-base-200 shadow-xl">
+          <div class="card-body">
+            <h2 class="card-title text-2xl mb-6">Metadata</h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div>
+                <div class="text-base-content/60 text-sm uppercase tracking-wide mb-2">
+                  Created At
+                </div>
+                <div>{new Date(persona.created_at).toLocaleString()}</div>
+              </div>
+
+              <div>
+                <div class="text-base-content/60 text-sm uppercase tracking-wide mb-2">
+                  Updated At
+                </div>
+                <div>{new Date(persona.updated_at).toLocaleString()}</div>
+              </div>
+
+              {persona.created_by && (
+                <div>
+                  <div class="text-base-content/60 text-sm uppercase tracking-wide mb-2">
+                    Created By
+                  </div>
+                  <div>{persona.created_by}</div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  {
+    currentTab === 'settings' && (
+      <div class="animate-reveal delay-200">
+        <div class="card bg-base-200 shadow-xl">
+          <div class="card-body">
+            <h2 class="card-title text-2xl mb-6">Persona Settings</h2>
+
+            <form id="update-persona-form" class="space-y-6">
+              <div class="form-control">
+                <label class="label">
+                  <span class="label-text font-semibold">Persona Name</span>
+                </label>
+                <input
+                  type="text"
+                  name="name"
+                  value={persona.name}
+                  class="input input-bordered w-full"
+                  required
+                />
+              </div>
+
+              <div class="form-control">
+                <label class="label">
+                  <span class="label-text font-semibold">Description</span>
+                </label>
+                <textarea
+                  name="description"
+                  class="textarea textarea-bordered w-full h-24"
+                  set:text={persona.description || ''}
+                />
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="form-control">
+                  <label class="label">
+                    <span class="label-text font-semibold">Target F1 Score</span>
+                  </label>
+                  <input
+                    type="number"
+                    name="target_pass_rate"
+                    value={persona.target_pass_rate}
+                    step="0.01"
+                    min="0"
+                    max="1"
+                    class="input input-bordered w-full"
+                    required
+                  />
+                  <label class="label">
+                    <span class="label-text-alt text-base-content/60">
+                      Target F1 score (0.0 to 1.0) for convergence
+                    </span>
+                  </label>
+                </div>
+
+                <div class="form-control">
+                  <label class="label">
+                    <span class="label-text font-semibold">Max Iterations</span>
+                  </label>
+                  <input
+                    type="number"
+                    name="max_iterations"
+                    value={persona.max_iterations}
+                    min="1"
+                    max="50"
+                    class="input input-bordered w-full"
+                    required
+                  />
+                  <label class="label">
+                    <span class="label-text-alt text-base-content/60">
+                      Maximum number of training iterations
+                    </span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="card-actions justify-end">
+                <button type="button" class="btn btn-ghost" onclick="history.back()">
+                  Cancel
+                </button>
+                <button type="submit" class="btn btn-primary">
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  {
+    currentTab === 'training-progress' && (
+      <div class="animate-reveal delay-200">
+        <TrainingProgress persona={persona} currentIteration={currentIteration} />
+
+        {currentIteration && currentIteration.status === 'in_progress' && (
+          <div class="alert alert-info mt-6">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              class="stroke-current shrink-0 w-6 h-6"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            <div>
+              <p class="font-semibold">Training iteration in progress</p>
+              <p class="text-sm">
+                The judge model has evaluated all training pairs. Click "Review Decisions" to
+                provide human feedback and calculate metrics for this iteration.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {trainingSession && trainingSession.status === 'paused' && (
+          <div class="alert alert-warning mt-6">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="stroke-current shrink-0 h-6 w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            <div class="flex-1">
+              <p class="font-semibold">Training paused</p>
+              <p class="text-sm">
+                {trainingSession.pause_reason || 'Training session was paused.'}
+              </p>
+            </div>
+            <button
+              class="btn btn-primary resume-training-btn"
+              data-persona-id={id}
+              data-session-id={trainingSession.session_id}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
+                />
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              Resume Training
+            </button>
+          </div>
+        )}
+
+        {trainingSession && trainingSession.status === 'in_progress' && (
+          <div class="flex justify-end mt-6">
+            <button
+              class="btn btn-warning pause-training-btn"
+              data-persona-id={id}
+              data-session-id={trainingSession.session_id}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              Pause Training
+            </button>
+          </div>
+        )}
+
+        {persona.status === 'draft' && (
+          <div class="alert alert-warning mt-6">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="stroke-current shrink-0 h-6 w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+              />
+            </svg>
+            <div>
+              <p class="font-semibold">Training not started</p>
+              <p class="text-sm">
+                Upload at least 10 training pairs in the Training Data tab, then click "Start
+                Training" to begin the first iteration.
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
+    )
+  }
+</Layout>
+
+<script>
+  import { addToast } from '@lib/ui/toastStore';
+
+  const personaId = window.location.pathname.split('/')[2];
+
+  // Delete persona
+  document.getElementById('delete-persona-btn')?.addEventListener('click', async () => {
+    if (!confirm('Are you sure you want to delete this persona? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/personas/${personaId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        addToast('Persona deleted successfully', 'success');
+        window.location.href = '/personas';
+      } else {
+        const data = await response.json();
+        addToast(data.message || 'Failed to delete persona', 'error');
+      }
+    } catch (error) {
+      console.error('Delete error:', error);
+      addToast('Failed to delete persona', 'error');
+    }
+  });
+
+  // Reset persona training data
+  document.getElementById('reset-persona-btn')?.addEventListener('click', async () => {
+    if (
+      !confirm(
+        'Are you sure you want to reset all training data? This will delete all iterations, metrics, judge decisions, and prompt versions. This action cannot be undone.'
+      )
+    ) {
+      return;
+    }
+
+    const button = document.getElementById('reset-persona-btn') as HTMLButtonElement;
+    if (button) {
+      button.disabled = true;
+      button.classList.add('loading');
+    }
+
+    try {
+      const response = await fetch(`/api/personas/${personaId}/reset`, {
+        method: 'POST',
+      });
+
+      if (response.ok) {
+        addToast('Training data reset successfully', 'success');
+        // Refresh the page to show reset state
+        window.location.reload();
+      } else {
+        const result = await response.json();
+        addToast(result.message || 'Failed to reset training data', 'error');
+        if (button) {
+          button.disabled = false;
+          button.classList.remove('loading');
+        }
+      }
+    } catch (error) {
+      console.error('Reset error:', error);
+      addToast('Failed to reset training data', 'error');
+      if (button) {
+        button.disabled = false;
+        button.classList.remove('loading');
+      }
+    }
+  });
+
+  // Start training
+  // Start training button (handle both ID and class selectors)
+  document.querySelectorAll('#start-training-btn, .start-training-btn').forEach((btn) => {
+    btn.addEventListener('click', async (e) => {
+      const button = e.currentTarget as HTMLButtonElement;
+      if (!button) return;
+
+      button.disabled = true;
+      button.classList.add('loading');
+
+      try {
+        const response = await fetch(`/api/personas/${personaId}/training/start`, {
+          method: 'POST',
+        });
+
+        const result = await response.json();
+        if (!response.ok) {
+          throw new Error(result.message || 'Failed to start training');
+        }
+
+        addToast(result.message || 'Training started successfully', 'success');
+        // Redirect to review page for the iteration
+        const iterationNumber = result.iteration?.iteration_number || 1;
+        window.location.href = `/personas/${personaId}/review/${iterationNumber}`;
+      } catch (error) {
+        console.error('Failed to start training:', error);
+        addToast(
+          `Failed to start training: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          'error'
+        );
+        button.disabled = false;
+        button.classList.remove('loading');
+      }
+    });
+  });
+
+  // Update persona form
+  document.getElementById('update-persona-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const form = e.target as HTMLFormElement;
+    const formData = new FormData(form);
+
+    const data = {
+      name: formData.get('name') as string,
+      description: formData.get('description') as string,
+      target_pass_rate: parseFloat(formData.get('target_pass_rate') as string),
+      max_iterations: parseInt(formData.get('max_iterations') as string, 10),
+    };
+
+    try {
+      const response = await fetch(`/api/personas/${personaId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (response.ok) {
+        addToast('Persona updated successfully', 'success');
+        // Refresh the page to show updated data
+        window.location.reload();
+      } else {
+        const _result = await response.json();
+        addToast('Failed to update persona', 'error');
+      }
+    } catch (error) {
+      console.error('Update error:', error);
+      addToast('Failed to update persona', 'error');
+    }
+  });
+
+  // Pause training button
+  document.querySelectorAll('.pause-training-btn').forEach((btn) => {
+    btn.addEventListener('click', async (e) => {
+      const button = e.currentTarget as HTMLButtonElement;
+      const personaId = button.dataset.personaId;
+
+      if (!personaId) return;
+
+      if (!confirm('Pause the current training iteration? You can resume it later.')) {
+        return;
+      }
+
+      button.disabled = true;
+      button.classList.add('loading');
+
+      try {
+        const response = await fetch(`/api/personas/${personaId}/training/pause`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            reason: 'User requested pause',
+          }),
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || 'Failed to pause training');
+        }
+
+        addToast('Training paused successfully', 'success');
+        // Reload page to show paused state
+        window.location.reload();
+      } catch (error) {
+        console.error('Failed to pause training:', error);
+        addToast(
+          `Failed to pause training: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          'error'
+        );
+        button.disabled = false;
+        button.classList.remove('loading');
+      }
+    });
+  });
+
+  // Resume training button
+  document.querySelectorAll('.resume-training-btn').forEach((btn) => {
+    btn.addEventListener('click', async (e) => {
+      const button = e.currentTarget as HTMLButtonElement;
+      const personaId = button.dataset.personaId;
+
+      if (!personaId) return;
+
+      button.disabled = true;
+      button.classList.add('loading');
+
+      try {
+        const response = await fetch(`/api/personas/${personaId}/training/resume`, {
+          method: 'POST',
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || 'Failed to resume training');
+        }
+
+        const _result = await response.json();
+        addToast('Training resumed successfully', 'success');
+        // Reload page to show resumed state
+        window.location.reload();
+      } catch (error) {
+        console.error('Failed to resume training:', error);
+        addToast(
+          `Failed to resume training: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          'error'
+        );
+        button.disabled = false;
+        button.classList.remove('loading');
+      }
+    });
+  });
+</script>

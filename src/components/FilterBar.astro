@@ -1,5 +1,14 @@
 ---
-import type { RubricType } from '../lib/types';
+/**
+ * FilterBar component for filtering evaluation lists.
+ * Provides inputs for date range, rubric type, and minimum accuracy score.
+ *
+ * @param fromDate - Start date for filtering
+ * @param toDate - End date for filtering
+ * @param rubric - Rubric type filter
+ * @param minScore - Minimum accuracy score filter (0-100)
+ */
+import type { RubricType } from '@lib/utils/types';
 import Input from './ui/Input.astro';
 import Select from './ui/Select.astro';
 import Button from './ui/Button.astro';
@@ -90,9 +99,7 @@ const rubrics: { value: RubricType; label: string }[] = [
     </div>
 
     <div class="pb-1">
-      <Button type="submit" variant="primary" size="sm" class="font-semibold">
-        Filter
-      </Button>
+      <Button type="submit" variant="primary" size="sm" class="font-semibold"> Filter </Button>
     </div>
 
     <div class="pb-1">

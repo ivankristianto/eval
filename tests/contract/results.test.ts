@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GET as getResults } from '../../src/pages/api/results';
-import * as db from '../../src/lib/db';
+import * as db from '@lib/db';
 import { createMockDb } from '../helpers/mock-db';
 import { readJson } from '../helpers/requests';
 

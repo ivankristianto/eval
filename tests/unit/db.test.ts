@@ -3,7 +3,7 @@ import { mkdtempSync, rmSync } from 'fs';
 import { tmpdir } from 'os';
 import { dirname, join } from 'path';
 
-let dbModule: typeof import('../../src/lib/db');
+let dbModule: typeof import('@lib/db');
 let dbPath = '';
 
 const encryptionKey = 'a'.repeat(64);
@@ -16,11 +16,11 @@ const createEvaluation = () =>
 
 beforeAll(async () => {
   const dir = mkdtempSync(join(tmpdir(), 'eval-db-'));
-  dbPath = join(dir, 'evaluation.db');
+  dbPath = join(dir, 'evaluation.e2e-test.db');
   process.env.EVAL_DB_PATH = dbPath;
   process.env.ENCRYPTION_KEY = encryptionKey;
   vi.resetModules();
-  dbModule = await import('../../src/lib/db');
+  dbModule = await import('@lib/db');
   dbModule.initializeDatabase();
 });
 

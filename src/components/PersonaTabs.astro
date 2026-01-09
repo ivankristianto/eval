@@ -1,0 +1,45 @@
+---
+/**
+ * PersonaTabs Component
+ * Unified navigation tabs for persona detail pages
+ */
+interface Props {
+  personaId: string;
+  activeTab: 'overview' | 'workspace' | 'task-prompts' | 'judge-prompts' | 'settings';
+}
+
+const { personaId, activeTab } = Astro.props;
+---
+
+<div class="tabs tabs-boxed bg-base-200 mb-8 animate-reveal delay-100">
+  <a
+    href={`/personas/${personaId}?tab=overview`}
+    class={`tab tab-lg ${activeTab === 'overview' ? 'tab-active' : ''}`}
+  >
+    Overview
+  </a>
+  <a
+    href={`/personas/${personaId}/workspace`}
+    class={`tab tab-lg ${activeTab === 'workspace' ? 'tab-active' : ''}`}
+  >
+    Workspace
+  </a>
+  <a
+    href={`/personas/${personaId}/task-prompts`}
+    class={`tab tab-lg ${activeTab === 'task-prompts' ? 'tab-active' : ''}`}
+  >
+    Task Prompts
+  </a>
+  <a
+    href={`/personas/${personaId}/judge-prompts`}
+    class={`tab tab-lg ${activeTab === 'judge-prompts' ? 'tab-active' : ''}`}
+  >
+    Judge Prompts
+  </a>
+  <a
+    href={`/personas/${personaId}?tab=settings`}
+    class={`tab tab-lg ${activeTab === 'settings' ? 'tab-active' : ''}`}
+  >
+    Settings
+  </a>
+</div>

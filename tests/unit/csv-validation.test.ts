@@ -1,14 +1,10 @@
 // tests/unit/test-csv-validation.ts
 // Unit tests for CSV parsing and validation for template import/export
 
-import { describe, expect, it, vi, beforeEach } from 'vitest';
-import {
-  parseCSVLine,
-  parseCSV,
-} from '../../src/pages/api/templates/import';
+import { describe, expect, it, vi } from 'vitest';
+import { parseCSVLine, parseCSV } from '../../src/pages/api/templates/import';
 import { escapeCSVField } from '../../src/pages/api/templates/export';
-import * as db from '../../src/lib/db';
-import type { RubricType } from '../../src/lib/types';
+import type { RubricType } from '@lib/utils/types';
 
 // Mock database functions
 vi.mock('../../src/lib/db', () => ({
@@ -370,9 +366,7 @@ describe('CSV Parsing - parseCSV', () => {
 
   it('handles CSV with CRLF line endings', () => {
     const csv =
-      validHeaders.map(escapeCSVField).join(',') +
-      '\r\n' +
-      validRow.map(escapeCSVField).join(',');
+      validHeaders.map(escapeCSVField).join(',') + '\r\n' + validRow.map(escapeCSVField).join(',');
     const result = parseCSV(csv);
 
     expect(result.errors).toHaveLength(0);
@@ -461,14 +455,18 @@ describe('CSV Validation - Field Types', () => {
 
   const createCSV = (headers: string[], rows: string[][]): string => {
     const allRows = [headers, ...rows];
-    return allRows.map((row) =>
-      row.map((field) => {
-        if (field.includes(',') || field.includes('"') || field.includes('\n')) {
-          return '"' + field.replace(/"/g, '""') + '"';
-        }
-        return field;
-      }).join(',')
-    ).join('\n');
+    return allRows
+      .map((row) =>
+        row
+          .map((field) => {
+            if (field.includes(',') || field.includes('"') || field.includes('\n')) {
+              return '"' + field.replace(/"/g, '""') + '"';
+            }
+            return field;
+          })
+          .join(',')
+      )
+      .join('\n');
   };
 
   it('rejects negative temperature values', () => {
@@ -559,7 +557,7 @@ describe('CSV Malformed Cases', () => {
     'updated_at',
   ];
 
-  const validRow = [
+  const _validRow = [
     '123e4567-e89b-12d3-a456-426614174000',
     'Test Template',
     'A test template',
@@ -575,16 +573,20 @@ describe('CSV Malformed Cases', () => {
     '2024-01-01 00:00:00',
   ];
 
-  const createCSV = (headers: string[], rows: string[][]): string => {
+  const _createCSV = (headers: string[], rows: string[][]): string => {
     const allRows = [headers, ...rows];
-    return allRows.map((row) =>
-      row.map((field) => {
-        if (field.includes(',') || field.includes('"') || field.includes('\n')) {
-          return '"' + field.replace(/"/g, '""') + '"';
-        }
-        return field;
-      }).join(',')
-    ).join('\n');
+    return allRows
+      .map((row) =>
+        row
+          .map((field) => {
+            if (field.includes(',') || field.includes('"') || field.includes('\n')) {
+              return '"' + field.replace(/"/g, '""') + '"';
+            }
+            return field;
+          })
+          .join(',')
+      )
+      .join('\n');
   };
 
   it('handles missing opening quote', () => {
@@ -668,14 +670,18 @@ describe('Semicolon-Separated List Parsing', () => {
 
   const createCSV = (headers: string[], rows: string[][]): string => {
     const allRows = [headers, ...rows];
-    return allRows.map((row) =>
-      row.map((field) => {
-        if (field.includes(',') || field.includes('"') || field.includes('\n')) {
-          return '"' + field.replace(/"/g, '""') + '"';
-        }
-        return field;
-      }).join(',')
-    ).join('\n');
+    return allRows
+      .map((row) =>
+        row
+          .map((field) => {
+            if (field.includes(',') || field.includes('"') || field.includes('\n')) {
+              return '"' + field.replace(/"/g, '""') + '"';
+            }
+            return field;
+          })
+          .join(',')
+      )
+      .join('\n');
   };
 
   it('parses semicolon-separated model_ids', () => {

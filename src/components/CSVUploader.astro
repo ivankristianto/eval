@@ -1,0 +1,394 @@
+---
+/**
+ * CSV Uploader Component
+ * Drag-drop zone for uploading CSV training data files
+ *
+ * Props:
+ * - personaId: string - ID of the persona to upload data for
+ * - onUploadSuccess: (optional) callback function
+ */
+
+interface Props {
+  personaId: string;
+}
+
+const { personaId } = Astro.props;
+---
+
+<div class="csv-uploader card bg-base-200 shadow-xl" data-persona-id={personaId}>
+  <div class="card-body">
+    <h3 class="card-title text-2xl mb-4">Upload Training Data</h3>
+
+    <div class="alert alert-info mb-4">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+        class="stroke-current shrink-0 w-6 h-6"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+      </svg>
+      <div>
+        <p class="font-semibold">CSV Format Requirements:</p>
+        <ul class="list-disc list-inside mt-2 text-sm">
+          <li>
+            Columns: <code>input, expected_output</code> (or <code>Input A, Correct Output</code>)
+          </li>
+          <li>Must contain 10-200 pairs</li>
+          <li>No duplicate pairs allowed</li>
+          <li>All fields must be non-empty</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Drag-drop zone -->
+    <div
+      id="drop-zone"
+      class="border-2 border-dashed border-base-content/30 rounded-lg p-8 text-center cursor-pointer hover:border-primary hover:bg-base-300 transition-colors"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        class="h-16 w-16 mx-auto mb-4 text-base-content/50"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+        ></path>
+      </svg>
+      <p class="text-lg font-semibold mb-2">Drag and drop your CSV file here</p>
+      <p class="text-sm text-base-content/60 mb-4">or click to browse</p>
+      <input type="file" id="file-input" accept=".csv,text/csv" class="hidden" />
+      <button type="button" class="btn btn-primary" id="browse-btn">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-5 w-5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+          ></path>
+        </svg>
+        Browse Files
+      </button>
+    </div>
+
+    <!-- File info -->
+    <div id="file-info" class="hidden mt-4">
+      <div class="flex items-center justify-between bg-base-300 p-4 rounded-lg">
+        <div class="flex items-center gap-3">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-8 w-8 text-success"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+            ></path>
+          </svg>
+          <div>
+            <p class="font-semibold" id="file-name"></p>
+            <p class="text-sm text-base-content/60" id="file-size"></p>
+          </div>
+        </div>
+        <button type="button" class="btn btn-ghost btn-sm" id="remove-file-btn">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-5 w-5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Upload progress -->
+    <div id="upload-progress" class="hidden mt-4">
+      <div class="flex items-center gap-3 mb-2">
+        <span class="loading loading-spinner loading-sm"></span>
+        <span class="text-sm font-semibold">Uploading and validating...</span>
+      </div>
+      <progress class="progress progress-primary w-full" id="progress-bar"></progress>
+    </div>
+
+    <!-- Error messages -->
+    <div id="error-messages" class="hidden mt-4">
+      <div class="alert alert-error">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="stroke-current shrink-0 h-6 w-6"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        <div>
+          <p class="font-semibold" id="error-title">Upload Failed</p>
+          <ul class="list-disc list-inside mt-2 text-sm" id="error-list"></ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Success message -->
+    <div id="success-message" class="hidden mt-4">
+      <div class="alert alert-success">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="stroke-current shrink-0 h-6 w-6"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        <div>
+          <p class="font-semibold">Upload Successful!</p>
+          <p class="text-sm" id="success-details"></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Upload button -->
+    <div class="card-actions justify-end mt-4">
+      <button type="button" class="btn btn-primary" id="upload-btn" disabled>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-5 w-5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+        </svg>
+        Upload Training Data
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Import toast functionality
+  import { addToast } from '@lib/ui/toastStore';
+
+  // Get personaId from data attribute
+  const uploadContainer = document.querySelector('.csv-uploader');
+  const personaId = uploadContainer?.getAttribute('data-persona-id');
+
+  const dropZone = document.getElementById('drop-zone');
+  const fileInput = document.getElementById('file-input');
+  const browseBtn = document.getElementById('browse-btn');
+  const fileInfo = document.getElementById('file-info');
+  const fileName = document.getElementById('file-name');
+  const fileSize = document.getElementById('file-size');
+  const removeFileBtn = document.getElementById('remove-file-btn');
+  const uploadBtn = document.getElementById('upload-btn');
+  const uploadProgress = document.getElementById('upload-progress');
+  const errorMessages = document.getElementById('error-messages');
+  const errorList = document.getElementById('error-list');
+  const successMessage = document.getElementById('success-message');
+  const successDetails = document.getElementById('success-details');
+
+  let selectedFile = null;
+
+  // Browse button click
+  browseBtn.addEventListener('click', () => {
+    fileInput.click();
+  });
+
+  // Drop zone click
+  dropZone.addEventListener('click', (e) => {
+    if (e.target !== browseBtn && !browseBtn.contains(e.target)) {
+      fileInput.click();
+    }
+  });
+
+  // Drag and drop handlers
+  dropZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropZone.classList.add('border-primary', 'bg-base-300');
+  });
+
+  dropZone.addEventListener('dragleave', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('border-primary', 'bg-base-300');
+  });
+
+  dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('border-primary', 'bg-base-300');
+
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      handleFileSelect(files[0]);
+    }
+  });
+
+  // File input change
+  fileInput.addEventListener('change', (e) => {
+    const files = e.target.files;
+    if (files.length > 0) {
+      handleFileSelect(files[0]);
+    }
+  });
+
+  // Remove file button
+  removeFileBtn.addEventListener('click', () => {
+    selectedFile = null;
+    fileInput.value = '';
+    fileInfo.classList.add('hidden');
+    uploadBtn.disabled = true;
+    hideMessages();
+  });
+
+  // Upload button
+  uploadBtn.addEventListener('click', async () => {
+    if (!selectedFile) return;
+
+    hideMessages();
+    uploadProgress.classList.remove('hidden');
+    uploadBtn.disabled = true;
+
+    try {
+      // Read file content
+      const fileContent = await selectedFile.text();
+
+      // Upload to API
+      const response = await fetch(`/api/personas/${personaId}/training/upload`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          csv: fileContent,
+        }),
+      });
+
+      const result = await response.json();
+
+      uploadProgress.classList.add('hidden');
+
+      if (response.ok) {
+        // Success
+        successDetails.textContent = `${result.count} training pairs uploaded successfully`;
+        successMessage.classList.remove('hidden');
+        addToast(`Uploaded ${result.count} training pairs`, 'success');
+
+        // Reset form after 2 seconds
+        setTimeout(() => {
+          selectedFile = null;
+          fileInput.value = '';
+          fileInfo.classList.add('hidden');
+          successMessage.classList.add('hidden');
+          uploadBtn.disabled = true;
+
+          // Reload page to show new data
+          window.location.reload();
+        }, 2000);
+      } else {
+        // Error
+        errorList.innerHTML = '';
+        if (result.details && Array.isArray(result.details)) {
+          result.details.forEach((error) => {
+            const li = document.createElement('li');
+            li.textContent = error;
+            errorList.appendChild(li);
+          });
+        } else {
+          const li = document.createElement('li');
+          li.textContent = result.message || 'Unknown error occurred';
+          errorList.appendChild(li);
+        }
+        errorMessages.classList.remove('hidden');
+        uploadBtn.disabled = false;
+        addToast('Upload failed', 'error');
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+      uploadProgress.classList.add('hidden');
+      errorList.innerHTML = '<li>Network error. Please try again.</li>';
+      errorMessages.classList.remove('hidden');
+      uploadBtn.disabled = false;
+      addToast('Upload failed', 'error');
+    }
+  });
+
+  /**
+   * Validates and processes a selected file.
+   * @param file - The File object to process
+   */
+  function handleFileSelect(file) {
+    // Validate file type
+    if (!file.name.endsWith('.csv')) {
+      addToast('Please select a CSV file', 'error');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      addToast('File size must be less than 5MB', 'error');
+      return;
+    }
+
+    selectedFile = file;
+    fileName.textContent = file.name;
+    fileSize.textContent = formatFileSize(file.size);
+    fileInfo.classList.remove('hidden');
+    uploadBtn.disabled = false;
+    hideMessages();
+  }
+
+  /**
+   * Formats file size in bytes to a human-readable string.
+   * @param bytes - Size in bytes
+   * @returns Formatted string (e.g., "1.2 MB")
+   */
+  function formatFileSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+  }
+
+  /**
+   * Hides all error and success message containers.
+   */
+  function hideMessages() {
+    errorMessages.classList.add('hidden');
+    successMessage.classList.add('hidden');
+  }
+</script>

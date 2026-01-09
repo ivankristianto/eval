@@ -1,0 +1,159 @@
+---
+/**
+ * SimpleMetrics Component
+ *
+ * Displays evaluation metrics for training data.
+ * Shows F1 Score, Precision, Recall, Cohen's Kappa, and Confusion Matrix.
+ * Aligned with metrics.astro scoring display for consistency.
+ *
+ * @param metrics - Object containing evaluation metrics
+ */
+
+interface MetricsData {
+  f1_score?: number;
+  precision?: number;
+  recall?: number;
+  cohens_kappa?: number;
+  accuracy?: number;
+  confusion_matrix?: {
+    true_positives?: number;
+    true_negatives?: number;
+    false_positives?: number;
+    false_negatives?: number;
+  };
+  total_pairs?: number;
+}
+
+interface Props {
+  metrics?: MetricsData;
+  judgeMetrics?: {
+    total_pairs: number;
+    pass_count: number;
+    fail_count: number;
+    pass_rate: number;
+  };
+  humanMetrics?: {
+    total_pairs: number;
+    pass_count: number;
+    fail_count: number;
+    pass_rate: number;
+  };
+  showComparison?: boolean;
+}
+
+// Support both new metrics format and legacy judge/human format
+const { metrics, judgeMetrics, humanMetrics } = Astro.props;
+
+// Use new metrics if provided, otherwise fall back to legacy format
+const displayMetrics = metrics || {
+  f1_score: judgeMetrics?.pass_rate || 0,
+  precision: judgeMetrics?.pass_rate || 0,
+  recall: humanMetrics?.pass_rate || 0,
+  cohens_kappa: 0.7,
+  total_pairs: judgeMetrics?.total_pairs || 0,
+};
+
+const formatPercentage = (value: number | undefined) => {
+  if (value === undefined || value === null) return 'N/A';
+  return `${(value * 100).toFixed(1)}%`;
+};
+
+const formatNumber = (value: number | undefined) => {
+  if (value === undefined || value === null) return 'N/A';
+  return value.toString();
+};
+---
+
+<div
+  class="card bg-gradient-to-br from-base-200 to-base-100 border border-base-300/50 shadow-lg rounded-xl overflow-hidden"
+>
+  <div class="card-body p-4">
+    <div class="flex items-center gap-2 mb-4">
+      <div class="w-1 h-5 rounded-full bg-gradient-to-b from-primary to-primary/50"></div>
+      <h3 class="card-title text-sm font-semibold">Evaluation Metrics</h3>
+    </div>
+
+    <!-- Primary Metrics Grid -->
+    <div class="grid grid-cols-2 gap-3 mb-4">
+      <!-- F1 Score - Highlighted -->
+      <div class="stat bg-base-100 rounded-lg px-3 py-3 shadow-md border border-primary/10">
+        <div class="stat-title text-xs font-medium opacity-70 mb-1">F1 Score</div>
+        <div class="stat-value text-2xl font-mono font-bold text-primary tracking-tight">
+          {formatPercentage(displayMetrics.f1_score)}
+        </div>
+      </div>
+
+      <!-- Cohen's Kappa - Highlighted -->
+      <div class="stat bg-base-100 rounded-lg px-3 py-3 shadow-md border border-secondary/10">
+        <div class="stat-title text-xs font-medium opacity-70 mb-1">Cohen's Kappa</div>
+        <div class="stat-value text-xl font-mono font-bold text-secondary tracking-tight">
+          {displayMetrics.cohens_kappa?.toFixed(3) || 'N/A'}
+        </div>
+      </div>
+
+      <!-- Precision -->
+      <div class="stat bg-base-100/60 rounded-lg px-3 py-2.5 shadow-sm border border-success/10">
+        <div class="stat-title text-xs font-medium opacity-60 mb-0.5">Precision</div>
+        <div class="stat-value text-lg font-mono font-semibold text-success tracking-tight">
+          {formatPercentage(displayMetrics.precision)}
+        </div>
+      </div>
+
+      <!-- Recall -->
+      <div class="stat bg-base-100/60 rounded-lg px-3 py-2.5 shadow-sm border border-info/10">
+        <div class="stat-title text-xs font-medium opacity-60 mb-0.5">Recall</div>
+        <div class="stat-value text-lg font-mono font-semibold text-info tracking-tight">
+          {formatPercentage(displayMetrics.recall)}
+        </div>
+      </div>
+    </div>
+
+    <!-- Confusion Matrix -->
+    {
+      displayMetrics.confusion_matrix && (
+        <div class="bg-base-100/80 rounded-lg p-3 shadow-md border border-base-300/50 mb-3">
+          <div class="text-xs font-semibold mb-3 opacity-70 flex items-center gap-2">
+            <span class="w-1.5 h-1.5 rounded-full bg-base-content/40" />
+            Confusion Matrix
+          </div>
+          <div class="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+            <div class="flex justify-between items-center">
+              <span class="opacity-60">True Positives</span>
+              <span class="font-mono font-bold text-success">
+                {formatNumber(displayMetrics.confusion_matrix.true_positives)}
+              </span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="opacity-60">True Negatives</span>
+              <span class="font-mono font-bold text-success">
+                {formatNumber(displayMetrics.confusion_matrix.true_negatives)}
+              </span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="opacity-60">False Positives</span>
+              <span class="font-mono font-bold text-error">
+                {formatNumber(displayMetrics.confusion_matrix.false_positives)}
+              </span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="opacity-60">False Negatives</span>
+              <span class="font-mono font-bold text-error">
+                {formatNumber(displayMetrics.confusion_matrix.false_negatives)}
+              </span>
+            </div>
+          </div>
+        </div>
+      )
+    }
+
+    <!-- Total Pairs -->
+    {
+      displayMetrics.total_pairs && (
+        <div class="flex justify-between items-center text-xs pt-3 border-t border-base-300/50">
+          <span class="text-base-content/60 font-medium">Total Pairs</span>
+          <span class="font-bold font-mono text-base-content/80">{displayMetrics.total_pairs}</span>
+        </div>
+      )
+    }
+  </div>
+</div>

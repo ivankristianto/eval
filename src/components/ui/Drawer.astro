@@ -1,8 +1,8 @@
 ---
-import Icon from './Icon.astro';
-
 /**
- * Drawer component for side panel overlays
+ * Drawer component.
+ * Provides a slide-out side panel for displaying detailed information or secondary actions.
+ * Controlled via custom events for consistent behavior across the application.
  *
  * @example
  * <Drawer id="details-drawer" title="Details" width="lg">
@@ -20,6 +20,7 @@ import Icon from './Icon.astro';
  * @slot title - Custom title content (overrides title prop)
  * @slot footer - Optional footer content with border separator
  */
+import Icon from './Icon.astro';
 export interface Props {
   id: string;
   title?: string;
@@ -86,19 +87,20 @@ const widthClasses = {
 </div>
 
 <script>
-  import { DRAWER_EVENTS } from '../../lib/drawer-events';
-  import type { DrawerEventDetail } from '../../lib/drawer-events';
-  import { initializeOnce } from '../../lib/client-utils';
+  import { DRAWER_EVENTS } from '@lib/ui/drawer-events';
+  import type { DrawerEventDetail } from '@lib/ui/drawer-events';
+  import { initializeOnce } from '@lib/utils/client-utils';
 
   /**
-   * Drawer controller using custom events
+   * Drawer controller using custom events.
    *
    * This implementation replaces global window functions with
    * CustomEvent-based communication for better isolation and testability.
    */
   function initDrawers() {
     /**
-     * Close a drawer with animation
+     * Closes a drawer with animation.
+     * @param drawerId - Unique identifier of the drawer to close
      */
     function closeDrawer(drawerId: string) {
       const drawer = document.getElementById(drawerId);
@@ -117,7 +119,8 @@ const widthClasses = {
     }
 
     /**
-     * Open a drawer with animation
+     * Opens a drawer with animation.
+     * @param drawerId - Unique identifier of the drawer to open
      */
     function openDrawer(drawerId: string) {
       const drawer = document.getElementById(drawerId);
@@ -136,7 +139,8 @@ const widthClasses = {
     }
 
     /**
-     * Toggle a drawer's state
+     * Toggles a drawer's state between open and closed.
+     * @param drawerId - Unique identifier of the drawer to toggle
      */
     function toggleDrawer(drawerId: string) {
       const drawer = document.getElementById(drawerId);

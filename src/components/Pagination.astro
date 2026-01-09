@@ -7,7 +7,11 @@ interface Props {
 
 const { currentPage, totalPages, limit } = Astro.props;
 
-// Generate page numbers to display
+/**
+ * Generates an array of page numbers to display in the pagination control.
+ * Includes current page, start/end pages, and ellipses (-1) where appropriate.
+ * @returns Array of page numbers or -1 for ellipses
+ */
 const getVisiblePages = () => {
   if (totalPages <= 7) {
     return Array.from({ length: totalPages }, (_, i) => i + 1);

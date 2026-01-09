@@ -2,7 +2,7 @@
 // Individual template endpoints
 
 import type { APIRoute } from 'astro';
-import { getTemplateById, updateTemplate, deleteTemplate, getModelById } from '../../../lib/db';
+import { getTemplateById, updateTemplate, deleteTemplate, getModelById } from '@lib/db';
 import {
   validateTemplateName,
   validateDescription,
@@ -11,41 +11,35 @@ import {
   validateModelIds,
   validateSystemPrompt,
   validateTemperature,
-} from '../../../lib/validators';
-import type { RubricType } from '../../../lib/types';
+} from '@lib/validation/validators';
+import type { RubricType } from '@lib/utils/types';
+import { badRequest, notFound, createErrorResponse } from '@lib/api-error-handler';
+import { createLogger } from '@lib/logger';
 
-// GET /api/templates/:id - Get template details
+const logger = createLogger('API:Templates:ById');
+
+/**
+ * GET /api/templates/:id
+ * Retrieves detailed configuration for a specific evaluation template.
+ * @param root0
+ * @param root0.params
+ * @returns {Promise<Response>}
+ */
 export const GET: APIRoute = async ({ params }) => {
-  try {
-    const { id } = params;
+  const startTime = Date.now();
+  const { id } = params;
 
+  try {
     if (!id) {
-      return new Response(
-        JSON.stringify({
-          error: 'INVALID_INPUT',
-          message: 'Template ID is required',
-        }),
-        {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+      logger.logApiRequest('GET', '/api/templates/:id', 400, Date.now() - startTime);
+      return badRequest('Template ID is required', 'INVALID_INPUT');
     }
 
     const template = getTemplateById(id);
 
     if (!template) {
-      return new Response(
-        JSON.stringify({
-          error: 'TEMPLATE_NOT_FOUND',
-          message: 'Template does not exist',
-          template_id: id,
-        }),
-        {
-          status: 404,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+      logger.logApiRequest('GET', `/api/templates/${id}`, 404, Date.now() - startTime);
+      return notFound('Template');
     }
 
     // Get model details
@@ -62,6 +56,8 @@ export const GET: APIRoute = async ({ params }) => {
           : null;
       })
       .filter(Boolean);
+
+    logger.logApiRequest('GET', `/api/templates/${id}`, 200, Date.now() - startTime);
 
     return new Response(
       JSON.stringify({
@@ -86,51 +82,35 @@ export const GET: APIRoute = async ({ params }) => {
       }
     );
   } catch (error) {
-    console.error('GET /api/templates/:id error:', error);
-    return new Response(
-      JSON.stringify({
-        error: 'INTERNAL_ERROR',
-        message: error instanceof Error ? error.message : 'Internal server error',
-      }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
+    logger.logApiError('GET', `/api/templates/${id}`, error as Error);
+    return createErrorResponse(error);
   }
 };
 
-// PATCH /api/templates/:id - Update template
+/**
+ * PATCH /api/templates/:id
+ * Updates an existing evaluation template.
+ * Validates only the provided fields.
+ * @param root0
+ * @param root0.params
+ * @param root0.request
+ * @returns {Promise<Response>}
+ */
 export const PATCH: APIRoute = async ({ params, request }) => {
-  try {
-    const { id } = params;
+  const startTime = Date.now();
+  const { id } = params;
 
+  try {
     if (!id) {
-      return new Response(
-        JSON.stringify({
-          error: 'INVALID_INPUT',
-          message: 'Template ID is required',
-        }),
-        {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+      logger.logApiRequest('PATCH', '/api/templates/:id', 400, Date.now() - startTime);
+      return badRequest('Template ID is required', 'INVALID_INPUT');
     }
 
     const template = getTemplateById(id);
 
     if (!template) {
-      return new Response(
-        JSON.stringify({
-          error: 'TEMPLATE_NOT_FOUND',
-          message: 'Template does not exist',
-        }),
-        {
-          status: 404,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+      logger.logApiRequest('PATCH', `/api/templates/${id}`, 404, Date.now() - startTime);
+      return notFound('Template');
     }
 
     const body = await request.json();
@@ -139,70 +119,84 @@ export const PATCH: APIRoute = async ({ params, request }) => {
     if (body.name !== undefined) {
       const validation = validateTemplateName(body.name);
       if (!validation.valid) {
-        return new Response(JSON.stringify(validation.error), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        });
+        logger.logApiRequest('PATCH', `/api/templates/${id}`, 400, Date.now() - startTime);
+        return badRequest(
+          validation.error?.message || 'Invalid name',
+          'VALIDATION_ERROR',
+          validation.error
+        );
       }
     }
 
     if (body.description !== undefined) {
       const validation = validateDescription(body.description);
       if (!validation.valid) {
-        return new Response(JSON.stringify(validation.error), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        });
+        logger.logApiRequest('PATCH', `/api/templates/${id}`, 400, Date.now() - startTime);
+        return badRequest(
+          validation.error?.message || 'Invalid description',
+          'VALIDATION_ERROR',
+          validation.error
+        );
       }
     }
 
     if (body.instruction_text !== undefined) {
       const validation = validateInstruction(body.instruction_text);
       if (!validation.valid) {
-        return new Response(JSON.stringify(validation.error), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        });
+        logger.logApiRequest('PATCH', `/api/templates/${id}`, 400, Date.now() - startTime);
+        return badRequest(
+          validation.error?.message || 'Invalid instruction',
+          'VALIDATION_ERROR',
+          validation.error
+        );
       }
     }
 
     if (body.accuracy_rubric !== undefined) {
       const validation = validateRubricType(body.accuracy_rubric);
       if (!validation.valid) {
-        return new Response(JSON.stringify(validation.error), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        });
+        logger.logApiRequest('PATCH', `/api/templates/${id}`, 400, Date.now() - startTime);
+        return badRequest(
+          validation.error?.message || 'Invalid rubric type',
+          'VALIDATION_ERROR',
+          validation.error
+        );
       }
     }
 
     if (body.model_ids !== undefined) {
       const validation = validateModelIds(body.model_ids);
       if (!validation.valid) {
-        return new Response(JSON.stringify(validation.error), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        });
+        logger.logApiRequest('PATCH', `/api/templates/${id}`, 400, Date.now() - startTime);
+        return badRequest(
+          validation.error?.message || 'Invalid model IDs',
+          'VALIDATION_ERROR',
+          validation.error
+        );
       }
     }
 
     if (body.system_prompt !== undefined) {
       const validation = validateSystemPrompt(body.system_prompt);
       if (!validation.valid) {
-        return new Response(JSON.stringify(validation.error), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        });
+        logger.logApiRequest('PATCH', `/api/templates/${id}`, 400, Date.now() - startTime);
+        return badRequest(
+          validation.error?.message || 'Invalid system prompt',
+          'VALIDATION_ERROR',
+          validation.error
+        );
       }
     }
 
     if (body.temperature !== undefined) {
       const validation = validateTemperature(body.temperature);
       if (!validation.valid) {
-        return new Response(JSON.stringify(validation.error), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        });
+        logger.logApiRequest('PATCH', `/api/templates/${id}`, 400, Date.now() - startTime);
+        return badRequest(
+          validation.error?.message || 'Invalid temperature',
+          'VALIDATION_ERROR',
+          validation.error
+        );
       }
     }
 
@@ -230,20 +224,17 @@ export const PATCH: APIRoute = async ({ params, request }) => {
     if (body.system_prompt !== undefined) updates.system_prompt = body.system_prompt;
     if (body.temperature !== undefined) updates.temperature = body.temperature;
 
+    logger.info('Updating template', { templateId: id, updates: Object.keys(updates) });
+
     const updated = updateTemplate(id, updates);
 
     if (!updated) {
-      return new Response(
-        JSON.stringify({
-          error: 'UPDATE_FAILED',
-          message: 'Failed to update template',
-        }),
-        {
-          status: 500,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+      logger.logApiRequest('PATCH', `/api/templates/${id}`, 500, Date.now() - startTime);
+      return badRequest('Failed to update template', 'UPDATE_FAILED');
     }
+
+    logger.info('Template updated', { templateId: id });
+    logger.logApiRequest('PATCH', `/api/templates/${id}`, 200, Date.now() - startTime);
 
     return new Response(
       JSON.stringify({
@@ -258,67 +249,46 @@ export const PATCH: APIRoute = async ({ params, request }) => {
       }
     );
   } catch (error) {
-    console.error('PATCH /api/templates/:id error:', error);
-    return new Response(
-      JSON.stringify({
-        error: 'INTERNAL_ERROR',
-        message: error instanceof Error ? error.message : 'Internal server error',
-      }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
+    logger.logApiError('PATCH', `/api/templates/${id}`, error as Error);
+    return createErrorResponse(error);
   }
 };
 
-// DELETE /api/templates/:id - Delete template
+/**
+ * DELETE /api/templates/:id
+ * Deletes an evaluation template.
+ * @param root0
+ * @param root0.params
+ * @returns {Promise<Response>}
+ */
 export const DELETE: APIRoute = async ({ params }) => {
-  try {
-    const { id } = params;
+  const startTime = Date.now();
+  const { id } = params;
 
+  try {
     if (!id) {
-      return new Response(
-        JSON.stringify({
-          error: 'INVALID_INPUT',
-          message: 'Template ID is required',
-        }),
-        {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+      logger.logApiRequest('DELETE', '/api/templates/:id', 400, Date.now() - startTime);
+      return badRequest('Template ID is required', 'INVALID_INPUT');
     }
 
     const template = getTemplateById(id);
 
     if (!template) {
-      return new Response(
-        JSON.stringify({
-          error: 'TEMPLATE_NOT_FOUND',
-          message: 'Template does not exist',
-        }),
-        {
-          status: 404,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+      logger.logApiRequest('DELETE', `/api/templates/${id}`, 404, Date.now() - startTime);
+      return notFound('Template');
     }
+
+    logger.info('Deleting template', { templateId: id, name: template.name });
 
     const deleted = deleteTemplate(id);
 
     if (!deleted) {
-      return new Response(
-        JSON.stringify({
-          error: 'DELETE_FAILED',
-          message: 'Failed to delete template',
-        }),
-        {
-          status: 500,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+      logger.logApiRequest('DELETE', `/api/templates/${id}`, 500, Date.now() - startTime);
+      return badRequest('Failed to delete template', 'DELETE_FAILED');
     }
+
+    logger.info('Template deleted', { templateId: id });
+    logger.logApiRequest('DELETE', `/api/templates/${id}`, 200, Date.now() - startTime);
 
     return new Response(
       JSON.stringify({
@@ -331,16 +301,7 @@ export const DELETE: APIRoute = async ({ params }) => {
       }
     );
   } catch (error) {
-    console.error('DELETE /api/templates/:id error:', error);
-    return new Response(
-      JSON.stringify({
-        error: 'INTERNAL_ERROR',
-        message: error instanceof Error ? error.message : 'Internal server error',
-      }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
+    logger.logApiError('DELETE', `/api/templates/${id}`, error as Error);
+    return createErrorResponse(error);
   }
 };

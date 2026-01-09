@@ -2,56 +2,71 @@
 // Test API key connection endpoint
 
 import type { APIRoute } from 'astro';
-import { getModelById, decryptApiKey } from '../../../../lib/db';
-import { ClientFactory } from '../../../../lib/api-clients';
-import { validateApiKeyFormat } from '../../../../lib/validators';
+import { getModelById, decryptApiKey } from '@lib/db';
+import { ClientFactory } from '@lib/utils/api-clients';
+import { validateApiKeyFormat } from '@lib/validation/validators';
+import { badRequest, notFound, internalError, createErrorResponse } from '@lib/api-error-handler';
+import { createLogger } from '@lib/logger';
 
+const logger = createLogger('API:Models:TestConnection');
+
+/**
+ * POST /api/models/:id/test-connection
+ * Tests the API connectivity for a specific model configuration.
+ * Can test either the stored API key or a new key provided in the request body.
+ * @param root0
+ * @param root0.params
+ * @param root0.request
+ * @returns {Promise<Response>}
+ */
 export const POST: APIRoute = async ({ params, request }) => {
-  try {
-    const { id } = params;
+  const startTime = Date.now();
+  const { id } = params;
 
+  try {
     if (!id) {
-      return new Response(
-        JSON.stringify({
-          error: 'INVALID_INPUT',
-          message: 'Model ID is required',
-        }),
-        {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+      logger.logApiRequest('POST', '/api/models/:id/test-connection', 400, Date.now() - startTime);
+      return badRequest('Model ID is required', 'INVALID_INPUT');
     }
 
     const model = getModelById(id);
 
     if (!model) {
-      return new Response(
-        JSON.stringify({
-          error: 'MODEL_NOT_FOUND',
-          message: 'Model does not exist',
-        }),
-        {
-          status: 404,
-          headers: { 'Content-Type': 'application/json' },
-        }
+      logger.logApiRequest(
+        'POST',
+        `/api/models/${id}/test-connection`,
+        404,
+        Date.now() - startTime
       );
+      return notFound('Model');
     }
+
+    logger.info('Testing model API connection', { modelId: id, provider: model.provider });
 
     // Check if a new API key was provided in the request body
     let apiKey: string;
+    let usingProvidedKey = false;
+
     try {
       const body = await request.json();
       if (body.api_key) {
         // Validate the provided API key format
         const validation = validateApiKeyFormat(body.api_key, model.provider);
         if (!validation.valid) {
-          return new Response(JSON.stringify(validation.error), {
-            status: 400,
-            headers: { 'Content-Type': 'application/json' },
-          });
+          logger.logApiRequest(
+            'POST',
+            `/api/models/${id}/test-connection`,
+            400,
+            Date.now() - startTime
+          );
+          return badRequest(
+            validation.error?.message || 'Invalid API key format',
+            'VALIDATION_ERROR',
+            validation.error
+          );
         }
         apiKey = body.api_key;
+        usingProvidedKey = true;
       } else {
         // Use stored API key
         apiKey = decryptApiKey(model.api_key_encrypted);
@@ -65,6 +80,18 @@ export const POST: APIRoute = async ({ params, request }) => {
     const isValid = await ClientFactory.testConnection(model.provider, apiKey, model.model_name);
 
     if (isValid) {
+      logger.info('API connection test successful', {
+        modelId: id,
+        provider: model.provider,
+        usingProvidedKey,
+      });
+      logger.logApiRequest(
+        'POST',
+        `/api/models/${id}/test-connection`,
+        200,
+        Date.now() - startTime
+      );
+
       return new Response(
         JSON.stringify({
           model_id: model.id,
@@ -79,32 +106,26 @@ export const POST: APIRoute = async ({ params, request }) => {
         }
       );
     } else {
-      return new Response(
-        JSON.stringify({
-          error: 'API_KEY_INVALID',
-          message: 'API key is invalid or expired',
-          details: {
-            provider: model.provider,
-            provider_message: 'Invalid authentication credentials',
-          },
-        }),
-        {
-          status: 401,
-          headers: { 'Content-Type': 'application/json' },
-        }
+      logger.warn('API connection test failed', {
+        modelId: id,
+        provider: model.provider,
+        usingProvidedKey,
+      });
+      logger.logApiRequest(
+        'POST',
+        `/api/models/${id}/test-connection`,
+        401,
+        Date.now() - startTime
       );
+
+      return internalError('API key is invalid or expired', {
+        code: 'API_KEY_INVALID',
+        provider: model.provider,
+        provider_message: 'Invalid authentication credentials',
+      });
     }
   } catch (error) {
-    console.error('POST /api/models/:id/test-connection error:', error);
-    return new Response(
-      JSON.stringify({
-        error: 'INTERNAL_ERROR',
-        message: error instanceof Error ? error.message : 'Internal server error',
-      }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
+    logger.logApiError('POST', `/api/models/${id}/test-connection`, error as Error);
+    return createErrorResponse(error);
   }
 };

@@ -2,26 +2,41 @@
 // Template CRUD endpoints
 
 import type { APIRoute } from 'astro';
-import { insertTemplate, getTemplates } from '../../lib/db';
+import { insertTemplate, getTemplates } from '@lib/db';
 import {
   validateCreateTemplate,
   validateSystemPrompt,
   validateTemperature,
-} from '../../lib/validators';
-import type { RubricType } from '../../lib/types';
+} from '@lib/validation/validators';
+import type { RubricType } from '@lib/utils/types';
+import { badRequest, createErrorResponse } from '@lib/api-error-handler';
+import { createLogger } from '@lib/logger';
 
-// POST /api/templates - Create new template
+const logger = createLogger('API:Templates');
+
+/**
+ * POST /api/templates
+ * Creates a new evaluation template for reusable configurations.
+ * Validates inputs and persists the template to the database.
+ * @param root0
+ * @param root0.request
+ * @returns {Promise<Response>}
+ */
 export const POST: APIRoute = async ({ request }) => {
+  const startTime = Date.now();
+
   try {
     const body = await request.json();
 
     // Validate input
     const validation = validateCreateTemplate(body);
     if (!validation.valid) {
-      return new Response(JSON.stringify(validation.error), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      logger.logApiRequest('POST', '/api/templates', 400, Date.now() - startTime);
+      return badRequest(
+        validation.error?.message || 'Invalid template data',
+        'VALIDATION_ERROR',
+        validation.error
+      );
     }
 
     const {
@@ -39,20 +54,26 @@ export const POST: APIRoute = async ({ request }) => {
     // Validate system prompt if provided
     const systemPromptValidation = validateSystemPrompt(system_prompt);
     if (!systemPromptValidation.valid) {
-      return new Response(JSON.stringify(systemPromptValidation.error), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      logger.logApiRequest('POST', '/api/templates', 400, Date.now() - startTime);
+      return badRequest(
+        systemPromptValidation.error?.message || 'Invalid system prompt',
+        'VALIDATION_ERROR',
+        systemPromptValidation.error
+      );
     }
 
     // Validate temperature if provided
     const temperatureValidation = validateTemperature(temperature);
     if (!temperatureValidation.valid) {
-      return new Response(JSON.stringify(temperatureValidation.error), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      logger.logApiRequest('POST', '/api/templates', 400, Date.now() - startTime);
+      return badRequest(
+        temperatureValidation.error?.message || 'Invalid temperature',
+        'VALIDATION_ERROR',
+        temperatureValidation.error
+      );
     }
+
+    logger.info('Creating evaluation template', { name, modelCount: model_ids?.length });
 
     // Create template
     const template = insertTemplate(
@@ -66,6 +87,9 @@ export const POST: APIRoute = async ({ request }) => {
       system_prompt,
       temperature
     );
+
+    logger.info('Evaluation template created', { templateId: template.id, name });
+    logger.logApiRequest('POST', '/api/templates', 201, Date.now() - startTime);
 
     return new Response(
       JSON.stringify({
@@ -83,22 +107,22 @@ export const POST: APIRoute = async ({ request }) => {
       }
     );
   } catch (error) {
-    console.error('POST /api/templates error:', error);
-    return new Response(
-      JSON.stringify({
-        error: 'INTERNAL_ERROR',
-        message: error instanceof Error ? error.message : 'Internal server error',
-      }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
+    logger.logApiError('POST', '/api/templates', error as Error);
+    return createErrorResponse(error);
   }
 };
 
-// GET /api/templates - List all templates
+/**
+ * GET /api/templates
+ * Lists all evaluation templates.
+ * Supports sorting by creation date, name, or run count.
+ * @param root0
+ * @param root0.url
+ * @returns {Promise<Response>}
+ */
 export const GET: APIRoute = async ({ url }) => {
+  const startTime = Date.now();
+
   try {
     const sortBy = (url.searchParams.get('sort_by') || 'created') as
       | 'created'
@@ -107,6 +131,8 @@ export const GET: APIRoute = async ({ url }) => {
     const order = (url.searchParams.get('order') || 'desc') as 'asc' | 'desc';
 
     const templates = getTemplates(sortBy, order);
+
+    logger.logApiRequest('GET', '/api/templates', 200, Date.now() - startTime);
 
     return new Response(
       JSON.stringify({
@@ -127,16 +153,7 @@ export const GET: APIRoute = async ({ url }) => {
       }
     );
   } catch (error) {
-    console.error('GET /api/templates error:', error);
-    return new Response(
-      JSON.stringify({
-        error: 'INTERNAL_ERROR',
-        message: error instanceof Error ? error.message : 'Internal server error',
-      }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
+    logger.logApiError('GET', '/api/templates', error as Error);
+    return createErrorResponse(error);
   }
 };

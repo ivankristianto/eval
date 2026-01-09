@@ -1,11 +1,11 @@
 ---
-import Layout from '../layouts/Layout.astro';
-import Breadcrumbs from '../components/ui/Breadcrumbs.astro';
-import Button from '../components/ui/Button.astro';
-import Input from '../components/ui/Input.astro';
-import EmptyState from '../components/ui/EmptyState.astro';
-import { getModels, getModelUsageCount } from '../lib/db';
-import type { Provider } from '../lib/types';
+import Layout from '@layouts/Layout.astro';
+import Breadcrumbs from '@components/ui/Breadcrumbs.astro';
+import Button from '@components/ui/Button.astro';
+import Input from '@components/ui/Input.astro';
+import EmptyState from '@components/ui/EmptyState.astro';
+import { getModels, getModelUsageCount } from '@lib/db';
+import type { Provider } from '@lib/utils/types';
 
 // Get models for initial render
 let models: Array<{
@@ -239,7 +239,7 @@ const modelIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text
 </Layout>
 
 <script>
-  import { addToast } from '../lib/toastStore';
+  import { addToast } from '@lib/ui/toastStore';
 
   // Elements
   const addModelBtn = document.getElementById('add-model-btn') as HTMLButtonElement;
@@ -249,14 +249,19 @@ const modelIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text
   const exportBtn = document.getElementById('export-btn') as HTMLButtonElement;
   const importFile = document.getElementById('import-file') as HTMLInputElement;
 
-  // Show modal
+  /**
+   * Sets up the event listener for showing the "Add Model" modal.
+   */
   if (addModelBtn) {
     addModelBtn.addEventListener('click', () => {
       addModelModal.showModal();
     });
   }
 
-  // Add Model Submit
+  /**
+   * Handles the submission of the "Add Model" form.
+   * Verifies the API key with the provider before saving.
+   */
   if (addModelForm) {
     addModelForm.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -298,7 +303,9 @@ const modelIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text
     });
   }
 
-  // Toggle Active Status
+  /**
+   * Initializes toggle switches for model active/inactive status.
+   */
   document.querySelectorAll('.toggle').forEach((btn) => {
     btn.addEventListener('change', async (e) => {
       const target = e.currentTarget as HTMLInputElement;
@@ -325,7 +332,10 @@ const modelIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text
     });
   });
 
-  // Delete Model
+  /**
+   * Initializes delete buttons for model configurations.
+   * Prevents deletion if the model has associated evaluation results.
+   */
   document.querySelectorAll('.delete-btn').forEach((btn) => {
     btn.addEventListener('click', async (e) => {
       const target = e.currentTarget as HTMLButtonElement;
@@ -364,7 +374,9 @@ const modelIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text
     });
   });
 
-  // Test Connection
+  /**
+   * Initializes test buttons to verify API connectivity for configured models.
+   */
   document.querySelectorAll('.test-btn').forEach((btn) => {
     btn.addEventListener('click', async (e) => {
       const target = e.currentTarget as HTMLButtonElement;
@@ -395,7 +407,10 @@ const modelIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text
     });
   });
 
-  // Export
+  /**
+   * Handles model configuration export to JSON.
+   * Strips sensitive API key data before export.
+   */
   if (exportBtn) {
     exportBtn.addEventListener('click', async () => {
       try {
@@ -422,7 +437,10 @@ const modelIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text
     });
   }
 
-  // Import
+  /**
+   * Handles model configuration import from JSON file.
+   * Each imported model's API key is verified before creation.
+   */
   if (importBtn && importFile) {
     importBtn.addEventListener('click', () => {
       importFile.click();
