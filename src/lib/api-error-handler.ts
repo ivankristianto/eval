@@ -4,7 +4,7 @@
  */
 
 import type { APIRoute } from 'astro';
-import { toErrorResponse } from './training/deprecated/training-errors';
+import { toErrorResponse } from './training/training-errors';
 
 /**
  * HTTP status codes for different error types

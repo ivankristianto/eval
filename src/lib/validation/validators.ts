@@ -664,9 +664,7 @@ export function validateTemperature(value: number | null | undefined): Validatio
  * }
  * ```
  */
-export function isValidRating(
-  value: unknown
-): value is 'pass' | 'fail' | null | undefined {
+export function isValidRating(value: unknown): value is 'pass' | 'fail' | null | undefined {
   if (value === null || value === undefined) {
     return true;
   }
@@ -690,9 +688,7 @@ export function isValidRating(
  * }));
  * ```
  */
-export function parseRating(
-  value: unknown
-): 'pass' | 'fail' | null | undefined {
+export function parseRating(value: unknown): 'pass' | 'fail' | null | undefined {
   if (isValidRating(value)) {
     return value;
   }
