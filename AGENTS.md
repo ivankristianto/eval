@@ -90,10 +90,14 @@ npm run format:fix    # Prettier auto-format
 
 Latest coverage (vitest `npm test -- --coverage`):
 
-- Overall line coverage: 69.17%
-- Critical path coverage: validators.ts 84.29%, accuracy.ts 92.85%, evaluator.ts 93.05%
+- Overall line coverage: 9.24% (all files), 37.99% (evaluation module)
+- Critical path coverage (verified 2026-01-10 per eval-z5f):
+  - validators.ts: 86.01% lines (84.17% stmts, 82.42% branch, 95% funcs) ✅ >80%
+  - accuracy.ts: 92.85% lines (91.11% stmts, 80.76% branch, 100% funcs) ✅ >80%
+  - evaluator.ts: 93.05% lines (91.02% stmts, 70.58% branch, 93.75% funcs) ✅ >80%
 - Other coverage: api-clients.ts 64.38%, db.ts 62.62%
-- Constitution Principle II satisfied for critical paths; improve api-clients/db coverage toward targets
+- Constitution Principle III (line 48) SATISFIED: All critical paths >80% coverage
+- Coverage verification ticket: eval-z5f
 
 ## Development Conventions
 
