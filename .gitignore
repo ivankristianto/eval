@@ -24,6 +24,7 @@ db/evaluation.e2e-test.db-shm
 .env.local
 .env.*.local
 .env*
+.claude/ralph-loop.local.md
 
 # Logs
 *.log
