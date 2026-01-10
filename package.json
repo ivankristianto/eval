@@ -21,8 +21,7 @@
     "lint:fix": "eslint src tests --fix",
     "format": "prettier --write \"src/**/*.{ts,tsx,astro,css}\" \"tests/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,astro,css}\" \"tests/**/*.ts\"",
-    "typecheck": "tsc --noEmit",
-    "validate": "node scripts/validate.js"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.30.0",
