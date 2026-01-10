@@ -216,99 +216,116 @@ const { personaId } = Astro.props;
     throw new Error('personaId data attribute not found');
   }
 
-  // Get all required DOM elements with null checks
-  const dropZone = document.getElementById('drop-zone');
-  const fileInput = document.getElementById('file-input');
-  const browseBtn = document.getElementById('browse-btn');
-  const fileInfo = document.getElementById('file-info');
-  const fileName = document.getElementById('file-name');
-  const fileSize = document.getElementById('file-size');
-  const removeFileBtn = document.getElementById('remove-file-btn');
-  const uploadBtn = document.getElementById('upload-btn');
-  const uploadProgress = document.getElementById('upload-progress');
-  const errorMessages = document.getElementById('error-messages');
-  const errorList = document.getElementById('error-list');
-  const successMessage = document.getElementById('success-message');
-  const successDetails = document.getElementById('success-details');
+  // Get all required DOM elements with proper types
+  const _dropZoneEl = document.getElementById('drop-zone');
+  const _fileInputEl = document.getElementById('file-input') as HTMLInputElement | null;
+  const _browseBtnEl = document.getElementById('browse-btn') as HTMLButtonElement | null;
+  const _fileInfoEl = document.getElementById('file-info');
+  const _fileNameEl = document.getElementById('file-name');
+  const _fileSizeEl = document.getElementById('file-size');
+  const _removeFileBtnEl = document.getElementById('remove-file-btn') as HTMLButtonElement | null;
+  const _uploadBtnEl = document.getElementById('upload-btn') as HTMLButtonElement | null;
+  const _uploadProgressEl = document.getElementById('upload-progress');
+  const _errorMessagesEl = document.getElementById('error-messages');
+  const _errorListEl = document.getElementById('error-list');
+  const _successMessageEl = document.getElementById('success-message');
+  const _successDetailsEl = document.getElementById('success-details');
 
-  // Validate all required elements exist
+  // Validate all required elements exist and assign non-null versions
   if (
-    !dropZone ||
-    !fileInput ||
-    !browseBtn ||
-    !fileInfo ||
-    !fileName ||
-    !fileSize ||
-    !removeFileBtn ||
-    !uploadBtn ||
-    !uploadProgress ||
-    !errorMessages ||
-    !errorList ||
-    !successMessage ||
-    !successDetails
+    !_dropZoneEl ||
+    !_fileInputEl ||
+    !_browseBtnEl ||
+    !_fileInfoEl ||
+    !_fileNameEl ||
+    !_fileSizeEl ||
+    !_removeFileBtnEl ||
+    !_uploadBtnEl ||
+    !_uploadProgressEl ||
+    !_errorMessagesEl ||
+    !_errorListEl ||
+    !_successMessageEl ||
+    !_successDetailsEl
   ) {
     throw new Error('Required CSV uploader elements not found');
   }
 
-  let selectedFile = null;
+  // Non-null assertions after validation
+  const dropZoneEl = _dropZoneEl;
+  const fileInputEl = _fileInputEl;
+  const browseBtnEl = _browseBtnEl;
+  const fileInfoEl = _fileInfoEl;
+  const fileNameEl = _fileNameEl;
+  const fileSizeEl = _fileSizeEl;
+  const removeFileBtnEl = _removeFileBtnEl;
+  const uploadBtnEl = _uploadBtnEl;
+  const uploadProgressEl = _uploadProgressEl;
+  const errorMessagesEl = _errorMessagesEl;
+  const errorListEl = _errorListEl;
+  const successMessageEl = _successMessageEl;
+  const successDetailsEl = _successDetailsEl;
+
+  let selectedFile: File | null = null;
 
   // Browse button click
-  browseBtn.addEventListener('click', () => {
-    fileInput.click();
+  browseBtnEl.addEventListener('click', () => {
+    fileInputEl.click();
   });
 
   // Drop zone click
-  dropZone.addEventListener('click', (e) => {
-    if (e.target !== browseBtn && !browseBtn.contains(e.target)) {
-      fileInput.click();
+  dropZoneEl.addEventListener('click', (e: Event) => {
+    const target = e.target as Node;
+    if (target !== browseBtnEl && !browseBtnEl.contains(target)) {
+      fileInputEl.click();
     }
   });
 
   // Drag and drop handlers
-  dropZone.addEventListener('dragover', (e) => {
+  dropZoneEl.addEventListener('dragover', (e: Event) => {
     e.preventDefault();
-    dropZone.classList.add('border-primary', 'bg-base-300');
+    dropZoneEl.classList.add('border-primary', 'bg-base-300');
   });
 
-  dropZone.addEventListener('dragleave', (e) => {
+  dropZoneEl.addEventListener('dragleave', (e: Event) => {
     e.preventDefault();
-    dropZone.classList.remove('border-primary', 'bg-base-300');
+    dropZoneEl.classList.remove('border-primary', 'bg-base-300');
   });
 
-  dropZone.addEventListener('drop', (e) => {
+  dropZoneEl.addEventListener('drop', (e: DragEvent) => {
     e.preventDefault();
-    dropZone.classList.remove('border-primary', 'bg-base-300');
+    dropZoneEl.classList.remove('border-primary', 'bg-base-300');
 
-    const files = e.dataTransfer.files;
-    if (files.length > 0) {
+    const files = e.dataTransfer?.files;
+    if (files && files.length > 0) {
       handleFileSelect(files[0]);
     }
   });
 
   // File input change
-  fileInput.addEventListener('change', (e) => {
-    const files = e.target.files;
-    if (files.length > 0) {
+  fileInputEl.addEventListener('change', (e: Event) => {
+    const target = e.target as HTMLInputElement;
+    const files = target.files;
+    if (files && files.length > 0) {
       handleFileSelect(files[0]);
     }
   });
 
   // Remove file button
-  removeFileBtn.addEventListener('click', () => {
+  removeFileBtnEl.addEventListener('click', () => {
     selectedFile = null;
-    fileInput.value = '';
-    fileInfo.classList.add('hidden');
-    uploadBtn.disabled = true;
+    fileInputEl.value = '';
+    fileInfoEl.classList.add('hidden');
+    uploadBtnEl.disabled = true;
     hideMessages();
   });
 
   // Upload button
-  uploadBtn.addEventListener('click', async () => {
+  uploadBtnEl.addEventListener('click', async () => {
     if (!selectedFile) return;
 
     hideMessages();
-    uploadProgress.classList.remove('hidden');
-    uploadBtn.disabled = true;
+    uploadProgressEl.classList.remove('hidden');
+    uploadBtnEl.disabled = true;
 
     try {
       // Read file content
@@ -325,51 +342,51 @@ const { personaId } = Astro.props;
         }),
       });
 
-      const result = await response.json();
+      const result = (await response.json()) as { count?: number; details?: string[]; message?: string };
 
-      uploadProgress.classList.add('hidden');
+      uploadProgressEl.classList.add('hidden');
 
       if (response.ok) {
         // Success
-        successDetails.textContent = `${result.count} training pairs uploaded successfully`;
-        successMessage.classList.remove('hidden');
+        successDetailsEl.textContent = `${result.count} training pairs uploaded successfully`;
+        successMessageEl.classList.remove('hidden');
         addToast(`Uploaded ${result.count} training pairs`, 'success');
 
         // Reset form after 2 seconds
         setTimeout(() => {
           selectedFile = null;
-          fileInput.value = '';
-          fileInfo.classList.add('hidden');
-          successMessage.classList.add('hidden');
-          uploadBtn.disabled = true;
+          fileInputEl.value = '';
+          fileInfoEl.classList.add('hidden');
+          successMessageEl.classList.add('hidden');
+          uploadBtnEl.disabled = true;
 
           // Reload page to show new data
           window.location.reload();
         }, 2000);
       } else {
         // Error
-        errorList.innerHTML = '';
+        errorListEl.innerHTML = '';
         if (result.details && Array.isArray(result.details)) {
-          result.details.forEach((error) => {
+          result.details.forEach((error: string) => {
             const li = document.createElement('li');
             li.textContent = error;
-            errorList.appendChild(li);
+            errorListEl.appendChild(li);
           });
         } else {
           const li = document.createElement('li');
           li.textContent = result.message || 'Unknown error occurred';
-          errorList.appendChild(li);
+          errorListEl.appendChild(li);
         }
-        errorMessages.classList.remove('hidden');
-        uploadBtn.disabled = false;
+        errorMessagesEl.classList.remove('hidden');
+        uploadBtnEl.disabled = false;
         addToast('Upload failed', 'error');
       }
     } catch (error) {
       console.error('Upload error:', error);
-      uploadProgress.classList.add('hidden');
-      errorList.innerHTML = '<li>Network error. Please try again.</li>';
-      errorMessages.classList.remove('hidden');
-      uploadBtn.disabled = false;
+      uploadProgressEl.classList.add('hidden');
+      errorListEl.innerHTML = '<li>Network error. Please try again.</li>';
+      errorMessagesEl.classList.remove('hidden');
+      uploadBtnEl.disabled = false;
       addToast('Upload failed', 'error');
     }
   });
@@ -378,7 +395,7 @@ const { personaId } = Astro.props;
    * Validates and processes a selected file.
    * @param file - The File object to process
    */
-  function handleFileSelect(file) {
+  function handleFileSelect(file: File): void {
     // Validate file type
     if (!file.name.endsWith('.csv')) {
       addToast('Please select a CSV file', 'error');
@@ -392,10 +409,10 @@ const { personaId } = Astro.props;
     }
 
     selectedFile = file;
-    fileName.textContent = file.name;
-    fileSize.textContent = formatFileSize(file.size);
-    fileInfo.classList.remove('hidden');
-    uploadBtn.disabled = false;
+    fileNameEl.textContent = file.name;
+    fileSizeEl.textContent = formatFileSize(file.size);
+    fileInfoEl.classList.remove('hidden');
+    uploadBtnEl.disabled = false;
     hideMessages();
   }
 
@@ -404,7 +421,7 @@ const { personaId } = Astro.props;
    * @param bytes - Size in bytes
    * @returns Formatted string (e.g., "1.2 MB")
    */
-  function formatFileSize(bytes) {
+  function formatFileSize(bytes: number): string {
     if (bytes < 1024) return bytes + ' B';
     if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
     return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
@@ -413,8 +430,8 @@ const { personaId } = Astro.props;
   /**
    * Hides all error and success message containers.
    */
-  function hideMessages() {
-    errorMessages.classList.add('hidden');
-    successMessage.classList.add('hidden');
+  function hideMessages(): void {
+    errorMessagesEl.classList.add('hidden');
+    successMessageEl.classList.add('hidden');
   }
 </script>
