@@ -29,11 +29,11 @@
     "pre-push": "npm run test -- --run"
   },
   "lint-staged": {
-    "*.{ts,tsx,astro}": [
+    "*.{ts,tsx,astro,js,jsx}": [
       "eslint --fix",
       "prettier --write"
     ],
-    "*.{ts,tsx,astro,css,md}": [
+    "*.{css,md,json,yml,yaml}": [
       "prettier --write"
     ]
   },

@@ -124,7 +124,9 @@ This project uses automated quality enforcement to maintain code standards:
 
 **Local Development** (Pre-commit Hooks):
 
-- **Pre-commit**: Runs ESLint and Prettier on staged files (_.ts, _.tsx, \*.astro)
+- **Pre-commit**: Runs ESLint and Prettier on staged files (*.ts, *.tsx, *.astro, *.js, *.jsx)
+  - Typecheck is intentionally excluded from pre-commit for faster incremental development
+  - Run typecheck manually before creating PRs
 - **Pre-push**: Runs full test suite (optional, can be skipped with `--no-verify`)
 - Hooks are installed automatically via `npm install`
 
@@ -139,7 +141,7 @@ This project uses automated quality enforcement to maintain code standards:
 ```bash
 npm run lint         # ESLint check
 npm run typecheck    # TypeScript strict mode + Astro component check
-npm run format:fix   # Prettier auto-format
+npm run format       # Prettier auto-format
 npm test             # Run full test suite
 ```
 
@@ -147,6 +149,12 @@ To reinstall git hooks manually:
 
 ```bash
 npm run prepare  # Sets up git hooks via simple-git-hooks
+```
+
+Or use the direct command:
+
+```bash
+npx simple-git-hooks  # Install git hooks from package.json config
 ```
 
 ## 🎨 Development

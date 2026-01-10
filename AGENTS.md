@@ -82,9 +82,10 @@ npm run typecheck
 
 This project uses **simple-git-hooks** and **lint-staged** to enforce quality gates automatically:
 
-- **Pre-commit**: Runs lint-staged on staged files (_.ts, _.tsx, \*.astro)
+- **Pre-commit**: Runs lint-staged on staged files (*.ts, *.tsx, *.astro, *.js, *.jsx)
   - ESLint with auto-fix
   - Prettier formatting
+  - Note: Typecheck is intentionally excluded from pre-commit for faster incremental development
 - **Pre-push**: Runs full test suite (optional, can be skipped with `--no-verify`)
 
 ### Manual Quality Gate Runs
@@ -93,8 +94,8 @@ For manual verification before commits:
 
 ```bash
 npm run lint         # ESLint check
-npm run typecheck    # TypeScript strict mode check + Astro component check
-npm run format:fix   # Prettier auto-format
+npm run typecheck    # TypeScript strict mode check + Astro component check (run before PR)
+npm run format       # Prettier auto-format
 npm test             # Run full test suite
 ```
 
@@ -106,6 +107,12 @@ To reinstall hooks manually:
 
 ```bash
 npm run prepare  # Sets up git hooks via simple-git-hooks
+```
+
+Or use the direct command:
+
+```bash
+npx simple-git-hooks  # Install git hooks from package.json config
 ```
 
 ### CI Quality Gates
