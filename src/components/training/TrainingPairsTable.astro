@@ -549,18 +549,13 @@ const totalPages = Math.max(1, Math.ceil(pairs.length / pageSize));
       const rating = button.dataset.rating;
       console.log(`Human rated pair ${pairId} as ${rating}`);
 
-      // Dispatch custom event
+      // Dispatch custom event - TrainingWorkspace will handle the API call
+      // and UI update after successful response
       const event = new CustomEvent('human-rating', {
         bubbles: true,
         detail: { pairId, rating },
       });
       button.dispatchEvent(event);
-
-      // Replace buttons with badge
-      const td = button.closest('td');
-      if (td) {
-        td.innerHTML = `<span class="badge badge-sm badge-${rating === 'pass' ? 'success' : 'error'}">${rating}</span>`;
-      }
     });
   });
 

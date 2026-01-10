@@ -737,6 +737,113 @@ const {
     }
   });
 
+  // Handle human-rating event from TrainingPairsTable
+  document.addEventListener('human-rating', async (e: Event) => {
+    const { pairId, rating } = e.detail;
+
+    // Get persona ID from the page
+    const personaIdElement = document.querySelector('[data-persona-id]');
+    const personaId = personaIdElement?.dataset.personaId;
+
+    if (!personaId) {
+      console.error('No persona_id found on page');
+      if (window.toast) {
+        window.toast.error('Failed to submit rating: Missing persona ID');
+      }
+      return;
+    }
+
+    // Find the button that was clicked to show loading state
+    const button = document.querySelector(
+      `[data-action="human-rate"][data-rating="${rating}"][data-pair-id="${pairId}"]`
+    );
+
+    try {
+      // Show loading state on the specific button
+      if (button) {
+        button.classList.add('loading');
+        button.setAttribute('disabled', 'true');
+      }
+
+      const response = await fetch(`/api/personas/${personaId}/feedback-by-pair`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          training_pair_id: pairId,
+          human_rating: rating,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || 'Failed to submit rating');
+      }
+
+      // Show success notification
+      if (window.toast) {
+        window.toast.success(`Rating submitted: ${rating.toUpperCase()}`);
+      }
+
+      // Update UI to replace buttons with badge after successful API call
+      const td = document
+        .querySelector(`[data-pair-id="${pairId}"]`)
+        ?.closest('tr')
+        ?.querySelector('[data-cell-type="human-rating"]');
+      if (td) {
+        td.innerHTML = `<span class="badge badge-sm badge-${rating === 'pass' ? 'success' : 'error'}">${rating}</span>`;
+      }
+    } catch (error) {
+      console.error('Submit rating error:', error);
+
+      // Revert the UI back to buttons on error
+      const td = document
+        .querySelector(`[data-pair-id="${pairId}"]`)
+        ?.closest('tr')
+        ?.querySelector('[data-cell-type="human-rating"]');
+      if (td) {
+        td.innerHTML = `
+          <div class="flex gap-1 justify-center">
+            <button
+              class="btn btn-sm btn-success"
+              data-action="human-rate"
+              data-pair-id="${pairId}"
+              data-rating="pass"
+              title="Mark as Pass"
+            >
+              Pass
+            </button>
+            <button
+              class="btn btn-sm btn-error"
+              data-action="human-rate"
+              data-pair-id="${pairId}"
+              data-rating="fail"
+              title="Mark as Fail"
+            >
+              Fail
+            </button>
+          </div>
+        `;
+
+        // Re-attach the event listener to the new buttons
+        // This is handled by the event delegation in TrainingPairsTable
+      }
+
+      if (window.toast) {
+        window.toast.error(error instanceof Error ? error.message : 'Failed to submit rating');
+      }
+    } finally {
+      // Remove loading state - button may no longer exist if success, but that's ok
+      const currentButton = document.querySelector(
+        `[data-action="human-rate"][data-rating="${rating}"][data-pair-id="${pairId}"]`
+      );
+      if (currentButton) {
+        currentButton.classList.remove('loading');
+        currentButton.removeAttribute('disabled');
+      }
+    }
+  });
+
   // Handle CSV import event from TrainingPairsTable
   document.addEventListener('csv-import', async (e: Event) => {
     const { file } = e.detail;
