@@ -82,7 +82,7 @@ npm run typecheck
 
 ```bash
 npm run lint         # ESLint check
-npm run typecheck    # Typeheck
+npm run typecheck    # TypeScript strict mode check + Astro component check
 npm run format:fix    # Prettier auto-format
 ```
 

@@ -29,7 +29,7 @@ npm run test:e2e         # Run E2E tests (Playwright)
 npm run test:e2e:clean   # Clean E2E DB and run tests
 
 # Quality Gates (MUST run before commits)
-npm run typecheck        # TypeScript strict mode check
+npm run typecheck        # TypeScript strict mode check + Astro component check
 npm run lint             # ESLint check
 npm run lint:fix         # Auto-fix lint issues
 npm run format           # Format code with Prettier
