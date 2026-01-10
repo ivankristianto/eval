@@ -52,7 +52,9 @@
       "mcp__plugin_playwright_playwright__browser_click",
       "mcp__plugin_playwright_playwright__browser_close",
       "Bash(npx eslint:*)",
-      "Bash(bd close:*)"
+      "Bash(bd close:*)",
+      "Bash(bd comments:*)",
+      "Bash(gh api:*)"
     ]
   },
   "gitAttribution": false
