@@ -218,6 +218,7 @@ const {
     suggestedPrompt="Write a detailed response that answers the user's question about {topic}. Include:\n1. A clear explanation of the concept\n2. Relevant examples\n3. Common misconceptions to avoid\n\nEnsure the response is beginner-friendly and uses simple language."
     rationale="Added structure with numbered list for clarity. Specified 'beginner-friendly' and 'simple language' to address cases where previous outputs were too technical. These changes directly address the 5 failed examples where responses lacked structure."
     modalId="optimization-modal-task"
+    personaId={personaId}
   />
 
   <OptimizationSuggestion
@@ -226,6 +227,7 @@ const {
     suggestedPrompt="Evaluate if the generated output correctly addresses the user's question.\n\nCheck that the output:\n- Directly answers the question asked\n- Provides accurate information\n- Includes relevant examples when appropriate\n- Avoids hallucinations or unsupported claims\n\nMark as PASS only if all criteria are met. Mark as FAIL if any criterion is not satisfied, and explain which specific criterion failed."
     rationale="Added explicit evaluation criteria with bullet points. Specified 'mark as PASS only if ALL criteria are met' to reduce false positives. Added requirement to explain which criterion failed to improve feedback quality."
     modalId="optimization-modal-judge"
+    personaId={personaId}
   />
 </div>
 
