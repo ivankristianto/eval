@@ -21,7 +21,21 @@
     "lint:fix": "eslint src tests --fix",
     "format": "prettier --write \"src/**/*.{ts,tsx,astro,css}\" \"tests/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,astro,css}\" \"tests/**/*.ts\"",
-    "typecheck": "tsc --noEmit && astro check"
+    "typecheck": "tsc --noEmit && astro check",
+    "prepare": "simple-git-hooks"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "npx lint-staged",
+    "pre-push": "npm run test -- --run"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,astro}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{ts,tsx,astro,css,md}": [
+      "prettier --write"
+    ]
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.30.0",
@@ -59,9 +73,11 @@
     "eslint-plugin-jsdoc": "^61.5.0",
     "eslint-plugin-storybook": "10.1.10",
     "globals": "^16.5.0",
+    "lint-staged": "^16.2.7",
     "playwright": "^1.48.0",
     "prettier": "^3.7.4",
     "prettier-plugin-astro": "^0.14.1",
+    "simple-git-hooks": "^2.13.1",
     "storybook": "^10.1.10",
     "typescript": "^5.9.3",
     "vitest": "^4.0.16"
