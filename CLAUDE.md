@@ -312,6 +312,35 @@ npm run lint         # Must pass
 npm run format       # Auto-format code
 ```
 
+### Automated Quality Gates
+
+This project includes automated quality enforcement via:
+
+**Local Git Hooks** (simple-git-hooks + lint-staged):
+
+- **Pre-commit**: Automatically runs ESLint and Prettier on staged files (*.ts, *.tsx, *.astro, *.js, *.jsx)
+  - Typecheck is intentionally excluded from pre-commit for faster incremental development
+  - Run typecheck manually before creating PRs
+- **Pre-push**: Runs full test suite (can be skipped with `--no-verify`)
+
+**GitHub Actions CI** (.github/workflows/quality-gates.yml):
+
+- Runs on every PR and push to main
+- Jobs: Lint, Type Check, Test, Format Check (parallel)
+- All checks must pass before merging
+
+To reinstall git hooks:
+
+```bash
+npm run prepare  # Sets up git hooks via simple-git-hooks
+```
+
+Or use the direct command:
+
+```bash
+npx simple-git-hooks  # Install git hooks from package.json config
+```
+
 ## Database Schema Notes
 
 ### Key Tables

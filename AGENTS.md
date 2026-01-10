@@ -78,13 +78,53 @@ npm run typecheck
 
 ## Pre-Commit Quality Gates
 
-**Before committing ANY code**, you MUST run:
+### Automated Hooks (Local)
+
+This project uses **simple-git-hooks** and **lint-staged** to enforce quality gates automatically:
+
+- **Pre-commit**: Runs lint-staged on staged files (*.ts, *.tsx, *.astro, *.js, *.jsx)
+  - ESLint with auto-fix
+  - Prettier formatting
+  - Note: Typecheck is intentionally excluded from pre-commit for faster incremental development
+- **Pre-push**: Runs full test suite (optional, can be skipped with `--no-verify`)
+
+### Manual Quality Gate Runs
+
+For manual verification before commits:
 
 ```bash
 npm run lint         # ESLint check
-npm run typecheck    # TypeScript strict mode check + Astro component check
-npm run format:fix    # Prettier auto-format
+npm run typecheck    # TypeScript strict mode check + Astro component check (run before PR)
+npm run format       # Prettier auto-format
+npm test             # Run full test suite
 ```
+
+### Hook Setup
+
+Hooks are installed automatically via `npm install` (runs `simple-git-hooks` in postinstall).
+
+To reinstall hooks manually:
+
+```bash
+npm run prepare  # Sets up git hooks via simple-git-hooks
+```
+
+Or use the direct command:
+
+```bash
+npx simple-git-hooks  # Install git hooks from package.json config
+```
+
+### CI Quality Gates
+
+GitHub Actions runs the following checks on every PR and push to main:
+
+- **Lint**: Full ESLint check on src/ and tests/
+- **Type Check**: TypeScript strict mode + Astro component check
+- **Test**: Full test suite with test database
+- **Format**: Prettier format check
+
+All CI checks must pass before merging. Configure branch protection rules to require these status checks.
 
 ## Testing Status
 

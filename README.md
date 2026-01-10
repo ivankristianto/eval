@@ -68,6 +68,7 @@ A powerful, local-first framework designed to compare, evaluate, and train AI mo
 ### Installation
 
 1. **Clone and Install**
+
    ```bash
    git clone <repository-url>
    cd eval-ai-models
@@ -75,6 +76,7 @@ A powerful, local-first framework designed to compare, evaluate, and train AI mo
    ```
 
 2. **Environment Configuration**
+
    ```bash
    cp .env.example .env
    # Generate a 32-byte hex key for API key encryption
@@ -82,6 +84,7 @@ A powerful, local-first framework designed to compare, evaluate, and train AI mo
    ```
 
 3. **Initialize Database**
+
    ```bash
    npm run db:init
    ```
@@ -98,6 +101,7 @@ The project uses a contract-first approach. The complete REST API documentation 
 👉 **[openapi.yml](./openapi.yml)**
 
 **Key API Modules:**
+
 - `/api/models`: Model configuration and encryption.
 - `/api/evaluate`: Core evaluation execution.
 - `/api/personas`: Judge persona management and training iterations.
@@ -114,16 +118,59 @@ npm run test:e2e      # Run Playwright end-to-end tests
 npm run typecheck     # Verify TypeScript strict mode
 ```
 
+### Quality Gates
+
+This project uses automated quality enforcement to maintain code standards:
+
+**Local Development** (Pre-commit Hooks):
+
+- **Pre-commit**: Runs ESLint and Prettier on staged files (*.ts, *.tsx, *.astro, *.js, *.jsx)
+  - Typecheck is intentionally excluded from pre-commit for faster incremental development
+  - Run typecheck manually before creating PRs
+- **Pre-push**: Runs full test suite (optional, can be skipped with `--no-verify`)
+- Hooks are installed automatically via `npm install`
+
+**Continuous Integration** (GitHub Actions):
+
+- Runs on every pull request and push to main
+- Parallel jobs: Lint, Type Check, Test, Format Check
+- All checks must pass before merging (configure branch protection rules)
+
+**Manual Verification**:
+
+```bash
+npm run lint         # ESLint check
+npm run typecheck    # TypeScript strict mode + Astro component check
+npm run format       # Prettier auto-format
+npm test             # Run full test suite
+```
+
+To reinstall git hooks manually:
+
+```bash
+npm run prepare  # Sets up git hooks via simple-git-hooks
+```
+
+Or use the direct command:
+
+```bash
+npx simple-git-hooks  # Install git hooks from package.json config
+```
+
 ## 🎨 Development
 
 ### UI Components (Storybook)
+
 We use Storybook for component-driven development.
+
 ```bash
 npm run storybook
 ```
 
 ### Database Reset
+
 To wipe the local database and start fresh:
+
 ```bash
 npm run db:reset
 ```
