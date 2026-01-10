@@ -27,8 +27,6 @@ import {
   getIterationReviews,
   createIterationMetrics,
   getIterationMetrics,
-  createTaskPromptVersion,
-  getTaskPromptHistory,
   createJudgePromptVersion,
   getJudgePromptHistory,
   createTrainingLoopState,

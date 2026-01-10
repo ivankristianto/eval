@@ -10,7 +10,6 @@ import {
   initializeTestDatabase,
   cleanTestDatabase,
   closeTestDatabase,
-  createTestPersona,
   createTestModelConfig,
 } from '../setup';
 import { v4 as uuidv4 } from 'uuid';

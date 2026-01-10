@@ -215,7 +215,7 @@ const historyModalId = `${type}-prompt-history`;
   document.querySelectorAll('[data-prompt-editor]').forEach((textarea) => {
     textarea.addEventListener('input', (e) => {
       const target = e.target as HTMLTextAreaElement;
-      const type = target.dataset.promptEditor;
+      const _promptType = target.dataset.promptEditor;
       const charCountLabel = target.closest('.card')?.querySelector('.label-text-alt') as HTMLElement;
       if (charCountLabel) {
         charCountLabel.textContent = `${target.value.length} chars`;

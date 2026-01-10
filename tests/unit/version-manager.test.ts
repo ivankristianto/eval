@@ -22,7 +22,6 @@ import {
   deleteTaskPromptVersion,
   deleteJudgePromptVersion,
 } from '@lib/training/version-manager';
-import type { TaskPromptVersion, JudgePromptVersion } from '@src-types/training';
 import {
   getTestDatabase,
   initializeTestDatabase,
@@ -645,7 +644,7 @@ describe('Version Manager', () => {
 
   describe('Get Current Version', () => {
     it('should get latest task prompt version for a persona', () => {
-      const v1 = createTaskPromptVersion(
+      createTaskPromptVersion(
         {
           persona_id: personaId,
           prompt_text: 'First',
@@ -654,7 +653,7 @@ describe('Version Manager', () => {
         db
       );
 
-      const v2 = createTaskPromptVersion(
+      createTaskPromptVersion(
         {
           persona_id: personaId,
           prompt_text: 'Second',
@@ -680,7 +679,7 @@ describe('Version Manager', () => {
     });
 
     it('should get latest judge prompt version for a persona', () => {
-      const v1 = createJudgePromptVersion(
+      createJudgePromptVersion(
         {
           persona_id: personaId,
           prompt_text: 'First',
@@ -689,7 +688,7 @@ describe('Version Manager', () => {
         db
       );
 
-      const v2 = createJudgePromptVersion(
+      createJudgePromptVersion(
         {
           persona_id: personaId,
           prompt_text: 'Second',

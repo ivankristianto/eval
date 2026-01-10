@@ -7,7 +7,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import Database from 'better-sqlite3';
 import { TrainingLoopManager } from '@lib/training/training-loop-manager';
 import { TrainingStateError } from '@lib/training/training-errors';
-import { getDatabase } from '@lib/db/db';
 import path from 'path';
 import { readFileSync } from 'fs';
 
@@ -179,11 +178,11 @@ describe('TrainingLoopManager Integration Tests', () => {
       overallMatch: true,
       reasoning: 'High similarity',
       dimensions: {
-        semantic: 0.9,
-        structural: 0.85,
-        completeness: 0.95,
+        correctness: { rating: 'YES', details: 'Fully correct' },
+        completeness: { rating: 'YES', details: 'Complete' },
+        noContradictions: { rating: 'YES', details: 'No contradictions' },
       },
-    } as any);
+    });
     mockCalculateMetrics.mockResolvedValue({
       metrics: {
         f1_score: 0.85,
@@ -198,8 +197,8 @@ describe('TrainingLoopManager Integration Tests', () => {
           false_negatives: 2,
         },
       },
-      failureCases: [],
-    } as any);
+      failureCases: [] as Array<{ type: 'false_positive' | 'false_negative'; input: string; generated_output: string; expected_output: string; judge_reasoning: string }>,
+    });
     mockRefineBothFromFailure.mockResolvedValue({
       refined_task_prompt: 'Refined task prompt',
       refined_judge_prompt: 'Refined judge prompt',
@@ -249,7 +248,7 @@ describe('TrainingLoopManager Integration Tests', () => {
 
       const state = db
         .prepare('SELECT * FROM training_loop_state WHERE session_id = ?')
-        .get(sessionId) as any;
+        .get(sessionId) as { session_id: string; persona_id: string; status: string; current_iteration: number; pause_reason: string | null };
 
       expect(state).toBeDefined();
       expect(state.session_id).toBe(sessionId);
@@ -339,7 +338,7 @@ describe('TrainingLoopManager Integration Tests', () => {
 
       const state = db
         .prepare('SELECT * FROM training_loop_state WHERE session_id = ?')
-        .get(sessionId) as any;
+        .get(sessionId) as { session_id: string; persona_id: string; status: string; current_iteration: number; pause_reason: string | null };
 
       expect(state).toBeDefined();
       expect(state.status).toBe('paused');
@@ -378,7 +377,7 @@ describe('TrainingLoopManager Integration Tests', () => {
 
       const state = db
         .prepare('SELECT * FROM training_loop_state WHERE session_id = ?')
-        .get(sessionId) as any;
+        .get(sessionId) as { session_id: string; persona_id: string; status: string; current_iteration: number; pause_reason: string | null };
 
       expect(state.status).not.toBe('paused');
     });
@@ -438,7 +437,7 @@ describe('TrainingLoopManager Integration Tests', () => {
 
       const iteration = db
         .prepare('SELECT * FROM training_iterations WHERE id = ?')
-        .get(iterationId) as any;
+        .get(iterationId) as { id: string; status: string };
       expect(iteration.status).toBe('awaiting_human_review');
     });
 
@@ -492,7 +491,7 @@ describe('TrainingLoopManager Integration Tests', () => {
 
       const review = db
         .prepare('SELECT * FROM human_reviews WHERE judge_decision_id = ?')
-        .get(decisionId) as any;
+        .get(decisionId) as { human_decision: string };
       expect(review).toBeDefined();
       expect(review.human_decision).toBe('agree');
     });
@@ -714,7 +713,7 @@ describe('TrainingLoopManager Integration Tests', () => {
 
       const metrics = db
         .prepare('SELECT * FROM iteration_metrics WHERE iteration_id = ?')
-        .get(iterationId) as any;
+        .get(iterationId) as { f1_score: number };
       expect(metrics).toBeDefined();
       expect(metrics.f1_score).toBe(0.85);
     });
