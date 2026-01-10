@@ -10,9 +10,9 @@ import type { Database } from 'better-sqlite3';
 import type {
   Persona,
   TrainingIteration,
-  TrainingPair,
   TrainingLoopState,
   MetricsResult,
+  IterationStatus,
 } from '@src-types/training';
 
 // Mock dependencies
@@ -74,6 +74,11 @@ describe('TrainingLoopManager', () => {
   let mockIteration: TrainingIteration | null = null;
   let mockPersona: Persona | null = null;
 
+  // Helper functions to create mock state and iteration objects
+  let createMockState: (status: string) => TrainingLoopState;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  let createMockIteration: (status: IterationStatus) => TrainingIteration;
+
   const createMockDb = (): Database => {
     const db = {
       prepare: vi.fn(),
@@ -81,7 +86,7 @@ describe('TrainingLoopManager', () => {
       transaction: vi.fn(),
     } as unknown as Database;
 
-    (db.prepare as any).mockImplementation((query: string) => {
+    (db.prepare as unknown as ReturnType<typeof vi.fn>).mockImplementation((query: string) => {
       const stmt = {
         get: vi.fn(),
         all: vi.fn(),
@@ -193,12 +198,12 @@ describe('TrainingLoopManager', () => {
     };
 
     // Create a complete mock state object
-    const createMockState = (status: string): any => ({
+    createMockState = (status: string): TrainingLoopState => ({
       session_id: sessionId,
       persona_id: personaId,
       total_iterations: 3,
       current_iteration: 1,
-      status,
+      status: status as TrainingLoopState['status'],
       task_model_id: 'model-1',
       judge_model_id: 'model-2',
       prompt_engineer_model_id: 'model-3',
@@ -210,7 +215,7 @@ describe('TrainingLoopManager', () => {
     });
 
     // Create a complete mock iteration object
-    const createMockIteration = (status: string): any => ({
+    createMockIteration = (status: IterationStatus): TrainingIteration => ({
       id: 'iteration-1',
       persona_id: personaId,
       iteration_number: 1,
@@ -237,11 +242,11 @@ describe('TrainingLoopManager', () => {
       overallMatch: true,
       reasoning: 'High similarity',
       dimensions: {
-        semantic: 0.9,
-        structural: 0.85,
-        completeness: 0.95,
+        correctness: { rating: 'YES', details: 'Fully correct' },
+        completeness: { rating: 'YES', details: 'Complete' },
+        noContradictions: { rating: 'YES', details: 'No contradictions' },
       },
-    } as any);
+    });
     mockCalculateMetrics.mockResolvedValue({
       metrics: {
         f1_score: 0.85,
@@ -256,8 +261,8 @@ describe('TrainingLoopManager', () => {
           false_negatives: 2,
         },
       },
-      failureCases: [],
-    } as any);
+      failureCases: [] as Array<{ type: 'false_positive' | 'false_negative'; input: string; generated_output: string; expected_output: string; judge_reasoning: string }>,
+    });
     mockRefineBothFromFailure.mockResolvedValue({
       refined_task_prompt: 'Refined task prompt',
       refined_judge_prompt: 'Refined judge prompt',
@@ -340,7 +345,7 @@ describe('TrainingLoopManager', () => {
 
     it('should pause without reason', async () => {
       // Set up existing state
-      const createMockState = (
+      const _createMockState2 = (
         status: 'in_progress' | 'paused' | 'completed' | 'failed' | 'awaiting_human_review'
       ): TrainingLoopState => ({
         session_id: sessionId,
@@ -370,7 +375,7 @@ describe('TrainingLoopManager', () => {
   describe('resume', () => {
     it('should resume a paused session', async () => {
       // First create a paused state
-      const createMockState = (
+      const _createMockState3 = (
         status: 'in_progress' | 'paused' | 'completed' | 'failed' | 'awaiting_human_review'
       ): TrainingLoopState => ({
         session_id: sessionId,
@@ -408,7 +413,7 @@ describe('TrainingLoopManager', () => {
     });
 
     it('should throw error when session is not paused', async () => {
-      const createMockState = (
+      const _createMockState4 = (
         status: 'in_progress' | 'paused' | 'completed' | 'failed' | 'awaiting_human_review'
       ): TrainingLoopState => ({
         session_id: sessionId,
@@ -504,7 +509,7 @@ describe('TrainingLoopManager', () => {
       // Create a custom mock DB that returns iteration but has unreviewed decisions
       const customMockDb = createMockDb();
 
-      (customMockDb.prepare as any).mockImplementation((query: string) => {
+      (customMockDb.prepare as unknown as ReturnType<typeof vi.fn>).mockImplementation((query: string) => {
         const stmt = {
           get: vi.fn(),
           all: vi.fn(),
@@ -526,15 +531,15 @@ describe('TrainingLoopManager', () => {
         return stmt;
       });
 
-      const customManager = new TrainingLoopManager(
+      const _customManager11 = new TrainingLoopManager(
         { sessionId, personaId, maxIterations: 3 },
         customMockDb
       );
 
-      await expect(customManager.acceptPromptsAndContinue('iteration-1')).rejects.toThrow(
+      await expect(_customManager11.acceptPromptsAndContinue('iteration-1')).rejects.toThrow(
         TrainingStateError
       );
-      await expect(customManager.acceptPromptsAndContinue('iteration-1')).rejects.toThrow(
+      await expect(_customManager11.acceptPromptsAndContinue('iteration-1')).rejects.toThrow(
         'Cannot proceed'
       );
     });
@@ -606,8 +611,8 @@ describe('TrainingLoopManager', () => {
     it('should prevent duplicate prompt versions', () => {
       // Test that existing check prevents duplicates
       // The mock DB returns null for existing versions
-      const mockDb = (manager as any).db;
-      expect(mockDb).toBeDefined();
+      const _mockDb = (manager as unknown as { db: Database }).db;
+      expect(_mockDb).toBeDefined();
     });
 
     it('should store metrics summary with prompt versions', () => {
@@ -677,7 +682,7 @@ describe('TrainingLoopManager', () => {
   describe('generateJudgeDecisions', () => {
     it('should skip when no training pairs exist', async () => {
       // Mock empty training pairs
-      (mockDb.prepare as any).mockImplementation((query: string) => {
+      (mockDb.prepare as unknown as ReturnType<typeof vi.fn>).mockImplementation((query: string) => {
         const stmt = {
           get: vi.fn(),
           all: vi.fn(),
@@ -691,7 +696,7 @@ describe('TrainingLoopManager', () => {
         return stmt;
       });
 
-      const customManager = new TrainingLoopManager(
+      const _customManager14 = new TrainingLoopManager(
         { sessionId, personaId, maxIterations: 3 },
         mockDb
       );
@@ -702,7 +707,7 @@ describe('TrainingLoopManager', () => {
 
     it('should handle missing iteration gracefully', async () => {
       const customMockDb = createMockDb();
-      (customMockDb.prepare as any).mockImplementation((query: string) => {
+      (customMockDb.prepare as unknown as ReturnType<typeof vi.fn>).mockImplementation((query: string) => {
         const stmt = {
           get: vi.fn(),
           all: vi.fn(),
@@ -728,7 +733,7 @@ describe('TrainingLoopManager', () => {
       // Should throw error for missing iteration
       await expect(async () => {
         // Access private method for testing
-        await (customManager as any).generateJudgeDecisions('test-iteration', 'task prompt');
+        await (customManager as unknown as { generateJudgeDecisions: (id: string, prompt: string) => Promise<void> }).generateJudgeDecisions('test-iteration', 'task prompt');
       }).rejects.toThrow(TrainingStateError);
     });
   });
@@ -736,7 +741,7 @@ describe('TrainingLoopManager', () => {
   describe('refinePrompts', () => {
     it('should skip when persona not found', async () => {
       const customMockDb = createMockDb();
-      (customMockDb.prepare as any).mockImplementation((query: string) => {
+      (customMockDb.prepare as unknown as ReturnType<typeof vi.fn>).mockImplementation((query: string) => {
         const stmt = {
           get: vi.fn(),
           all: vi.fn(),
@@ -756,12 +761,12 @@ describe('TrainingLoopManager', () => {
       );
 
       // Should complete without error when persona not found
-      await expect((customManager as any).refinePrompts('test-iteration')).resolves.toBeUndefined();
+      await expect((customManager as unknown as { refinePrompts: (id: string) => Promise<void> }).refinePrompts('test-iteration')).resolves.toBeUndefined();
     });
 
     it('should skip when iteration not found', async () => {
       const customMockDb = createMockDb();
-      (customMockDb.prepare as any).mockImplementation((query: string) => {
+      (customMockDb.prepare as unknown as ReturnType<typeof vi.fn>).mockImplementation((query: string) => {
         const stmt = {
           get: vi.fn(),
           all: vi.fn(),
@@ -777,13 +782,13 @@ describe('TrainingLoopManager', () => {
         return stmt;
       });
 
-      const customManager = new TrainingLoopManager(
+      const _customManager15 = new TrainingLoopManager(
         { sessionId, personaId, maxIterations: 3 },
         customMockDb
       );
 
       // Should complete without error when iteration not found
-      await expect((customManager as any).refinePrompts('test-iteration')).resolves.toBeUndefined();
+      await expect((_customManager15 as unknown as { refinePrompts: (id: string) => Promise<void> }).refinePrompts('test-iteration')).resolves.toBeUndefined();
     });
   });
 
@@ -791,14 +796,14 @@ describe('TrainingLoopManager', () => {
     it('should handle LLM call failures', async () => {
       mockCallModel.mockRejectedValue(new Error('API timeout'));
 
-      const customManager = new TrainingLoopManager(
+      const _customManager12 = new TrainingLoopManager(
         { sessionId, personaId, maxIterations: 3 },
         mockDb
       );
 
       // Should throw TrainingStateError on API failure
       await expect(async () => {
-        await (customManager as any).callTaskModel('model-id', 'input', 'prompt');
+        await (_customManager12 as unknown as { callTaskModel: (...args: unknown[]) => Promise<void> }).callTaskModel('model-id', 'input', 'prompt');
       }).rejects.toThrow(TrainingStateError);
     });
   });
@@ -807,14 +812,14 @@ describe('TrainingLoopManager', () => {
     it('should handle LLM call failures', async () => {
       mockCallModel.mockRejectedValue(new Error('API timeout'));
 
-      const customManager = new TrainingLoopManager(
+      const _customManager13 = new TrainingLoopManager(
         { sessionId, personaId, maxIterations: 3 },
         mockDb
       );
 
       // Should throw TrainingStateError on API failure
       await expect(async () => {
-        await (customManager as any).callJudgeModel(
+        await (_customManager13 as unknown as { callJudgeModel: (...args: unknown[]) => Promise<void> }).callJudgeModel(
           'model-id',
           'input',
           'output',
@@ -827,33 +832,33 @@ describe('TrainingLoopManager', () => {
 
   describe('parseJudgeResponse', () => {
     it('should parse valid JSON with agree decision', async () => {
-      const customManager = new TrainingLoopManager(
+      const _customManager7 = new TrainingLoopManager(
         { sessionId, personaId, maxIterations: 3 },
         mockDb
       );
 
       const response = JSON.stringify({ decision: 'agree', reasoning: 'Correct output' });
-      const result = await (customManager as any).parseJudgeResponse(response);
+      const result = await (_customManager7 as unknown as { parseJudgeResponse: (response: string) => Promise<{ decision: string; reasoning: string }> }).parseJudgeResponse(response);
 
       expect(result.decision).toBe('agree');
       expect(result.reasoning).toBe('Correct output');
     });
 
     it('should parse valid JSON with disagree decision', async () => {
-      const customManager = new TrainingLoopManager(
+      const _customManager8 = new TrainingLoopManager(
         { sessionId, personaId, maxIterations: 3 },
         mockDb
       );
 
       const response = JSON.stringify({ decision: 'disagree', reasoning: 'Incorrect output' });
-      const result = await (customManager as any).parseJudgeResponse(response);
+      const result = await (_customManager8 as unknown as { parseJudgeResponse: (response: string) => Promise<{ decision: string; reasoning: string }> }).parseJudgeResponse(response);
 
       expect(result.decision).toBe('disagree');
       expect(result.reasoning).toBe('Incorrect output');
     });
 
     it('should use semantic similarity fallback when available', async () => {
-      const customManager = new TrainingLoopManager(
+      const _customManager9 = new TrainingLoopManager(
         { sessionId, personaId, maxIterations: 3 },
         mockDb
       );
@@ -870,7 +875,7 @@ describe('TrainingLoopManager', () => {
       });
 
       const unclearResponse = 'This is unclear';
-      const result = await (customManager as any).parseJudgeResponse(
+      const result = await (_customManager9 as unknown as { parseJudgeResponse: (response: string, generated: string, expected: string) => Promise<{ decision: string; reasoning: string }> }).parseJudgeResponse(
         unclearResponse,
         'generated output',
         'expected output'
@@ -881,7 +886,7 @@ describe('TrainingLoopManager', () => {
     });
 
     it('should default to disagree when parsing fails and no semantic similarity', async () => {
-      const customManager = new TrainingLoopManager(
+      const _customManager10 = new TrainingLoopManager(
         { sessionId, personaId, maxIterations: 3 },
         mockDb
       );
@@ -889,7 +894,7 @@ describe('TrainingLoopManager', () => {
       mockGetSemanticSimilarity.mockRejectedValue(new Error('Similarity check failed'));
 
       const unclearResponse = 'This is completely unclear';
-      const result = await (customManager as any).parseJudgeResponse(unclearResponse);
+      const result = await (_customManager10 as unknown as { parseJudgeResponse: (response: string) => Promise<{ decision: string; reasoning: string }> }).parseJudgeResponse(unclearResponse);
 
       expect(result.decision).toBe('disagree');
       expect(result.reasoning).toContain('defaulting to disagree');

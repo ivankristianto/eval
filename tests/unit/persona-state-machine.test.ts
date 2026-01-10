@@ -137,7 +137,7 @@ describe('Persona State Machine', () => {
 
   describe('Training → Trained Transition', () => {
     it('should transition from training to trained when F1 ≥ target', () => {
-      const db = getTestDatabase();
+      getTestDatabase();
       const persona = createPersona(
         'State Machine Test - Training to Trained',
         'Test persona for convergence',
@@ -165,7 +165,7 @@ describe('Persona State Machine', () => {
     });
 
     it('should record best iteration number when transitioning to trained', () => {
-      const db = getTestDatabase();
+      getTestDatabase();
       const persona = createPersona(
         'State Machine Test - Best Iteration',
         'Test persona for best iteration tracking',
@@ -190,7 +190,7 @@ describe('Persona State Machine', () => {
 
   describe('Training → Incomplete Transition', () => {
     it('should transition from training to incomplete when max iterations reached without convergence', () => {
-      const db = getTestDatabase();
+      getTestDatabase();
       const persona = createPersona(
         'State Machine Test - Training to Incomplete',
         'Test persona for incomplete training',
@@ -265,7 +265,7 @@ describe('Persona State Machine', () => {
     });
 
     it('should reset iteration tracking when re-training from trained', () => {
-      const db = getTestDatabase();
+      getTestDatabase();
       const persona = createPersona(
         'State Machine Test - Reset on Re-train',
         'Test persona for iteration reset on re-training',
@@ -501,7 +501,7 @@ describe('Persona State Machine', () => {
 
   describe('Convergence Detection', () => {
     it('should identify convergence when F1 ≥ target_f1_score', () => {
-      const db = getTestDatabase();
+      getTestDatabase();
       const persona = createPersona(
         'State Machine Test - Convergence',
         'Test persona for convergence detection',
@@ -526,7 +526,7 @@ describe('Persona State Machine', () => {
     });
 
     it('should identify non-convergence when F1 < target_f1_score', () => {
-      const db = getTestDatabase();
+      getTestDatabase();
       const persona = createPersona(
         'State Machine Test - Non-Convergence',
         'Test persona for non-convergence detection',
@@ -548,7 +548,7 @@ describe('Persona State Machine', () => {
 
   describe('Max Iterations Detection', () => {
     it('should detect when max iterations reached', () => {
-      const db = getTestDatabase();
+      getTestDatabase();
       const persona = createPersona(
         'State Machine Test - Max Iterations',
         'Test persona for max iterations detection',
@@ -569,7 +569,7 @@ describe('Persona State Machine', () => {
     });
 
     it('should detect when max iterations not reached', () => {
-      const db = getTestDatabase();
+      getTestDatabase();
       const persona = createPersona(
         'State Machine Test - Below Max Iterations',
         'Test persona for max iterations detection',

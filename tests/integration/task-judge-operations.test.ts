@@ -31,6 +31,7 @@ import { callModel } from '@lib/utils/api-clients';
 /**
  * Helper function to create a test persona with the current schema
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function createTestPersona(db: Database): {
   id: string;
   task_model_id: string;
@@ -206,7 +207,7 @@ describe('Task/Judge Operations Integration', () => {
   describe('Task Generation Flow', () => {
     it('should generate outputs for all training pairs', async () => {
       // Create training pairs
-      const pairIds = createTrainingPairs(db, persona.id, 3);
+      createTrainingPairs(db, persona.id, 3);
       const taskPromptVersionId = createTaskPromptVersion(db, persona.id, 'Test task prompt');
 
       // Mock the model call
@@ -321,8 +322,8 @@ describe('Task/Judge Operations Integration', () => {
   describe('Judge Evaluation Flow', () => {
     it('should evaluate training pair results with judge', async () => {
       // Create training pairs
-      const pairIds = createTrainingPairs(db, persona.id, 2);
-      const judgePromptVersionId = createJudgePromptVersion(db, persona.id, 'Test judge prompt');
+      const pairIds2 = createTrainingPairs(db, persona.id, 2);
+      const _judgePromptVersionId = createJudgePromptVersion(db, persona.id, 'Test judge prompt');
 
       // Create task generation run and results
       const runId = uuidv4();
@@ -331,10 +332,10 @@ describe('Task/Judge Operations Integration', () => {
         `INSERT INTO evaluation_runs
          (id, persona_id, run_type, status, total_pairs, processed_pairs, started_at, created_at, updated_at, model_id, prompt_version_id)
          VALUES (?, ?, 'task_generate', 'completed', ?, 0, ?, ?, ?, ?, ?)`
-      ).run(runId, persona.id, 2, now, now, now, persona.task_model_id, judgePromptVersionId);
+      ).run(runId, persona.id, 2, now, now, now, persona.task_model_id, _judgePromptVersionId);
 
       // Create training pair results
-      const resultIds = pairIds.map((pairId) => {
+      const resultIds = pairIds2.map((pairId) => {
         const resultId = uuidv4();
         db.prepare(
           `INSERT INTO training_pair_results
@@ -357,7 +358,7 @@ describe('Task/Judge Operations Integration', () => {
       const result = await evaluateWithJudge(
         {
           persona_id: persona.id,
-          judge_prompt_version_id: judgePromptVersionId,
+          judge_prompt_version_id: _judgePromptVersionId,
           training_pair_result_ids: resultIds,
         },
         db
@@ -381,8 +382,8 @@ describe('Task/Judge Operations Integration', () => {
 
     it('should get results needing judge evaluation', () => {
       // Create training pairs
-      const pairIds = createTrainingPairs(db, persona.id, 3);
-      const judgePromptVersionId = createJudgePromptVersion(db, persona.id, 'Test judge prompt');
+      const pairIds3 = createTrainingPairs(db, persona.id, 3);
+      const _judgePromptVersionId2 = createJudgePromptVersion(db, persona.id, 'Test judge prompt');
 
       // Create task generation run
       const runId = uuidv4();
@@ -391,10 +392,10 @@ describe('Task/Judge Operations Integration', () => {
         `INSERT INTO evaluation_runs
          (id, persona_id, run_type, status, total_pairs, processed_pairs, started_at, created_at, updated_at, model_id, prompt_version_id)
          VALUES (?, ?, 'task_generate', 'completed', ?, 0, ?, ?, ?, ?, ?)`
-      ).run(runId, persona.id, 3, now, now, now, persona.task_model_id, judgePromptVersionId);
+      ).run(runId, persona.id, 3, now, now, now, persona.task_model_id, _judgePromptVersionId2);
 
       // Create training pair results - only first 2 have generated_output, all have no judge_rating
-      pairIds.slice(0, 2).forEach((pairId) => {
+      pairIds3.slice(0, 2).forEach((pairId) => {
         const resultId = uuidv4();
         db.prepare(
           `INSERT INTO training_pair_results
@@ -413,8 +414,8 @@ describe('Task/Judge Operations Integration', () => {
 
     it('should handle judge evaluation with pass and fail ratings', async () => {
       // Create training pairs
-      const pairIds = createTrainingPairs(db, persona.id, 2);
-      const judgePromptVersionId = createJudgePromptVersion(db, persona.id, 'Test judge prompt');
+      const pairIds4 = createTrainingPairs(db, persona.id, 2);
+      const _judgePromptVersionId3 = createJudgePromptVersion(db, persona.id, 'Test judge prompt');
 
       // Create task generation run and results
       const runId = uuidv4();
@@ -423,9 +424,9 @@ describe('Task/Judge Operations Integration', () => {
         `INSERT INTO evaluation_runs
          (id, persona_id, run_type, status, total_pairs, processed_pairs, started_at, created_at, updated_at, model_id, prompt_version_id)
          VALUES (?, ?, 'task_generate', 'completed', ?, 0, ?, ?, ?, ?, ?)`
-      ).run(runId, persona.id, 2, now, now, now, persona.task_model_id, judgePromptVersionId);
+      ).run(runId, persona.id, 2, now, now, now, persona.task_model_id, _judgePromptVersionId3);
 
-      const resultIds = pairIds.map((pairId) => {
+      const resultIds = pairIds4.map((pairId) => {
         const resultId = uuidv4();
         db.prepare(
           `INSERT INTO training_pair_results
@@ -454,7 +455,7 @@ describe('Task/Judge Operations Integration', () => {
       const result = await evaluateWithJudge(
         {
           persona_id: persona.id,
-          judge_prompt_version_id: judgePromptVersionId,
+          judge_prompt_version_id: _judgePromptVersionId3,
           training_pair_result_ids: resultIds,
         },
         db
@@ -468,9 +469,9 @@ describe('Task/Judge Operations Integration', () => {
   describe('Prompt Optimization Flow', () => {
     it('should optimize task prompt based on feedback', async () => {
       // Create training pairs and results with ratings
-      const pairIds = createTrainingPairs(db, persona.id, 4);
+      const pairIds5 = createTrainingPairs(db, persona.id, 4);
       const taskPromptVersionId = createTaskPromptVersion(db, persona.id, 'Original task prompt');
-      const judgePromptVersionId = createJudgePromptVersion(db, persona.id, 'Test judge prompt');
+      const _judgePromptVersionId4 = createJudgePromptVersion(db, persona.id, 'Test judge prompt');
 
       // Create task generation run
       const runId = uuidv4();
@@ -482,7 +483,7 @@ describe('Task/Judge Operations Integration', () => {
       ).run(runId, persona.id, 4, now, now, now, persona.task_model_id, taskPromptVersionId);
 
       // Create training pair results with mixed ratings
-      pairIds.forEach((pairId, index) => {
+      pairIds5.forEach((pairId, index) => {
         const resultId = uuidv4();
         db.prepare(
           `INSERT INTO training_pair_results
@@ -528,9 +529,9 @@ describe('Task/Judge Operations Integration', () => {
 
     it('should optimize judge prompt based on feedback', async () => {
       // Create training pairs and results with ratings
-      const pairIds = createTrainingPairs(db, persona.id, 4);
+      const pairIds6 = createTrainingPairs(db, persona.id, 4);
       const taskPromptVersionId = createTaskPromptVersion(db, persona.id, 'Test task prompt');
-      const judgePromptVersionId = createJudgePromptVersion(
+      createJudgePromptVersion(
         db,
         persona.id,
         'Original judge prompt'
@@ -546,7 +547,7 @@ describe('Task/Judge Operations Integration', () => {
       ).run(runId, persona.id, 4, now, now, now, persona.task_model_id, taskPromptVersionId);
 
       // Create training pair results with mixed ratings
-      pairIds.forEach((pairId, index) => {
+      pairIds6.forEach((pairId, index) => {
         const resultId = uuidv4();
         db.prepare(
           `INSERT INTO training_pair_results
@@ -591,7 +592,7 @@ describe('Task/Judge Operations Integration', () => {
 
     it('should get feedback summary for persona', () => {
       // Create training pairs and results
-      const pairIds = createTrainingPairs(db, persona.id, 10);
+      const pairIds7 = createTrainingPairs(db, persona.id, 10);
       const taskPromptVersionId = createTaskPromptVersion(db, persona.id, 'Test task prompt');
 
       // Create task generation run
@@ -604,7 +605,7 @@ describe('Task/Judge Operations Integration', () => {
       ).run(runId, persona.id, 10, now, now, now, persona.task_model_id, taskPromptVersionId);
 
       // Create training pair results: 6 pass, 4 fail
-      pairIds.forEach((pairId, index) => {
+      pairIds7.forEach((pairId, index) => {
         const resultId = uuidv4();
         db.prepare(
           `INSERT INTO training_pair_results
@@ -634,7 +635,7 @@ describe('Task/Judge Operations Integration', () => {
 
     it('should handle LLM failure gracefully', async () => {
       // Create training pairs and results
-      const pairIds = createTrainingPairs(db, persona.id, 2);
+      const pairIds8 = createTrainingPairs(db, persona.id, 2);
       const taskPromptVersionId = createTaskPromptVersion(db, persona.id, 'Test task prompt');
 
       // Create task generation run
@@ -647,7 +648,7 @@ describe('Task/Judge Operations Integration', () => {
       ).run(runId, persona.id, 2, now, now, now, persona.task_model_id, taskPromptVersionId);
 
       // Create training pair results with ratings
-      pairIds.forEach((pairId, index) => {
+      pairIds8.forEach((pairId, index) => {
         const resultId = uuidv4();
         db.prepare(
           `INSERT INTO training_pair_results
@@ -687,7 +688,7 @@ describe('Task/Judge Operations Integration', () => {
   describe('End-to-End Workflow', () => {
     it('should complete full task -> judge -> optimize cycle', async () => {
       // 1. Create training data
-      const pairIds = createTrainingPairs(db, persona.id, 3);
+      createTrainingPairs(db, persona.id, 3);
       const taskPromptVersionId = createTaskPromptVersion(db, persona.id, 'Initial task prompt');
       const judgePromptVersionId = createJudgePromptVersion(db, persona.id, 'Initial judge prompt');
 

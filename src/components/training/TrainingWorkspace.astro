@@ -467,17 +467,18 @@ const {
    */
   function flashElement(element: Element, className = 'bg-success/10', duration = 1000) {
     // Clear any existing timer on this element
-    if ((element as any)._animationTimer) {
-      clearTimeout((element as any)._animationTimer);
+    const animationTimer = (element as unknown as { _animationTimer: ReturnType<typeof setTimeout> | null })._animationTimer;
+    if (animationTimer) {
+      clearTimeout(animationTimer);
     }
 
     // Add the flash class
     element.classList.add(className);
 
     // Set timer to remove it
-    (element as any)._animationTimer = setTimeout(() => {
+    (element as unknown as { _animationTimer: ReturnType<typeof setTimeout> | null })._animationTimer = setTimeout(() => {
       element.classList.remove(className);
-      (element as any)._animationTimer = null;
+      (element as unknown as { _animationTimer: ReturnType<typeof setTimeout> | null })._animationTimer = null;
     }, duration);
   }
 
