@@ -9,6 +9,7 @@ import { TrainingLoopManager } from '@lib/training/training-loop-manager';
 import { TrainingStateError } from '@lib/training/training-errors';
 import { getDatabase } from '@lib/db/db';
 import path from 'path';
+import { readFileSync } from 'fs';
 
 // Mock external dependencies
 vi.mock('@lib/evaluation/metrics-orchestrator', () => ({
@@ -126,7 +127,7 @@ describe('TrainingLoopManager Integration Tests', () => {
 
     // Initialize schema
     const schemaPath = path.join(process.cwd(), 'db', 'schema.sql');
-    const schema = require('fs').readFileSync(schemaPath, 'utf-8');
+    const schema = readFileSync(schemaPath, 'utf-8');
     db.exec(schema);
 
     // Create test models (use unique model names to avoid UNIQUE constraint)

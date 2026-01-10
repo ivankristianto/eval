@@ -103,6 +103,7 @@ export function closeDatabase(): void {
   if (db) {
     db.close();
     db = null;
+    databaseInitialized = false;
   }
 }
 

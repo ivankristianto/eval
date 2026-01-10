@@ -863,9 +863,9 @@ describe('TrainingLoopManager', () => {
         overallMatch: true,
         reasoning: 'Very similar',
         dimensions: {
-          semantic: 0.95,
-          structural: 0.9,
-          completeness: 1.0,
+          correctness: { rating: 'YES', details: 'Fully correct' },
+          completeness: { rating: 'YES', details: 'Complete' },
+          noContradictions: { rating: 'YES', details: 'No contradictions' },
         },
       });
 

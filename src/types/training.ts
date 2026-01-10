@@ -16,12 +16,23 @@ export type PersonaStatus =
 /**
  * Training iteration status
  */
-export type IterationStatus = 'in_progress' | 'paused' | 'completed' | 'failed';
+export type IterationStatus =
+  | 'in_progress'
+  | 'paused'
+  | 'completed'
+  | 'failed'
+  | 'awaiting_human_review';
 
 /**
  * Training loop session status
  */
-export type SessionStatus = 'pending' | 'in_progress' | 'paused' | 'completed' | 'failed';
+export type SessionStatus =
+  | 'pending'
+  | 'in_progress'
+  | 'paused'
+  | 'completed'
+  | 'failed'
+  | 'awaiting_human_review';
 
 /**
  * Judge decision: agree or disagree with expected output
