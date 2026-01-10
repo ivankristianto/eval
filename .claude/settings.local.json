@@ -50,7 +50,11 @@
       "Skill(frontend-design:frontend-design)",
       "Skill(k2-dev:*)",
       "mcp__plugin_playwright_playwright__browser_click",
-      "mcp__plugin_playwright_playwright__browser_close"
+      "mcp__plugin_playwright_playwright__browser_close",
+      "Bash(bd epic add-child:*)",
+      "Bash(bd blocked)",
+      "Bash(bd epic status:*)",
+      "Bash(npx astro check:*)"
     ]
   },
   "gitAttribution": false
