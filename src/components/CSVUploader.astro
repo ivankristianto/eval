@@ -208,8 +208,15 @@ const { personaId } = Astro.props;
 
   // Get personaId from data attribute
   const uploadContainer = document.querySelector('.csv-uploader');
-  const personaId = uploadContainer?.getAttribute('data-persona-id');
+  if (!uploadContainer) {
+    throw new Error('CSV uploader container not found');
+  }
+  const personaId = uploadContainer.getAttribute('data-persona-id');
+  if (!personaId) {
+    throw new Error('personaId data attribute not found');
+  }
 
+  // Get all required DOM elements with null checks
   const dropZone = document.getElementById('drop-zone');
   const fileInput = document.getElementById('file-input');
   const browseBtn = document.getElementById('browse-btn');
@@ -223,6 +230,25 @@ const { personaId } = Astro.props;
   const errorList = document.getElementById('error-list');
   const successMessage = document.getElementById('success-message');
   const successDetails = document.getElementById('success-details');
+
+  // Validate all required elements exist
+  if (
+    !dropZone ||
+    !fileInput ||
+    !browseBtn ||
+    !fileInfo ||
+    !fileName ||
+    !fileSize ||
+    !removeFileBtn ||
+    !uploadBtn ||
+    !uploadProgress ||
+    !errorMessages ||
+    !errorList ||
+    !successMessage ||
+    !successDetails
+  ) {
+    throw new Error('Required CSV uploader elements not found');
+  }
 
   let selectedFile = null;
 
