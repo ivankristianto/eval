@@ -2,7 +2,7 @@
 // Evaluation submission endpoint
 
 import type { APIRoute } from 'astro';
-import { insertEvaluation, insertResult, getModelById } from '@lib/db';
+import { insertEvaluation, insertResult, getModelById, getDatabase } from '@lib/db';
 import { startEvaluation } from '@lib/evaluation/evaluator';
 import {
   validateCreateEvaluation,
@@ -96,21 +96,29 @@ export const POST: APIRoute = async ({ request }) => {
       rubricType: rubric_type,
     });
 
-    // Create evaluation record
-    const evaluation = insertEvaluation(
-      instruction,
-      rubric_type as RubricType,
-      expected_output,
-      partial_credit_concepts,
-      undefined, // templateId
-      system_prompt,
-      temperature
-    );
+    // Create evaluation and result records within a transaction for atomicity
+    const db = getDatabase();
+    const transaction = db.transaction(() => {
+      // Create evaluation record
+      const evaluation = insertEvaluation(
+        instruction,
+        rubric_type as RubricType,
+        expected_output,
+        partial_credit_concepts,
+        undefined, // templateId
+        system_prompt,
+        temperature
+      );
 
-    // Create result records for each model
-    for (const model of models) {
-      insertResult(evaluation.id, model.id);
-    }
+      // Create result records for each model
+      for (const model of models) {
+        insertResult(evaluation.id, model.id);
+      }
+
+      return evaluation;
+    });
+
+    const evaluation = transaction();
 
     // Start evaluation in background
     startEvaluation({
