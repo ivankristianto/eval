@@ -11,8 +11,11 @@
  * - training_iterations
  * - training_loop_checkpoints
  * - training_loop_state
+ * - training_pair_results
  *
- * Resets persona status to 'draft' and iteration counters to 0.
+ * Resets persona status to 'draft', current prompt version IDs to NULL,
+ * and iteration counters to 0.
+ * Note: training_pairs (input/expected data) are preserved for reuse.
  */
 
 import type { APIRoute } from 'astro';
@@ -112,15 +115,22 @@ export const POST: APIRoute = async ({ params }) => {
         .prepare('DELETE FROM training_loop_state WHERE persona_id = ?')
         .run(id).changes;
 
-      // Delete training_iterations last (after cascading deletes)
+      // Delete training_iterations (after cascading deletes)
       const deletedIterations = db
         .prepare('DELETE FROM training_iterations WHERE persona_id = ?')
+        .run(id).changes;
+
+      // Delete training_pair_results (evaluation results for training pairs)
+      const deletedTrainingPairResults = db
+        .prepare('DELETE FROM training_pair_results WHERE persona_id = ?')
         .run(id).changes;
 
       // Reset persona to initial state
       db.prepare(
         `UPDATE personas
          SET status = 'draft',
+             current_task_prompt_version_id = NULL,
+             current_judge_prompt_version_id = NULL,
              best_pass_rate = NULL,
              best_pass_rate_updated_at = NULL,
              updated_at = ?
@@ -136,6 +146,7 @@ export const POST: APIRoute = async ({ params }) => {
         deletedIterations,
         deletedCheckpoints,
         deletedLoopState,
+        deletedTrainingPairResults,
       };
     });
 
@@ -146,6 +157,7 @@ export const POST: APIRoute = async ({ params }) => {
       deletedIterations: result.deletedIterations,
       deletedDecisions: result.deletedDecisions,
       deletedMetrics: result.deletedMetrics,
+      deletedTrainingPairResults: result.deletedTrainingPairResults,
     });
 
     logger.logApiRequest('POST', `/api/personas/${id}/reset`, 200, Date.now() - startTime);
@@ -162,6 +174,7 @@ export const POST: APIRoute = async ({ params }) => {
           training_iterations: result.deletedIterations,
           training_loop_checkpoints: result.deletedCheckpoints,
           training_loop_state: result.deletedLoopState,
+          training_pair_results: result.deletedTrainingPairResults,
         },
       }),
       { status: 200, headers: { 'Content-Type': 'application/json' } }
