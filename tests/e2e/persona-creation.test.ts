@@ -1,6 +1,11 @@
 /**
  * E2E tests for Persona Creation workflow
- * Tests persona list, detail page, and CRUD operations
+ * Tests persona list page, filtering, and API integration
+ *
+ * NOTE: Workspace-based UI tests (persona creation, training operations)
+ * have been moved to workspace-ui.test.ts to reflect the current
+ * workspace-based architecture where personas are managed within
+ * the /workspace context rather than via detail page tabs.
  */
 
 import { test, expect } from '@playwright/test';
@@ -70,116 +75,6 @@ test.describe('Persona Creation Workflow', () => {
       // Verify DaisyUI classes
       await expect(personaCards.first()).toHaveClass(/card/);
       await expect(personaCards.first()).toHaveClass(/shadow/);
-    }
-  });
-
-  // Note: The following tests require personas to exist in the database
-  // These tests may be skipped if running against an empty database
-
-  test.skip('should navigate to persona detail page when clicking view details', async ({
-    page,
-  }) => {
-    await page.goto('/personas');
-
-    // Wait for personas to load
-    await page.waitForSelector('.card-body', { timeout: 5000 });
-
-    // Check if any personas exist
-    const viewDetailsBtn = page.locator('a:has-text("View Details")').first();
-    const btnCount = await viewDetailsBtn.count();
-
-    if (btnCount > 0) {
-      await viewDetailsBtn.click();
-
-      // Should navigate to persona detail page
-      await expect(page).toHaveURL(/\/personas\/[a-f0-9-]+/);
-
-      // Should show persona name in title
-      await expect(page.locator('h1')).toBeVisible();
-
-      // Should show tabs
-      await expect(page.locator('a:has-text("Overview")')).toBeVisible();
-      await expect(page.locator('a:has-text("Settings")')).toBeVisible();
-    }
-  });
-
-  test.skip('should display persona overview tab correctly', async ({ page }) => {
-    // This test requires a persona to exist
-    // Navigate directly to a persona detail page (assuming one exists)
-    await page.goto('/personas');
-
-    const viewDetailsBtn = page.locator('a:has-text("View Details")').first();
-    const btnCount = await viewDetailsBtn.count();
-
-    if (btnCount > 0) {
-      await viewDetailsBtn.click();
-
-      // Wait for detail page to load
-      await page.waitForSelector('h1', { timeout: 5000 });
-
-      // Check overview tab is active
-      const overviewTab = page.locator('a:has-text("Overview")');
-      await expect(overviewTab).toHaveClass(/tab-active/);
-
-      // Check persona information sections
-      await expect(page.locator('h2:has-text("Persona Information")')).toBeVisible();
-      await expect(page.locator('h2:has-text("Model Configuration")')).toBeVisible();
-      await expect(page.locator('h2:has-text("Metadata")')).toBeVisible();
-
-      // Check action buttons
-      await expect(page.locator('button:has-text("Delete")')).toBeVisible();
-    }
-  });
-
-  test.skip('should display settings tab with editable form', async ({ page }) => {
-    await page.goto('/personas');
-
-    const viewDetailsBtn = page.locator('a:has-text("View Details")').first();
-    const btnCount = await viewDetailsBtn.count();
-
-    if (btnCount > 0) {
-      await viewDetailsBtn.click();
-
-      // Click settings tab
-      await page.click('a:has-text("Settings")');
-
-      // Wait for settings tab to load
-      await page.waitForSelector('form#update-persona-form', { timeout: 5000 });
-
-      // Check form fields exist
-      await expect(page.locator('input[name="name"]')).toBeVisible();
-      await expect(page.locator('textarea[name="description"]')).toBeVisible();
-      await expect(page.locator('textarea[name="task_prompt"]')).toBeVisible();
-
-      // Check form buttons
-      await expect(page.locator('button:has-text("Save Changes")')).toBeVisible();
-      await expect(page.locator('button:has-text("Cancel")')).toBeVisible();
-    }
-  });
-
-  test.skip('should validate required fields in settings form', async ({ page }) => {
-    await page.goto('/personas');
-
-    const viewDetailsBtn = page.locator('a:has-text("View Details")').first();
-    const btnCount = await viewDetailsBtn.count();
-
-    if (btnCount > 0) {
-      await viewDetailsBtn.click();
-
-      // Navigate to settings
-      await page.click('a:has-text("Settings")');
-      await page.waitForSelector('form#update-persona-form', { timeout: 5000 });
-
-      // Clear required field
-      await page.fill('input[name="name"]', '');
-
-      // Try to submit
-      await page.click('button:has-text("Save Changes")');
-
-      // HTML5 validation should prevent submission
-      const nameInput = page.locator('input[name="name"]');
-      const isInvalid = await nameInput.evaluate((el: HTMLInputElement) => !el.validity.valid);
-      expect(isInvalid).toBe(true);
     }
   });
 
