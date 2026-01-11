@@ -624,7 +624,7 @@ const totalPages = Math.max(1, Math.ceil(pairs.length / pageSize));
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           persona_id: personaId,
-          training_pair_result_ids: selectedIds,
+          training_pair_ids: selectedIds,
         }),
       });
 

@@ -23,7 +23,8 @@ const logger = createLogger('API:Judge:Evaluate');
  * {
  *   persona_id: string;
  *   judge_prompt_text?: string; // Optional: if provided, creates new version if different from current
- *   training_pair_result_ids?: string[]; // Optional: specific results to evaluate
+ *   training_pair_result_ids?: string[]; // Optional: specific result IDs to evaluate
+ *   training_pair_ids?: string[]; // Optional: specific training pair IDs to evaluate (will be resolved to result IDs)
  * }
  *
  * Response:
@@ -42,9 +43,10 @@ export const POST: APIRoute = async ({ request }) => {
       persona_id: string;
       judge_prompt_text?: string;
       training_pair_result_ids?: string[];
+      training_pair_ids?: string[];
     }>(request);
 
-    const { persona_id, judge_prompt_text, training_pair_result_ids } = body;
+    const { persona_id, judge_prompt_text, training_pair_result_ids, training_pair_ids } = body;
 
     if (!persona_id) {
       logger.logApiRequest('POST', '/api/judge/evaluate', 400, Date.now() - startTime);
@@ -140,6 +142,71 @@ export const POST: APIRoute = async ({ request }) => {
       judgePromptVersionId = repairResult.versionId;
     }
 
+    // Resolve training_pair_ids to training_pair_result_ids if provided
+    let resolvedResultIds = training_pair_result_ids;
+
+    if (training_pair_ids && training_pair_ids.length > 0) {
+      logger.info('Resolving training_pair_ids to training_pair_result_ids', {
+        persona_id,
+        pair_ids: training_pair_ids,
+      });
+
+      // Query training_pair_results for the persona to find existing results
+      const placeholders = training_pair_ids.map(() => '?').join(',');
+      const existingResults = db
+        .prepare(
+          `SELECT id, training_pair_id, generated_output, judge_rating
+           FROM training_pair_results
+           WHERE persona_id = ? AND training_pair_id IN (${placeholders})`
+        )
+        .all(persona_id, ...training_pair_ids) as Array<{
+        id: string;
+        training_pair_id: string;
+        generated_output: string | null;
+        judge_rating: string | null;
+      }>;
+
+      // Filter to results that have generated_output and no judge_rating
+      const validResults = existingResults.filter(
+        (r) => r.generated_output !== null && r.judge_rating === null
+      );
+
+      // Log warnings for pairs that don't have valid results
+      const pairIdsWithResults = new Set(existingResults.map((r) => r.training_pair_id));
+      const pairIdsWithoutResults = training_pair_ids.filter((id) => !pairIdsWithResults.has(id));
+      if (pairIdsWithoutResults.length > 0) {
+        logger.warn('Some training pairs have no results, skipping them', {
+          persona_id,
+          skipped_pairs: pairIdsWithoutResults,
+        });
+      }
+
+      const pairIdsWithRatedResults = existingResults
+        .filter((r) => r.judge_rating !== null)
+        .map((r) => r.training_pair_id);
+      if (pairIdsWithRatedResults.length > 0) {
+        logger.warn('Some training pairs already have judge ratings, skipping them', {
+          persona_id,
+          rated_pairs: pairIdsWithRatedResults,
+        });
+      }
+
+      if (validResults.length === 0) {
+        logger.logApiRequest('POST', '/api/judge/evaluate', 400, Date.now() - startTime);
+        return badRequest(
+          'No valid training pair results found for the selected pairs. Results must have generated_output and no existing judge_rating.',
+          'NO_VALID_RESULTS'
+        );
+      }
+
+      resolvedResultIds = validResults.map((r) => r.id);
+      logger.info('Resolved training_pair_ids to training_pair_result_ids', {
+        persona_id,
+        requested_count: training_pair_ids.length,
+        resolved_count: resolvedResultIds.length,
+      });
+    }
+
     // Evaluate with judge
     logger.info('Starting judge evaluation', { persona_id, judgePromptVersionId });
 
@@ -147,7 +214,7 @@ export const POST: APIRoute = async ({ request }) => {
       {
         persona_id,
         judge_prompt_version_id: judgePromptVersionId,
-        training_pair_result_ids,
+        training_pair_result_ids: resolvedResultIds,
       },
       db
     );
