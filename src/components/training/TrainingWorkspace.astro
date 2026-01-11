@@ -686,6 +686,8 @@ const {
     generated_output?: string;
     judge_rating?: string;
     judge_feedback?: string;
+    human_rating?: string;
+    human_feedback?: string;
   }
 
   /**
@@ -778,6 +780,47 @@ const {
           // Update existing div if content changed
           if (contentDiv.textContent !== pair.judge_feedback) {
             contentDiv.textContent = pair.judge_feedback;
+            flashElement(contentDiv);
+          }
+        }
+      }
+
+      // Update human rating column
+      const humanRatingCell = row.querySelector('[data-cell-type="human-rating"]');
+      if (humanRatingCell && pair.human_rating) {
+        const badge = humanRatingCell.querySelector('.badge');
+        if (badge) {
+          const newClassName = `badge badge-sm badge-${pair.human_rating === 'pass' ? 'success' : 'error'}`;
+          if (badge.className !== newClassName) {
+            badge.className = newClassName;
+            badge.textContent = pair.human_rating;
+            flashElement(badge, 'bg-success/20');
+          }
+        }
+      }
+
+      // Update human feedback column
+      const humanFeedbackCell = row.querySelector('[data-cell-type="human-feedback"]');
+      if (humanFeedbackCell && pair.human_feedback) {
+        const input = humanFeedbackCell.querySelector('[data-action="add-feedback"]');
+        const contentDiv = humanFeedbackCell.querySelector('[data-content]');
+
+        if (input) {
+          // Replace input with content div
+          input.remove();
+          const newDiv = document.createElement('div');
+          newDiv.className =
+            'text-sm opacity-70 whitespace-pre-wrap break-words max-h-20 overflow-y-auto';
+          newDiv.setAttribute('data-content', '');
+          newDiv.textContent = pair.human_feedback;
+          humanFeedbackCell.appendChild(newDiv);
+
+          // Add flash animation with timer cleanup
+          flashElement(newDiv);
+        } else if (contentDiv) {
+          // Update existing div if content changed
+          if (contentDiv.textContent !== pair.human_feedback) {
+            contentDiv.textContent = pair.human_feedback;
             flashElement(contentDiv);
           }
         }
@@ -948,7 +991,7 @@ const {
 
   // Handle human-feedback event from TrainingPairsTable
   document.addEventListener('human-feedback', async (e) => {
-    const { pairId } = (e as CustomEvent<{ pairId: string }>).detail;
+    const { pairId, feedback } = (e as CustomEvent<{ pairId: string; feedback: string }>).detail;
 
     // Get persona ID from the page
     const personaIdElement = document.querySelector('[data-persona-id]') as HTMLElement | null;
@@ -980,7 +1023,7 @@ const {
           return;
         }
 
-        const currentFeedback = input.value;
+        const currentFeedback = input.value || feedback;
         if (!currentFeedback.trim()) {
           console.log('Feedback is empty, skipping API call');
           return;
@@ -1027,14 +1070,23 @@ const {
             window.toast.success('Feedback saved!');
           }
 
-          // Show visual confirmation (green border)
-          input.classList.remove('input-loading');
-          input.classList.add('input-success');
+          // Update UI immediately: convert input to display div showing saved feedback
+          const humanFeedbackCell = input.closest('[data-cell-type="human-feedback"]');
+          if (humanFeedbackCell) {
+            // Create content div with saved feedback
+            const newDiv = document.createElement('div');
+            newDiv.className =
+              'text-sm opacity-70 whitespace-pre-wrap break-words max-h-20 overflow-y-auto';
+            newDiv.setAttribute('data-content', '');
+            newDiv.textContent = currentFeedback;
 
-          // Remove visual confirmation after 2 seconds
-          setTimeout(() => {
-            input.classList.remove('input-success');
-          }, 2000);
+            // Replace input with content div
+            input.remove();
+            humanFeedbackCell.appendChild(newDiv);
+
+            // Add flash animation
+            flashElement(newDiv);
+          }
         } catch (error) {
           console.error('Save feedback error:', error);
           if (window.toast) {
