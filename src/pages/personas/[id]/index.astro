@@ -612,71 +612,81 @@ if (currentTab === 'training-progress') {
   const personaId = window.location.pathname.split('/')[2];
 
   // Delete persona
-  document.getElementById('delete-persona-btn')?.addEventListener('click', async () => {
-    if (!confirm('Are you sure you want to delete this persona? This action cannot be undone.')) {
-      return;
-    }
-
-    try {
-      const response = await fetch(`/api/personas/${personaId}`, {
-        method: 'DELETE',
-      });
-
-      if (response.ok) {
-        addToast('Persona deleted successfully', 'success');
-        window.location.href = '/personas';
-      } else {
-        const data = await response.json();
-        addToast(data.message || 'Failed to delete persona', 'error');
+  const deleteBtn = document.getElementById('delete-persona-btn');
+  if (!deleteBtn) {
+    console.error('Delete persona button not found');
+  } else {
+    deleteBtn.addEventListener('click', async () => {
+      if (!confirm('Are you sure you want to delete this persona? This action cannot be undone.')) {
+        return;
       }
-    } catch (error) {
-      console.error('Delete error:', error);
-      addToast('Failed to delete persona', 'error');
-    }
-  });
+
+      try {
+        const response = await fetch(`/api/personas/${personaId}`, {
+          method: 'DELETE',
+        });
+
+        if (response.ok) {
+          addToast('Persona deleted successfully', 'success');
+          window.location.href = '/personas';
+        } else {
+          const data = await response.json();
+          addToast(data.message || 'Failed to delete persona', 'error');
+        }
+      } catch (error) {
+        console.error('Delete error:', error);
+        addToast('Failed to delete persona', 'error');
+      }
+    });
+  }
 
   // Reset persona training data
-  document.getElementById('reset-persona-btn')?.addEventListener('click', async () => {
-    if (
-      !confirm(
-        'Are you sure you want to reset all training data? This will delete all iterations, metrics, judge decisions, and prompt versions. This action cannot be undone.'
-      )
-    ) {
-      return;
-    }
+  const resetBtn = document.getElementById('reset-persona-btn');
+  if (!resetBtn) {
+    console.error('Reset persona button not found');
+  } else {
+    resetBtn.addEventListener('click', async () => {
+      if (
+        !confirm(
+          'Are you sure you want to reset all training data? This will delete all iterations, metrics, judge decisions, and prompt versions. This action cannot be undone.'
+        )
+      ) {
+        return;
+      }
 
-    const button = document.getElementById('reset-persona-btn') as HTMLButtonElement;
-    if (button) {
-      button.disabled = true;
-      button.classList.add('loading');
-    }
+      const button = document.getElementById('reset-persona-btn') as HTMLButtonElement;
+      if (button) {
+        button.disabled = true;
+        button.classList.add('loading');
+      }
 
-    try {
-      const response = await fetch(`/api/personas/${personaId}/reset`, {
-        method: 'POST',
-      });
+      try {
+        const response = await fetch(`/api/personas/${personaId}/reset`, {
+          method: 'POST',
+        });
 
-      if (response.ok) {
-        addToast('Training data reset successfully', 'success');
-        // Refresh the page to show reset state
-        window.location.reload();
-      } else {
-        const result = await response.json();
-        addToast(result.message || 'Failed to reset training data', 'error');
+        if (response.ok) {
+          addToast('Training data reset successfully', 'success');
+          // Refresh the page to show reset state
+          window.location.reload();
+        } else {
+          const result = await response.json();
+          addToast(result.message || 'Failed to reset training data', 'error');
+          if (button) {
+            button.disabled = false;
+            button.classList.remove('loading');
+          }
+        }
+      } catch (error) {
+        console.error('Reset error:', error);
+        addToast('Failed to reset training data', 'error');
         if (button) {
           button.disabled = false;
           button.classList.remove('loading');
         }
       }
-    } catch (error) {
-      console.error('Reset error:', error);
-      addToast('Failed to reset training data', 'error');
-      if (button) {
-        button.disabled = false;
-        button.classList.remove('loading');
-      }
-    }
-  });
+    });
+  }
 
   // Start training
   // Start training button (handle both ID and class selectors)
@@ -715,49 +725,54 @@ if (currentTab === 'training-progress') {
   });
 
   // Update persona form
-  document.getElementById('update-persona-form')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
+  const updateForm = document.getElementById('update-persona-form');
+  if (!updateForm) {
+    console.error('Update persona form not found');
+  } else {
+    updateForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
 
-    const form = e.target as HTMLFormElement;
-    const formData = new FormData(form);
+      const form = e.target as HTMLFormElement;
+      const formData = new FormData(form);
 
-    const data = {
-      name: formData.get('name') as string,
-      description: formData.get('description') as string,
-      target_pass_rate: parseFloat(formData.get('target_pass_rate') as string),
-      max_iterations: parseInt(formData.get('max_iterations') as string, 10),
-    };
+      const data = {
+        name: formData.get('name') as string,
+        description: formData.get('description') as string,
+        target_pass_rate: parseFloat(formData.get('target_pass_rate') as string),
+        max_iterations: parseInt(formData.get('max_iterations') as string, 10),
+      };
 
-    try {
-      const response = await fetch(`/api/personas/${personaId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
+      try {
+        const response = await fetch(`/api/personas/${personaId}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data),
+        });
 
-      if (response.ok) {
-        addToast('Persona updated successfully', 'success');
-        // Refresh the page to show updated data
-        window.location.reload();
-      } else {
-        await response.json();
+        if (response.ok) {
+          addToast('Persona updated successfully', 'success');
+          // Refresh the page to show updated data
+          window.location.reload();
+        } else {
+          await response.json();
+          addToast('Failed to update persona', 'error');
+        }
+      } catch (error) {
+        console.error('Update error:', error);
         addToast('Failed to update persona', 'error');
       }
-    } catch (error) {
-      console.error('Update error:', error);
-      addToast('Failed to update persona', 'error');
-    }
-  });
+    });
+  }
 
   // Pause training button
   document.querySelectorAll('.pause-training-btn').forEach((btn) => {
     btn.addEventListener('click', async (e) => {
       const button = e.currentTarget as HTMLButtonElement;
-      const personaId = button.dataset.personaId;
+      const datasetPersonaId = button.dataset.personaId;
 
-      if (!personaId) return;
+      if (!datasetPersonaId) return;
 
       if (!confirm('Pause the current training iteration? You can resume it later.')) {
         return;
@@ -767,7 +782,7 @@ if (currentTab === 'training-progress') {
       button.classList.add('loading');
 
       try {
-        const response = await fetch(`/api/personas/${personaId}/training/pause`, {
+        const response = await fetch(`/api/personas/${datasetPersonaId}/training/pause`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -801,15 +816,15 @@ if (currentTab === 'training-progress') {
   document.querySelectorAll('.resume-training-btn').forEach((btn) => {
     btn.addEventListener('click', async (e) => {
       const button = e.currentTarget as HTMLButtonElement;
-      const personaId = button.dataset.personaId;
+      const datasetPersonaId = button.dataset.personaId;
 
-      if (!personaId) return;
+      if (!datasetPersonaId) return;
 
       button.disabled = true;
       button.classList.add('loading');
 
       try {
-        const response = await fetch(`/api/personas/${personaId}/training/resume`, {
+        const response = await fetch(`/api/personas/${datasetPersonaId}/training/resume`, {
           method: 'POST',
         });
 
