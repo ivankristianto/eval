@@ -16,7 +16,6 @@ const logger = createLogger('API:JudgePrompts:Diff');
  * Retrieves textual differences between two versions of a judge prompt.
  * @param root0
  * @param root0.url
- * @returns {Promise<Response>}
  */
 export const GET: APIRoute = async ({ url }) => {
   const startTime = Date.now();

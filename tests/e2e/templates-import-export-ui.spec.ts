@@ -216,7 +216,7 @@ test.describe('Templates Import/Export UI', () => {
 
       await page.click('#import-csv-btn');
 
-      const _fileChooser = await fileChooserPromise;
+      await fileChooserPromise;
 
       // Set files (using the hidden file input)
       const fileInput = page.locator('#csv-file-input');
@@ -517,7 +517,6 @@ test.describe('Templates Import/Export UI', () => {
 
       await page.waitForLoadState('networkidle');
 
-      const _importBtn = page.locator('#import-csv-btn');
       const fileChooserPromise = page.waitForEvent('filechooser');
 
       await page.click('#import-csv-btn');

@@ -14,7 +14,6 @@ const logger = createLogger('API:Templates:History');
  * @param root0
  * @param root0.params
  * @param root0.url
- * @returns {Promise<Response>}
  */
 export const GET: APIRoute = async ({ params, url }) => {
   const startTime = Date.now();

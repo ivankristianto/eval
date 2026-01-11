@@ -24,7 +24,6 @@ const logger = createLogger('API:Training:Pairs');
  * Retrieves all training pairs associated with a specific persona.
  * @param root0
  * @param root0.params
- * @returns {Promise<Response>}
  */
 export const GET: APIRoute = async ({ params }) => {
   const startTime = Date.now();

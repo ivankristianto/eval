@@ -14,7 +14,6 @@ const logger = createLogger('API:Results');
  * Results are sorted by accuracy score descending.
  * @param root0
  * @param root0.url
- * @returns {Promise<Response>}
  */
 export const GET: APIRoute = async ({ url }) => {
   const startTime = Date.now();

@@ -17,7 +17,6 @@ const logger = createLogger('API:Models');
  * Verifies API connectivity before persisting to database.
  * @param root0
  * @param root0.request
- * @returns {Promise<Response>}
  */
 export const POST: APIRoute = async ({ request }) => {
   const startTime = Date.now();
@@ -88,7 +87,6 @@ export const POST: APIRoute = async ({ request }) => {
  * Supports filtering by provider and active status.
  * @param root0
  * @param root0.url
- * @returns {Promise<Response>}
  */
 export const GET: APIRoute = async ({ url }) => {
   const startTime = Date.now();

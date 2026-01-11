@@ -19,7 +19,6 @@ const logger = createLogger('API:Training:RefinePrompt');
  * Requires the iteration to be in 'completed' status.
  * @param root0
  * @param root0.params
- * @returns {Promise<Response>}
  */
 export const POST: APIRoute = async ({ params }) => {
   const startTime = Date.now();

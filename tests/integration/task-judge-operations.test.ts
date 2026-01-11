@@ -471,7 +471,7 @@ describe('Task/Judge Operations Integration', () => {
       // Create training pairs and results with ratings
       const pairIds5 = createTrainingPairs(db, persona.id, 4);
       const taskPromptVersionId = createTaskPromptVersion(db, persona.id, 'Original task prompt');
-      const _judgePromptVersionId4 = createJudgePromptVersion(db, persona.id, 'Test judge prompt');
+      createJudgePromptVersion(db, persona.id, 'Test judge prompt');
 
       // Create task generation run
       const runId = uuidv4();

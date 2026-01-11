@@ -48,7 +48,6 @@ function isValidUUID(id: string): boolean {
  * Loads checkpoint and continues from where it left off.
  * @param root0
  * @param root0.params
- * @returns {Promise<Response>}
  */
 export const POST: APIRoute = async ({ params }) => {
   const startTime = Date.now();

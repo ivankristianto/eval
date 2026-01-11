@@ -28,7 +28,6 @@ const logger = createLogger('API:Training:AcceptPrompt');
  * @param root0
  * @param root0.params
  * @param root0.request
- * @returns {Promise<Response>}
  */
 export const POST: APIRoute = async ({ params, request }) => {
   const startTime = Date.now();

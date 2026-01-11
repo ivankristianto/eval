@@ -122,10 +122,6 @@ export function analyzeHumanFeedback(iterationId: string, db: Database): HumanFe
   // Extract "disagree" patterns (where human contradicted judge)
   const disagreeReviews = decisionsWithReviews.filter((d) => d.human_decision === 'disagree');
 
-  // Group by judge decision to understand patterns
-  const _judgeWrongButAgreed = disagreeReviews.filter((d) => d.judge_decision === 'agree'); // Judge said correct but was wrong
-  const _judgeWrongButDisagreed = disagreeReviews.filter((d) => d.judge_decision === 'disagree'); // Judge said incorrect but was right
-
   // Extract common patterns from human notes
   const humanNotes = disagreeReviews.map((d) => d.human_notes || '').filter(Boolean);
   const commonDisagreePatterns = extractCommonPatterns(humanNotes);

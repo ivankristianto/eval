@@ -12,7 +12,6 @@ import type {
   TrainingIteration,
   TrainingLoopState,
   MetricsResult,
-  IterationStatus,
 } from '@src-types/training';
 
 // Mock dependencies
@@ -74,10 +73,8 @@ describe('TrainingLoopManager', () => {
   let mockIteration: TrainingIteration | null = null;
   let mockPersona: Persona | null = null;
 
-  // Helper functions to create mock state and iteration objects
+  // Helper functions to create mock state objects
   let createMockState: (status: string) => TrainingLoopState;
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  let createMockIteration: (status: IterationStatus) => TrainingIteration;
 
   const createMockDb = (): Database => {
     const db = {
@@ -214,21 +211,6 @@ describe('TrainingLoopManager', () => {
       updated_at: new Date().toISOString(),
     });
 
-    // Create a complete mock iteration object
-    createMockIteration = (status: IterationStatus): TrainingIteration => ({
-      id: 'iteration-1',
-      persona_id: personaId,
-      iteration_number: 1,
-      judge_model_id: 'model-2',
-      judge_prompt_text: 'Judge prompt',
-      status,
-      total_pairs_evaluated: 0,
-      pairs_reviewed_by_human: 0,
-      started_at: new Date().toISOString(),
-      completed_at: null,
-      error_message: null,
-    });
-
     mockDb = createMockDb();
     manager = new TrainingLoopManager({ sessionId, personaId, maxIterations: 3 }, mockDb);
 
@@ -351,24 +333,6 @@ describe('TrainingLoopManager', () => {
 
     it('should pause without reason', async () => {
       // Set up existing state
-      const _createMockState2 = (
-        status: 'in_progress' | 'paused' | 'completed' | 'failed' | 'awaiting_human_review'
-      ): TrainingLoopState => ({
-        session_id: sessionId,
-        persona_id: personaId,
-        total_iterations: 3,
-        current_iteration: 1,
-        status,
-        task_model_id: 'model-1',
-        judge_model_id: 'model-2',
-        prompt_engineer_model_id: 'model-3',
-        task_results_evaluated: 0,
-        error_message: null,
-        pause_reason: null,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      });
-
       mockState = createMockState('in_progress');
 
       await manager.pause();
@@ -381,24 +345,6 @@ describe('TrainingLoopManager', () => {
   describe('resume', () => {
     it('should resume a paused session', async () => {
       // First create a paused state
-      const _createMockState3 = (
-        status: 'in_progress' | 'paused' | 'completed' | 'failed' | 'awaiting_human_review'
-      ): TrainingLoopState => ({
-        session_id: sessionId,
-        persona_id: personaId,
-        total_iterations: 3,
-        current_iteration: 2,
-        status,
-        task_model_id: 'model-1',
-        judge_model_id: 'model-2',
-        prompt_engineer_model_id: 'model-3',
-        task_results_evaluated: 0,
-        error_message: null,
-        pause_reason: null,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      });
-
       mockState = createMockState('paused');
 
       // Mock execute to do nothing
@@ -419,24 +365,6 @@ describe('TrainingLoopManager', () => {
     });
 
     it('should throw error when session is not paused', async () => {
-      const _createMockState4 = (
-        status: 'in_progress' | 'paused' | 'completed' | 'failed' | 'awaiting_human_review'
-      ): TrainingLoopState => ({
-        session_id: sessionId,
-        persona_id: personaId,
-        total_iterations: 3,
-        current_iteration: 2,
-        status,
-        task_model_id: 'model-1',
-        judge_model_id: 'model-2',
-        prompt_engineer_model_id: 'model-3',
-        task_results_evaluated: 0,
-        error_message: null,
-        pause_reason: null,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      });
-
       mockState = createMockState('in_progress');
 
       await expect(manager.resume()).rejects.toThrow(TrainingStateError);
@@ -706,10 +634,9 @@ describe('TrainingLoopManager', () => {
         }
       );
 
-      const _customManager14 = new TrainingLoopManager(
-        { sessionId, personaId, maxIterations: 3 },
-        mockDb
-      );
+      expect(() => {
+        new TrainingLoopManager({ sessionId, personaId, maxIterations: 3 }, mockDb);
+      }).not.toThrow();
 
       // Test should complete without error when no pairs exist
       expect(mockPersona).toBeDefined();

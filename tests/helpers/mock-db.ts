@@ -14,7 +14,6 @@ const now = () => new Date().toISOString();
 
 /**
  * Creates a mock database instance for testing.
- * @returns {Object} Mock database with methods for managing models, templates, evaluations, and results.
  */
 export function createMockDb() {
   const store = {

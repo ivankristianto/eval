@@ -428,7 +428,7 @@ const totalPages = Math.max(1, Math.ceil(pairs.length / pageSize));
   </div>
 </div>
 
-<script define:vars={{ pageSize, pairs }}>
+<script define:vars={{ pageSize, pairs }} is:inline>
   // Pagination state
   let currentPage = 1;
   const totalPairs = pairs.length;

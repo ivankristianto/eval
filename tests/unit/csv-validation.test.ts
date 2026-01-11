@@ -557,38 +557,6 @@ describe('CSV Malformed Cases', () => {
     'updated_at',
   ];
 
-  const _validRow = [
-    '123e4567-e89b-12d3-a456-426614174000',
-    'Test Template',
-    'A test template',
-    'Test instruction',
-    'uuid1',
-    'exact_match',
-    '',
-    'Expected output',
-    '',
-    '0.5',
-    '3',
-    '2024-01-01 00:00:00',
-    '2024-01-01 00:00:00',
-  ];
-
-  const _createCSV = (headers: string[], rows: string[][]): string => {
-    const allRows = [headers, ...rows];
-    return allRows
-      .map((row) =>
-        row
-          .map((field) => {
-            if (field.includes(',') || field.includes('"') || field.includes('\n')) {
-              return '"' + field.replace(/"/g, '""') + '"';
-            }
-            return field;
-          })
-          .join(',')
-      )
-      .join('\n');
-  };
-
   it('handles missing opening quote', () => {
     const csv = validHeaders.join(',') + '\n' + 'Test",Template,"Other field"';
     const result = parseCSV(csv);

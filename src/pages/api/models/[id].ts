@@ -21,7 +21,6 @@ const logger = createLogger('API:Models:ById');
  * Retrieves detailed configuration for a specific model.
  * @param root0
  * @param root0.params
- * @returns {Promise<Response>}
  */
 export const GET: APIRoute = async ({ params }) => {
   const startTime = Date.now();
@@ -71,7 +70,6 @@ export const GET: APIRoute = async ({ params }) => {
  * @param root0
  * @param root0.params
  * @param root0.request
- * @returns {Promise<Response>}
  */
 export const PATCH: APIRoute = async ({ params, request }) => {
   const startTime = Date.now();
@@ -175,7 +173,6 @@ export const PATCH: APIRoute = async ({ params, request }) => {
  * Prevents deletion if the model has associated evaluation results.
  * @param root0
  * @param root0.params
- * @returns {Promise<Response>}
  */
 export const DELETE: APIRoute = async ({ params }) => {
   const startTime = Date.now();

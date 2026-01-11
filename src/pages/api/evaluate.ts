@@ -21,7 +21,6 @@ const logger = createLogger('API:Evaluate');
  * Validates inputs, creates database records, and starts background execution.
  * @param root0
  * @param root0.request
- * @returns {Promise<Response>}
  */
 export const POST: APIRoute = async ({ request }) => {
   const startTime = Date.now();

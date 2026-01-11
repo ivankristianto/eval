@@ -13,7 +13,6 @@ const logger = createLogger('API:EvaluationStatus');
  * Retrieves current overall and per-model status for a specific evaluation.
  * @param root0
  * @param root0.url
- * @returns {Promise<Response>}
  */
 export const GET: APIRoute = async ({ url }) => {
   const startTime = Date.now();

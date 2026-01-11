@@ -20,7 +20,6 @@ const logger = createLogger('API:Templates');
  * Validates inputs and persists the template to the database.
  * @param root0
  * @param root0.request
- * @returns {Promise<Response>}
  */
 export const POST: APIRoute = async ({ request }) => {
   const startTime = Date.now();
@@ -118,7 +117,6 @@ export const POST: APIRoute = async ({ request }) => {
  * Supports sorting by creation date, name, or run count.
  * @param root0
  * @param root0.url
- * @returns {Promise<Response>}
  */
 export const GET: APIRoute = async ({ url }) => {
   const startTime = Date.now();

@@ -14,8 +14,6 @@ import { join } from 'path';
 const TEST_DB_PATH = join(process.cwd(), 'db', 'evaluation-roundtrip-test.db');
 
 describe('Import/Export Roundtrip Integration Tests', () => {
-  let _originalDbPath: string | undefined;
-
   beforeAll(() => {
     // Close any existing database connection
     try {

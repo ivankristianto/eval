@@ -741,7 +741,7 @@ if (currentTab === 'training-progress') {
         // Refresh the page to show updated data
         window.location.reload();
       } else {
-        const _result = await response.json();
+        await response.json();
         addToast('Failed to update persona', 'error');
       }
     } catch (error) {
@@ -817,7 +817,7 @@ if (currentTab === 'training-progress') {
           throw new Error(error.message || 'Failed to resume training');
         }
 
-        const _result = await response.json();
+        await response.json();
         addToast('Training resumed successfully', 'success');
         // Reload page to show resumed state
         window.location.reload();

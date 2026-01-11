@@ -308,7 +308,6 @@ describe('Personas API Integration', () => {
       const db = getTestDatabase();
 
       const persona = createTestPersona(db);
-      const _newPrompt = 'New task prompt with different instructions';
 
       // Note: initial_task_prompt cannot be updated directly after persona creation
       // Task prompts are managed through the task_prompt_versions table

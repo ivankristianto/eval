@@ -189,8 +189,8 @@ describe('Prompt Version Manager', () => {
   it('should handle diff with identical versions', async () => {
     const promptText = 'Evaluate accuracy';
 
-    const _id1 = await storePromptVersion(personaId, 1, promptText, 'First', 'human', db);
-    const _id2 = await storePromptVersion(personaId, 3, 'Different prompt', 'Third', 'ai', db);
+    await storePromptVersion(personaId, 1, promptText, 'First', 'human', db);
+    await storePromptVersion(personaId, 3, 'Different prompt', 'Third', 'ai', db);
 
     // Get history and manually create a second version with same text
     db.prepare(
@@ -226,8 +226,8 @@ describe('Prompt Version Manager', () => {
 
   it('should support both human and ai created_by values', async () => {
     // Note: createTestPersona creates an initial judge prompt at iteration 0 with created_by='human'
-    const _id1 = await storePromptVersion(personaId, 1, 'Prompt 1', 'Human', 'human', db);
-    const _id2 = await storePromptVersion(personaId, 2, 'Prompt 2', 'AI', 'ai', db);
+    await storePromptVersion(personaId, 1, 'Prompt 1', 'Human', 'human', db);
+    await storePromptVersion(personaId, 2, 'Prompt 2', 'AI', 'ai', db);
 
     const history = await getPromptHistory(personaId, db);
 

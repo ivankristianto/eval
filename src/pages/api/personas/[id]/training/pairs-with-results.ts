@@ -32,7 +32,6 @@ interface TrainingPairWithResults {
  * Useful for polling to update the UI in real-time.
  * @param root0
  * @param root0.params
- * @returns {Promise<Response>}
  */
 export const GET: APIRoute = async ({ params }) => {
   const startTime = Date.now();

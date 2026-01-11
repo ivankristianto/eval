@@ -51,7 +51,6 @@ interface MetricsStatusResponse {
  * @param root0
  * @param root0.params
  * @param root0.request
- * @returns {Promise<Response>}
  */
 export const GET: APIRoute = async ({ params, request: _request }) => {
   const startTime = Date.now();

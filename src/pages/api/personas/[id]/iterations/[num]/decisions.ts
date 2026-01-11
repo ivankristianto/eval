@@ -17,7 +17,6 @@ const logger = createLogger('API:Training:Decisions');
  * Includes training pair details and existing human reviews.
  * @param root0
  * @param root0.params
- * @returns {Promise<Response>}
  */
 export const GET: APIRoute = async ({ params }) => {
   const startTime = Date.now();

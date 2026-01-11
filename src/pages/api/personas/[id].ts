@@ -14,7 +14,6 @@ const logger = createLogger('API:Personas:Detail');
  * Retrieves detailed configuration and metrics for a specific persona.
  * @param root0
  * @param root0.params
- * @returns {Promise<Response>}
  */
 export const GET: APIRoute = async ({ params }) => {
   const startTime = Date.now();
@@ -68,7 +67,6 @@ export const GET: APIRoute = async ({ params }) => {
  * PUT /api/personas/:id
  * Alias for PATCH /api/personas/:id
  * @param context
- * @returns {Promise<Response>}
  */
 export const PUT: APIRoute = async (context: APIContext) => {
   return PATCH(context);
@@ -81,7 +79,6 @@ export const PUT: APIRoute = async (context: APIContext) => {
  * @param root0
  * @param root0.params
  * @param root0.request
- * @returns {Promise<Response>}
  */
 export const PATCH: APIRoute = async ({ params, request }) => {
   const startTime = Date.now();
@@ -154,7 +151,6 @@ export const PATCH: APIRoute = async ({ params, request }) => {
  * Deletes a persona and all its associated training data.
  * @param root0
  * @param root0.params
- * @returns {Promise<Response>}
  */
 export const DELETE: APIRoute = async ({ params }) => {
   const startTime = Date.now();

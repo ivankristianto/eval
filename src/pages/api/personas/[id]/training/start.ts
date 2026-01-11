@@ -19,7 +19,6 @@ const logger = createLogger('API:Training:Start');
  * Validates that minimum training data requirements are met.
  * @param root0
  * @param root0.params
- * @returns {Promise<Response>}
  */
 export const POST: APIRoute = async ({ params }) => {
   const startTime = Date.now();

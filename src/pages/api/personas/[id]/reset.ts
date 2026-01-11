@@ -28,7 +28,6 @@ const logger = createLogger('API:Persona:Reset');
  * Resets all training data for a persona and returns it to draft state.
  * @param root0
  * @param root0.params
- * @returns {Promise<Response>}
  */
 export const POST: APIRoute = async ({ params }) => {
   const startTime = Date.now();

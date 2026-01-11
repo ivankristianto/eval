@@ -52,6 +52,8 @@ export function partialCredit(
   expectedOutput: string,
   concepts: string[]
 ): AccuracyResult {
+  void expectedOutput;
+
   if (!concepts || concepts.length === 0) {
     return {
       score: 0,

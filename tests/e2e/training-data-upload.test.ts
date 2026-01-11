@@ -73,10 +73,14 @@ ${Array.from({ length: 15 }, (_, i) => `"Question ${i}","Answer ${i}"`).join('\n
     await fileInput.setInputFiles(csvPath);
 
     // Click upload button
+    const navigationPromise = page.waitForEvent('framenavigated', {
+      predicate: (frame) => frame === page.mainFrame(),
+      timeout: 15000,
+    });
     await page.locator('#upload-btn').click();
 
     // Wait for page to reload (the component reloads after 2s on success)
-    await page.waitForNavigation({ timeout: 15000 }).catch(() => {
+    await navigationPromise.catch(() => {
       // If no navigation, maybe it already reloaded or we can just continue
     });
 
@@ -188,8 +192,12 @@ ${Array.from({ length: 10 }, (_, i) => `"Input ${i}","Output ${i}"`).join('\n')}
       const csvPath = join(TEST_CSV_DIR, 'display-test.csv');
       writeFileSync(csvPath, validCSV);
       await page.locator('#file-input').setInputFiles(csvPath);
+      const navigationPromise = page.waitForEvent('framenavigated', {
+        predicate: (frame) => frame === page.mainFrame(),
+        timeout: 15000,
+      });
       await page.locator('#upload-btn').click();
-      await page.waitForNavigation({ timeout: 15000 }).catch(() => {});
+      await navigationPromise.catch(() => {});
     }
 
     // Verify table headers
@@ -212,8 +220,12 @@ ${Array.from({ length: 9 }, (_, i) => `"Question ${i}","Answer ${i}"`).join('\n'
     const csvPath = join(TEST_CSV_DIR, 'search-test.csv');
     writeFileSync(csvPath, validCSV);
     await page.locator('#file-input').setInputFiles(csvPath);
+    const navigationPromise = page.waitForEvent('framenavigated', {
+      predicate: (frame) => frame === page.mainFrame(),
+      timeout: 15000,
+    });
     await page.locator('#upload-btn').click();
-    await page.waitForNavigation({ timeout: 15000 }).catch(() => {});
+    await navigationPromise.catch(() => {});
 
     // Enter search term
     const searchInput = page.locator('#search-input');
@@ -281,10 +293,14 @@ ${Array.from({ length: 9 }, (_, i) => `"Question ${i}","Answer ${i}"`).join('\n'
 
     // Upload file
     await page.locator('#file-input').setInputFiles(csvPath);
+    const navigationPromise = page.waitForEvent('framenavigated', {
+      predicate: (frame) => frame === page.mainFrame(),
+      timeout: 15000,
+    });
     await page.locator('#upload-btn').click();
 
     // Wait for reload
-    await page.waitForNavigation({ timeout: 15000 }).catch(() => {});
+    await navigationPromise.catch(() => {});
 
     // Verify multiline content is preserved
     const firstInputCell = page.locator('.pair-row').first().locator('td').nth(1);
@@ -309,10 +325,14 @@ ${Array.from({ length: 20 }, (_, i) => `"New Question ${i}","New Answer ${i}"`).
     writeFileSync(csvPath, newCSV);
 
     await page.locator('#file-input').setInputFiles(csvPath);
+    const navigationPromise = page.waitForEvent('framenavigated', {
+      predicate: (frame) => frame === page.mainFrame(),
+      timeout: 15000,
+    });
     await page.locator('#upload-btn').click();
 
     // Wait for page to reload
-    await page.waitForNavigation({ timeout: 15000 }).catch(() => {});
+    await navigationPromise.catch(() => {});
 
     // Verify new count
     const initialBadge = page.locator('.badge-primary');

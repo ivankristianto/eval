@@ -63,7 +63,6 @@ export const POST: APIRoute = async ({ request }) => {
  * Query params: ?status=draft|training|trained|incomplete
  * @param root0
  * @param root0.url
- * @returns {Promise<Response>}
  */
 export const GET: APIRoute = async ({ url }) => {
   const startTime = Date.now();
