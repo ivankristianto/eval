@@ -8,7 +8,11 @@ import type { APIRoute } from 'astro';
 import { getDatabase } from '@lib/db';
 import { badRequest, notFound, createErrorResponse } from '@lib/api-error-handler';
 import { createLogger } from '@lib/logger';
-import { getHumanMetricsFromResults, getJudgeMetricsFromResults } from '@lib/db/persona-db';
+import {
+  getHumanMetricsFromResults,
+  getJudgeMetricsFromResults,
+  savePersonaMetrics,
+} from '@lib/db/persona-db';
 
 const logger = createLogger('API:Training:FeedbackByPair');
 
@@ -151,6 +155,10 @@ export const POST: APIRoute = async ({ params, request }) => {
       resultId: latestResult.id,
       humanRating: human_rating,
     });
+
+    // Calculate and save full metrics to persona_metrics table
+    const personaMetrics = savePersonaMetrics(id, db);
+
     logger.logApiRequest(
       'POST',
       `/api/personas/${id}/feedback-by-pair`,
@@ -183,6 +191,39 @@ export const POST: APIRoute = async ({ params, request }) => {
     const humanMetrics = getHumanMetricsFromResults(id, db);
     const judgeMetrics = getJudgeMetricsFromResults(id, db);
 
+    // Build full metrics response
+    // If personaMetrics is null (not enough data to calculate), return basic metrics
+    const fullMetrics = personaMetrics
+      ? {
+          f1_score: personaMetrics.f1_score,
+          precision: personaMetrics.precision,
+          recall: personaMetrics.recall,
+          cohens_kappa: personaMetrics.cohens_kappa,
+          accuracy: personaMetrics.accuracy,
+          confusion_matrix: personaMetrics.confusion_matrix
+            ? (JSON.parse(personaMetrics.confusion_matrix) as {
+                true_positives: number;
+                true_negatives: number;
+                false_positives: number;
+                false_negatives: number;
+              })
+            : undefined,
+          total_pairs: personaMetrics.total_pairs,
+          judge_pass_count: personaMetrics.judge_pass_count,
+          judge_fail_count: personaMetrics.judge_fail_count,
+          human_pass_count: personaMetrics.human_pass_count,
+          human_fail_count: personaMetrics.human_fail_count,
+        }
+      : {
+          // Return null for calculated metrics when insufficient data
+          f1_score: null,
+          precision: null,
+          recall: null,
+          cohens_kappa: null,
+          accuracy: null,
+          confusion_matrix: null,
+        };
+
     return new Response(
       JSON.stringify({
         id: updatedResult.id,
@@ -193,6 +234,7 @@ export const POST: APIRoute = async ({ params, request }) => {
         metrics: {
           human: humanMetrics,
           judge: judgeMetrics,
+          full: fullMetrics,
         },
       }),
       { status: 200, headers: { 'Content-Type': 'application/json' } }
