@@ -545,6 +545,20 @@ export function deleteTrainingPairs(personaId: string, db?: Database.Database): 
   stmt.run(personaId);
 }
 
+/**
+ * Delete a single training pair by ID.
+ * Cascades to delete related training_pair_results due to foreign key constraint.
+ * @param pairId - Training pair ID
+ * @param db - Optional database instance
+ * @returns True if deleted, false if not found
+ */
+export function deleteTrainingPair(pairId: string, db?: Database.Database): boolean {
+  const database = db || getTrainingDatabase();
+  const stmt = database.prepare('DELETE FROM training_pairs WHERE id = ?');
+  const result = stmt.run(pairId);
+  return result.changes > 0;
+}
+
 // ===== TrainingIteration CRUD Operations =====
 
 /**
