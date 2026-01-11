@@ -57,3 +57,4 @@ test-results/
 .bv/
 .beads/.bv.lock
 .beads/last-touched
+PROMPT.md
