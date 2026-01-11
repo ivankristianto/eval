@@ -4,7 +4,7 @@ import Breadcrumbs from '@components/ui/Breadcrumbs.astro';
 import Badge from '@components/ui/Badge.astro';
 import TrainingProgress from '@components/TrainingProgress.astro';
 import PersonaTabs from '@components/PersonaTabs.astro';
-import { getPersona } from '@lib/db/persona-db';
+import { getPersona, getCurrentTaskVersion } from '@lib/db/persona-db';
 import { getModels, getDatabase } from '@lib/db';
 import type { Persona } from '@src-types/training';
 
@@ -32,6 +32,12 @@ try {
   if (!persona) {
     error = 'Persona not found';
   } else {
+    // Fetch current task prompt text from task_prompt_versions table
+    const currentTaskVersion = getCurrentTaskVersion(id);
+    if (currentTaskVersion) {
+      persona.task_prompt = currentTaskVersion.prompt_text;
+    }
+
     // Fetch all models to map IDs to names
     const models = getModels();
     models.forEach((model) => {
