@@ -70,7 +70,7 @@ const historyModalId = `${type}-prompt-history`;
     </div>
 
     <!-- Action Buttons -->
-    <div class="flex gap-2 mt-3 sticky top-0 z-10 bg-base-100/95 backdrop-blur-sm py-2 -mx-2 px-2">
+    <div class="flex gap-2 mt-3 z-10 py-2">
       {showOptimize && (
         <button
           class="btn btn-primary btn-sm flex-1 shadow-md hover:shadow-lg transition-all duration-200"
@@ -215,7 +215,6 @@ const historyModalId = `${type}-prompt-history`;
   document.querySelectorAll('[data-prompt-editor]').forEach((textarea) => {
     textarea.addEventListener('input', (e) => {
       const target = e.target as HTMLTextAreaElement;
-      const _promptType = target.dataset.promptEditor;
       const charCountLabel = target.closest('.card')?.querySelector('.label-text-alt') as HTMLElement;
       if (charCountLabel) {
         charCountLabel.textContent = `${target.value.length} chars`;
