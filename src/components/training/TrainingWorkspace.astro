@@ -933,7 +933,7 @@ const {
         ?.closest('tr')
         ?.querySelector('[data-cell-type="human-rating"]');
       if (td) {
-        td.innerHTML = `<span class="badge badge-sm badge-${rating === 'pass' ? 'success' : 'error'}">${rating}</span>`;
+        td.innerHTML = `<span class="badge badge-sm badge-${rating === 'pass' ? 'success' : 'error'}" data-rated="true">${rating}</span>`;
       }
     } catch (error) {
       console.error('Submit rating error:', error);
@@ -1033,9 +1033,15 @@ const {
         const row = document.querySelector(`[data-pair-id="${pairId}"]`)?.closest('tr');
         const ratingCell = row?.querySelector('[data-cell-type="human-rating"]');
         const ratingBadge = ratingCell?.querySelector('.badge');
+        // Check data-rated attribute to avoid timing issues with textContent
+        const isRated = ratingBadge?.getAttribute('data-rated') === 'true';
         const existingRating = ratingBadge?.textContent?.toLowerCase();
 
-        if (!existingRating || (existingRating !== 'pass' && existingRating !== 'fail')) {
+        if (
+          !isRated ||
+          !existingRating ||
+          (existingRating !== 'pass' && existingRating !== 'fail')
+        ) {
           console.warn(`No rating found for pair ${pairId}, cannot save feedback`);
           if (window.toast) {
             window.toast.warning('Please rate the pair first before adding feedback');
