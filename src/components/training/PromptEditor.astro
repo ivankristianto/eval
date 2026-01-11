@@ -44,15 +44,13 @@ const editorId = `${type}-prompt-editor`;
 const historyModalId = `${type}-prompt-history`;
 ---
 
-<div class="card bg-base-100/80 backdrop-blur-sm border border-base-300/50 shadow-lg rounded-xl overflow-hidden">
+<div
+  class="card bg-base-100/80 backdrop-blur-sm border border-base-300/50 shadow-lg rounded-xl overflow-hidden"
+>
   <div class="card-body p-4">
     <!-- Header with Version Selector -->
     <div class="mb-3">
-      <VersionSelector
-        versions={versions}
-        selectedVersion={selectedVersion}
-        type={type}
-      />
+      <VersionSelector versions={versions} selectedVersion={selectedVersion} type={type} />
     </div>
 
     <!-- Prompt Textarea -->
@@ -65,105 +63,152 @@ const historyModalId = `${type}-prompt-history`;
         id={editorId}
         class="textarea textarea-bordered textarea-sm h-36 font-mono text-xs leading-relaxed w-full resize-y bg-base-50 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200"
         placeholder={`Enter your ${type} prompt here...`}
-        data-prompt-editor={type}
-      >{promptText}</textarea>
+        data-prompt-editor={type}>{promptText}</textarea
+      >
     </div>
 
     <!-- Action Buttons -->
     <div class="flex gap-2 mt-3 z-10 py-2">
-      {showOptimize && (
-        <button
-          class="btn btn-primary btn-sm flex-1 shadow-md hover:shadow-lg transition-all duration-200"
-          data-action="optimize"
-          data-type={type}
-          aria-label={`Optimize ${type} prompt`}
-          title={`Optimize ${type} prompt`}
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3.5 h-3.5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z" />
-          </svg>
-          Optimize
-        </button>
-      )}
-      {showHistory && (
-        <label
-          for={historyModalId}
-          class="btn btn-ghost btn-sm border border-base-300 hover:bg-base-200 transition-all duration-200"
-          data-action="view-history"
-          data-type={type}
-          aria-label={`View ${type} prompt history`}
-          title={`View ${type} prompt history`}
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3.5 h-3.5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          History
-        </label>
-      )}
+      {
+        showOptimize && (
+          <button
+            class="btn btn-primary btn-sm flex-1 shadow-md hover:shadow-lg transition-all duration-200"
+            data-action="optimize"
+            data-type={type}
+            aria-label={`Optimize ${type} prompt`}
+            title={`Optimize ${type} prompt`}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke-width="1.5"
+              stroke="currentColor"
+              class="w-3.5 h-3.5"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z"
+              />
+            </svg>
+            Optimize
+          </button>
+        )
+      }
+      {
+        showHistory && (
+          <label
+            for={historyModalId}
+            class="btn btn-ghost btn-sm border border-base-300 hover:bg-base-200 transition-all duration-200"
+            data-action="view-history"
+            data-type={type}
+            aria-label={`View ${type} prompt history`}
+            title={`View ${type} prompt history`}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke-width="1.5"
+              stroke="currentColor"
+              class="w-3.5 h-3.5"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            History
+          </label>
+        )
+      }
     </div>
   </div>
 </div>
 
 <!-- Version History Modal -->
-{showHistory && (
-  <input type="checkbox" id={historyModalId} class="modal-toggle" />
-  <div class="modal" role="dialog">
-    <div class="modal-box max-w-3xl border border-base-300 shadow-2xl rounded-xl">
-      <div class="flex items-center justify-between mb-5 pb-3 border-b border-base-300">
-        <h3 class="font-bold text-lg capitalize flex items-center gap-2">
-          <span class="w-2 h-2 rounded-full bg-primary"></span>
-          {type} Prompt History
-        </h3>
-        <label for={historyModalId} class="btn btn-sm btn-circle btn-ghost hover:bg-base-200 transition-colors">✕</label>
-      </div>
-
-      <div class="space-y-3">
-        {versions.sort((a, b) => b.version_number - a.version_number).map((version) => (
-          <div class:list={[
-            'card border transition-all duration-200',
-            version.version_number === selectedVersion
-              ? 'bg-primary/5 border-primary/30 shadow-md'
-              : 'bg-base-200 border-base-300 hover:border-base-400'
-          ]}>
-            <div class="card-body p-4">
-              <div class="flex items-center justify-between mb-2">
-                <div class="flex items-center gap-2">
-                  <span class="badge badge-ghost font-mono">v{version.version_number}</span>
-                  <span class="text-xs flex items-center gap-1">
-                    <span class={version.created_by === 'ai' ? 'text-info' : 'text-warning'}>
-                      {version.created_by === 'ai' ? '✦' : '●'}
-                    </span>
-                    {version.created_by === 'ai' ? 'AI' : 'Human'}
-                  </span>
-                  {version.version_number === selectedVersion && (
-                    <span class="badge badge-primary badge-sm text-xs">Current</span>
-                  )}
-                </div>
-                <span class="text-xs opacity-60 font-mono">{new Date(version.created_at).toLocaleString()}</span>
-              </div>
-              {version.improvement_rationale && (
-                <p class="text-sm opacity-80 mt-2 leading-relaxed">{version.improvement_rationale}</p>
-              )}
-              <button
-                class="btn btn-xs btn-ghost mt-3 self-start border border-base-300 hover:bg-base-300 transition-all duration-200"
-                data-action="load-version"
-                data-version={version.version_number}
-                data-type={type}
-              >
-                Load this version
-              </button>
-            </div>
+{
+  showHistory && (
+    <>
+      <input type="checkbox" id={historyModalId} class="modal-toggle" />
+      <div class="modal" role="dialog">
+        <div class="modal-box max-w-3xl border border-base-300 shadow-2xl rounded-xl">
+          <div class="flex items-center justify-between mb-5 pb-3 border-b border-base-300">
+            <h3 class="font-bold text-lg capitalize flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-primary" />
+              {type} Prompt History
+            </h3>
+            <label
+              for={historyModalId}
+              class="btn btn-sm btn-circle btn-ghost hover:bg-base-200 transition-colors"
+            >
+              ✕
+            </label>
           </div>
-        ))}
-      </div>
 
-      <div class="modal-action pt-4 border-t border-base-300 mt-4">
-        <label for={historyModalId} class="btn">Close</label>
+          <div class="space-y-3">
+            {versions
+              .sort((a, b) => b.version_number - a.version_number)
+              .map((version) => (
+                <div
+                  class:list={[
+                    'card border transition-all duration-200',
+                    version.version_number === selectedVersion
+                      ? 'bg-primary/5 border-primary/30 shadow-md'
+                      : 'bg-base-200 border-base-300 hover:border-base-400',
+                  ]}
+                >
+                  <div class="card-body p-4">
+                    <div class="flex items-center justify-between mb-2">
+                      <div class="flex items-center gap-2">
+                        <span class="badge badge-ghost font-mono">v{version.version_number}</span>
+                        <span class="text-xs flex items-center gap-1">
+                          <span class={version.created_by === 'ai' ? 'text-info' : 'text-warning'}>
+                            {version.created_by === 'ai' ? '✦' : '●'}
+                          </span>
+                          {version.created_by === 'ai' ? 'AI' : 'Human'}
+                        </span>
+                        {version.version_number === selectedVersion && (
+                          <span class="badge badge-primary badge-sm text-xs">Current</span>
+                        )}
+                      </div>
+                      <span class="text-xs opacity-60 font-mono">
+                        {new Date(version.created_at).toLocaleString()}
+                      </span>
+                    </div>
+                    {version.improvement_rationale && (
+                      <p class="text-sm opacity-80 mt-2 leading-relaxed">
+                        {version.improvement_rationale}
+                      </p>
+                    )}
+                    <button
+                      class="btn btn-xs btn-ghost mt-3 self-start border border-base-300 hover:bg-base-300 transition-all duration-200"
+                      data-action="load-version"
+                      data-version={version.version_number}
+                      data-type={type}
+                    >
+                      Load this version
+                    </button>
+                  </div>
+                </div>
+              ))}
+          </div>
+
+          <div class="modal-action pt-4 border-t border-base-300 mt-4">
+            <label for={historyModalId} class="btn">
+              Close
+            </label>
+          </div>
+        </div>
+        <label class="modal-backdrop" for={historyModalId}>
+          Close
+        </label>
       </div>
-    </div>
-    <label class="modal-backdrop" for={historyModalId}>Close</label>
-  </div>
-)}
+    </>
+  )
+}
 
 <script>
   // Optimize button handler
@@ -215,7 +260,9 @@ const historyModalId = `${type}-prompt-history`;
   document.querySelectorAll('[data-prompt-editor]').forEach((textarea) => {
     textarea.addEventListener('input', (e) => {
       const target = e.target as HTMLTextAreaElement;
-      const charCountLabel = target.closest('.card')?.querySelector('.label-text-alt') as HTMLElement;
+      const charCountLabel = target
+        .closest('.card')
+        ?.querySelector('.label-text-alt') as HTMLElement;
       if (charCountLabel) {
         charCountLabel.textContent = `${target.value.length} chars`;
       }

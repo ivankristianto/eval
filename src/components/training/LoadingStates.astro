@@ -25,14 +25,20 @@
 </template>
 
 <script>
+  // Toast Type
+  type ToastType = 'success' | 'error' | 'warning' | 'info';
+
   // Toast Notification System
   class ToastManager {
+    private container: HTMLElement | null;
+    private toastQueue: HTMLElement[];
+
     constructor() {
       this.container = document.getElementById('toast-container');
       this.toastQueue = [];
     }
 
-    show(message, type = 'info', duration = 3000) {
+    show(message: string, type: ToastType = 'info', duration = 3000): HTMLElement | null {
       if (!this.container) {
         console.error('Toast container not found');
         return null;
@@ -60,11 +66,11 @@
       return toast;
     }
 
-    createToast(message, type) {
+    createToast(message: string, type: ToastType): HTMLElement {
       const toast = document.createElement('div');
       toast.className = `alert alert-${type} shadow-lg max-w-md`;
 
-      const iconMap = {
+      const iconMap: Record<ToastType, string> = {
         success:
           '<svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>',
         error:
@@ -82,7 +88,7 @@
       return toast;
     }
 
-    update(toast, message, type = null) {
+    update(toast: HTMLElement, message: string, type: string | null = null): void {
       // Validate toast still exists in DOM
       if (!toast || !document.body.contains(toast)) {
         console.warn('Toast element no longer exists in DOM');
@@ -100,7 +106,7 @@
       }
     }
 
-    removeToast(toast) {
+    removeToast(toast: HTMLElement): void {
       const index = this.toastQueue.indexOf(toast);
       if (index > -1) {
         this.toastQueue.splice(index, 1);
@@ -118,16 +124,17 @@
   // Initialize global toast manager
   const toastManager = new ToastManager();
   window.toast = {
-    success: (msg) => toastManager.show(msg, 'success'),
-    error: (msg) => toastManager.show(msg, 'error'),
-    info: (msg) => toastManager.show(msg, 'info'),
-    warning: (msg) => toastManager.show(msg, 'warning'),
-    update: (toast, message, type = null) => toastManager.update(toast, message, type),
-    remove: (toast) => toastManager.removeToast(toast),
+    success: (msg: string) => toastManager.show(msg, 'success'),
+    error: (msg: string) => toastManager.show(msg, 'error'),
+    info: (msg: string) => toastManager.show(msg, 'info'),
+    warning: (msg: string) => toastManager.show(msg, 'warning'),
+    update: (toast: HTMLElement, message: string, type: string | null = null) =>
+      toastManager.update(toast, message, type),
+    remove: (toast: HTMLElement) => toastManager.removeToast(toast),
   };
 
   // Loading Spinner Utility
-  window.showLoading = (targetSelector, message = 'Loading...') => {
+  window.showLoading = (targetSelector: string, message = 'Loading...'): void => {
     const target = document.querySelector(targetSelector);
     if (!target) return;
 
@@ -142,7 +149,7 @@
     target.appendChild(loadingDiv);
   };
 
-  window.hideLoading = (targetSelector) => {
+  window.hideLoading = (targetSelector: string): void => {
     const target = document.querySelector(targetSelector);
     if (!target) return;
 
@@ -153,11 +160,11 @@
   };
 
   // Skeleton Loader Utility
-  window.showSkeleton = (tableBodySelector, rowCount = 5) => {
+  window.showSkeleton = (tableBodySelector: string, rowCount = 5): void => {
     const tbody = document.querySelector(tableBodySelector);
     if (!tbody) return;
 
-    const template = document.getElementById('skeleton-row-template');
+    const template = document.getElementById('skeleton-row-template') as HTMLTemplateElement | null;
     if (!template) return;
 
     tbody.innerHTML = '';
@@ -168,8 +175,8 @@
   };
 
   // Progress Bar Utility
-  window.updateProgress = (percentage, targetSelector = '#progress-bar') => {
-    const progressBar = document.querySelector(targetSelector);
+  window.updateProgress = (percentage: number, targetSelector = '#progress-bar'): void => {
+    const progressBar = document.querySelector(targetSelector) as HTMLProgressElement | null;
     if (progressBar) {
       progressBar.value = percentage;
     }

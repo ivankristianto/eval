@@ -2,25 +2,39 @@
 /**
  * TrainingProgress component for displaying training status and progress
  *
- * @param persona - Persona object with training state
+ * @param persona - Persona object with training state (may include iteration data)
  * @param currentIteration - Current iteration details (optional)
  * @param showActions - Whether to show action buttons (default: true)
  */
 import Badge from './ui/Badge.astro';
 import type { Persona, TrainingIteration } from '@src-types/training';
 
+/**
+ * Extended Persona type with optional training iteration data
+ */
+type PersonaWithIterations = Persona & {
+  current_iteration?: number;
+  max_iterations?: number;
+};
+
 export interface Props {
-  persona: Persona;
+  persona: PersonaWithIterations;
   currentIteration?: TrainingIteration | null;
   showActions?: boolean;
 }
 
 const { persona, currentIteration, showActions = true } = Astro.props;
 
+// Check if iteration data is available
+const hasIterationData =
+  persona.max_iterations !== undefined && persona.current_iteration !== undefined;
+const maxIterations = persona.max_iterations ?? 0;
+const currentIterationNum = persona.current_iteration ?? 0;
+
 // Calculate progress percentage
 const progressPercentage =
-  persona.max_iterations > 0
-    ? Math.round((persona.current_iteration / persona.max_iterations) * 100)
+  hasIterationData && maxIterations > 0
+    ? Math.round((currentIterationNum / maxIterations) * 100)
     : 0;
 
 /**
@@ -66,13 +80,13 @@ function getIterationStatusVariant(status: string): 'warning' | 'info' | 'succes
 // Determine if training is active
 const hasMetrics = persona.best_pass_rate !== null;
 
-// Calculate F1 score progress
+// Calculate F1 score progress (use non-null assertion since we check hasMetrics)
 const f1Progress = hasMetrics
-  ? Math.round((persona.best_pass_rate / persona.target_pass_rate) * 100)
+  ? Math.round((persona.best_pass_rate! / persona.target_pass_rate) * 100)
   : 0;
 
 // Check if target reached
-const targetReached = hasMetrics && persona.best_pass_rate >= persona.target_pass_rate;
+const targetReached = hasMetrics && persona.best_pass_rate! >= persona.target_pass_rate;
 ---
 
 <div class="card bg-base-200 shadow-lg">
@@ -85,21 +99,28 @@ const targetReached = hasMetrics && persona.best_pass_rate >= persona.target_pas
     </div>
 
     <!-- Iteration Progress -->
-    <div class="mb-6">
-      <div class="flex items-center justify-between mb-2">
-        <span class="text-sm font-semibold text-base-content/60 uppercase tracking-wide">
-          Iterations
-        </span>
-        <span class="font-mono font-bold">
-          {persona.current_iteration} / {persona.max_iterations}
-        </span>
-      </div>
-      <progress
-        class="progress progress-primary w-full"
-        value={persona.current_iteration}
-        max={persona.max_iterations}></progress>
-      <div class="text-xs text-base-content/60 text-right mt-1">{progressPercentage}% complete</div>
-    </div>
+    {
+      hasIterationData && (
+        <div class="mb-6">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-sm font-semibold text-base-content/60 uppercase tracking-wide">
+              Iterations
+            </span>
+            <span class="font-mono font-bold">
+              {currentIterationNum} / {maxIterations}
+            </span>
+          </div>
+          <progress
+            class="progress progress-primary w-full"
+            value={currentIterationNum}
+            max={maxIterations}
+          />
+          <div class="text-xs text-base-content/60 text-right mt-1">
+            {progressPercentage}% complete
+          </div>
+        </div>
+      )
+    }
 
     <!-- F1 Score Progress -->
     {
@@ -110,12 +131,12 @@ const targetReached = hasMetrics && persona.best_pass_rate >= persona.target_pas
               Best F1 Score
             </span>
             <span class="font-mono font-bold text-success">
-              {(persona.best_pass_rate * 100).toFixed(1)}%
+              {(persona.best_pass_rate! * 100).toFixed(1)}%
             </span>
           </div>
           <progress
             class="progress progress-success w-full"
-            value={persona.best_pass_rate}
+            value={persona.best_pass_rate!}
             max={persona.target_pass_rate}
           />
           <div class="flex items-center justify-between text-xs mt-1">
@@ -179,7 +200,7 @@ const targetReached = hasMetrics && persona.best_pass_rate >= persona.target_pas
 
     <!-- Target Info -->
     {
-      !hasMetrics && (
+      !hasMetrics && hasIterationData && (
         <div class="mb-6 p-4 bg-base-300 rounded-lg">
           <div class="text-sm">
             <div class="text-xs text-base-content/60 uppercase tracking-wide mb-1">Target</div>
@@ -188,8 +209,7 @@ const targetReached = hasMetrics && persona.best_pass_rate >= persona.target_pas
               <span class="font-mono font-bold text-primary">
                 {(persona.target_pass_rate * 100).toFixed(0)}%
               </span>{' '}
-              F1 score within <span class="font-mono font-bold">{persona.max_iterations}</span>{' '}
-              iterations
+              F1 score within <span class="font-mono font-bold">{maxIterations}</span> iterations
             </div>
           </div>
         </div>

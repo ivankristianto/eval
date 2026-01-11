@@ -37,6 +37,8 @@ declare global {
       system_prompt?: string;
       temperature?: number;
     }) => void;
+    /** Open edit template modal. Pass templateId to edit existing template, or undefined to create new. */
+    openEditTemplateModal?: (templateId?: string) => Promise<void>;
     showEvaluationDetails?: (data: {
       modelName: string;
       prompt: string;
@@ -52,6 +54,25 @@ declare global {
     }) => void;
     openDrawer?: (id: string) => void;
     closeDrawer?: (id: string) => void;
+    /** Toast notification system */
+    toast?: {
+      success: (msg: string) => HTMLElement | null;
+      error: (msg: string) => HTMLElement | null;
+      info: (msg: string) => HTMLElement | null;
+      warning: (msg: string) => HTMLElement | null;
+      update: (toast: HTMLElement, message: string, type?: string | null) => void;
+      remove: (toast: HTMLElement) => void;
+    };
+    /** Show loading spinner in target element */
+    showLoading?: (targetSelector: string, message?: string) => void;
+    /** Hide loading spinner from target element */
+    hideLoading?: (targetSelector: string) => void;
+    /** Show skeleton loader in table body */
+    showSkeleton?: (tableBodySelector: string, rowCount?: number) => void;
+    /** Update progress bar value */
+    updateProgress?: (percentage: number, targetSelector?: string) => void;
+    /** CSV upload polling interval (internal use) */
+    __csvUploadInterval?: ReturnType<typeof setInterval>;
   }
 }
 

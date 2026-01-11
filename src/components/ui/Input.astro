@@ -30,6 +30,8 @@ export interface Props {
   disabled?: boolean;
   error?: string;
   class?: string;
+  min?: string | number;
+  max?: string | number;
 }
 
 const {
@@ -43,6 +45,8 @@ const {
   disabled = false,
   error,
   class: className = '',
+  min,
+  max,
   ...rest
 } = Astro.props;
 
@@ -67,6 +71,8 @@ const inputClasses = getInputClasses(!!error, size, className);
     value={value}
     required={required}
     disabled={disabled}
+    min={min}
+    max={max}
     class={inputClasses}
     aria-describedby={error ? `${name}-error` : undefined}
     {...rest}

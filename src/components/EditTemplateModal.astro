@@ -258,19 +258,6 @@ try {
   import { addToast } from '@lib/ui/toastStore';
   import { initializeOnce } from '@lib/utils/client-utils';
 
-  interface _TemplateData {
-    id?: string;
-    name?: string;
-    description?: string;
-    instruction_text?: string;
-    model_ids?: string[];
-    accuracy_rubric?: string;
-    expected_output?: string;
-    partial_credit_concepts?: string[];
-    system_prompt?: string;
-    temperature?: number;
-  }
-
   function initEditTemplateModal() {
     let currentTemplateId: string | null = null;
     let isCreating = false;

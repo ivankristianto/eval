@@ -71,14 +71,26 @@ const createdDate = new Date(persona.created_at).toLocaleDateString();
       {
         (persona.status === 'training' ||
           persona.status === 'trained' ||
-          persona.status === 'incomplete') && (
-          <div>
-            <div class="text-base-content/60 text-xs uppercase tracking-wide mb-1">Iterations</div>
-            <div class="font-mono font-semibold">
-              {persona.current_iteration} / {persona.max_iterations}
+          persona.status === 'incomplete') &&
+          'current_iteration' in persona &&
+          'max_iterations' in persona && (
+            <div>
+              <div class="text-base-content/60 text-xs uppercase tracking-wide mb-1">
+                Iterations
+              </div>
+              <div class="font-mono font-semibold">
+                {
+                  (persona as Persona & { current_iteration: number; max_iterations: number })
+                    .current_iteration
+                }{' '}
+                /{' '}
+                {
+                  (persona as Persona & { current_iteration: number; max_iterations: number })
+                    .max_iterations
+                }
+              </div>
             </div>
-          </div>
-        )
+          )
       }
 
       <div>
