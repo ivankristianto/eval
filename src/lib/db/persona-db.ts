@@ -7,6 +7,7 @@ import Database from 'better-sqlite3';
 import { v4 as uuidv4 } from 'uuid';
 import { getDatabase } from './db';
 import { validatePersonaCreation } from '@lib/validation/persona-validator';
+import { calculateMetrics } from '@lib/evaluation/metrics';
 import type {
   Persona,
   CreatePersonaInput,
@@ -21,11 +22,13 @@ import type {
   TaskPromptVersion,
   TrainingLoopState,
   TrainingLoopCheckpoint,
+  PersonaMetrics,
   PersonaStatus,
   IterationStatus,
   SessionStatus,
   JudgeDecisionType,
   PromptSource,
+  ConfusionMatrix,
 } from '@src-types/training';
 
 /**
@@ -1409,4 +1412,131 @@ export function getHumanMetricsFromResults(
   db?: Database.Database
 ): { total_pairs: number; pass_count: number; fail_count: number; pass_rate: number } {
   return getMetricsFromResults(personaId, 'human_rating', db);
+}
+
+// ===== PersonaMetrics Operations =====
+
+/**
+ * Calculate and save full metrics for a persona.
+ * This function builds a confusion matrix by comparing judge_rating vs human_rating
+ * on all training_pair_results that have both ratings, calculates F1, precision,
+ * recall, Cohen's Kappa, and accuracy, then saves the metrics to persona_metrics table.
+ *
+ * Confusion matrix mapping for judge vs human agreement:
+ * - TP (true_positives): judge='pass' AND human='pass' (both agree the output is correct)
+ * - TN (true_negatives): judge='fail' AND human='fail' (both agree the output is incorrect)
+ * - FP (false_positives): judge='pass' AND human='fail' (judge was wrong to pass)
+ * - FN (false_negatives): judge='fail' AND human='pass' (judge was wrong to fail)
+ *
+ * @param personaId - Persona ID
+ * @param db - Optional database instance
+ * @returns Created PersonaMetrics object with calculated metrics
+ */
+export function savePersonaMetrics(
+  personaId: string,
+  db?: Database.Database
+): PersonaMetrics | null {
+  const database = db || getTrainingDatabase();
+
+  // Query all training_pair_results that have both judge_rating AND human_rating
+  const stmt = database.prepare(`
+    SELECT judge_rating, human_rating
+    FROM training_pair_results
+    WHERE persona_id = ?
+      AND judge_rating IS NOT NULL
+      AND human_rating IS NOT NULL
+  `);
+
+  const results = stmt.all(personaId) as Array<{ judge_rating: string; human_rating: string }>;
+
+  // If no results with both ratings, return null (cannot calculate metrics)
+  if (results.length === 0) {
+    return null;
+  }
+
+  // Build confusion matrix by comparing judge_rating vs human_rating
+  // Map: judge='pass' → predicted positive, human='pass' → actual positive
+  let tp = 0;
+  let tn = 0;
+  let fp = 0;
+  let fn = 0;
+  let judgePassCount = 0;
+  let judgeFailCount = 0;
+  let humanPassCount = 0;
+  let humanFailCount = 0;
+
+  for (const result of results) {
+    // Count judge ratings
+    if (result.judge_rating === 'pass') {
+      judgePassCount++;
+    } else if (result.judge_rating === 'fail') {
+      judgeFailCount++;
+    }
+
+    // Count human ratings
+    if (result.human_rating === 'pass') {
+      humanPassCount++;
+    } else if (result.human_rating === 'fail') {
+      humanFailCount++;
+    }
+
+    // Build confusion matrix: judge is "predictor", human is "ground truth"
+    if (result.judge_rating === 'pass' && result.human_rating === 'pass') {
+      tp++; // Judge said pass, human confirmed pass (correct positive prediction)
+    } else if (result.judge_rating === 'fail' && result.human_rating === 'fail') {
+      tn++; // Judge said fail, human confirmed fail (correct negative prediction)
+    } else if (result.judge_rating === 'pass' && result.human_rating === 'fail') {
+      fp++; // Judge said pass, human said fail (false positive - judge was wrong)
+    } else if (result.judge_rating === 'fail' && result.human_rating === 'pass') {
+      fn++; // Judge said fail, human said pass (false negative - judge was wrong)
+    }
+  }
+
+  const confusionMatrix: ConfusionMatrix = {
+    true_positives: tp,
+    true_negatives: tn,
+    false_positives: fp,
+    false_negatives: fn,
+  };
+
+  // Calculate metrics using the metrics module
+  const metricsResult = calculateMetrics(confusionMatrix);
+
+  // Create persona_metrics record
+  const id = uuidv4();
+  const now = new Date().toISOString();
+  const totalPairs = results.length;
+
+  const insertStmt = database.prepare(`
+    INSERT INTO persona_metrics (
+      id, persona_id, evaluation_run_id, snapshot_type,
+      total_pairs, judge_pass_count, judge_fail_count,
+      human_pass_count, human_fail_count,
+      f1_score, precision, recall, cohens_kappa, accuracy,
+      confusion_matrix, calculated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  insertStmt.run(
+    id,
+    personaId,
+    null, // evaluation_run_id is null for manual snapshots
+    'manual', // snapshot_type
+    totalPairs,
+    judgePassCount,
+    judgeFailCount,
+    humanPassCount,
+    humanFailCount,
+    metricsResult.f1_score,
+    metricsResult.precision,
+    metricsResult.recall,
+    metricsResult.cohens_kappa,
+    metricsResult.accuracy,
+    JSON.stringify(confusionMatrix),
+    now
+  );
+
+  // Return the created metrics record
+  const createdStmt = database.prepare('SELECT * FROM persona_metrics WHERE id = ?');
+  return createdStmt.get(id) as PersonaMetrics;
 }
