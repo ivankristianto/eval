@@ -60,6 +60,7 @@ npm run typecheck
 ## Testing Status
 
 Latest coverage (vitest `npm test -- --coverage`):
+
 - Overall line coverage: 69.17%
 - Critical path coverage: validators.ts 84.29%, accuracy.ts 92.85%, evaluator.ts 93.05%
 - Other coverage: api-clients.ts 64.38%, db.ts 62.62%
@@ -94,16 +95,108 @@ Latest coverage (vitest `npm test -- --coverage`):
 - Unused variables: warn (prefix with `_` to ignore)
 - Explicit `any`: warn
 
-## Recent Changes
-- 004-ui-ux-improvements: Added TypeScript 5.6+ (Node.js >= 22.0.0) + Astro 5.x, Tailwind CSS 4.x, DaisyUI 5.x, better-sqlite3
-
-- 001-eval-ai-models: Added TypeScript 5.6+ on Node.js 22+ + Astro 5.x (SSR),
-  Tailwind CSS 4.x, better-sqlite3, OpenAI SDK, Anthropic SDK, Google
-  Generative AI SDK
-- 001-eval-ai-models: Added JavaScript/TypeScript (Node.js 18+) + TypeScript
-  for type safety + Astro, Tailwind CSS, SQLite3, node-sqlite3/better-sqlite3
-  5.16.6, Tailwind CSS 4.0.0, daisyui (v5 beta/latest compatible with TW v4)
-
 ## Active Technologies
+
 - TypeScript 5.6+ (Node.js >= 22.0.0) + Astro 5.x, Tailwind CSS 4.x, DaisyUI 5.x, better-sqlite3 (004-ui-ux-improvements)
 - SQLite (better-sqlite3) (004-ui-ux-improvements)
+
+## Development Workflow
+
+**ALWAYS FOLLOW THIS IMPLEMENTATION WORKFLOW**
+
+1. **Find work:** Run `bd ready` to find unblocked tasks
+2. **Claim:** Run `bd update <id> --status in_progress` for each task
+3. **Branch:** `git checkout -b feature/<descriptive-name>`
+4. **Implement:** For each task:
+   - Write code following component guidelines and design tokens
+   - Run `npm run typecheck && npm run lint && npm run format:fix`
+   - Commit with clear message: `git commit -m "feat: descriptive message"`
+   - Push: `git push`
+5. **PR:** Create Pull Request following the GitHub PR template
+6. **Review:** Invoke **code-review-specialist** agent to review (comments only, no code changes)
+7. **Complete:** After merge:
+   - Run `bd close <id>` for each completed task
+   - Run `bd sync`
+8. **Report:** Provide summary with PR link, tasks completed, review status, and any recommendations
+
+## Landing the Plane (Session Completion)
+
+**When ending a work session**, you MUST complete ALL steps below. Work is NOT complete until `git push` succeeds.
+
+**MANDATORY WORKFLOW:**
+
+1. **File issues for remaining work** - Create issues for anything that needs follow-up
+2. **Run quality gates** (if code changed) - Tests, linters, builds
+3. **Update issue status** - Close finished work, update in-progress items
+4. **PUSH TO REMOTE** - This is MANDATORY:
+   ```bash
+   git pull --rebase
+   bd sync
+   git push
+   git status  # MUST show "up to date with origin"
+   ```
+5. **Clean up** - Clear stashes, prune remote branches
+6. **Verify** - All changes committed AND pushed
+7. **Hand off** - Provide context for next session
+
+**CRITICAL RULES:**
+
+- Work is NOT complete until `git push` succeeds
+- NEVER stop before pushing - that leaves work stranded locally
+- NEVER say "ready to push when you are" - YOU must push
+- If push fails, resolve and retry until it succeeds
+
+<!-- bv-agent-instructions-v1 -->
+
+---
+
+## Beads Workflow Integration
+
+This project uses [beads_viewer](https://github.com/Dicklesworthstone/beads_viewer) for issue tracking. Issues are stored in `.beads/` and tracked in git.
+
+### Essential Commands
+
+```bash
+# View issues (launches TUI - avoid in automated sessions)
+bv
+
+# CLI commands for agents (use these instead)
+bd ready              # Show issues ready to work (no blockers)
+bd list --status=open # All open issues
+bd show <id>          # Full issue details with dependencies
+bd create --title="..." --type=task --priority=2
+bd update <id> --status=in_progress
+bd close <id> --reason="Completed"
+bd close <id1> <id2>  # Close multiple issues at once
+bd sync               # Commit and push changes
+```
+
+### Key Concepts
+
+- **Dependencies**: Issues can block other issues. `bd ready` shows only unblocked work.
+- **Priority**: P0=critical, P1=high, P2=medium, P3=low, P4=backlog (use numbers, not words)
+- **Types**: task, bug, feature, epic, question, docs
+- **Blocking**: `bd dep add <issue> <depends-on>` to add dependencies
+
+### Session Protocol
+
+**Before ending any session, run this checklist:**
+
+```bash
+git status              # Check what changed
+git add <files>         # Stage code changes
+bd sync                 # Commit beads changes
+git commit -m "..."     # Commit code
+bd sync                 # Commit any new beads changes
+git push                # Push to remote
+```
+
+### Best Practices
+
+- Check `bd ready` at session start to find available work
+- Update status as you work (in_progress → closed)
+- Create new issues with `bd create` when you discover tasks
+- Use descriptive titles and set appropriate priority/type
+- Always `bd sync` before ending session
+
+<!-- end-bv-agent-instructions -->
