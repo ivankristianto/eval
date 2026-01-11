@@ -274,7 +274,7 @@ function storeIterationMetrics(iterationId: string, metrics: MetricsResult, db: 
 }
 
 /**
- * Update persona's best F1 score if the new score is higher.
+ * Update persona's best pass rate if the new score is higher.
  * @param iterationId - Current iteration ID
  * @param f1Score - Calculated F1 score
  * @param db - Database connection
@@ -299,13 +299,14 @@ function updatePersonaBestScore(iterationId: string, f1Score: number, db: Databa
 
   // Update if this is the first score or if it's better than current best
   if (persona.best_pass_rate === null || f1Score > persona.best_pass_rate) {
+    const now = new Date().toISOString();
     db.prepare(
       `
       UPDATE personas
-      SET best_pass_rate = ?, best_f1_iteration = ?, updated_at = ?
+      SET best_pass_rate = ?, best_pass_rate_updated_at = ?, updated_at = ?
       WHERE id = ?
     `
-    ).run(f1Score, iteration.iteration_number, new Date().toISOString(), iteration.persona_id);
+    ).run(f1Score, now, now, iteration.persona_id);
   }
 }
 

@@ -422,7 +422,7 @@ test.describe('Full MVP E2E Test', () => {
       }
     });
 
-    test('should track best iteration with highest F1 score', async ({ request }) => {
+    test('should track best pass rate', async ({ request }) => {
       if (!personaId) {
         test.skip();
         return;
@@ -432,14 +432,14 @@ test.describe('Full MVP E2E Test', () => {
       const personaResponse = await request.get(`/api/personas/${personaId}`);
       const persona = await personaResponse.json();
 
-      expect(persona).toHaveProperty('best_f1_score');
-      expect(persona).toHaveProperty('best_iteration_number');
+      expect(persona).toHaveProperty('best_pass_rate');
+      expect(persona).toHaveProperty('best_pass_rate_updated_at');
 
-      // If best_f1_score is set, verify it's valid
-      if (persona.best_f1_score !== null) {
-        expect(persona.best_f1_score).toBeGreaterThan(0);
-        expect(persona.best_f1_score).toBeLessThanOrEqual(1);
-        expect(persona.best_iteration_number).toBeGreaterThan(0);
+      // If best_pass_rate is set, verify it's valid
+      if (persona.best_pass_rate !== null) {
+        expect(persona.best_pass_rate).toBeGreaterThan(0);
+        expect(persona.best_pass_rate).toBeLessThanOrEqual(1);
+        expect(persona.best_pass_rate_updated_at).toBeTruthy();
       }
     });
   });
@@ -561,10 +561,7 @@ test.describe('Full MVP E2E Test', () => {
       const persona = await personaResponse.json();
 
       // Verify convergence target is set
-      expect(persona.target_f1_score).toBe(0.8);
-
-      // Verify max iterations is set
-      expect(persona.max_iterations).toBeGreaterThan(0);
+      expect(persona.target_pass_rate).toBe(0.8);
     });
   });
 });

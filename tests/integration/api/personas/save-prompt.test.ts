@@ -95,7 +95,7 @@ describe('Prompt Save Database Operations Integration', () => {
       expect(newVersion).toMatchObject({
         id: expect.any(String),
         persona_id: persona.id,
-        version_number: 0,
+        version_number: 1,
         prompt_text: promptText,
         improvement_rationale: improvementRationale,
         label: label,
@@ -115,7 +115,7 @@ describe('Prompt Save Database Operations Integration', () => {
         | undefined;
 
       expect(savedPrompt).toBeDefined();
-      expect(savedPrompt!.version_number).toBe(0);
+      expect(savedPrompt!.version_number).toBe(1);
       expect(savedPrompt!.prompt_text).toBe(promptText);
       expect(savedPrompt!.created_by).toBe('human');
 
@@ -133,13 +133,20 @@ describe('Prompt Save Database Operations Integration', () => {
       const promptText = 'Task prompt with minimal fields';
 
       // Simulate saving without optional fields
+      const versionResult = db
+        .prepare(
+          `SELECT COALESCE(MAX(version_number), -1) + 1 as next_version FROM task_prompt_versions WHERE persona_id = ?`
+        )
+        .get(persona.id) as { next_version: number };
+
+      const nextVersionNumber = versionResult.next_version;
       const versionId = uuidv4();
       const now = new Date().toISOString();
 
       db.prepare(
         `INSERT INTO task_prompt_versions (id, persona_id, version_number, prompt_text, improvement_rationale, label, created_by, created_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-      ).run(versionId, persona.id, 0, promptText, null, null, 'human', now);
+      ).run(versionId, persona.id, nextVersionNumber, promptText, null, null, 'human', now);
 
       db.prepare(
         `UPDATE personas SET current_task_prompt_version_id = ?, updated_at = ? WHERE id = ?`
@@ -166,7 +173,7 @@ describe('Prompt Save Database Operations Integration', () => {
       db.prepare(
         `INSERT INTO task_prompt_versions (id, persona_id, version_number, prompt_text, improvement_rationale, label, created_by, created_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-      ).run(versionId1, persona.id, 0, 'First version', null, null, 'human', now);
+      ).run(versionId1, persona.id, 1, 'First version', null, null, 'human', now);
 
       db.prepare(
         `UPDATE personas SET current_task_prompt_version_id = ?, updated_at = ? WHERE id = ?`
@@ -182,7 +189,7 @@ describe('Prompt Save Database Operations Integration', () => {
       ).run(
         versionId2,
         persona.id,
-        1,
+        2,
         'Second version',
         'Refined based on feedback',
         null,
@@ -201,7 +208,7 @@ describe('Prompt Save Database Operations Integration', () => {
       db.prepare(
         `INSERT INTO task_prompt_versions (id, persona_id, version_number, prompt_text, improvement_rationale, label, created_by, created_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-      ).run(versionId3, persona.id, 2, 'Third version', null, null, 'human', now3);
+      ).run(versionId3, persona.id, 3, 'Third version', null, null, 'human', now3);
 
       db.prepare(
         `UPDATE personas SET current_task_prompt_version_id = ?, updated_at = ? WHERE id = ?`
@@ -214,8 +221,8 @@ describe('Prompt Save Database Operations Integration', () => {
         )
         .all(persona.id) as Array<{ version_number: number }>;
 
-      expect(allVersions).toHaveLength(3);
-      expect(allVersions.map((v) => v.version_number)).toEqual([0, 1, 2]);
+      expect(allVersions).toHaveLength(4);
+      expect(allVersions.map((v) => v.version_number)).toEqual([0, 1, 2, 3]);
     });
 
     it('should return 404 for non-existent persona', () => {
@@ -476,13 +483,20 @@ describe('Prompt Save Database Operations Integration', () => {
       const persona = createTestPersona(db);
 
       // Save a prompt
+      const versionResult = db
+        .prepare(
+          `SELECT COALESCE(MAX(version_number), -1) + 1 as next_version FROM task_prompt_versions WHERE persona_id = ?`
+        )
+        .get(persona.id) as { next_version: number };
+
+      const nextVersionNumber = versionResult.next_version;
       const versionId = uuidv4();
       const now = new Date().toISOString();
 
       db.prepare(
         `INSERT INTO task_prompt_versions (id, persona_id, version_number, prompt_text, improvement_rationale, label, created_by, created_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-      ).run(versionId, persona.id, 0, 'New prompt', null, null, 'human', now);
+      ).run(versionId, persona.id, nextVersionNumber, 'New prompt', null, null, 'human', now);
 
       db.prepare(
         `UPDATE personas SET current_task_prompt_version_id = ?, updated_at = ? WHERE id = ?`
@@ -504,13 +518,29 @@ describe('Prompt Save Database Operations Integration', () => {
       const persona = createTestPersona(db);
 
       // Save a task prompt
+      const taskVersionResult = db
+        .prepare(
+          `SELECT COALESCE(MAX(version_number), -1) + 1 as next_version FROM task_prompt_versions WHERE persona_id = ?`
+        )
+        .get(persona.id) as { next_version: number };
+
+      const nextTaskVersionNumber = taskVersionResult.next_version;
       const taskVersionId = uuidv4();
       const now = new Date().toISOString();
 
       db.prepare(
         `INSERT INTO task_prompt_versions (id, persona_id, version_number, prompt_text, improvement_rationale, label, created_by, created_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-      ).run(taskVersionId, persona.id, 0, 'Task prompt', null, null, 'human', now);
+      ).run(
+        taskVersionId,
+        persona.id,
+        nextTaskVersionNumber,
+        'Task prompt',
+        null,
+        null,
+        'human',
+        now
+      );
 
       db.prepare(
         `UPDATE personas SET current_task_prompt_version_id = ?, updated_at = ? WHERE id = ?`
@@ -537,8 +567,8 @@ describe('Prompt Save Database Operations Integration', () => {
         .prepare(`SELECT * FROM judge_prompt_versions WHERE id = ?`)
         .get(judgeVersionId) as { version_number: number; id: string };
 
-      // Task version should be 0 (first task prompt)
-      expect(taskData.version_number).toBe(0);
+      // Task version should be next available version for task prompts
+      expect(taskData.version_number).toBe(nextTaskVersionNumber);
 
       // Judge version should be 1 (version 0 created by createTestPersona)
       expect(judgeData.version_number).toBe(1);
@@ -559,13 +589,29 @@ describe('Prompt Save Database Operations Integration', () => {
       const persona = createTestPersona(db);
 
       // Save task prompt
+      const taskVersionResult = db
+        .prepare(
+          `SELECT COALESCE(MAX(version_number), -1) + 1 as next_version FROM task_prompt_versions WHERE persona_id = ?`
+        )
+        .get(persona.id) as { next_version: number };
+
+      const nextTaskVersionNumber = taskVersionResult.next_version;
       const taskVersionId = uuidv4();
       const now = new Date().toISOString();
 
       db.prepare(
         `INSERT INTO task_prompt_versions (id, persona_id, version_number, prompt_text, improvement_rationale, label, created_by, created_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-      ).run(taskVersionId, persona.id, 0, 'Task prompt', null, null, 'human', now);
+      ).run(
+        taskVersionId,
+        persona.id,
+        nextTaskVersionNumber,
+        'Task prompt',
+        null,
+        null,
+        'human',
+        now
+      );
 
       db.prepare(
         `UPDATE personas SET current_task_prompt_version_id = ?, updated_at = ? WHERE id = ?`
@@ -692,14 +738,21 @@ describe('Prompt Save Database Operations Integration', () => {
     it('should enforce unique constraint on (persona_id, version_number)', () => {
       const persona = createTestPersona(db);
 
+      const versionResult = db
+        .prepare(
+          `SELECT COALESCE(MAX(version_number), -1) + 1 as next_version FROM task_prompt_versions WHERE persona_id = ?`
+        )
+        .get(persona.id) as { next_version: number };
+
+      const nextVersionNumber = versionResult.next_version;
       const versionId = uuidv4();
       const now = new Date().toISOString();
 
-      // Insert first prompt with version 0
+      // Insert first prompt with next available version number
       db.prepare(
         `INSERT INTO task_prompt_versions (id, persona_id, version_number, prompt_text, improvement_rationale, label, created_by, created_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-      ).run(versionId, persona.id, 0, 'First prompt', null, null, 'human', now);
+      ).run(versionId, persona.id, nextVersionNumber, 'First prompt', null, null, 'human', now);
 
       // Try to insert another prompt with same persona_id and version_number
       const duplicateVersionId = uuidv4();
@@ -708,7 +761,16 @@ describe('Prompt Save Database Operations Integration', () => {
         db.prepare(
           `INSERT INTO task_prompt_versions (id, persona_id, version_number, prompt_text, improvement_rationale, label, created_by, created_at)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-        ).run(duplicateVersionId, persona.id, 0, 'Duplicate version', null, null, 'human', now);
+        ).run(
+          duplicateVersionId,
+          persona.id,
+          nextVersionNumber,
+          'Duplicate version',
+          null,
+          null,
+          'human',
+          now
+        );
       }).toThrow();
     });
   });

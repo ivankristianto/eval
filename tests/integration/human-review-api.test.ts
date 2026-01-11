@@ -35,20 +35,20 @@ describe('Human Review API', () => {
     personaId = uuidv4();
     db.prepare(
       `
-      INSERT INTO personas (id, name, description, task_prompt,
-        task_model_id, judge_model_id, prompt_engineer_model_id,
-        status, created_at, updated_at)
+      INSERT INTO personas
+      (id, name, description, task_model_id, judge_model_id, prompt_engineer_model_id,
+       status, target_pass_rate, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `
     ).run(
       personaId,
       'Test Persona',
       'Test description',
-      'Test task prompt',
       'task-model',
       'judge-model',
       'engineer-model',
       'training',
+      0.8,
       new Date().toISOString(),
       new Date().toISOString()
     );

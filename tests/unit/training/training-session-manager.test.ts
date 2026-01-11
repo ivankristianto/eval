@@ -854,6 +854,8 @@ describe('TrainingSessionManager', () => {
     });
 
     it('should return null when no prompt exists', () => {
+      db.prepare('DELETE FROM task_prompt_versions WHERE persona_id = ?').run(personaId);
+
       const prompt = manager.getCurrentPrompt(personaId, 'task');
       expect(prompt).toBeNull();
     });

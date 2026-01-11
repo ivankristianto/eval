@@ -13,7 +13,7 @@ const logger = createLogger('API:Personas:Prompts');
 /**
  * GET /api/personas/[id]/prompts
  * Retrieves all judge prompt versions for a specific persona.
- * Sorted by iteration number descending.
+ * Sorted by version number descending.
  * @param root0
  * @param root0.params
  */
@@ -36,21 +36,21 @@ export const GET: APIRoute = async ({ params }) => {
       return notFound('Persona');
     }
 
-    // Fetch all prompt versions sorted by iteration (newest first)
+    // Fetch all prompt versions sorted by version (newest first)
     const prompts = db
       .prepare(
         `
       SELECT
         id,
         persona_id,
-        iteration_number,
+        version_number,
         prompt_text,
         improvement_rationale,
         created_by,
         created_at
       FROM judge_prompt_versions
       WHERE persona_id = ?
-      ORDER BY iteration_number DESC
+      ORDER BY version_number DESC
     `
       )
       .all(id) as JudgePromptVersion[];

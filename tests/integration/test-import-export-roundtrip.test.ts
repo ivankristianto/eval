@@ -131,7 +131,7 @@ describe('Import/Export Roundtrip Integration Tests', () => {
 
       const { POST: importPOST } = await import('../../src/pages/api/templates/import.ts');
       const importResponse = await importPOST({ request } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
-      expect(importResponse.status).toBe(200);
+      expect(importResponse.status).toBe(201);
 
       const importResult = (await importResponse.json()) as {
         imported: number;
@@ -270,8 +270,8 @@ describe('Import/Export Roundtrip Integration Tests', () => {
       const result = await response.json();
 
       expect(response.status).toBe(400);
-      expect(result.error).toBe('INVALID_FILE_TYPE');
-      expect(result.message).toBe('File must be a CSV file');
+      expect(result.code).toBe('INVALID_FILE_TYPE');
+      expect(result.error).toBe('File must be a CSV file');
     });
 
     it('should reject import with missing file', async () => {
@@ -288,8 +288,8 @@ describe('Import/Export Roundtrip Integration Tests', () => {
       const result = await response.json();
 
       expect(response.status).toBe(400);
-      expect(result.error).toBe('INVALID_INPUT');
-      expect(result.message).toBe('No file provided');
+      expect(result.code).toBe('INVALID_INPUT');
+      expect(result.error).toContain('No file provided');
     });
 
     it('should reject CSV with malformed structure', async () => {
@@ -315,7 +315,8 @@ describe('Import/Export Roundtrip Integration Tests', () => {
       const result = await response.json();
 
       expect(response.status).toBe(400);
-      expect(result.error).toBe('CSV_PARSE_ERROR');
+      expect(result.code).toBe('CSV_VALIDATION_ERROR');
+      expect(result.error).toBe('Failed to parse CSV file');
       expect(result.details).toBeDefined();
       expect(result.details.length).toBeGreaterThan(0);
     });
@@ -343,7 +344,8 @@ describe('Import/Export Roundtrip Integration Tests', () => {
       const result = await response.json();
 
       expect(response.status).toBe(400);
-      expect(result.error).toBe('CSV_PARSE_ERROR');
+      expect(result.code).toBe('CSV_VALIDATION_ERROR');
+      expect(result.error).toBe('Failed to parse CSV file');
       expect(result.details).toBeDefined();
     });
 
@@ -382,7 +384,7 @@ describe('Import/Export Roundtrip Integration Tests', () => {
         errors: Array<{ row: number; name: string; error: string }>;
       };
 
-      expect(response.status).toBe(200);
+      expect(response.status).toBe(201);
       expect(result.imported).toBe(2);
       expect(result.failed).toBe(2);
       expect(result.skipped).toBe(0);
@@ -418,7 +420,8 @@ describe('Import/Export Roundtrip Integration Tests', () => {
       const result = await response.json();
 
       expect(response.status).toBe(400);
-      expect(result.error).toBe('CSV_PARSE_ERROR');
+      expect(result.code).toBe('CSV_VALIDATION_ERROR');
+      expect(result.error).toBe('Failed to parse CSV file');
     });
 
     it('should reject CSV with no data rows after filtering empty ones', async () => {
@@ -443,7 +446,8 @@ describe('Import/Export Roundtrip Integration Tests', () => {
       const result = await response.json();
 
       expect(response.status).toBe(400);
-      expect(result.error).toBe('EMPTY_CSV');
+      expect(result.code).toBe('VALIDATION_ERROR');
+      expect(result.error).toBe('CSV file contains no valid template rows');
     });
   });
 

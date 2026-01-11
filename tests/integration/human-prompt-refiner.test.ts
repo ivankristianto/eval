@@ -9,8 +9,8 @@ import { v4 as uuidv4 } from 'uuid';
 import {
   analyzeHumanFeedback,
   refineJudgePromptFromHumanFeedback,
-  storeHumanRefinedPromptVersion,
 } from '@lib/training/human-prompt-refiner';
+import { createJudgePromptVersion } from '@lib/training/version-manager';
 import {
   getTestDatabase,
   initializeTestDatabase,
@@ -243,25 +243,26 @@ describe('Human-Driven Prompt Refiner Integration', () => {
       expect(refinementResult.analysis).toBe(analysis);
 
       // Step 3: Store refined prompt version
-      const versionId = storeHumanRefinedPromptVersion(
-        personaId,
-        1,
-        refinementResult.refined_prompt!,
-        refinementResult.rationale,
-        'human',
+      const version = createJudgePromptVersion(
+        {
+          persona_id: personaId,
+          prompt_text: refinementResult.refined_prompt!,
+          improvement_rationale: refinementResult.rationale,
+          created_by: 'human',
+        },
         db
       );
 
-      expect(versionId).toBeDefined();
+      expect(version).toBeDefined();
 
       // Verify the stored version
       const storedVersion = db
         .prepare('SELECT * FROM judge_prompt_versions WHERE id = ?')
-        .get(versionId) as
+        .get(version.id) as
         | {
             id: string;
             persona_id: string;
-            iteration_number: number;
+            version_number: number;
             prompt_text: string;
             improvement_rationale: string | null;
             created_by: string;
@@ -270,7 +271,7 @@ describe('Human-Driven Prompt Refiner Integration', () => {
 
       expect(storedVersion).toBeDefined();
       expect(storedVersion!.persona_id).toBe(personaId);
-      expect(storedVersion!.iteration_number).toBe(1);
+      expect(storedVersion!.version_number).toBe(1);
       expect(storedVersion!.prompt_text).toBe(refinementResult.refined_prompt);
       expect(storedVersion!.improvement_rationale).toBe(refinementResult.rationale);
       expect(storedVersion!.created_by).toBe('human');
@@ -464,16 +465,18 @@ describe('Human-Driven Prompt Refiner Integration', () => {
       expect(result.analysis).toBe(analysis);
 
       // System should still be able to store a manually crafted prompt
-      const versionId = storeHumanRefinedPromptVersion(
-        personaId,
-        1,
-        'Manually refined prompt',
-        'Manual refinement after LLM failure',
-        'human',
+      const version = createJudgePromptVersion(
+        {
+          persona_id: personaId,
+          prompt_text: 'Manually refined prompt',
+          improvement_rationale: 'Manual refinement after LLM failure',
+          created_by: 'human',
+        },
         db
       );
 
-      expect(versionId).toBeDefined();
+      expect(version.id).toBeDefined();
+      expect(version.version_number).toBe(1);
     });
   });
 
@@ -516,31 +519,32 @@ describe('Human-Driven Prompt Refiner Integration', () => {
       );
 
       // Store version
-      const versionId1 = storeHumanRefinedPromptVersion(
-        personaId,
-        1,
-        result.refined_prompt!,
-        result.rationale,
-        'human',
+      const version = createJudgePromptVersion(
+        {
+          persona_id: personaId,
+          prompt_text: result.refined_prompt!,
+          improvement_rationale: result.rationale,
+          created_by: 'human',
+        },
         db
       );
 
-      // Verify history (includes initial prompt from fixture at iteration 0)
+      // Verify history (includes initial prompt from fixture at version 0)
       const history = db
         .prepare(
-          'SELECT * FROM judge_prompt_versions WHERE persona_id = ? ORDER BY iteration_number ASC'
+          'SELECT * FROM judge_prompt_versions WHERE persona_id = ? ORDER BY version_number ASC'
         )
         .all(personaId) as Array<{
         id: string;
-        iteration_number: number;
+        version_number: number;
         created_by: string;
         prompt_text: string;
       }>;
 
       expect(history).toHaveLength(2);
-      expect(history[0].iteration_number).toBe(0);
-      expect(history[1].id).toBe(versionId1);
-      expect(history[1].iteration_number).toBe(1);
+      expect(history[0].version_number).toBe(0);
+      expect(history[1].id).toBe(version.id);
+      expect(history[1].version_number).toBe(1);
       expect(history[1].created_by).toBe('human');
       expect(history[1].prompt_text).toBe('Refined prompt v1');
     });

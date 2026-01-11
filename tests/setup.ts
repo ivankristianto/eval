@@ -150,7 +150,25 @@ export function createTestPersona(
     input.created_by || null
   );
 
-  // Create initial judge prompt version (version 0)
+  const taskPromptVersionId = uuidv4();
+  const taskPromptStmt = db.prepare(`
+    INSERT INTO task_prompt_versions (
+      id, persona_id, version_number, prompt_text,
+      improvement_rationale, created_by, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  taskPromptStmt.run(
+    taskPromptVersionId,
+    id,
+    0,
+    input.initial_task_prompt,
+    'Initial task prompt provided during persona creation',
+    'human',
+    now
+  );
+
+  const judgePromptVersionId = uuidv4();
   const promptVersionStmt = db.prepare(`
     INSERT INTO judge_prompt_versions (
       id, persona_id, version_number, prompt_text,
@@ -159,7 +177,7 @@ export function createTestPersona(
   `);
 
   promptVersionStmt.run(
-    uuidv4(),
+    judgePromptVersionId,
     id,
     0, // version 0 is the initial prompt
     input.initial_judge_prompt,
@@ -167,6 +185,12 @@ export function createTestPersona(
     'human',
     now
   );
+
+  db.prepare(
+    `UPDATE personas
+     SET current_task_prompt_version_id = ?, current_judge_prompt_version_id = ?
+     WHERE id = ?`
+  ).run(taskPromptVersionId, judgePromptVersionId, id);
 
   const selectStmt = db.prepare('SELECT * FROM personas WHERE id = ?');
   return selectStmt.get(id) as Persona;

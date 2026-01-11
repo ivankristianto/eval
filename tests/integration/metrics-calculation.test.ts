@@ -32,20 +32,20 @@ describe('Metrics Calculation Integration', () => {
     // Create persona
     db.prepare(
       `
-      INSERT INTO personas (id, name, description, task_prompt,
-        task_model_id, judge_model_id, prompt_engineer_model_id,
-        status, created_at, updated_at)
+      INSERT INTO personas
+      (id, name, description, task_model_id, judge_model_id, prompt_engineer_model_id,
+       status, target_pass_rate, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `
     ).run(
       'persona-1',
       'Test Persona',
       'Test description',
-      'Test task prompt',
       'task-model',
       'judge-model',
       'engineer-model',
       'training',
+      0.8,
       new Date().toISOString(),
       new Date().toISOString()
     );
@@ -252,7 +252,7 @@ describe('Metrics Calculation Integration', () => {
       expect(storedMetrics!).toHaveProperty('cohens_kappa');
     });
 
-    it('should update persona best_f1_score if improved', () => {
+    it('should update persona best_pass_rate if improved', () => {
       // Create simple perfect case (F1 = 1.0)
       const pair1 = uuidv4();
       db.prepare(
@@ -285,13 +285,14 @@ describe('Metrics Calculation Integration', () => {
       // Verify persona updated
       const persona = db.prepare('SELECT * FROM personas WHERE id = ?').get('persona-1') as
         | {
-            best_f1_score: number | null;
-            best_f1_iteration: number | null;
+            best_pass_rate: number | null;
+            best_pass_rate_updated_at: string | null;
           }
         | undefined;
 
-      expect(persona!.best_f1_score).toBeDefined();
-      expect(persona!.best_f1_iteration).toBe(1);
+      expect(persona!.best_pass_rate).toBeDefined();
+      expect(persona!.best_pass_rate).toBe(1);
+      expect(persona!.best_pass_rate_updated_at).toBeTruthy();
     });
   });
 });

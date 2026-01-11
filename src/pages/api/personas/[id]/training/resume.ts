@@ -266,20 +266,12 @@ export const POST: APIRoute = async ({ params }) => {
         // Get current judge prompt
         const judgePrompt = db
           .prepare(
-            'SELECT prompt_text FROM judge_prompt_versions WHERE persona_id = ? ORDER BY iteration_number DESC LIMIT 1'
+            'SELECT prompt_text FROM judge_prompt_versions WHERE persona_id = ? ORDER BY version_number DESC LIMIT 1'
           )
           .get(id) as { prompt_text: string } | undefined;
 
-        // Get task prompt from persona if judge prompt not found
-        const personaFull = db.prepare('SELECT task_prompt FROM personas WHERE id = ?').get(id) as
-          | { task_prompt: string }
-          | undefined;
-
         const currentPrompt =
-          judgePrompt?.prompt_text ||
-          personaFull?.task_prompt ||
-          iteration.judge_prompt_text ||
-          'Initial judge prompt';
+          judgePrompt?.prompt_text || iteration.judge_prompt_text || 'Initial judge prompt';
 
         // Build checkpoint data with proper defaults
         const checkpointData = {

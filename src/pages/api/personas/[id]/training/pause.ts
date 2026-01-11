@@ -206,7 +206,7 @@ export const POST: APIRoute = async ({ params, request }) => {
       // Get current judge prompt
       const judgePrompt = db
         .prepare(
-          'SELECT prompt_text FROM judge_prompt_versions WHERE persona_id = ? ORDER BY iteration_number DESC LIMIT 1'
+          'SELECT prompt_text FROM judge_prompt_versions WHERE persona_id = ? ORDER BY version_number DESC LIMIT 1'
         )
         .get(id) as { prompt_text: string } | undefined;
 

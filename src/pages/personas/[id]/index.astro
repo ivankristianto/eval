@@ -13,7 +13,6 @@ interface ExtendedPersona extends Persona {
   task_prompt?: string;
   max_iterations?: number;
   current_iteration?: number;
-  best_f1_iteration?: number;
 }
 
 const { id } = Astro.params;
@@ -297,14 +296,16 @@ if (currentTab === 'training-progress') {
                 {persona.best_pass_rate !== null && (
                   <div>
                     <div class="text-base-content/60 text-sm uppercase tracking-wide mb-2">
-                      Best F1 Score
+                      Best Pass Rate
                     </div>
                     <div class="font-mono font-semibold text-2xl text-success">
                       {(persona.best_pass_rate * 100).toFixed(1)}%
                     </div>
-                    <div class="text-sm text-base-content/60">
-                      (Iteration {persona.best_f1_iteration})
-                    </div>
+                    {persona.best_pass_rate_updated_at && (
+                      <div class="text-sm text-base-content/60">
+                        Updated {new Date(persona.best_pass_rate_updated_at).toLocaleDateString()}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

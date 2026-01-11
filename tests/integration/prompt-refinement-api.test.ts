@@ -11,7 +11,7 @@ import { v4 as uuidv4 } from 'uuid';
 interface JudgePromptVersionRecord {
   id: string;
   persona_id: string;
-  iteration_number: number;
+  version_number: number;
   prompt_text: string;
   created_by: string;
 }
@@ -216,10 +216,11 @@ describe.skip('Prompt Refinement API Integration', () => {
       .prepare('SELECT * FROM judge_prompt_versions WHERE persona_id = ?')
       .all(personaId) as JudgePromptVersionRecord[];
 
-    expect(versions).toHaveLength(1);
-    expect(versions[0]!.prompt_text).toBe('New improved prompt');
-    expect(versions[0]!.created_by).toBe('ai');
-    expect(versions[0]!.iteration_number).toBe(2);
+    expect(versions).toHaveLength(2);
+    const stored = versions.find((version) => version.prompt_text === 'New improved prompt');
+    expect(stored).toBeDefined();
+    expect(stored!.created_by).toBe('ai');
+    expect(stored!.version_number).toBe(2);
   });
 
   it('should validate iteration exists before refining', async () => {

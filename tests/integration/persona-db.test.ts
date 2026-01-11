@@ -77,16 +77,17 @@ describe('Persona Database Integration Tests', () => {
 
           const stmt = database.prepare(`
             INSERT INTO personas (
-              id, name, task_prompt, task_model_id, judge_model_id,
-              prompt_engineer_model_id, status, target_f1_score,
-              max_iterations, current_iteration, created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+              id, name, description,
+              task_model_id, judge_model_id, prompt_engineer_model_id,
+              status, target_pass_rate,
+              created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           `);
 
           stmt.run(
             'test-id',
             input.name,
-            input.initial_task_prompt,
+            null,
             input.task_model_id,
             input.judge_model_id,
             input.prompt_engineer_model_id,
@@ -100,7 +101,7 @@ describe('Persona Database Integration Tests', () => {
           stmt.run(
             'test-id', // Same ID - should violate PRIMARY KEY constraint
             'Another Persona',
-            input.initial_task_prompt,
+            null,
             input.task_model_id,
             input.judge_model_id,
             input.prompt_engineer_model_id,
@@ -709,15 +710,16 @@ describe('Persona Database Integration Tests', () => {
         db.prepare(
           `
           INSERT INTO personas (
-            id, name, task_prompt, task_model_id, judge_model_id,
-            prompt_engineer_model_id, status, target_f1_score,
-            max_iterations, current_iteration, created_at, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            id, name, description,
+            task_model_id, judge_model_id, prompt_engineer_model_id,
+            status, target_pass_rate,
+            created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `
         ).run(
           'another-id',
           persona.name, // Same name - should violate UNIQUE constraint
-          'Prompt',
+          null,
           taskModelId,
           judgeModelId,
           promptEngineerModelId,

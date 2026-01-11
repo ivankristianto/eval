@@ -12,7 +12,7 @@ import { v4 as uuidv4 } from 'uuid';
 export interface JudgePromptVersion {
   id: string;
   persona_id: string;
-  iteration_number: number;
+  version_number: number;
   prompt_text: string;
   improvement_rationale: string | null;
   created_by: 'human' | 'ai';
@@ -36,7 +36,7 @@ export interface PromptDiff {
  * - OR the prompt text is significantly different (not just whitespace)
  *
  * @param personaId - Persona ID
- * @param iterationNumber - Iteration number for this prompt
+ * @param versionNumber - Version number for this prompt
  * @param promptText - The prompt text to store
  * @param rationale - Explanation of improvements
  * @param createdBy - 'human' or 'ai'
@@ -45,7 +45,7 @@ export interface PromptDiff {
  */
 export async function storePromptVersion(
   personaId: string,
-  iterationNumber: number,
+  versionNumber: number,
   promptText: string,
   rationale: string,
   createdBy: 'human' | 'ai',
@@ -59,7 +59,7 @@ export async function storePromptVersion(
     .prepare(
       `SELECT prompt_text FROM judge_prompt_versions
        WHERE persona_id = ?
-       ORDER BY iteration_number DESC
+       ORDER BY version_number DESC
        LIMIT 1`
     )
     .get(personaId) as { prompt_text: string } | undefined;
@@ -77,12 +77,12 @@ export async function storePromptVersion(
   const versionId = uuidv4();
   db.prepare(
     `INSERT INTO judge_prompt_versions
-     (id, persona_id, iteration_number, prompt_text, improvement_rationale, created_by, created_at)
+     (id, persona_id, version_number, prompt_text, improvement_rationale, created_by, created_at)
      VALUES (?, ?, ?, ?, ?, ?, ?)`
   ).run(
     versionId,
     personaId,
-    iterationNumber,
+    versionNumber,
     promptText,
     rationale,
     createdBy,
@@ -107,7 +107,7 @@ export async function getPromptHistory(
     .prepare(
       `SELECT * FROM judge_prompt_versions
        WHERE persona_id = ?
-       ORDER BY iteration_number ASC`
+       ORDER BY version_number ASC`
     )
     .all(personaId) as JudgePromptVersion[];
 

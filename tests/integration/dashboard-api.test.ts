@@ -66,20 +66,23 @@ describe('Dashboard API Integration Tests', () => {
     personaId = crypto.randomUUID();
     db.prepare(
       `
-      INSERT INTO personas (id, name, description, task_prompt, task_model_id, judge_model_id, prompt_engineer_model_id, status, target_f1_score, max_iterations)
+      INSERT INTO personas (
+        id, name, description, task_model_id, judge_model_id, prompt_engineer_model_id,
+        status, target_pass_rate, created_at, updated_at
+      )
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `
     ).run(
       personaId,
       'Test Judge Persona',
       'Test description',
-      'Evaluate test outputs',
       taskModelId,
       judgeModelId,
       engineerModelId,
       'training',
       0.8,
-      5
+      new Date().toISOString(),
+      new Date().toISOString()
     );
   });
 
@@ -95,17 +98,15 @@ describe('Dashboard API Integration Tests', () => {
             id: string;
             name: string;
             status: string;
-            target_f1_score: number;
-            max_iterations: number;
-            current_iteration: number;
-            best_f1_score: number | null;
-            best_f1_iteration: number | null;
+            target_pass_rate: number;
+            best_pass_rate: number | null;
           }
         | undefined;
 
       expect(persona).toBeDefined();
       expect(persona!.name).toBe('Test Judge Persona');
       expect(persona!.status).toBe('training');
+      expect(persona!.target_pass_rate).toBe(0.8);
     });
 
     it('should return dashboard data with completed iterations', () => {
@@ -161,28 +162,24 @@ describe('Dashboard API Integration Tests', () => {
         );
       }
 
-      // Update persona with best F1 score
+      // Update persona with best pass rate
       db.prepare(
         `
         UPDATE personas
-        SET best_f1_score = ?, best_f1_iteration = ?, current_iteration = ?
+        SET best_pass_rate = ?, best_pass_rate_updated_at = ?
         WHERE id = ?
       `
-      ).run(0.82, 3, 3, personaId);
+      ).run(0.82, new Date().toISOString(), personaId);
 
       // Fetch persona
       const persona = db.prepare('SELECT * FROM personas WHERE id = ?').get(personaId) as
         | {
-            best_f1_score: number | null;
-            best_f1_iteration: number | null;
-            current_iteration: number;
-            target_f1_score: number;
+            best_pass_rate: number | null;
+            target_pass_rate: number;
           }
         | undefined;
 
-      expect(persona!.best_f1_score).toBe(0.82);
-      expect(persona!.best_f1_iteration).toBe(3);
-      expect(persona!.current_iteration).toBe(3);
+      expect(persona!.best_pass_rate).toBe(0.82);
 
       // Fetch metrics history
       const metricsHistory = db
@@ -215,13 +212,13 @@ describe('Dashboard API Integration Tests', () => {
       expect(metricsHistory[1].f1_score).toBe(0.75);
       expect(metricsHistory[2].f1_score).toBe(0.82);
 
-      // Check convergence (F1 >= 0.80)
-      const convergenceAchieved = (persona!.best_f1_score ?? 0) >= persona!.target_f1_score;
+      // Check convergence (pass rate >= 0.80)
+      const convergenceAchieved = (persona!.best_pass_rate ?? 0) >= persona!.target_pass_rate;
       expect(convergenceAchieved).toBe(true);
     });
 
-    it('should indicate convergence when F1 >= target', () => {
-      // Create persona with F1 = 0.85, target = 0.80
+    it('should indicate convergence when pass rate >= target', () => {
+      // Create persona with pass rate = 0.85, target = 0.80
       const iterationId = crypto.randomUUID();
 
       db.prepare(
@@ -266,21 +263,21 @@ describe('Dashboard API Integration Tests', () => {
       db.prepare(
         `
         UPDATE personas
-        SET best_f1_score = 0.85, best_f1_iteration = 1, current_iteration = 1
+        SET best_pass_rate = 0.85, best_pass_rate_updated_at = ?
         WHERE id = ?
       `
-      ).run(personaId);
+      ).run(new Date().toISOString(), personaId);
 
       const persona = db.prepare('SELECT * FROM personas WHERE id = ?').get(personaId) as
         | {
-            best_f1_score: number | null;
-            target_f1_score: number;
+            best_pass_rate: number | null;
+            target_pass_rate: number;
           }
         | undefined;
 
-      const convergenceAchieved = (persona!.best_f1_score ?? 0) >= persona!.target_f1_score;
+      const convergenceAchieved = (persona!.best_pass_rate ?? 0) >= persona!.target_pass_rate;
       expect(convergenceAchieved).toBe(true);
-      expect(persona!.best_f1_score).toBe(0.85);
+      expect(persona!.best_pass_rate).toBe(0.85);
     });
 
     it('should return current iteration status if training in progress', () => {
@@ -330,8 +327,7 @@ describe('Dashboard API Integration Tests', () => {
     it('should return empty iterations for persona without training', () => {
       const persona = db.prepare('SELECT * FROM personas WHERE id = ?').get(personaId) as
         | {
-            current_iteration: number;
-            best_f1_score: number | null;
+            best_pass_rate: number | null;
           }
         | undefined;
 
@@ -353,8 +349,7 @@ describe('Dashboard API Integration Tests', () => {
       }>;
 
       expect(metricsHistory).toHaveLength(0);
-      expect(persona!.current_iteration).toBe(0);
-      expect(persona!.best_f1_score).toBeNull();
+      expect(persona!.best_pass_rate).toBeNull();
     });
   });
 });

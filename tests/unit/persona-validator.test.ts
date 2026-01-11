@@ -206,17 +206,19 @@ describe('Persona Validator', () => {
       // Create existing persona
       db.prepare(
         `
-        INSERT INTO personas (id, name, task_prompt, task_model_id, judge_model_id, prompt_engineer_model_id, status)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO personas (id, name, task_model_id, judge_model_id, prompt_engineer_model_id, status, target_pass_rate, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       `
       ).run(
         'existing-persona',
         'Existing Persona',
-        'Prompt',
         'task-model',
         'judge-model',
         'engineer-model',
-        'draft'
+        'draft',
+        0.8,
+        new Date().toISOString(),
+        new Date().toISOString()
       );
 
       const input: PersonaCreationInput = {
@@ -249,17 +251,19 @@ describe('Persona Validator', () => {
       // Create existing persona with different name
       db.prepare(
         `
-        INSERT INTO personas (id, name, task_prompt, task_model_id, judge_model_id, prompt_engineer_model_id, status)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO personas (id, name, task_model_id, judge_model_id, prompt_engineer_model_id, status, target_pass_rate, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       `
       ).run(
         'existing-persona',
         'Existing Persona',
-        'Prompt',
         'task-model',
         'judge-model',
         'engineer-model',
-        'draft'
+        'draft',
+        0.8,
+        new Date().toISOString(),
+        new Date().toISOString()
       );
 
       const input: PersonaCreationInput = {

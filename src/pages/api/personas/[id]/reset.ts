@@ -121,9 +121,8 @@ export const POST: APIRoute = async ({ params }) => {
       db.prepare(
         `UPDATE personas
          SET status = 'draft',
-             current_iteration = 0,
              best_pass_rate = NULL,
-             best_f1_iteration = NULL,
+             best_pass_rate_updated_at = NULL,
              updated_at = ?
          WHERE id = ?`
       ).run(new Date().toISOString(), id);

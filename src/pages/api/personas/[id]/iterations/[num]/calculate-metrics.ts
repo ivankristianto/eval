@@ -325,11 +325,12 @@ export const POST: APIRoute = async ({ params, request }) => {
     // Update persona best scores if this iteration is better
     const personaRecord = persona as Persona;
     if (personaRecord.best_pass_rate === null || metrics.f1_score > personaRecord.best_pass_rate) {
+      const now = new Date().toISOString();
       db.prepare(
-        'UPDATE personas SET best_pass_rate = ?, best_f1_iteration = ?, updated_at = ? WHERE id = ?'
-      ).run(metrics.f1_score, iterationNumber, new Date().toISOString(), id);
+        'UPDATE personas SET best_pass_rate = ?, best_pass_rate_updated_at = ?, updated_at = ? WHERE id = ?'
+      ).run(metrics.f1_score, now, now, id);
 
-      logger.info('New best F1 score achieved', {
+      logger.info('New best pass rate achieved', {
         personaId: id,
         iterationNumber,
         previousBest: personaRecord.best_pass_rate,

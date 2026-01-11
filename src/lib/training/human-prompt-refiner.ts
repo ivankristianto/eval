@@ -518,7 +518,7 @@ Focus on changes that directly address the human feedback patterns identified ab
  * Create a human-driven refined prompt version in the database.
  *
  * @param personaId - Persona ID
- * @param iterationNumber - Iteration number (should be 1)
+ * @param iterationNumber - Version number (should be 1)
  * @param promptText - Refined prompt text
  * @param rationale - Explanation of changes
  * @param createdBy - Should be "human" for human-driven refinement
@@ -538,7 +538,7 @@ export function storeHumanRefinedPromptVersion(
   db.prepare(
     `
     INSERT INTO judge_prompt_versions
-    (id, persona_id, iteration_number, prompt_text, improvement_rationale, created_by, created_at)
+    (id, persona_id, version_number, prompt_text, improvement_rationale, created_by, created_at)
     VALUES (?, ?, ?, ?, ?, ?, ?)
   `
   ).run(id, personaId, iterationNumber, promptText, rationale, createdBy, new Date().toISOString());

@@ -42,18 +42,18 @@ describe('Judge Prompts API Integration', () => {
       expect(prompts).toHaveLength(0);
     });
 
-    it('should return initial prompt version (iteration 0)', () => {
+    it('should return initial prompt version (version 0)', () => {
       const db = getTestDatabase();
       const persona = createTestPersona(db);
 
       // Fetch prompts
       const prompts = db
         .prepare(
-          'SELECT * FROM judge_prompt_versions WHERE persona_id = ? ORDER BY iteration_number DESC'
+          'SELECT * FROM judge_prompt_versions WHERE persona_id = ? ORDER BY version_number DESC'
         )
         .all(persona.id) as Array<{
         persona_id: string;
-        iteration_number: number;
+        version_number: number;
         created_by: string;
         prompt_text: string;
       }>;
@@ -61,13 +61,13 @@ describe('Judge Prompts API Integration', () => {
       expect(prompts).toHaveLength(1);
       expect(prompts[0]).toMatchObject({
         persona_id: persona.id,
-        iteration_number: 0,
+        version_number: 0,
         created_by: 'human',
       });
       expect(prompts[0].prompt_text).toBeTruthy();
     });
 
-    it('should return all prompt versions sorted by iteration (newest first)', () => {
+    it('should return all prompt versions sorted by version (newest first)', () => {
       const db = getTestDatabase();
       const persona = createTestPersona(db);
 
@@ -76,7 +76,7 @@ describe('Judge Prompts API Integration', () => {
 
       db.prepare(
         `
-        INSERT INTO judge_prompt_versions (id, persona_id, iteration_number, prompt_text, improvement_rationale, created_by, created_at)
+        INSERT INTO judge_prompt_versions (id, persona_id, version_number, prompt_text, improvement_rationale, created_by, created_at)
         VALUES (?, ?, ?, ?, ?, ?, ?)
       `
       ).run(
@@ -91,7 +91,7 @@ describe('Judge Prompts API Integration', () => {
 
       db.prepare(
         `
-        INSERT INTO judge_prompt_versions (id, persona_id, iteration_number, prompt_text, improvement_rationale, created_by, created_at)
+        INSERT INTO judge_prompt_versions (id, persona_id, version_number, prompt_text, improvement_rationale, created_by, created_at)
         VALUES (?, ?, ?, ?, ?, ?, ?)
       `
       ).run(
@@ -107,19 +107,19 @@ describe('Judge Prompts API Integration', () => {
       // Fetch prompts
       const prompts = db
         .prepare(
-          'SELECT * FROM judge_prompt_versions WHERE persona_id = ? ORDER BY iteration_number DESC'
+          'SELECT * FROM judge_prompt_versions WHERE persona_id = ? ORDER BY version_number DESC'
         )
         .all(persona.id) as Array<{
-        iteration_number: number;
+        version_number: number;
         created_by: string;
       }>;
 
       expect(prompts).toHaveLength(3);
 
       // Verify sorting (newest first)
-      expect(prompts[0].iteration_number).toBe(2);
-      expect(prompts[1].iteration_number).toBe(1);
-      expect(prompts[2].iteration_number).toBe(0);
+      expect(prompts[0].version_number).toBe(2);
+      expect(prompts[1].version_number).toBe(1);
+      expect(prompts[2].version_number).toBe(0);
 
       // Verify created_by tracking
       expect(prompts[0].created_by).toBe('ai');
@@ -144,15 +144,13 @@ describe('Judge Prompts API Integration', () => {
 
       db.prepare(
         `
-        INSERT INTO judge_prompt_versions (id, persona_id, iteration_number, prompt_text, improvement_rationale, created_by, created_at)
+        INSERT INTO judge_prompt_versions (id, persona_id, version_number, prompt_text, improvement_rationale, created_by, created_at)
         VALUES (?, ?, ?, ?, ?, ?, ?)
       `
       ).run(uuidv4(), persona.id, 1, 'Refined prompt with improvements', rationale, 'ai', now);
 
       const prompts = db
-        .prepare(
-          'SELECT * FROM judge_prompt_versions WHERE persona_id = ? AND iteration_number = 1'
-        )
+        .prepare('SELECT * FROM judge_prompt_versions WHERE persona_id = ? AND version_number = 1')
         .all(persona.id) as Array<{
         improvement_rationale: string;
       }>;
@@ -166,9 +164,7 @@ describe('Judge Prompts API Integration', () => {
       const persona = createTestPersona(db);
 
       const prompts = db
-        .prepare(
-          'SELECT * FROM judge_prompt_versions WHERE persona_id = ? AND iteration_number = 0'
-        )
+        .prepare('SELECT * FROM judge_prompt_versions WHERE persona_id = ? AND version_number = 0')
         .all(persona.id) as Array<{
         improvement_rationale: string | null;
       }>;

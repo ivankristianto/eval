@@ -9,6 +9,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 describe('Training Iteration API', () => {
   let db: ReturnType<typeof getTestDatabase>;
+  let personaId: string;
 
   beforeAll(() => {
     initializeTestDatabase();
@@ -29,22 +30,23 @@ describe('Training Iteration API', () => {
     modelStmt.run('engineer-model', 'google', 'gemini-pro', 'test-key', new Date().toISOString());
 
     // Create persona
+    personaId = 'persona-1';
     db.prepare(
       `
-      INSERT INTO personas (id, name, description, task_prompt,
+      INSERT INTO personas (id, name, description,
         task_model_id, judge_model_id, prompt_engineer_model_id,
-        status, created_at, updated_at)
+        status, target_pass_rate, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `
     ).run(
-      'persona-1',
+      personaId,
       'Test Persona',
       'Test description',
-      'Test task prompt',
       'task-model',
       'judge-model',
       'engineer-model',
       'draft',
+      0.8,
       new Date().toISOString(),
       new Date().toISOString()
     );
@@ -58,7 +60,7 @@ describe('Training Iteration API', () => {
     for (let i = 0; i < 10; i++) {
       pairStmt.run(
         uuidv4(),
-        'persona-1',
+        personaId,
         `Input ${i + 1}`,
         `Output ${i + 1}`,
         new Date().toISOString()
@@ -80,7 +82,7 @@ describe('Training Iteration API', () => {
       `
       ).run(
         iterationId,
-        'persona-1',
+        personaId,
         1,
         'judge-model',
         'Evaluate the output',
@@ -100,7 +102,7 @@ describe('Training Iteration API', () => {
         | undefined;
 
       expect(iteration).toBeDefined();
-      expect(iteration!.persona_id).toBe('persona-1');
+      expect(iteration!.persona_id).toBe(personaId);
       expect(iteration!.iteration_number).toBe(1);
       expect(iteration!.status).toBe('in_progress');
     });
@@ -119,7 +121,7 @@ describe('Training Iteration API', () => {
       `
       ).run(
         sessionId,
-        'persona-1',
+        personaId,
         1,
         5,
         'in_progress',
@@ -155,7 +157,7 @@ describe('Training Iteration API', () => {
       `
       ).run(
         uuidv4(),
-        'persona-1',
+        personaId,
         1,
         'judge-model',
         'Evaluate the output',
@@ -175,7 +177,7 @@ describe('Training Iteration API', () => {
       `
       ).run(
         iteration2Id,
-        'persona-1',
+        personaId,
         2,
         'judge-model',
         'Evaluate the output v2',
@@ -199,20 +201,20 @@ describe('Training Iteration API', () => {
       // Create persona without training pairs
       db.prepare(
         `
-        INSERT INTO personas (id, name, description, task_prompt,
+        INSERT INTO personas (id, name, description,
           task_model_id, judge_model_id, prompt_engineer_model_id,
-          status, created_at, updated_at)
+          status, target_pass_rate, created_at, updated_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `
       ).run(
         'persona-2',
         'Empty Persona',
         'No training data',
-        'Test prompt',
         'task-model',
         'judge-model',
         'engineer-model',
         'draft',
+        0.8,
         new Date().toISOString(),
         new Date().toISOString()
       );
@@ -240,7 +242,7 @@ describe('Training Iteration API', () => {
       `
       ).run(
         iterationId,
-        'persona-1',
+        personaId,
         1,
         'judge-model',
         'Evaluate the output',
@@ -278,7 +280,7 @@ describe('Training Iteration API', () => {
           LIMIT 1
         `
         )
-        .get('persona-1') as
+        .get(personaId) as
         | {
             iteration_number: number;
             status: string;
@@ -305,7 +307,7 @@ describe('Training Iteration API', () => {
       `
       ).run(
         iterationId,
-        'persona-1',
+        personaId,
         1,
         'judge-model',
         'Evaluate the output',
@@ -335,7 +337,7 @@ describe('Training Iteration API', () => {
     it('should return null if no iterations exist', () => {
       const iteration = db
         .prepare('SELECT * FROM training_iterations WHERE persona_id = ?')
-        .get('persona-1');
+        .get(personaId);
 
       expect(iteration).toBeUndefined();
     });

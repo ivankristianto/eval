@@ -3,9 +3,14 @@
  * Tests for training data display page rendering and functionality
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import Database from 'better-sqlite3';
+import { describe, it, expect, beforeAll, beforeEach, afterAll } from 'vitest';
 import { randomUUID } from 'crypto';
+import {
+  getTestDatabase,
+  initializeTestDatabase,
+  cleanTestDatabase,
+  closeTestDatabase,
+} from '../setup';
 
 /** Type for training_pairs database row */
 interface TrainingPairRow {
@@ -21,56 +26,16 @@ interface CountRow {
   count: number;
 }
 
-// Test database setup
-const TEST_DB_PATH = ':memory:';
-let db: Database.Database;
+let db: ReturnType<typeof getTestDatabase>;
 
 describe('Training Data Display', () => {
+  beforeAll(() => {
+    initializeTestDatabase();
+  });
+
   beforeEach(() => {
-    // Initialize test database
-    db = new Database(TEST_DB_PATH);
-
-    // Create tables
-    db.exec(`
-      CREATE TABLE IF NOT EXISTS ModelConfiguration (
-        id TEXT PRIMARY KEY,
-        provider TEXT NOT NULL,
-        model_name TEXT NOT NULL,
-        api_key TEXT,
-        is_active INTEGER DEFAULT 1
-      );
-
-      CREATE TABLE IF NOT EXISTS personas (
-        id TEXT PRIMARY KEY,
-        name TEXT NOT NULL UNIQUE,
-        description TEXT,
-        task_prompt TEXT NOT NULL,
-        task_model_id TEXT NOT NULL,
-        judge_model_id TEXT NOT NULL,
-        prompt_engineer_model_id TEXT NOT NULL,
-        status TEXT NOT NULL CHECK(status IN ('draft', 'training', 'trained', 'incomplete')),
-        target_f1_score REAL NOT NULL DEFAULT 0.80,
-        max_iterations INTEGER NOT NULL DEFAULT 5,
-        current_iteration INTEGER DEFAULT 0,
-        best_f1_score REAL DEFAULT NULL,
-        best_f1_iteration INTEGER DEFAULT NULL,
-        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        created_by TEXT,
-        FOREIGN KEY (task_model_id) REFERENCES ModelConfiguration(id),
-        FOREIGN KEY (judge_model_id) REFERENCES ModelConfiguration(id),
-        FOREIGN KEY (prompt_engineer_model_id) REFERENCES ModelConfiguration(id)
-      );
-
-      CREATE TABLE IF NOT EXISTS training_pairs (
-        id TEXT PRIMARY KEY,
-        persona_id TEXT NOT NULL,
-        input TEXT NOT NULL,
-        expected_output TEXT NOT NULL,
-        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (persona_id) REFERENCES personas(id) ON DELETE CASCADE
-      );
-    `);
+    db = getTestDatabase();
+    cleanTestDatabase();
 
     // Insert test models
     const models = [
@@ -80,30 +45,36 @@ describe('Training Data Display', () => {
     ];
 
     const insertModel = db.prepare(
-      'INSERT INTO ModelConfiguration (id, provider, model_name, is_active) VALUES (?, ?, ?, 1)'
+      `INSERT INTO ModelConfiguration
+       (id, provider, model_name, api_key_encrypted, created_at, updated_at, is_active)
+       VALUES (?, ?, ?, ?, ?, ?, 1)`
     );
     for (const model of models) {
-      insertModel.run(model.id, model.provider, model.model_name);
+      const now = new Date().toISOString();
+      insertModel.run(model.id, model.provider, model.model_name, 'test-key', now, now);
     }
 
     // Insert test persona
     db.prepare(
-      `INSERT INTO personas (id, name, description, task_prompt, task_model_id, judge_model_id, prompt_engineer_model_id, status)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO personas
+       (id, name, description, task_model_id, judge_model_id, prompt_engineer_model_id, status, target_pass_rate, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
       'persona-test',
       'Test Persona',
       'Test description',
-      'Test task prompt',
       'model-openai',
       'model-anthropic',
       'model-google',
-      'draft'
+      'draft',
+      0.8,
+      new Date().toISOString(),
+      new Date().toISOString()
     );
   });
 
-  afterEach(() => {
-    db.close();
+  afterAll(() => {
+    closeTestDatabase();
   });
 
   describe('Training pairs retrieval', () => {
@@ -143,17 +114,20 @@ describe('Training Data Display', () => {
     it('should handle persona with no training pairs', () => {
       // Create new persona without pairs
       db.prepare(
-        `INSERT INTO personas (id, name, description, task_prompt, task_model_id, judge_model_id, prompt_engineer_model_id, status)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+        `INSERT INTO personas
+         (id, name, description, task_model_id, judge_model_id, prompt_engineer_model_id, status, target_pass_rate, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       ).run(
         'persona-empty',
         'Empty Persona',
         'No pairs',
-        'Test prompt',
         'model-openai',
         'model-anthropic',
         'model-google',
-        'draft'
+        'draft',
+        0.8,
+        new Date().toISOString(),
+        new Date().toISOString()
       );
 
       const pairs = db

@@ -66,6 +66,8 @@ const kappaTrend = calculateTrend(dashboardData?.iterations || [], 'cohens_kappa
 // Convergence status
 const converged = dashboardData?.convergence_achieved || false;
 const targetF1 = dashboardData?.persona?.target_pass_rate || 0.8;
+const bestPassRate = dashboardData?.persona?.best_pass_rate ?? null;
+const bestPassRateUpdatedAt = dashboardData?.persona?.best_pass_rate_updated_at ?? null;
 ---
 
 <div class="training-dashboard space-y-6">
@@ -112,8 +114,16 @@ const targetF1 = dashboardData?.persona?.target_pass_rate || 0.8;
             <div>
               <h3 class="font-bold">Training Converged!</h3>
               <div class="text-sm">
-                F1 score ≥ {(targetF1 * 100).toFixed(0)}% target achieved in{' '}
-                {dashboardData.persona.best_f1_iteration} iterations
+                F1 score ≥ {(targetF1 * 100).toFixed(0)}% target achieved
+                {bestPassRate !== null && (
+                  <>
+                    {' '}
+                    with best pass rate {(bestPassRate * 100).toFixed(1)}%
+                    {bestPassRateUpdatedAt
+                      ? ` (updated ${new Date(bestPassRateUpdatedAt).toLocaleDateString()})`
+                      : ''}
+                  </>
+                )}
               </div>
             </div>
           </div>

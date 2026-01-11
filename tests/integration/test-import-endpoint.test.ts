@@ -79,7 +79,7 @@ describe('POST /api/templates/import', () => {
     const response = await POST({ request } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
 
     // Check response status
-    expect(response.status).toBe(200);
+    expect(response.status).toBe(201);
 
     const result = (await response.json()) as {
       imported: number;
@@ -183,7 +183,8 @@ describe('POST /api/templates/import', () => {
     const result = await response.json();
 
     expect(response.status).toBe(400);
-    expect(result.error).toBe('CSV_PARSE_ERROR');
+    expect(result.code).toBe('CSV_VALIDATION_ERROR');
+    expect(result.error).toBe('Failed to parse CSV file');
     expect(result.details).toBeDefined();
     expect(result.details.length).toBeGreaterThan(0);
   });
@@ -217,12 +218,12 @@ describe('POST /api/templates/import', () => {
     };
 
     // Debug: if response indicates a parsing error, log it
-    if (response.status !== 200) {
+    if (response.status !== 201) {
       console.error('Response status:', response.status);
       console.error('Response body:', JSON.stringify(json, null, 2));
     }
 
-    expect(response.status).toBe(200);
+    expect(response.status).toBe(201);
 
     // Should fail validation
     expect(result.imported).toBe(0);
@@ -251,7 +252,8 @@ describe('POST /api/templates/import', () => {
     const result = await response.json();
 
     expect(response.status).toBe(400);
-    expect(result.error).toBe('CSV_PARSE_ERROR');
+    expect(result.code).toBe('CSV_VALIDATION_ERROR');
+    expect(result.error).toBe('Failed to parse CSV file');
   });
 
   it('should reject missing file', async () => {
@@ -268,8 +270,8 @@ describe('POST /api/templates/import', () => {
     const result = await response.json();
 
     expect(response.status).toBe(400);
-    expect(result.error).toBe('INVALID_INPUT');
-    expect(result.message).toBe('No file provided');
+    expect(result.code).toBe('INVALID_INPUT');
+    expect(result.error).toContain('No file provided');
   });
 
   it('should reject non-CSV file', async () => {
@@ -287,7 +289,8 @@ describe('POST /api/templates/import', () => {
     const result = await response.json();
 
     expect(response.status).toBe(400);
-    expect(result.error).toBe('INVALID_FILE_TYPE');
+    expect(result.code).toBe('INVALID_FILE_TYPE');
+    expect(result.error).toBe('File must be a CSV file');
   });
 
   it('should import templates with all field types', async () => {
@@ -319,7 +322,7 @@ describe('POST /api/templates/import', () => {
       errors: Array<{ row: number; name: string; error: string }>;
     };
 
-    expect(response.status).toBe(200);
+    expect(response.status).toBe(201);
     expect(result.imported).toBe(1);
     expect(result.failed).toBe(0);
 
@@ -366,7 +369,7 @@ describe('POST /api/templates/import', () => {
       errors: Array<{ row: number; name: string; error: string }>;
     };
 
-    expect(response.status).toBe(200);
+    expect(response.status).toBe(201);
     // Should succeed - optional fields can be empty
     expect(result.imported).toBe(1);
     expect(result.failed).toBe(0);
@@ -425,7 +428,7 @@ describe('POST /api/templates/import', () => {
       errors: Array<{ row: number; name: string; error: string }>;
     };
 
-    expect(response.status).toBe(200);
+    expect(response.status).toBe(201);
     expect(result.imported).toBe(0);
     expect(result.failed).toBe(2);
     expect(result.errors).toHaveLength(2);
@@ -463,7 +466,7 @@ describe('POST /api/templates/import', () => {
       errors: Array<{ row: number; name: string; error: string }>;
     };
 
-    expect(response.status).toBe(200);
+    expect(response.status).toBe(201);
     expect(result.imported).toBe(0);
     expect(result.failed).toBe(1);
     expect(result.errors[0].error).toMatch(/system.?prompt/i);
@@ -496,7 +499,7 @@ describe('POST /api/templates/import', () => {
       errors: Array<{ row: number; name: string; error: string }>;
     };
 
-    expect(response.status).toBe(200);
+    expect(response.status).toBe(201);
     expect(result.imported).toBe(0);
     expect(result.failed).toBe(1);
     expect(result.errors[0].error).toContain('accuracy_rubric');
@@ -536,7 +539,7 @@ describe('POST /api/templates/import', () => {
       errors: Array<{ row: number; name: string; error: string }>;
     };
 
-    expect(response.status).toBe(200);
+    expect(response.status).toBe(201);
     expect(result.imported).toBe(rowCount);
     expect(result.failed).toBe(0);
 
@@ -580,7 +583,7 @@ describe('POST /api/templates/import', () => {
       errors: Array<{ row: number; name: string; error: string }>;
     };
 
-    expect(response.status).toBe(200);
+    expect(response.status).toBe(201);
     expect(result.imported).toBe(3);
     expect(result.failed).toBe(2);
     expect(result.skipped).toBe(0);
@@ -623,7 +626,7 @@ describe('POST /api/templates/import', () => {
       errors: Array<{ row: number; name: string; error: string }>;
     };
 
-    expect(response.status).toBe(200);
+    expect(response.status).toBe(201);
     expect(result.imported).toBe(3);
 
     const templates = getTemplates('created', 'desc');
