@@ -272,7 +272,9 @@ const modelIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text
       submitBtn.textContent = 'Verifying & Adding...';
 
       const formData = new FormData(addModelForm);
-      const data = Object.fromEntries(formData.entries());
+      const data = Object.fromEntries(
+        formData as unknown as Iterable<[string, FormDataEntryValue]>
+      );
 
       try {
         const response = await fetch('/api/models', {

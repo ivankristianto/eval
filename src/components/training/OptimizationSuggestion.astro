@@ -239,8 +239,10 @@ const {
         }
 
         // Close modal
-        const modalCheckbox = document.getElementById(modalId) as HTMLInputElement;
-        if (modalCheckbox) modalCheckbox.checked = false;
+        if (modalId) {
+          const modalCheckbox = document.getElementById(modalId) as HTMLInputElement | null;
+          if (modalCheckbox) modalCheckbox.checked = false;
+        }
 
         // Dispatch event to refresh versions list
         const event = new CustomEvent('prompt-saved', {
@@ -273,8 +275,10 @@ const {
       console.log('Accepted optimization suggestion');
 
       // Close modal
-      const modalCheckbox = document.getElementById(modalId) as HTMLInputElement;
-      if (modalCheckbox) modalCheckbox.checked = false;
+      if (modalId) {
+        const modalCheckbox = document.getElementById(modalId) as HTMLInputElement | null;
+        if (modalCheckbox) modalCheckbox.checked = false;
+      }
 
       // Dispatch custom event
       const event = new CustomEvent('suggestion-accepted', {

@@ -199,7 +199,7 @@ const templateIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 t
   import { addToast } from '@lib/ui/toastStore';
 
   // Import CSV
-  const importBtn = document.getElementById('import-csv-btn');
+  const importBtn = document.getElementById('import-csv-btn') as HTMLButtonElement | null;
   const fileInput = document.getElementById('csv-file-input') as HTMLInputElement;
 
   if (importBtn && fileInput) {
@@ -272,7 +272,7 @@ const templateIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 t
   }
 
   // Export CSV
-  const exportBtn = document.getElementById('export-csv-btn');
+  const exportBtn = document.getElementById('export-csv-btn') as HTMLButtonElement | null;
   if (exportBtn) {
     exportBtn.addEventListener('click', async () => {
       exportBtn.disabled = true;

@@ -101,23 +101,36 @@ const enrichedTrainingPairs = trainingPairs.map((pair) => {
     input: pair.input,
     expected_output: pair.expected_output,
     generated_output: resultQuery?.generated_output,
-    judge_rating: parseRating(resultQuery?.judge_rating),
+    judge_rating: parseRating(resultQuery?.judge_rating) ?? undefined,
     judge_feedback: resultQuery?.judge_feedback || resultQuery?.judge_reasoning,
-    human_rating: parseRating(resultQuery?.human_rating),
+    human_rating: parseRating(resultQuery?.human_rating) ?? undefined,
     human_feedback: resultQuery?.human_feedback,
   };
 });
+
+// Define the confusion matrix type
+type ConfusionMatrix = {
+  true_positives?: number;
+  true_negatives?: number;
+  false_positives?: number;
+  false_negatives?: number;
+};
 
 // Build metrics data from persona_metrics table
 const personaMetricsData =
   personaMetrics.length > 0
     ? {
-        f1_score: personaMetrics[0].f1_score,
-        precision: personaMetrics[0].precision,
-        recall: personaMetrics[0].recall,
-        cohens_kappa: personaMetrics[0].cohens_kappa,
-        accuracy: personaMetrics[0].accuracy,
-        confusion_matrix: personaMetrics[0].confusion_matrix,
+        f1_score: personaMetrics[0].f1_score ?? undefined,
+        precision: personaMetrics[0].precision ?? undefined,
+        recall: personaMetrics[0].recall ?? undefined,
+        cohens_kappa: personaMetrics[0].cohens_kappa ?? undefined,
+        accuracy: personaMetrics[0].accuracy ?? undefined,
+        confusion_matrix:
+          'confusion_matrix' in personaMetrics[0]
+            ? ((personaMetrics[0] as { confusion_matrix?: ConfusionMatrix }).confusion_matrix as
+                | ConfusionMatrix
+                | undefined)
+            : undefined,
         total_pairs:
           personaMetrics[0].true_positives +
           personaMetrics[0].true_negatives +
@@ -154,9 +167,9 @@ const humanMetrics = getHumanMetricsFromResults(id);
       text: currentTaskPromptText,
       versions: taskVersions.map((v) => ({
         version_number: v.version_number,
-        created_by: v.created_by,
+        created_by: v.created_by as 'human' | 'ai',
         created_at: v.created_at,
-        improvement_rationale: v.improvement_rationale,
+        improvement_rationale: v.improvement_rationale ?? undefined,
       })),
       selectedVersion: selectedTaskVersion,
     }}
@@ -164,9 +177,9 @@ const humanMetrics = getHumanMetricsFromResults(id);
       text: currentJudgePromptText,
       versions: judgeVersions.map((v) => ({
         version_number: v.version_number,
-        created_by: v.created_by,
+        created_by: v.created_by as 'human' | 'ai',
         created_at: v.created_at,
-        improvement_rationale: v.improvement_rationale,
+        improvement_rationale: v.improvement_rationale ?? undefined,
       })),
       selectedVersion: selectedJudgeVersion,
     }}

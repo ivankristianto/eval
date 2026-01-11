@@ -342,7 +342,11 @@ const { personaId } = Astro.props;
         }),
       });
 
-      const result = (await response.json()) as { count?: number; details?: string[]; message?: string };
+      const result = (await response.json()) as {
+        count?: number;
+        details?: string[];
+        message?: string;
+      };
 
       uploadProgressEl.classList.add('hidden');
 

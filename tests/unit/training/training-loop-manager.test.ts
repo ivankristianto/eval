@@ -261,7 +261,13 @@ describe('TrainingLoopManager', () => {
           false_negatives: 2,
         },
       },
-      failureCases: [] as Array<{ type: 'false_positive' | 'false_negative'; input: string; generated_output: string; expected_output: string; judge_reasoning: string }>,
+      failureCases: [] as Array<{
+        type: 'false_positive' | 'false_negative';
+        input: string;
+        generated_output: string;
+        expected_output: string;
+        judge_reasoning: string;
+      }>,
     });
     mockRefineBothFromFailure.mockResolvedValue({
       refined_task_prompt: 'Refined task prompt',
@@ -509,27 +515,29 @@ describe('TrainingLoopManager', () => {
       // Create a custom mock DB that returns iteration but has unreviewed decisions
       const customMockDb = createMockDb();
 
-      (customMockDb.prepare as unknown as ReturnType<typeof vi.fn>).mockImplementation((query: string) => {
-        const stmt = {
-          get: vi.fn(),
-          all: vi.fn(),
-          run: vi.fn(),
-        };
+      (customMockDb.prepare as unknown as ReturnType<typeof vi.fn>).mockImplementation(
+        (query: string) => {
+          const stmt = {
+            get: vi.fn(),
+            all: vi.fn(),
+            run: vi.fn(),
+          };
 
-        // Return the iteration
-        if (query.includes('SELECT * FROM training_iterations WHERE id = ?')) {
-          stmt.get.mockReturnValue(testIteration);
-        }
-        // Return count > 0 for unreviewed decisions
-        else if (
-          query.includes('SELECT COUNT(*) as count') &&
-          query.includes('LEFT JOIN human_reviews')
-        ) {
-          stmt.get.mockReturnValue({ count: 5 }); // 5 unreviewed decisions
-        }
+          // Return the iteration
+          if (query.includes('SELECT * FROM training_iterations WHERE id = ?')) {
+            stmt.get.mockReturnValue(testIteration);
+          }
+          // Return count > 0 for unreviewed decisions
+          else if (
+            query.includes('SELECT COUNT(*) as count') &&
+            query.includes('LEFT JOIN human_reviews')
+          ) {
+            stmt.get.mockReturnValue({ count: 5 }); // 5 unreviewed decisions
+          }
 
-        return stmt;
-      });
+          return stmt;
+        }
+      );
 
       const _customManager11 = new TrainingLoopManager(
         { sessionId, personaId, maxIterations: 3 },
@@ -682,19 +690,21 @@ describe('TrainingLoopManager', () => {
   describe('generateJudgeDecisions', () => {
     it('should skip when no training pairs exist', async () => {
       // Mock empty training pairs
-      (mockDb.prepare as unknown as ReturnType<typeof vi.fn>).mockImplementation((query: string) => {
-        const stmt = {
-          get: vi.fn(),
-          all: vi.fn(),
-          run: vi.fn(),
-        };
+      (mockDb.prepare as unknown as ReturnType<typeof vi.fn>).mockImplementation(
+        (query: string) => {
+          const stmt = {
+            get: vi.fn(),
+            all: vi.fn(),
+            run: vi.fn(),
+          };
 
-        if (query.includes('SELECT * FROM training_pairs WHERE persona_id = ?')) {
-          stmt.all.mockReturnValue([]);
+          if (query.includes('SELECT * FROM training_pairs WHERE persona_id = ?')) {
+            stmt.all.mockReturnValue([]);
+          }
+
+          return stmt;
         }
-
-        return stmt;
-      });
+      );
 
       const _customManager14 = new TrainingLoopManager(
         { sessionId, personaId, maxIterations: 3 },
@@ -707,23 +717,25 @@ describe('TrainingLoopManager', () => {
 
     it('should handle missing iteration gracefully', async () => {
       const customMockDb = createMockDb();
-      (customMockDb.prepare as unknown as ReturnType<typeof vi.fn>).mockImplementation((query: string) => {
-        const stmt = {
-          get: vi.fn(),
-          all: vi.fn(),
-          run: vi.fn(),
-        };
+      (customMockDb.prepare as unknown as ReturnType<typeof vi.fn>).mockImplementation(
+        (query: string) => {
+          const stmt = {
+            get: vi.fn(),
+            all: vi.fn(),
+            run: vi.fn(),
+          };
 
-        if (query.includes('SELECT * FROM training_iterations WHERE id = ?')) {
-          stmt.get.mockReturnValue(null); // Missing iteration
-        } else if (query.includes('SELECT * FROM personas WHERE id = ?')) {
-          stmt.get.mockReturnValue(mockPersona);
-        } else if (query.includes('SELECT * FROM training_pairs WHERE persona_id = ?')) {
-          stmt.all.mockReturnValue([{ id: 'pair-1', input: 'test', expected_output: 'output' }]);
+          if (query.includes('SELECT * FROM training_iterations WHERE id = ?')) {
+            stmt.get.mockReturnValue(null); // Missing iteration
+          } else if (query.includes('SELECT * FROM personas WHERE id = ?')) {
+            stmt.get.mockReturnValue(mockPersona);
+          } else if (query.includes('SELECT * FROM training_pairs WHERE persona_id = ?')) {
+            stmt.all.mockReturnValue([{ id: 'pair-1', input: 'test', expected_output: 'output' }]);
+          }
+
+          return stmt;
         }
-
-        return stmt;
-      });
+      );
 
       const customManager = new TrainingLoopManager(
         { sessionId, personaId, maxIterations: 3 },
@@ -733,7 +745,11 @@ describe('TrainingLoopManager', () => {
       // Should throw error for missing iteration
       await expect(async () => {
         // Access private method for testing
-        await (customManager as unknown as { generateJudgeDecisions: (id: string, prompt: string) => Promise<void> }).generateJudgeDecisions('test-iteration', 'task prompt');
+        await (
+          customManager as unknown as {
+            generateJudgeDecisions: (id: string, prompt: string) => Promise<void>;
+          }
+        ).generateJudgeDecisions('test-iteration', 'task prompt');
       }).rejects.toThrow(TrainingStateError);
     });
   });
@@ -741,19 +757,21 @@ describe('TrainingLoopManager', () => {
   describe('refinePrompts', () => {
     it('should skip when persona not found', async () => {
       const customMockDb = createMockDb();
-      (customMockDb.prepare as unknown as ReturnType<typeof vi.fn>).mockImplementation((query: string) => {
-        const stmt = {
-          get: vi.fn(),
-          all: vi.fn(),
-          run: vi.fn(),
-        };
+      (customMockDb.prepare as unknown as ReturnType<typeof vi.fn>).mockImplementation(
+        (query: string) => {
+          const stmt = {
+            get: vi.fn(),
+            all: vi.fn(),
+            run: vi.fn(),
+          };
 
-        if (query.includes('SELECT prompt_engineer_model_id FROM personas WHERE id = ?')) {
-          stmt.get.mockReturnValue(null); // Missing persona
+          if (query.includes('SELECT prompt_engineer_model_id FROM personas WHERE id = ?')) {
+            stmt.get.mockReturnValue(null); // Missing persona
+          }
+
+          return stmt;
         }
-
-        return stmt;
-      });
+      );
 
       const customManager = new TrainingLoopManager(
         { sessionId, personaId, maxIterations: 3 },
@@ -761,26 +779,32 @@ describe('TrainingLoopManager', () => {
       );
 
       // Should complete without error when persona not found
-      await expect((customManager as unknown as { refinePrompts: (id: string) => Promise<void> }).refinePrompts('test-iteration')).resolves.toBeUndefined();
+      await expect(
+        (
+          customManager as unknown as { refinePrompts: (id: string) => Promise<void> }
+        ).refinePrompts('test-iteration')
+      ).resolves.toBeUndefined();
     });
 
     it('should skip when iteration not found', async () => {
       const customMockDb = createMockDb();
-      (customMockDb.prepare as unknown as ReturnType<typeof vi.fn>).mockImplementation((query: string) => {
-        const stmt = {
-          get: vi.fn(),
-          all: vi.fn(),
-          run: vi.fn(),
-        };
+      (customMockDb.prepare as unknown as ReturnType<typeof vi.fn>).mockImplementation(
+        (query: string) => {
+          const stmt = {
+            get: vi.fn(),
+            all: vi.fn(),
+            run: vi.fn(),
+          };
 
-        if (query.includes('SELECT prompt_engineer_model_id FROM personas WHERE id = ?')) {
-          stmt.get.mockReturnValue({ prompt_engineer_model_id: 'engineer-1' });
-        } else if (query.includes('SELECT * FROM iteration_metrics WHERE iteration_id = ?')) {
-          stmt.get.mockReturnValue(null); // Missing metrics
+          if (query.includes('SELECT prompt_engineer_model_id FROM personas WHERE id = ?')) {
+            stmt.get.mockReturnValue({ prompt_engineer_model_id: 'engineer-1' });
+          } else if (query.includes('SELECT * FROM iteration_metrics WHERE iteration_id = ?')) {
+            stmt.get.mockReturnValue(null); // Missing metrics
+          }
+
+          return stmt;
         }
-
-        return stmt;
-      });
+      );
 
       const _customManager15 = new TrainingLoopManager(
         { sessionId, personaId, maxIterations: 3 },
@@ -788,7 +812,11 @@ describe('TrainingLoopManager', () => {
       );
 
       // Should complete without error when iteration not found
-      await expect((_customManager15 as unknown as { refinePrompts: (id: string) => Promise<void> }).refinePrompts('test-iteration')).resolves.toBeUndefined();
+      await expect(
+        (
+          _customManager15 as unknown as { refinePrompts: (id: string) => Promise<void> }
+        ).refinePrompts('test-iteration')
+      ).resolves.toBeUndefined();
     });
   });
 
@@ -803,7 +831,9 @@ describe('TrainingLoopManager', () => {
 
       // Should throw TrainingStateError on API failure
       await expect(async () => {
-        await (_customManager12 as unknown as { callTaskModel: (...args: unknown[]) => Promise<void> }).callTaskModel('model-id', 'input', 'prompt');
+        await (
+          _customManager12 as unknown as { callTaskModel: (...args: unknown[]) => Promise<void> }
+        ).callTaskModel('model-id', 'input', 'prompt');
       }).rejects.toThrow(TrainingStateError);
     });
   });
@@ -819,13 +849,9 @@ describe('TrainingLoopManager', () => {
 
       // Should throw TrainingStateError on API failure
       await expect(async () => {
-        await (_customManager13 as unknown as { callJudgeModel: (...args: unknown[]) => Promise<void> }).callJudgeModel(
-          'model-id',
-          'input',
-          'output',
-          'prompt',
-          'expected'
-        );
+        await (
+          _customManager13 as unknown as { callJudgeModel: (...args: unknown[]) => Promise<void> }
+        ).callJudgeModel('model-id', 'input', 'output', 'prompt', 'expected');
       }).rejects.toThrow(TrainingStateError);
     });
   });
@@ -838,7 +864,13 @@ describe('TrainingLoopManager', () => {
       );
 
       const response = JSON.stringify({ decision: 'agree', reasoning: 'Correct output' });
-      const result = await (_customManager7 as unknown as { parseJudgeResponse: (response: string) => Promise<{ decision: string; reasoning: string }> }).parseJudgeResponse(response);
+      const result = await (
+        _customManager7 as unknown as {
+          parseJudgeResponse: (
+            response: string
+          ) => Promise<{ decision: string; reasoning: string }>;
+        }
+      ).parseJudgeResponse(response);
 
       expect(result.decision).toBe('agree');
       expect(result.reasoning).toBe('Correct output');
@@ -851,7 +883,13 @@ describe('TrainingLoopManager', () => {
       );
 
       const response = JSON.stringify({ decision: 'disagree', reasoning: 'Incorrect output' });
-      const result = await (_customManager8 as unknown as { parseJudgeResponse: (response: string) => Promise<{ decision: string; reasoning: string }> }).parseJudgeResponse(response);
+      const result = await (
+        _customManager8 as unknown as {
+          parseJudgeResponse: (
+            response: string
+          ) => Promise<{ decision: string; reasoning: string }>;
+        }
+      ).parseJudgeResponse(response);
 
       expect(result.decision).toBe('disagree');
       expect(result.reasoning).toBe('Incorrect output');
@@ -875,11 +913,15 @@ describe('TrainingLoopManager', () => {
       });
 
       const unclearResponse = 'This is unclear';
-      const result = await (_customManager9 as unknown as { parseJudgeResponse: (response: string, generated: string, expected: string) => Promise<{ decision: string; reasoning: string }> }).parseJudgeResponse(
-        unclearResponse,
-        'generated output',
-        'expected output'
-      );
+      const result = await (
+        _customManager9 as unknown as {
+          parseJudgeResponse: (
+            response: string,
+            generated: string,
+            expected: string
+          ) => Promise<{ decision: string; reasoning: string }>;
+        }
+      ).parseJudgeResponse(unclearResponse, 'generated output', 'expected output');
 
       expect(result.decision).toBe('agree');
       expect(result.reasoning).toContain('0.95');
@@ -894,7 +936,13 @@ describe('TrainingLoopManager', () => {
       mockGetSemanticSimilarity.mockRejectedValue(new Error('Similarity check failed'));
 
       const unclearResponse = 'This is completely unclear';
-      const result = await (_customManager10 as unknown as { parseJudgeResponse: (response: string) => Promise<{ decision: string; reasoning: string }> }).parseJudgeResponse(unclearResponse);
+      const result = await (
+        _customManager10 as unknown as {
+          parseJudgeResponse: (
+            response: string
+          ) => Promise<{ decision: string; reasoning: string }>;
+        }
+      ).parseJudgeResponse(unclearResponse);
 
       expect(result.decision).toBe('disagree');
       expect(result.reasoning).toContain('defaulting to disagree');

@@ -36,6 +36,7 @@ export interface Props {
   href?: string;
   disabled?: boolean;
   id?: string;
+  onclick?: string;
 }
 
 const {
@@ -47,6 +48,7 @@ const {
   href,
   disabled = false,
   id,
+  onclick,
   ...rest
 } = Astro.props;
 

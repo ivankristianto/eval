@@ -67,20 +67,25 @@ const metrics = db
               label="F1 Score"
               value={metrics.f1_score}
               format="percentage"
-              trend={null}
+              trend={undefined}
             />
             <MetricCard
               label="Precision"
               value={metrics.precision}
               format="percentage"
-              trend={null}
+              trend={undefined}
             />
-            <MetricCard label="Recall" value={metrics.recall} format="percentage" trend={null} />
+            <MetricCard
+              label="Recall"
+              value={metrics.recall}
+              format="percentage"
+              trend={undefined}
+            />
             <MetricCard
               label="Cohen's Kappa"
               value={metrics.cohens_kappa}
-              format="decimal"
-              trend={null}
+              format="number"
+              trend={undefined}
             />
           </div>
         </div>
@@ -237,14 +242,15 @@ const metrics = db
       successState?.classList.remove('hidden');
 
       // Populate UI
-      document.getElementById('refinement-rationale')!.textContent = refinementData.rationale;
-      document.getElementById('refinement-impact')!.textContent = refinementData.expected_impact;
-      document
-        .getElementById('improved-prompt-data')!
-        .setAttribute('value', refinementData.improved_prompt);
-      document
-        .getElementById('current-prompt-data')!
-        .setAttribute('value', refinementData.current_prompt);
+      const rationaleEl = document.getElementById('refinement-rationale');
+      const impactEl = document.getElementById('refinement-impact');
+      const improvedPromptEl = document.getElementById('improved-prompt-data');
+      const currentPromptEl = document.getElementById('current-prompt-data');
+
+      if (rationaleEl) rationaleEl.textContent = refinementData.rationale;
+      if (impactEl) impactEl.textContent = refinementData.expected_impact;
+      if (improvedPromptEl) improvedPromptEl.setAttribute('value', refinementData.improved_prompt);
+      if (currentPromptEl) currentPromptEl.setAttribute('value', refinementData.current_prompt);
 
       // Render diff viewer
       renderDiffViewer(refinementData.current_prompt, refinementData.improved_prompt);
@@ -254,8 +260,10 @@ const metrics = db
       // Hide loading, show error
       loadingState?.classList.add('hidden');
       errorState?.classList.remove('hidden');
-      document.getElementById('error-message')!.textContent =
-        error instanceof Error ? error.message : 'Unknown error';
+      const errorMsgEl = document.getElementById('error-message');
+      if (errorMsgEl) {
+        errorMsgEl.textContent = error instanceof Error ? error.message : 'Unknown error';
+      }
     }
   }
 
@@ -338,18 +346,21 @@ const metrics = db
 
   document.getElementById('edit-btn')?.addEventListener('click', () => {
     const improvedPrompt = document.getElementById('improved-prompt-data')?.getAttribute('value');
-    const textarea = document.getElementById('edit-prompt-textarea') as HTMLTextAreaElement;
+    const textarea = document.getElementById('edit-prompt-textarea');
     if (textarea && improvedPrompt) {
-      textarea.value = improvedPrompt;
+      /** @type {HTMLTextAreaElement} */ (textarea).value = improvedPrompt;
     }
-    const modal = document.getElementById('edit-modal') as HTMLDialogElement;
-    modal?.showModal();
+    const modal = document.getElementById('edit-modal');
+    if (modal && 'showModal' in modal) {
+      /** @type {HTMLDialogElement} */ (modal).showModal();
+    }
   });
 
   document.getElementById('save-edited-btn')?.addEventListener('click', () => {
-    const textarea = document.getElementById('edit-prompt-textarea') as HTMLTextAreaElement;
-    if (textarea?.value) {
-      acceptPrompt(textarea.value, 'manual-edit');
+    const textarea = document.getElementById('edit-prompt-textarea');
+    const value = textarea && 'value' in textarea ? textarea.value : null;
+    if (value) {
+      acceptPrompt(value, 'manual-edit');
     }
   });
 

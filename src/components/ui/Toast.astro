@@ -21,7 +21,7 @@
 
 <script>
   import { toasts, removeToast } from '@lib/ui/toastStore';
-  import type { Toast } from '@lib/ui/toastStore';
+  import type { ToastMessage } from '@lib/ui/toastStore';
   import { createIconElement } from '@lib/ui/icons';
   import { initializeOnce } from '@lib/utils/client-utils';
 
@@ -30,11 +30,11 @@
    * @param toast - Toast message data
    * @returns Configured alert HTMLElement
    */
-  function createToastElement(toast: Toast): HTMLElement {
+  function createToastElement(toast: ToastMessage): HTMLElement {
     const alertDiv = document.createElement('div');
 
     // Map types to DaisyUI alert classes
-    const alertClasses: Record<Toast['type'], string> = {
+    const alertClasses: Record<ToastMessage['type'], string> = {
       info: 'alert-info',
       success: 'alert-success',
       warning: 'alert-warning',

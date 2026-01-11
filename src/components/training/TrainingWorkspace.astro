@@ -235,7 +235,8 @@ const {
   // Generate outputs action
   document.querySelectorAll('[data-action="generate-outputs"]').forEach((btn) => {
     btn.addEventListener('click', async (e) => {
-      const button = e.currentTarget;
+      const button = e.currentTarget as HTMLButtonElement | null;
+      if (!button) return;
       const personaId = button.dataset.personaId;
       const buttonSelector = '[data-action="generate-outputs"]';
       const originalContent = button.innerHTML;
@@ -286,7 +287,8 @@ const {
   // Generate judge decision action
   document.querySelectorAll('[data-action="generate-judge"]').forEach((btn) => {
     btn.addEventListener('click', async (e) => {
-      const button = e.currentTarget;
+      const button = e.currentTarget as HTMLButtonElement | null;
+      if (!button) return;
       const personaId = button.dataset.personaId;
       const buttonSelector = '[data-action="generate-judge"]';
       const originalContent = button.innerHTML;
@@ -339,7 +341,8 @@ const {
   // Evaluate all action (generate outputs + judge decisions)
   document.querySelectorAll('[data-action="evaluate-all"]').forEach((btn) => {
     btn.addEventListener('click', async (e) => {
-      const button = e.currentTarget;
+      const button = e.currentTarget as HTMLButtonElement | null;
+      if (!button) return;
       const personaId = button.dataset.personaId;
       const buttonSelector = '[data-action="evaluate-all"]';
       const originalContent = button.innerHTML;
@@ -408,8 +411,8 @@ const {
   });
 
   // Handle prompt optimization events from PromptEditor
-  document.addEventListener('prompt-optimize', async (e: Event) => {
-    const { type, currentText } = e.detail;
+  document.addEventListener('prompt-optimize', async (e) => {
+    const { type, currentText } = (e as CustomEvent<{ type: string; currentText: string }>).detail;
 
     try {
       const response = await fetch('/api/prompts/optimize', {
@@ -440,7 +443,7 @@ const {
         if (suggestedCodeEl) suggestedCodeEl.textContent = result.suggested_prompt;
 
         // Show the modal
-        const modalCheckbox = document.getElementById(modalId);
+        const modalCheckbox = document.getElementById(modalId) as HTMLInputElement | null;
         if (modalCheckbox) modalCheckbox.checked = true;
       }
 
@@ -456,7 +459,7 @@ const {
   });
 
   // Real-time polling for training pairs updates
-  let pollingInterval = null;
+  let pollingInterval: ReturnType<typeof setInterval> | null = null;
   let isPolling = false;
   let consecutiveErrors = 0;
   const MAX_CONSECUTIVE_ERRORS = 5;
@@ -467,7 +470,9 @@ const {
    */
   function flashElement(element: Element, className = 'bg-success/10', duration = 1000) {
     // Clear any existing timer on this element
-    const animationTimer = (element as unknown as { _animationTimer: ReturnType<typeof setTimeout> | null })._animationTimer;
+    const animationTimer = (
+      element as unknown as { _animationTimer: ReturnType<typeof setTimeout> | null }
+    )._animationTimer;
     if (animationTimer) {
       clearTimeout(animationTimer);
     }
@@ -476,9 +481,13 @@ const {
     element.classList.add(className);
 
     // Set timer to remove it
-    (element as unknown as { _animationTimer: ReturnType<typeof setTimeout> | null })._animationTimer = setTimeout(() => {
+    (
+      element as unknown as { _animationTimer: ReturnType<typeof setTimeout> | null }
+    )._animationTimer = setTimeout(() => {
       element.classList.remove(className);
-      (element as unknown as { _animationTimer: ReturnType<typeof setTimeout> | null })._animationTimer = null;
+      (
+        element as unknown as { _animationTimer: ReturnType<typeof setTimeout> | null }
+      )._animationTimer = null;
     }, duration);
   }
 
@@ -509,7 +518,7 @@ const {
   /**
    * Start polling for training pairs updates
    */
-  function startPolling(personaId) {
+  function startPolling(personaId: string) {
     if (isPolling) {
       console.log('Polling already active, skipping...');
       return;
@@ -596,11 +605,18 @@ const {
     }
   }
 
+  interface TrainingPairData {
+    id: string;
+    generated_output?: string;
+    judge_rating?: string;
+    judge_feedback?: string;
+  }
+
   /**
    * Update the training pairs table with new data
    * Uses data-cell-type attributes for robust cell selection regardless of column position
    */
-  function updateTrainingPairsTable(pairs) {
+  function updateTrainingPairsTable(pairs: TrainingPairData[]) {
     const tbody = document.querySelector('#training-pairs-body');
     if (!tbody) return;
 
@@ -616,7 +632,9 @@ const {
     // Update each row with new data
     pairs.forEach((pair) => {
       // Find row by pair ID instead of index to prevent race conditions
-      const row = Array.from(existingRows).find((r) => r.dataset.pairId === pair.id);
+      const row = Array.from(existingRows).find(
+        (r) => (r as HTMLElement).dataset.pairId === pair.id
+      );
       if (!row) {
         console.warn(`Row not found for pair ${pair.id}`);
         return;
@@ -692,11 +710,13 @@ const {
   }
 
   // Handle new row save event from TrainingPairsTable
-  document.addEventListener('new-row-save', async (e: Event) => {
-    const { input, expected_output } = e.detail;
+  document.addEventListener('new-row-save', async (e) => {
+    const { input, expected_output } = (
+      e as CustomEvent<{ input: string; expected_output: string }>
+    ).detail;
 
     // Get persona ID from the page
-    const personaIdElement = document.querySelector('[data-persona-id]');
+    const personaIdElement = document.querySelector('[data-persona-id]') as HTMLElement | null;
     const personaId = personaIdElement?.dataset.personaId;
 
     if (!personaId) {
@@ -741,11 +761,11 @@ const {
   });
 
   // Handle human-rating event from TrainingPairsTable
-  document.addEventListener('human-rating', async (e: Event) => {
-    const { pairId, rating } = e.detail;
+  document.addEventListener('human-rating', async (e) => {
+    const { pairId, rating } = (e as CustomEvent<{ pairId: string; rating: string }>).detail;
 
     // Get persona ID from the page
-    const personaIdElement = document.querySelector('[data-persona-id]');
+    const personaIdElement = document.querySelector('[data-persona-id]') as HTMLElement | null;
     const personaId = personaIdElement?.dataset.personaId;
 
     if (!personaId) {
@@ -851,11 +871,11 @@ const {
   const feedbackDebounceTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
   // Handle human-feedback event from TrainingPairsTable
-  document.addEventListener('human-feedback', async (e: Event) => {
-    const { pairId } = e.detail;
+  document.addEventListener('human-feedback', async (e) => {
+    const { pairId } = (e as CustomEvent<{ pairId: string }>).detail;
 
     // Get persona ID from the page
-    const personaIdElement = document.querySelector('[data-persona-id]');
+    const personaIdElement = document.querySelector('[data-persona-id]') as HTMLElement | null;
     const personaId = personaIdElement?.dataset.personaId;
 
     if (!personaId) {
@@ -955,11 +975,11 @@ const {
   });
 
   // Handle CSV import event from TrainingPairsTable
-  document.addEventListener('csv-import', async (e: Event) => {
-    const { file } = e.detail;
+  document.addEventListener('csv-import', async (e) => {
+    const { file } = (e as CustomEvent<{ file: File }>).detail;
 
     // Get persona ID from the page
-    const personaIdElement = document.querySelector('[data-persona-id]');
+    const personaIdElement = document.querySelector('[data-persona-id]') as HTMLElement | null;
     const personaId = personaIdElement?.dataset.personaId;
 
     if (!personaId) {
@@ -1028,7 +1048,7 @@ const {
           countdown--;
           if (countdown > 0) {
             // Check if toast still exists before updating
-            if (toast && document.body.contains(toast)) {
+            if (toast && document.body.contains(toast) && window.toast) {
               window.toast.update(
                 toast,
                 `Uploaded ${result.count} training pairs successfully! Reloading in ${countdown}...`

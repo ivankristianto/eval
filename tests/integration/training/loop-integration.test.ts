@@ -197,7 +197,13 @@ describe('TrainingLoopManager Integration Tests', () => {
           false_negatives: 2,
         },
       },
-      failureCases: [] as Array<{ type: 'false_positive' | 'false_negative'; input: string; generated_output: string; expected_output: string; judge_reasoning: string }>,
+      failureCases: [] as Array<{
+        type: 'false_positive' | 'false_negative';
+        input: string;
+        generated_output: string;
+        expected_output: string;
+        judge_reasoning: string;
+      }>,
     });
     mockRefineBothFromFailure.mockResolvedValue({
       refined_task_prompt: 'Refined task prompt',
@@ -248,7 +254,13 @@ describe('TrainingLoopManager Integration Tests', () => {
 
       const state = db
         .prepare('SELECT * FROM training_loop_state WHERE session_id = ?')
-        .get(sessionId) as { session_id: string; persona_id: string; status: string; current_iteration: number; pause_reason: string | null };
+        .get(sessionId) as {
+        session_id: string;
+        persona_id: string;
+        status: string;
+        current_iteration: number;
+        pause_reason: string | null;
+      };
 
       expect(state).toBeDefined();
       expect(state.session_id).toBe(sessionId);
@@ -338,7 +350,13 @@ describe('TrainingLoopManager Integration Tests', () => {
 
       const state = db
         .prepare('SELECT * FROM training_loop_state WHERE session_id = ?')
-        .get(sessionId) as { session_id: string; persona_id: string; status: string; current_iteration: number; pause_reason: string | null };
+        .get(sessionId) as {
+        session_id: string;
+        persona_id: string;
+        status: string;
+        current_iteration: number;
+        pause_reason: string | null;
+      };
 
       expect(state).toBeDefined();
       expect(state.status).toBe('paused');
@@ -377,7 +395,13 @@ describe('TrainingLoopManager Integration Tests', () => {
 
       const state = db
         .prepare('SELECT * FROM training_loop_state WHERE session_id = ?')
-        .get(sessionId) as { session_id: string; persona_id: string; status: string; current_iteration: number; pause_reason: string | null };
+        .get(sessionId) as {
+        session_id: string;
+        persona_id: string;
+        status: string;
+        current_iteration: number;
+        pause_reason: string | null;
+      };
 
       expect(state.status).not.toBe('paused');
     });

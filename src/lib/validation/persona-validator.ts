@@ -95,7 +95,8 @@ export function validatePersonaCreation(
   }
 
   // Support both initial_task_prompt and task_prompt for backward compatibility
-  const taskPromptForWarning = input.initial_task_prompt || (input as { task_prompt?: string }).task_prompt;
+  const taskPromptForWarning =
+    input.initial_task_prompt || (input as { task_prompt?: string }).task_prompt;
   if (taskPromptForWarning && taskPromptForWarning.trim().length < 10) {
     warnings.push('Task prompt is very short. Consider providing more context.');
   }

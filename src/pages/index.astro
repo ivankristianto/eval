@@ -295,7 +295,7 @@ function getStatusVariant(status: string): 'warning' | 'info' | 'success' | 'err
     }
   };
 
-  const writePrefs = (pagination) => {
+  const writePrefs = (pagination: { itemsPerPage?: number; currentPage?: number }) => {
     const prefs = readPrefs();
     const nextPrefs = {
       ...prefs,
@@ -307,8 +307,8 @@ function getStatusVariant(status: string): 'warning' | 'info' | 'success' | 'err
     localStorage.setItem(prefsKey, JSON.stringify(nextPrefs));
   };
 
-  const sanitizeLimit = (value) => (allowedLimits.includes(value) ? value : defaultLimit);
-  const sanitizePage = (value) =>
+  const sanitizeLimit = (value: number) => (allowedLimits.includes(value) ? value : defaultLimit);
+  const sanitizePage = (value: number) =>
     Number.isFinite(value) && value > 0 ? Math.floor(value) : defaultPage;
 
   const getPaginationState = () => {
@@ -318,7 +318,7 @@ function getStatusVariant(status: string): 'warning' | 'info' | 'success' | 'err
     return { page, limit };
   };
 
-  const setPaginationState = (page, limit) => {
+  const setPaginationState = (page: number, limit: number) => {
     writePrefs({ itemsPerPage: limit, currentPage: page });
   };
 
@@ -370,7 +370,7 @@ function getStatusVariant(status: string): 'warning' | 'info' | 'success' | 'err
     }
   };
 
-  const buildVisiblePages = (currentPage, totalPages) => {
+  const buildVisiblePages = (currentPage: number, totalPages: number) => {
     if (totalPages <= 7) {
       return Array.from({ length: totalPages }, (_, index) => index + 1);
     }
@@ -399,7 +399,7 @@ function getStatusVariant(status: string): 'warning' | 'info' | 'success' | 'err
     return pages;
   };
 
-  const updatePaginationUI = (currentPage, totalPages, limit) => {
+  const updatePaginationUI = (currentPage: number, totalPages: number, limit: number) => {
     if (paginationRoot) {
       paginationRoot.setAttribute('data-current-page', String(currentPage));
       paginationRoot.setAttribute('data-total-pages', String(totalPages));
@@ -456,7 +456,7 @@ function getStatusVariant(status: string): 'warning' | 'info' | 'success' | 'err
     }
   };
 
-  const buildStatusVariant = (status) => {
+  const buildStatusVariant = (status: string) => {
     switch (status) {
       case 'pending':
         return 'warning';
@@ -471,11 +471,26 @@ function getStatusVariant(status: string): 'warning' | 'info' | 'success' | 'err
     }
   };
 
-  const renderEvaluations = (items) => {
+  interface EvaluationItem {
+    id: number | string;
+    instruction: string;
+    instruction_text?: string;
+    expected_output: string;
+    rubric: string;
+    accuracy_rubric?: string;
+    status: string;
+    created_at: string;
+    results_count?: number;
+    result_count?: number;
+    avg_accuracy?: number;
+    avg_time_ms?: number;
+  }
+
+  const renderEvaluations = (items: EvaluationItem[]) => {
     if (!tableBody) return;
     tableBody.innerHTML = '';
 
-    items.forEach((item) => {
+    items.forEach((item: EvaluationItem) => {
       const row = document.createElement('tr');
       row.className = 'hover:bg-base-200 transition-colors';
 
@@ -570,7 +585,7 @@ function getStatusVariant(status: string): 'warning' | 'info' | 'success' | 'err
     });
   };
 
-  const toggleEmptyState = (total) => {
+  const toggleEmptyState = (total: number) => {
     if (tableWrapper) {
       tableWrapper.classList.toggle('hidden', total === 0);
     }
