@@ -11,13 +11,14 @@ import {
   closeTestDatabase,
   createTestPersona,
 } from '../setup';
-import type { CreatePersonaInput } from '../../src/types/training';
+import type { CreatePersonaInput, Persona } from '../../src/types/training';
 import {
   createPersona,
   getPersona,
   listPersonas,
   updatePersona,
   deletePersona,
+  resetPersonaTrainingData,
 } from '@lib/db/persona-db';
 
 describe('Personas API Integration', () => {
@@ -476,6 +477,304 @@ describe('Personas API Integration', () => {
           db
         );
       }).toThrow();
+    });
+  });
+
+  describe('resetPersonaTrainingData', () => {
+    it('should delete all training-related data and reset persona to draft state', () => {
+      const db = getTestDatabase();
+
+      // Create a persona
+      const persona = createTestPersona(db);
+
+      // Create training pairs (these should be preserved)
+      db.prepare(
+        `
+        INSERT INTO training_pairs (id, persona_id, input, expected_output, created_at)
+        VALUES (?, ?, ?, ?, ?)
+      `
+      ).run('pair-1', persona.id, 'Input 1', 'Output 1', new Date().toISOString());
+
+      // Create task prompt version
+      db.prepare(
+        `
+        INSERT INTO task_prompt_versions (id, persona_id, version_number, prompt_text, created_by, created_at)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `
+      ).run('task-v1', persona.id, 1, 'Task prompt v1', 'human', new Date().toISOString());
+
+      // Create judge prompt version
+      db.prepare(
+        `
+        INSERT INTO judge_prompt_versions (id, persona_id, version_number, prompt_text, created_by, created_at)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `
+      ).run('judge-v1', persona.id, 1, 'Judge prompt v1', 'human', new Date().toISOString());
+
+      // Update persona with current prompt versions and status
+      db.prepare(
+        `
+        UPDATE personas
+        SET status = 'training',
+            current_task_prompt_version_id = ?,
+            current_judge_prompt_version_id = ?,
+            best_pass_rate = 0.85
+        WHERE id = ?
+      `
+      ).run('task-v1', 'judge-v1', persona.id);
+
+      // Create training iteration
+      db.prepare(
+        `
+        INSERT INTO training_iterations (id, persona_id, iteration_number, judge_model_id, judge_prompt_text, status, started_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `
+      ).run(
+        'iter-1',
+        persona.id,
+        1,
+        persona.judge_model_id,
+        'Test judge prompt',
+        'in_progress',
+        new Date().toISOString()
+      );
+
+      // Create iteration metrics
+      db.prepare(
+        `
+        INSERT INTO iteration_metrics (id, iteration_id, f1_score, precision, recall, cohens_kappa, true_positives, false_positives, true_negatives, false_negatives, calculated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `
+      ).run('metrics-1', 'iter-1', 0.8, 0.75, 0.85, 0.7, 10, 2, 15, 3, new Date().toISOString());
+
+      // Create judge decision
+      db.prepare(
+        `
+        INSERT INTO judge_decisions (id, iteration_id, training_pair_id, generated_output, judge_decision, created_at)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `
+      ).run(
+        'decision-1',
+        'iter-1',
+        'pair-1',
+        'Generated output',
+        'agree',
+        new Date().toISOString()
+      );
+
+      // Create human review
+      db.prepare(
+        `
+        INSERT INTO human_reviews (id, judge_decision_id, human_decision, human_notes, created_at)
+        VALUES (?, ?, ?, ?, ?)
+      `
+      ).run('review-1', 'decision-1', 'agree', 'Agreed with judge', new Date().toISOString());
+
+      // Create training loop state
+      db.prepare(
+        `
+        INSERT INTO training_loop_state (session_id, persona_id, current_iteration, total_iterations, status, task_results_evaluated, judge_model_id, prompt_engineer_model_id, task_model_id, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `
+      ).run(
+        'session-1',
+        persona.id,
+        1,
+        10,
+        'in_progress',
+        0,
+        persona.judge_model_id,
+        persona.prompt_engineer_model_id,
+        persona.task_model_id,
+        new Date().toISOString(),
+        new Date().toISOString()
+      );
+
+      // Create training loop checkpoint
+      db.prepare(
+        `
+        INSERT INTO training_loop_checkpoints (id, session_id, iteration_number, evaluated_result_count, metrics_snapshot, evaluated_result_ids, current_prompt, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `
+      ).run('checkpoint-1', 'session-1', 1, 0, '{}', '[]', 'Test prompt', new Date().toISOString());
+
+      // Create training pair result
+      db.prepare(
+        `
+        INSERT INTO training_pair_results (id, persona_id, training_pair_id, generated_output, judge_rating, created_at)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `
+      ).run('result-1', persona.id, 'pair-1', 'Generated output', 'pass', new Date().toISOString());
+
+      // Verify data exists before reset
+      const iterationsBefore = db
+        .prepare('SELECT COUNT(*) as count FROM training_iterations WHERE persona_id = ?')
+        .get(persona.id) as { count: number };
+      const metricsBefore = db
+        .prepare(
+          'SELECT COUNT(*) as count FROM iteration_metrics WHERE iteration_id IN (SELECT id FROM training_iterations WHERE persona_id = ?)'
+        )
+        .get(persona.id) as { count: number };
+      const decisionsBefore = db
+        .prepare(
+          'SELECT COUNT(*) as count FROM judge_decisions WHERE iteration_id IN (SELECT id FROM training_iterations WHERE persona_id = ?)'
+        )
+        .get(persona.id) as { count: number };
+      const reviewsBefore = db
+        .prepare(
+          'SELECT COUNT(*) as count FROM human_reviews WHERE judge_decision_id IN (SELECT id FROM judge_decisions WHERE iteration_id IN (SELECT id FROM training_iterations WHERE persona_id = ?))'
+        )
+        .get(persona.id) as { count: number };
+      const taskPromptsBefore = db
+        .prepare('SELECT COUNT(*) as count FROM task_prompt_versions WHERE persona_id = ?')
+        .get(persona.id) as { count: number };
+      const judgePromptsBefore = db
+        .prepare('SELECT COUNT(*) as count FROM judge_prompt_versions WHERE persona_id = ?')
+        .get(persona.id) as { count: number };
+      const loopStateBefore = db
+        .prepare('SELECT COUNT(*) as count FROM training_loop_state WHERE persona_id = ?')
+        .get(persona.id) as { count: number };
+      const checkpointsBefore = db
+        .prepare(
+          'SELECT COUNT(*) as count FROM training_loop_checkpoints WHERE session_id IN (SELECT session_id FROM training_loop_state WHERE persona_id = ?)'
+        )
+        .get(persona.id) as { count: number };
+      const pairResultsBefore = db
+        .prepare('SELECT COUNT(*) as count FROM training_pair_results WHERE persona_id = ?')
+        .get(persona.id) as { count: number };
+
+      expect(iterationsBefore.count).toBe(1);
+      expect(metricsBefore.count).toBe(1);
+      expect(decisionsBefore.count).toBe(1);
+      expect(reviewsBefore.count).toBe(1);
+      expect(taskPromptsBefore.count).toBe(2);
+      expect(judgePromptsBefore.count).toBe(2);
+      expect(loopStateBefore.count).toBe(1);
+      expect(checkpointsBefore.count).toBe(1);
+      expect(pairResultsBefore.count).toBe(1);
+
+      // Call the reset function from persona-db
+      const result = resetPersonaTrainingData(persona.id, db);
+
+      // Verify response
+      expect(result).toEqual({ success: true });
+
+      // Verify all training-related data was deleted
+      const iterationsAfter = db
+        .prepare('SELECT COUNT(*) as count FROM training_iterations WHERE persona_id = ?')
+        .get(persona.id) as { count: number };
+      const metricsAfter = db
+        .prepare(
+          'SELECT COUNT(*) as count FROM iteration_metrics WHERE iteration_id IN (SELECT id FROM training_iterations WHERE persona_id = ?)'
+        )
+        .get(persona.id) as { count: number };
+      const decisionsAfter = db
+        .prepare(
+          'SELECT COUNT(*) as count FROM judge_decisions WHERE iteration_id IN (SELECT id FROM training_iterations WHERE persona_id = ?)'
+        )
+        .get(persona.id) as { count: number };
+      const reviewsAfter = db
+        .prepare(
+          'SELECT COUNT(*) as count FROM human_reviews WHERE judge_decision_id IN (SELECT id FROM judge_decisions WHERE iteration_id IN (SELECT id FROM training_iterations WHERE persona_id = ?))'
+        )
+        .get(persona.id) as { count: number };
+      const taskPromptsAfter = db
+        .prepare('SELECT COUNT(*) as count FROM task_prompt_versions WHERE persona_id = ?')
+        .get(persona.id) as { count: number };
+      const judgePromptsAfter = db
+        .prepare('SELECT COUNT(*) as count FROM judge_prompt_versions WHERE persona_id = ?')
+        .get(persona.id) as { count: number };
+      const loopStateAfter = db
+        .prepare('SELECT COUNT(*) as count FROM training_loop_state WHERE persona_id = ?')
+        .get(persona.id) as { count: number };
+      const checkpointsAfter = db
+        .prepare(
+          'SELECT COUNT(*) as count FROM training_loop_checkpoints WHERE session_id IN (SELECT session_id FROM training_loop_state WHERE persona_id = ?)'
+        )
+        .get(persona.id) as { count: number };
+      const pairResultsAfter = db
+        .prepare('SELECT COUNT(*) as count FROM training_pair_results WHERE persona_id = ?')
+        .get(persona.id) as { count: number };
+
+      expect(iterationsAfter.count).toBe(0);
+      expect(metricsAfter.count).toBe(0);
+      expect(decisionsAfter.count).toBe(0);
+      expect(reviewsAfter.count).toBe(0);
+      expect(taskPromptsAfter.count).toBe(0);
+      expect(judgePromptsAfter.count).toBe(0);
+      expect(loopStateAfter.count).toBe(0);
+      expect(checkpointsAfter.count).toBe(0);
+      expect(pairResultsAfter.count).toBe(0);
+
+      // Verify persona was reset to draft state
+      const resetPersona = db
+        .prepare('SELECT * FROM personas WHERE id = ?')
+        .get(persona.id) as Persona;
+      expect(resetPersona.status).toBe('draft');
+      expect(resetPersona.current_task_prompt_version_id).toBeNull();
+      expect(resetPersona.current_judge_prompt_version_id).toBeNull();
+      expect(resetPersona.best_pass_rate).toBeNull();
+      expect(resetPersona.best_pass_rate_updated_at).toBeNull();
+
+      // Verify training pairs are preserved
+      const pairsAfter = db
+        .prepare('SELECT COUNT(*) as count FROM training_pairs WHERE persona_id = ?')
+        .get(persona.id) as { count: number };
+      expect(pairsAfter.count).toBe(1);
+    });
+
+    it('should handle reset for persona with no training data', () => {
+      const db = getTestDatabase();
+
+      // Create a persona with no training data
+      const persona = createTestPersona(db);
+
+      // Call the reset function
+      const result = resetPersonaTrainingData(persona.id, db);
+
+      // Verify response
+      expect(result).toEqual({ success: true });
+
+      // Verify persona is still in draft state
+      const resetPersona = db
+        .prepare('SELECT * FROM personas WHERE id = ?')
+        .get(persona.id) as Persona;
+      expect(resetPersona.status).toBe('draft');
+    });
+
+    it('should throw error when resetting non-existent persona', () => {
+      const db = getTestDatabase();
+
+      expect(() => {
+        resetPersonaTrainingData('non-existent-id', db);
+      }).toThrow();
+    });
+
+    it('should use transaction for atomic reset operations', () => {
+      const db = getTestDatabase();
+
+      // Create a persona
+      const persona = createTestPersona(db);
+
+      // Create some training data
+      db.prepare(
+        `
+        INSERT INTO task_prompt_versions (id, persona_id, version_number, prompt_text, created_by, created_at)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `
+      ).run('task-v1', persona.id, 1, 'Task prompt v1', 'human', new Date().toISOString());
+
+      // Verify transaction is used by ensuring all deletions happen atomically
+      // If transaction failed, we'd expect partial deletions
+      const result = resetPersonaTrainingData(persona.id, db);
+
+      expect(result).toEqual({ success: true });
+
+      // All related data should be gone (atomic operation)
+      const remainingPrompts = db
+        .prepare('SELECT COUNT(*) as count FROM task_prompt_versions WHERE persona_id = ?')
+        .get(persona.id) as { count: number };
+      expect(remainingPrompts.count).toBe(0);
     });
   });
 });

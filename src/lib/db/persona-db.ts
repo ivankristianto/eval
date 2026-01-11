@@ -363,6 +363,120 @@ export function deletePersona(id: string, db?: Database.Database): boolean {
   return result.changes > 0;
 }
 
+/**
+ * Reset all training data for a persona, returning it to draft state.
+ *
+ * Deletes all training-related data while preserving training_pairs:
+ * - iteration_metrics
+ * - judge_decisions
+ * - human_reviews
+ * - judge_prompt_versions
+ * - task_prompt_versions
+ * - training_iterations
+ * - training_loop_checkpoints
+ * - training_loop_state
+ * - training_pair_results
+ *
+ * Resets persona status to 'draft' and clears:
+ * - current_task_prompt_version_id
+ * - current_judge_prompt_version_id
+ * - best_pass_rate
+ * - best_pass_rate_updated_at
+ *
+ * @param id - Persona ID
+ * @param db - Optional database instance
+ * @returns Object indicating success
+ * @throws Error if persona not found
+ */
+export function resetPersonaTrainingData(
+  id: string,
+  db?: Database.Database
+): { success: true } {
+  const database = db || getTrainingDatabase();
+
+  const existing = getPersona(id, database);
+
+  if (!existing) {
+    throw new Error(`Persona not found: ${id}`);
+  }
+
+  return withTransaction((transactionDb) => {
+    // Delete human_reviews (must be done before judge_decisions due to foreign key)
+    transactionDb
+      .prepare(
+        `DELETE FROM human_reviews
+         WHERE judge_decision_id IN (
+           SELECT jd.id FROM judge_decisions jd
+           JOIN training_iterations ti ON ti.id = jd.iteration_id
+           WHERE ti.persona_id = ?
+         )`
+      )
+      .run(id);
+
+    // Delete iteration_metrics
+    transactionDb
+      .prepare(
+        `DELETE FROM iteration_metrics
+         WHERE iteration_id IN (
+           SELECT id FROM training_iterations WHERE persona_id = ?
+         )`
+      )
+      .run(id);
+
+    // Delete judge_decisions
+    transactionDb
+      .prepare(
+        `DELETE FROM judge_decisions
+         WHERE iteration_id IN (
+           SELECT id FROM training_iterations WHERE persona_id = ?
+         )`
+      )
+      .run(id);
+
+    // Delete judge_prompt_versions
+    transactionDb.prepare('DELETE FROM judge_prompt_versions WHERE persona_id = ?').run(id);
+
+    // Delete task_prompt_versions
+    transactionDb.prepare('DELETE FROM task_prompt_versions WHERE persona_id = ?').run(id);
+
+    // Delete training_loop_checkpoints (via session_id in training_loop_state)
+    transactionDb
+      .prepare(
+        `DELETE FROM training_loop_checkpoints
+         WHERE session_id IN (
+           SELECT session_id FROM training_loop_state WHERE persona_id = ?
+         )`
+      )
+      .run(id);
+
+    // Delete training_loop_state for this persona
+    transactionDb.prepare('DELETE FROM training_loop_state WHERE persona_id = ?').run(id);
+
+    // Delete training_iterations (after cascading deletes)
+    transactionDb.prepare('DELETE FROM training_iterations WHERE persona_id = ?').run(id);
+
+    // Delete training_pair_results (evaluation results for training pairs)
+    transactionDb.prepare('DELETE FROM training_pair_results WHERE persona_id = ?').run(id);
+
+    // Reset persona to initial state
+    const now = new Date().toISOString();
+    transactionDb
+      .prepare(
+        `UPDATE personas
+         SET status = 'draft',
+             current_task_prompt_version_id = NULL,
+             current_judge_prompt_version_id = NULL,
+             best_pass_rate = NULL,
+             best_pass_rate_updated_at = NULL,
+             updated_at = ?
+         WHERE id = ?`
+      )
+      .run(now, id);
+
+    return { success: true };
+  }, db);
+}
+
 // ===== TrainingPair CRUD Operations =====
 
 /**
