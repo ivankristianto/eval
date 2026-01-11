@@ -8,6 +8,7 @@ import type { APIRoute } from 'astro';
 import { getDatabase } from '@lib/db';
 import { badRequest, notFound, createErrorResponse } from '@lib/api-error-handler';
 import { createLogger } from '@lib/logger';
+import { getHumanMetricsFromResults, getJudgeMetricsFromResults } from '@lib/db/persona-db';
 
 const logger = createLogger('API:Training:FeedbackByPair');
 
@@ -178,6 +179,10 @@ export const POST: APIRoute = async ({ params, request }) => {
       updated_at: string;
     };
 
+    // Calculate real-time metrics after human rating submission
+    const humanMetrics = getHumanMetricsFromResults(id, db);
+    const judgeMetrics = getJudgeMetricsFromResults(id, db);
+
     return new Response(
       JSON.stringify({
         id: updatedResult.id,
@@ -185,6 +190,10 @@ export const POST: APIRoute = async ({ params, request }) => {
         human_rating: updatedResult.human_rating,
         human_feedback: updatedResult.human_feedback,
         updated_at: updatedResult.updated_at,
+        metrics: {
+          human: humanMetrics,
+          judge: judgeMetrics,
+        },
       }),
       { status: 200, headers: { 'Content-Type': 'application/json' } }
     );
