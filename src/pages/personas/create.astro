@@ -97,6 +97,7 @@ const breadcrumbItems = [
                 placeholder="e.g., Customer Support Judge"
                 class="input input-bordered w-full"
                 required
+                data-test="persona-name"
               />
               <label class="label">
                 <span class="label-text-alt">A unique, descriptive name for this judge persona</span
@@ -112,7 +113,8 @@ const breadcrumbItems = [
                 name="description"
                 placeholder="What does this judge evaluate?"
                 class="textarea textarea-bordered w-full h-24"
-                rows="3"></textarea>
+                rows="3"
+                data-test="persona-description"></textarea>
               <label class="label">
                 <span class="label-text-alt"
                   >Optional description of what this persona evaluates</span
@@ -131,7 +133,8 @@ const breadcrumbItems = [
                 placeholder="e.g., You are a helpful customer support agent. Respond to the customer's inquiry professionally and accurately."
                 class="textarea textarea-bordered w-full h-32"
                 rows="5"
-                required></textarea>
+                required
+                data-test="task-prompt"></textarea>
               <label class="label">
                 <span class="label-text-alt"
                   >The prompt used to generate outputs that the judge will evaluate</span
@@ -150,7 +153,8 @@ const breadcrumbItems = [
                 placeholder="e.g., Evaluate if the response is professional, accurate, and helpful. Respond with 'agree' if it meets the criteria, or 'disagree' if it does not."
                 class="textarea textarea-bordered w-full h-32"
                 rows="5"
-                required></textarea>
+                required
+                data-test="judge-prompt"></textarea>
               <label class="label">
                 <span class="label-text-alt"
                   >The initial evaluation criteria for the judge. This will be refined during
@@ -195,6 +199,7 @@ const breadcrumbItems = [
                   class="select select-bordered w-full"
                   required
                   id="task-model-select"
+                  data-test="task-model"
                 >
                   <option value="" selected>Select a model to generate outputs</option>
                   {
@@ -245,6 +250,7 @@ const breadcrumbItems = [
                   class="select select-bordered w-full"
                   required
                   id="judge-model-select"
+                  data-test="judge-model"
                 >
                   <option value="" selected>Select a model to judge outputs</option>
                   {
@@ -295,6 +301,7 @@ const breadcrumbItems = [
                   class="select select-bordered w-full"
                   required
                   id="prompt-engineer-select"
+                  data-test="prompt-engineer-model"
                 >
                   <option value="" selected>Select a model to refine judge prompts</option>
                   {
@@ -334,7 +341,11 @@ const breadcrumbItems = [
               </label>
             </div>
 
-            <div id="validation-error" class="alert alert-error hidden">
+            <div
+              id="validation-error"
+              class="alert alert-error hidden"
+              data-test="validation-error"
+            >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 class="stroke-current shrink-0 h-6 w-6"
@@ -356,7 +367,12 @@ const breadcrumbItems = [
 
           <div class="flex justify-end gap-4">
             <a href="/personas" class="btn btn-ghost">Cancel</a>
-            <button type="submit" class="btn btn-primary" id="submit-btn">
+            <button
+              type="submit"
+              class="btn btn-primary"
+              id="submit-btn"
+              data-test="create-persona-submit"
+            >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 class="h-6 w-6"
