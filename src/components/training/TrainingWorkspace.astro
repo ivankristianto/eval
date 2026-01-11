@@ -458,6 +458,82 @@ const {
     }
   });
 
+  // Handle version-load events from PromptEditor
+  document.addEventListener('version-load', async (e) => {
+    const { type, version } = (e as CustomEvent<{ type: string; version: number }>).detail;
+
+    // Get persona ID from the page
+    const personaIdElement = document.querySelector('[data-persona-id]') as HTMLElement | null;
+    const personaId = personaIdElement?.dataset.personaId;
+
+    if (!personaId) {
+      console.error('No persona_id found on page');
+      if (window.toast) {
+        window.toast.error('Failed to load version: Missing persona ID');
+      }
+      return;
+    }
+
+    try {
+      // Fetch versions based on prompt type
+      let versions: Array<{ version_number: number; prompt_text: string }>;
+
+      if (type === 'task') {
+        const response = await fetch(`/api/prompts/task/versions?persona_id=${personaId}`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch task prompt versions');
+        }
+        const data = await response.json();
+        versions = data.versions || [];
+      } else {
+        // judge type
+        const response = await fetch(`/api/personas/${personaId}/prompts`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch judge prompt versions');
+        }
+        const data = await response.json();
+        versions = data.prompts || [];
+      }
+
+      // Find the matching version
+      const matchedVersion = versions.find((v) => v.version_number === version);
+
+      if (matchedVersion) {
+        // Update the textarea
+        const textareaId = `${type}-prompt-editor`;
+        const textarea = document.getElementById(textareaId) as HTMLTextAreaElement | null;
+
+        if (textarea) {
+          textarea.value = matchedVersion.prompt_text;
+
+          // Update char count
+          const charCountLabel = textarea
+            .closest('.card')
+            ?.querySelector('.label-text-alt') as HTMLElement;
+          if (charCountLabel) {
+            charCountLabel.textContent = `${matchedVersion.prompt_text.length} chars`;
+          }
+
+          if (window.toast) {
+            window.toast.success(`Loaded ${type} prompt version ${version}`);
+          }
+        } else {
+          console.error(`Textarea not found: ${textareaId}`);
+        }
+      } else {
+        console.error(`Version ${version} not found for ${type} prompt`);
+        if (window.toast) {
+          window.toast.error(`Version ${version} not found`);
+        }
+      }
+    } catch (error) {
+      console.error('Load version error:', error);
+      if (window.toast) {
+        window.toast.error(error instanceof Error ? error.message : 'Failed to load version');
+      }
+    }
+  });
+
   // Real-time polling for training pairs updates
   let pollingInterval: ReturnType<typeof setInterval> | null = null;
   let isPolling = false;
