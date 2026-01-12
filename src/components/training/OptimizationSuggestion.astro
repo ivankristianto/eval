@@ -35,7 +35,7 @@ const {
 <input type="checkbox" id={modalId} class="modal-toggle" />
 
 <!-- Modal -->
-<div class="modal" role="dialog">
+<div class="modal" role="dialog" data-modal-content={modalId}>
   <div class="modal-box max-w-4xl">
     <!-- Header -->
     <div class="flex items-center justify-between mb-4">
@@ -205,7 +205,7 @@ const {
       }
 
       // Get suggested prompt from the modal
-      // Note: modalCheckbox is the input element, we need to query from the modal container (parent)
+      // Note: modalCheckbox is the input element, we need to query from the modal container using data attribute
       if (!modalId) {
         console.error('No modalId provided');
         if (window.toast) {
@@ -213,10 +213,8 @@ const {
         }
         return;
       }
-      const modalCheckbox = document.getElementById(modalId);
-      const suggestedCodeEl = modalCheckbox?.parentElement?.querySelector(
-        '.modal .mockup-code code:nth-of-type(2)'
-      );
+      const modalContent = document.querySelector(`div[data-modal-content="${modalId}"]`);
+      const suggestedCodeEl = modalContent?.querySelector('.mockup-code code:nth-of-type(2)');
       const suggestedPrompt = suggestedCodeEl?.textContent?.trim();
 
       if (!suggestedPrompt) {
@@ -297,11 +295,9 @@ const {
         return;
       }
 
-      // Get suggested prompt from the modal
-      const modalCheckbox = document.getElementById(modalId);
-      const suggestedCodeEl = modalCheckbox?.parentElement?.querySelector(
-        '.modal .mockup-code code:nth-of-type(2)'
-      );
+      // Get suggested prompt from the modal using data attribute
+      const modalContent = document.querySelector(`div[data-modal-content="${modalId}"]`);
+      const suggestedCodeEl = modalContent?.querySelector('.mockup-code code:nth-of-type(2)');
       const suggestedPrompt = suggestedCodeEl?.textContent?.trim();
 
       if (!suggestedPrompt) {
