@@ -164,7 +164,12 @@ const {
         </svg>
         Edit & Accept
       </button>
-      <button class="btn btn-success" data-action="accept-suggestion" data-modal-id={modalId}>
+      <button
+        class="btn btn-success"
+        data-action="accept-suggestion"
+        data-modal-id={modalId}
+        data-type={type}
+      >
         <svg
           xmlns="http://www.w3.org/2000/svg"
           fill="none"
@@ -200,9 +205,18 @@ const {
       }
 
       // Get suggested prompt from the modal
-      const suggestedCodeEl = document
-        .querySelector(`#${modalId}`)
-        ?.parentElement?.querySelectorAll('.mockup-code code')[1];
+      // Note: modalCheckbox is the input element, we need to query from the modal container (parent)
+      if (!modalId) {
+        console.error('No modalId provided');
+        if (window.toast) {
+          window.toast.error('Cannot save: Missing modal ID');
+        }
+        return;
+      }
+      const modalCheckbox = document.getElementById(modalId);
+      const suggestedCodeEl = modalCheckbox?.parentElement?.querySelector(
+        '.modal .mockup-code code:nth-of-type(2)'
+      );
       const suggestedPrompt = suggestedCodeEl?.textContent?.trim();
 
       if (!suggestedPrompt) {
@@ -272,20 +286,47 @@ const {
     btn.addEventListener('click', (e) => {
       const button = e.currentTarget as HTMLElement;
       const modalId = button.dataset.modalId;
-      console.log('Accepted optimization suggestion');
+      const type = button.dataset.type;
 
-      // Close modal
-      if (modalId) {
-        const modalCheckbox = document.getElementById(modalId) as HTMLInputElement | null;
-        if (modalCheckbox) modalCheckbox.checked = false;
+      // Validate required fields
+      if (!modalId || !type) {
+        console.error('No modalId or type provided');
+        if (window.toast) {
+          window.toast.error('Cannot accept: Missing modal ID or type');
+        }
+        return;
       }
 
-      // Dispatch custom event
+      // Get suggested prompt from the modal
+      const modalCheckbox = document.getElementById(modalId);
+      const suggestedCodeEl = modalCheckbox?.parentElement?.querySelector(
+        '.modal .mockup-code code:nth-of-type(2)'
+      );
+      const suggestedPrompt = suggestedCodeEl?.textContent?.trim();
+
+      if (!suggestedPrompt) {
+        console.error('Could not find suggested prompt');
+        if (window.toast) {
+          window.toast.error('Cannot accept: Suggested prompt not found');
+        }
+        return;
+      }
+
+      // Close modal
+      const modalCheckboxElement = document.getElementById(modalId) as HTMLInputElement | null;
+      if (modalCheckboxElement) modalCheckboxElement.checked = false;
+
+      // Dispatch custom event with the suggested prompt
       const event = new CustomEvent('suggestion-accepted', {
         bubbles: true,
-        detail: { modalId },
+        detail: { modalId, type, suggestedPrompt },
       });
       button.dispatchEvent(event);
+
+      // Show success notification
+      if (window.toast) {
+        window.toast.success(`${type} prompt updated with optimization suggestion!`);
+      }
     });
   });
 
