@@ -495,7 +495,7 @@ describe('Personas API Integration', () => {
       `
       ).run('pair-1', persona.id, 'Input 1', 'Output 1', new Date().toISOString());
 
-      // Create task prompt version
+      // Create task prompt versions (version 0 is created with persona, add version 1)
       db.prepare(
         `
         INSERT INTO task_prompt_versions (id, persona_id, version_number, prompt_text, created_by, created_at)
@@ -503,7 +503,7 @@ describe('Personas API Integration', () => {
       `
       ).run('task-v1', persona.id, 1, 'Task prompt v1', 'human', new Date().toISOString());
 
-      // Create judge prompt version
+      // Create judge prompt versions (version 0 is created with persona, add version 1)
       db.prepare(
         `
         INSERT INTO judge_prompt_versions (id, persona_id, version_number, prompt_text, created_by, created_at)
@@ -647,8 +647,8 @@ describe('Personas API Integration', () => {
       expect(metricsBefore.count).toBe(1);
       expect(decisionsBefore.count).toBe(1);
       expect(reviewsBefore.count).toBe(1);
-      expect(taskPromptsBefore.count).toBe(2);
-      expect(judgePromptsBefore.count).toBe(2);
+      expect(taskPromptsBefore.count).toBe(2); // Version 0 (initial) + version 1
+      expect(judgePromptsBefore.count).toBe(2); // Version 0 (initial) + version 1
       expect(loopStateBefore.count).toBe(1);
       expect(checkpointsBefore.count).toBe(1);
       expect(pairResultsBefore.count).toBe(1);
@@ -700,8 +700,8 @@ describe('Personas API Integration', () => {
       expect(metricsAfter.count).toBe(0);
       expect(decisionsAfter.count).toBe(0);
       expect(reviewsAfter.count).toBe(0);
-      expect(taskPromptsAfter.count).toBe(0);
-      expect(judgePromptsAfter.count).toBe(0);
+      expect(taskPromptsAfter.count).toBe(1); // Version 0 (initial) is preserved
+      expect(judgePromptsAfter.count).toBe(1); // Version 0 (initial) is preserved
       expect(loopStateAfter.count).toBe(0);
       expect(checkpointsAfter.count).toBe(0);
       expect(pairResultsAfter.count).toBe(0);
@@ -770,11 +770,11 @@ describe('Personas API Integration', () => {
 
       expect(result).toEqual({ success: true });
 
-      // All related data should be gone (atomic operation)
+      // All related data should be gone except version 0 prompts (atomic operation)
       const remainingPrompts = db
         .prepare('SELECT COUNT(*) as count FROM task_prompt_versions WHERE persona_id = ?')
         .get(persona.id) as { count: number };
-      expect(remainingPrompts.count).toBe(0);
+      expect(remainingPrompts.count).toBe(1); // Version 0 (initial) is preserved
     });
   });
 });

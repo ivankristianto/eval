@@ -366,12 +366,12 @@ export function deletePersona(id: string, db?: Database.Database): boolean {
 /**
  * Reset all training data for a persona, returning it to draft state.
  *
- * Deletes all training-related data while preserving training_pairs:
+ * Deletes all training-related data while preserving training_pairs and initial prompts (version 0):
  * - iteration_metrics
  * - judge_decisions
  * - human_reviews
- * - judge_prompt_versions
- * - task_prompt_versions
+ * - judge_prompt_versions (except version 0 - initial prompts are preserved)
+ * - task_prompt_versions (except version 0 - initial prompts are preserved)
  * - training_iterations
  * - training_loop_checkpoints
  * - training_loop_state
@@ -433,11 +433,15 @@ export function resetPersonaTrainingData(
       )
       .run(id);
 
-    // Delete judge_prompt_versions
-    transactionDb.prepare('DELETE FROM judge_prompt_versions WHERE persona_id = ?').run(id);
+    // Delete judge_prompt_versions (preserve version 0 - initial prompts)
+    transactionDb
+      .prepare('DELETE FROM judge_prompt_versions WHERE persona_id = ? AND version_number > 0')
+      .run(id);
 
-    // Delete task_prompt_versions
-    transactionDb.prepare('DELETE FROM task_prompt_versions WHERE persona_id = ?').run(id);
+    // Delete task_prompt_versions (preserve version 0 - initial prompts)
+    transactionDb
+      .prepare('DELETE FROM task_prompt_versions WHERE persona_id = ? AND version_number > 0')
+      .run(id);
 
     // Delete training_loop_checkpoints (via session_id in training_loop_state)
     transactionDb
