@@ -641,14 +641,14 @@ const {
           setPollingStatus(true, `${generatedCount}/${totalCount}`);
         }
 
-        // Check if we should stop polling (all pairs have judge ratings)
+        // Check if we should stop polling (all pairs have generated outputs)
         const allHaveResults =
-          data.stats.total_pairs > 0 && data.stats.with_judge_rating === data.stats.total_pairs;
+          data.stats.total_pairs > 0 && data.stats.with_generated_output === data.stats.total_pairs;
 
         if (allHaveResults) {
           stopPolling();
           if (window.toast) {
-            window.toast.success(`All ${data.stats.total_pairs} pairs evaluated successfully!`);
+            window.toast.success(`All ${data.stats.total_pairs} pairs have generated outputs!`);
           }
         }
       } catch (error) {
