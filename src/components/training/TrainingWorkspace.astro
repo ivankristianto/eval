@@ -662,6 +662,11 @@ const {
         // Update the table with new data
         updateTrainingPairsTable(data.pairs);
 
+        // Update metrics if available
+        if (data.metrics) {
+          updateMetrics(data.metrics);
+        }
+
         // Update polling status with progress
         if (data.stats) {
           const generatedCount = data.stats.with_generated_output || 0;
@@ -716,6 +721,71 @@ const {
     judge_feedback?: string;
     human_rating?: string;
     human_feedback?: string;
+  }
+
+  /**
+   * Update metrics in the SimpleMetrics component
+   * Uses data-metric attributes to find and update individual metric values
+   */
+  function updateMetrics(metrics: {
+    f1_score?: number;
+    precision?: number;
+    recall?: number;
+    cohens_kappa?: number;
+    accuracy?: number;
+    confusion_matrix?: {
+      true_positives?: number;
+      true_negatives?: number;
+      false_positives?: number;
+      false_negatives?: number;
+    };
+    total_pairs?: number;
+  }) {
+    const container = document.querySelector('[data-metrics-container="true"]');
+    if (!container) return;
+
+    // Helper to format and update a metric value
+    const updateMetricValue = (metricName: string, value: number | undefined) => {
+      const element = container.querySelector(`[data-metric="${metricName}"]`);
+      if (!element) return;
+
+      // Update the data-value attribute
+      if (value !== undefined && value !== null) {
+        element.setAttribute('data-value', value.toString());
+      }
+
+      // Update the displayed text based on metric type
+      if (metricName === 'cohens_kappa') {
+        element.textContent = value !== undefined && value !== null ? value.toFixed(3) : 'N/A';
+      } else if (['f1_score', 'precision', 'recall'].includes(metricName)) {
+        element.textContent =
+          value !== undefined && value !== null ? `${(value * 100).toFixed(1)}%` : 'N/A';
+      } else {
+        // For confusion matrix values and total_pairs
+        element.textContent = value !== undefined && value !== null ? value.toString() : 'N/A';
+      }
+
+      // Add flash animation to indicate update
+      flashElement(element, 'bg-success/10', 500);
+    };
+
+    // Update each metric if provided
+    if (metrics.f1_score !== undefined) updateMetricValue('f1_score', metrics.f1_score);
+    if (metrics.precision !== undefined) updateMetricValue('precision', metrics.precision);
+    if (metrics.recall !== undefined) updateMetricValue('recall', metrics.recall);
+    if (metrics.cohens_kappa !== undefined) updateMetricValue('cohens_kappa', metrics.cohens_kappa);
+    if (metrics.total_pairs !== undefined) updateMetricValue('total_pairs', metrics.total_pairs);
+
+    // Update confusion matrix values if provided
+    if (metrics.confusion_matrix) {
+      const cm = metrics.confusion_matrix;
+      if (cm.true_positives !== undefined) updateMetricValue('true_positives', cm.true_positives);
+      if (cm.true_negatives !== undefined) updateMetricValue('true_negatives', cm.true_negatives);
+      if (cm.false_positives !== undefined)
+        updateMetricValue('false_positives', cm.false_positives);
+      if (cm.false_negatives !== undefined)
+        updateMetricValue('false_negatives', cm.false_negatives);
+    }
   }
 
   /**

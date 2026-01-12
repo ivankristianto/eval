@@ -5,6 +5,7 @@
  * Displays evaluation metrics for training data.
  * Shows F1 Score, Precision, Recall, Cohen's Kappa, and Confusion Matrix.
  * Aligned with metrics.astro scoring display for consistency.
+ * Supports dynamic updates via data attributes for live polling.
  *
  * @param metrics - Object containing evaluation metrics
  */
@@ -77,7 +78,9 @@ const formatNumber = (value: number | undefined) => {
 ---
 
 <div
+  id="simple-metrics-card"
   class="card bg-gradient-to-br from-base-200 to-base-100 border border-base-300/50 shadow-lg rounded-xl overflow-hidden"
+  data-metrics-container="true"
 >
   <div class="card-body p-4">
     <div class="flex items-center gap-2 mb-4">
@@ -112,7 +115,11 @@ const formatNumber = (value: number | undefined) => {
             </div>
           </div>
         </div>
-        <div class="stat-value text-2xl font-mono font-bold text-primary tracking-tight">
+        <div
+          class="stat-value text-2xl font-mono font-bold text-primary tracking-tight"
+          data-metric="f1_score"
+          data-value={displayMetrics.f1_score ?? 0}
+        >
           {formatPercentage(displayMetrics.f1_score)}
         </div>
       </div>
@@ -142,7 +149,11 @@ const formatNumber = (value: number | undefined) => {
             </div>
           </div>
         </div>
-        <div class="stat-value text-xl font-mono font-bold text-secondary tracking-tight">
+        <div
+          class="stat-value text-xl font-mono font-bold text-secondary tracking-tight"
+          data-metric="cohens_kappa"
+          data-value={displayMetrics.cohens_kappa ?? 0}
+        >
           {displayMetrics.cohens_kappa?.toFixed(3) || 'N/A'}
         </div>
       </div>
@@ -172,7 +183,11 @@ const formatNumber = (value: number | undefined) => {
             </div>
           </div>
         </div>
-        <div class="stat-value text-lg font-mono font-semibold text-success tracking-tight">
+        <div
+          class="stat-value text-lg font-mono font-semibold text-success tracking-tight"
+          data-metric="precision"
+          data-value={displayMetrics.precision ?? 0}
+        >
           {formatPercentage(displayMetrics.precision)}
         </div>
       </div>
@@ -202,7 +217,11 @@ const formatNumber = (value: number | undefined) => {
             </div>
           </div>
         </div>
-        <div class="stat-value text-lg font-mono font-semibold text-info tracking-tight">
+        <div
+          class="stat-value text-lg font-mono font-semibold text-info tracking-tight"
+          data-metric="recall"
+          data-value={displayMetrics.recall ?? 0}
+        >
           {formatPercentage(displayMetrics.recall)}
         </div>
       </div>
@@ -211,7 +230,10 @@ const formatNumber = (value: number | undefined) => {
     <!-- Confusion Matrix -->
     {
       displayMetrics.confusion_matrix && (
-        <div class="bg-base-100/80 rounded-lg p-3 shadow-md border border-base-300/50 mb-3">
+        <div
+          class="bg-base-100/80 rounded-lg p-3 shadow-md border border-base-300/50 mb-3"
+          data-confusion-matrix="true"
+        >
           <div class="text-xs font-semibold mb-3 opacity-70 flex items-center gap-2">
             <span class="w-1.5 h-1.5 rounded-full bg-base-content/40" />
             Confusion Matrix
@@ -219,25 +241,41 @@ const formatNumber = (value: number | undefined) => {
           <div class="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
             <div class="flex justify-between items-center">
               <span class="opacity-60">True Positives</span>
-              <span class="font-mono font-bold text-success">
+              <span
+                class="font-mono font-bold text-success"
+                data-metric="true_positives"
+                data-value={displayMetrics.confusion_matrix.true_positives ?? 0}
+              >
                 {formatNumber(displayMetrics.confusion_matrix.true_positives)}
               </span>
             </div>
             <div class="flex justify-between items-center">
               <span class="opacity-60">True Negatives</span>
-              <span class="font-mono font-bold text-success">
+              <span
+                class="font-mono font-bold text-success"
+                data-metric="true_negatives"
+                data-value={displayMetrics.confusion_matrix.true_negatives ?? 0}
+              >
                 {formatNumber(displayMetrics.confusion_matrix.true_negatives)}
               </span>
             </div>
             <div class="flex justify-between items-center">
               <span class="opacity-60">False Positives</span>
-              <span class="font-mono font-bold text-error">
+              <span
+                class="font-mono font-bold text-error"
+                data-metric="false_positives"
+                data-value={displayMetrics.confusion_matrix.false_positives ?? 0}
+              >
                 {formatNumber(displayMetrics.confusion_matrix.false_positives)}
               </span>
             </div>
             <div class="flex justify-between items-center">
               <span class="opacity-60">False Negatives</span>
-              <span class="font-mono font-bold text-error">
+              <span
+                class="font-mono font-bold text-error"
+                data-metric="false_negatives"
+                data-value={displayMetrics.confusion_matrix.false_negatives ?? 0}
+              >
                 {formatNumber(displayMetrics.confusion_matrix.false_negatives)}
               </span>
             </div>
@@ -251,7 +289,13 @@ const formatNumber = (value: number | undefined) => {
       displayMetrics.total_pairs && (
         <div class="flex justify-between items-center text-xs pt-3 border-t border-base-300/50">
           <span class="text-base-content/60 font-medium">Total Pairs</span>
-          <span class="font-bold font-mono text-base-content/80">{displayMetrics.total_pairs}</span>
+          <span
+            class="font-bold font-mono text-base-content/80"
+            data-metric="total_pairs"
+            data-value={displayMetrics.total_pairs}
+          >
+            {displayMetrics.total_pairs}
+          </span>
         </div>
       )
     }
