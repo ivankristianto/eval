@@ -414,7 +414,7 @@ const totalPages = Math.max(1, Math.ceil(pairs.length / pageSize));
           </svg>
           <h3 class="text-lg font-semibold mb-2">No Training Data</h3>
           <p class="text-sm text-base-content/70 mb-4">Upload a CSV file to add training pairs</p>
-          <button class="btn btn-primary btn-sm">
+          <button class="btn btn-primary btn-sm" data-action="upload-csv-empty">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
@@ -674,16 +674,20 @@ const totalPages = Math.max(1, Math.ceil(pairs.length / pageSize));
     }
   });
 
-  // CSV import button
+  // CSV import button (both header button and empty state button)
   const importCsvBtn = document.querySelector('[data-action="import-csv"]');
+  const emptyStateUploadBtn = document.querySelector('[data-action="upload-csv-empty"]');
   const csvFileInput = document.querySelector('[data-action="csv-file-input"]');
 
-  importCsvBtn?.addEventListener('click', () => {
+  const triggerFileUpload = () => {
     console.log('Import CSV clicked');
     if (csvFileInput) {
       csvFileInput.click();
     }
-  });
+  };
+
+  importCsvBtn?.addEventListener('click', triggerFileUpload);
+  emptyStateUploadBtn?.addEventListener('click', triggerFileUpload);
 
   csvFileInput?.addEventListener('change', (e) => {
     const target = e.target;
