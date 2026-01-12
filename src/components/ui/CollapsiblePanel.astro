@@ -101,12 +101,15 @@ const { panelId, defaultExpanded = true, position = 'left' } = Astro.props;
   </button>
 </div>
 
-<script define:vars={{ panelId, defaultExpanded, position }}>
+<script define:vars={{ panelId, defaultExpanded }}>
+  import { initializeOnce } from '@lib/utils/client-utils';
+
   // localStorage key for persistence
   const STORAGE_KEY = `panel-collapsed-${panelId}`;
 
   /**
    * Get the initial collapsed state from localStorage or use default
+   * @returns {boolean} Initial expanded state
    */
   function getInitialState() {
     try {
@@ -122,6 +125,7 @@ const { panelId, defaultExpanded = true, position = 'left' } = Astro.props;
 
   /**
    * Save the collapsed state to localStorage
+   * @param {boolean} isExpanded - Whether the panel is expanded
    */
   function saveState(isExpanded) {
     try {
@@ -133,6 +137,7 @@ const { panelId, defaultExpanded = true, position = 'left' } = Astro.props;
 
   /**
    * Apply the collapsed/expanded state to the DOM
+   * @param {boolean} isExpanded - Whether the panel is expanded
    */
   function applyState(isExpanded) {
     const panel = document.querySelector(`[data-panel-id="${panelId}"][data-collapse-panel]`);
@@ -155,9 +160,9 @@ const { panelId, defaultExpanded = true, position = 'left' } = Astro.props;
       main.classList.remove('lg:col-span-12');
       main.classList.add('lg:col-span-9');
 
-      // Rotate icon based on position
+      // Rotate icon to indicate expandability (same rotation for both positions since SVG paths differ)
       const svgIcon = icon;
-      svgIcon.style.transform = position === 'left' ? 'rotate(0deg)' : 'rotate(0deg)';
+      svgIcon.style.transform = 'rotate(0deg)';
     } else {
       // Panel is collapsed
       panel.classList.remove('lg:col-span-3', 'opacity-100');
@@ -167,9 +172,9 @@ const { panelId, defaultExpanded = true, position = 'left' } = Astro.props;
       main.classList.remove('lg:col-span-9');
       main.classList.add('lg:col-span-12');
 
-      // Rotate icon based on position
+      // Rotate icon to indicate expandability (same rotation for both positions since SVG paths differ)
       const svgIcon = icon;
-      svgIcon.style.transform = position === 'left' ? 'rotate(180deg)' : 'rotate(-180deg)';
+      svgIcon.style.transform = 'rotate(180deg)';
     }
 
     // Update button aria state
@@ -192,8 +197,10 @@ const { panelId, defaultExpanded = true, position = 'left' } = Astro.props;
     applyState(newState);
   }
 
-  // Initialize on DOM content loaded
-  document.addEventListener('DOMContentLoaded', () => {
+  /**
+   * Initialize panel event listeners and apply initial state
+   */
+  function initPanel() {
     const initialState = getInitialState();
     applyState(initialState);
 
@@ -209,6 +216,12 @@ const { panelId, defaultExpanded = true, position = 'left' } = Astro.props;
         togglePanel();
       }
     });
+  }
+
+  // Initialize once and re-initialize on Astro page transitions
+  initializeOnce(`collapsiblePanel-${panelId}`, initPanel);
+  document.addEventListener('astro:page-load', () => {
+    initializeOnce(`collapsiblePanel-${panelId}`, initPanel);
   });
 </script>
 
