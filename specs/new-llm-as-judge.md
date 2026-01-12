@@ -23,6 +23,9 @@ Redesign the LLM-as-a-Judge training system from an **automatic iteration-based 
 - No automatic iteration
 - Single unified table view (input, expected_output, generated_output, rating, feedback, grader)
 - Manual prompt optimization triggers
+- **New: "Live Playground"** for instant row-level testing
+- **New: "Training Trajectory"** sparklines to visualize progress
+- **New: Side-by-side Output Diffing** to compare results across versions
 
 ## User Workflow
 
@@ -30,13 +33,14 @@ Redesign the LLM-as-a-Judge training system from an **automatic iteration-based 
 
 1. **Create Persona** → Configure task prompt, judge prompt, models
 2. **Upload Training Data** → CSV with input/expected_output pairs
-3. **Generate Outputs** → Click "Generate Outputs" → Task model creates generated_output for all pairs
+3. **Playground Testing** (Optional) → Test prompts on single rows instantly
+4. **Generate Outputs** → Click "Generate Outputs" → Task model creates generated_output for all pairs
    - Auto-creates new task prompt version if prompt was edited
-4. **Run Judge** → Click "Run Judge on All" or "Evaluate Selected Rows"
+5. **Run Judge** → Click "Run Judge on All" or "Evaluate Selected Rows"
    - Judge evaluates outputs, assigns Pass/Fail
    - Auto-creates new judge prompt version if prompt was edited
-5. **Human Review** → Click Pass/Fail on each row, add feedback notes
-6. **Optimize Prompts** → Click "Optimize Task Prompt" or "Optimize Judge Prompt"
+6. **Human Review** → Click Pass/Fail on each row, add feedback notes
+7. **Optimize Prompts** → Click "Optimize Task Prompt" or "Optimize Judge Prompt"
    - LLM analyzes Pass/Fail feedback and reasoning
    - Suggests improved prompt based on failures
    - User reviews and accepts/edits suggestion
@@ -244,6 +248,7 @@ CREATE TABLE persona_metrics (
    - Inline Pass/Fail buttons per row
    - Checkbox selection for batch operations
    - "Run Judge on All" / "Evaluate Selected" buttons
+   - **New**: "Play" button for Live Playground
 
 4. **`PassFailBadge.astro`**
    - Visual badge component (green Pass / red Fail)
@@ -256,7 +261,11 @@ CREATE TABLE persona_metrics (
 6. **`SimpleMetrics.astro`**
    - Shows: Total pairs, Pass count, Fail count, Pass rate %
    - Judge stats vs Human stats
-   - No charts (or simple bar chart)
+   - **New**: Sparkline charts for historical trends
+
+7. **`PlaygroundModal.astro`** (New)
+   - Modal for "Live Playground" execution
+   - Split view: Input -> Streamed Output / Judge Decision
 
 #### Pages (`src/pages/personas/[id]/`)
 
@@ -279,17 +288,17 @@ CREATE TABLE persona_metrics (
 ┌─────────────────────────────────────────────────────────────┐
 │ Persona: [Name]                    [Generate] [Evaluate All]│
 ├──────────────────┬──────────────────────────────────────────┤
-│ TASK PROMPT      │ TRAINING DATA                            │
+│ TASK PROMPT      │ DASHBOARD [F1: 0.85 📈] [Pass: 90% 📈]   │
 │                  │                                            │
 │ [Version v3 ▼]   │ ☑ Select All  [Evaluate Selected]        │
 │ ┌──────────────┐ │ ┌────────────────────────────────────────┤
-│ │              │ │ │Input│Expected│Generated│Rating│Feedback│
+│ │              │ │ │Input│Expected│Generated│Rating│Actions │
 │ │ (editable)   │ │ ├─────┼────────┼─────────┼──────┼────────┤
-│ │              │ │ │☐ ... │  ...   │   ...   │ Pass │  ...   │
-│ │              │ │ │☐ ... │  ...   │   ...   │ Fail │  ...   │
+│ │              │ │ │☐ ... │  ...   │   ...   │ Pass │ [▶]    │
+│ │              │ │ │☐ ... │  ...   │   ...   │ Fail │ [▶]    │
 │ └──────────────┘ │ └────────────────────────────────────────┘
 │ [Optimize ✨]    │                                            │
-│ [View History]   │ Pass Rate: 65% (Judge) | 80% (Human)     │
+│ [View History]   │                                            │
 │                  │                                            │
 │ JUDGE PROMPT     │                                            │
 │ [Version v2 ▼]   │                                            │
@@ -312,6 +321,14 @@ CREATE TABLE persona_metrics (
 4. Task model generates outputs for all pairs (or selected)
 5. Table updates with generated_output column filled
 6. Status: "Generated 50 outputs with Task Prompt v3"
+
+#### Live Playground (New)
+1. User clicks "Play" [▶] button on a specific row
+2. Modal opens showing "Input", "Task Prompt", "Judge Prompt"
+3. "Executing..." spinner appears
+4. Output streams in real-time
+5. Judge evaluates immediately
+6. User can tweak prompt *inside* the playground for instant feedback
 
 #### Evaluate with Judge
 1. User edits judge prompt (or keeps current)
@@ -440,6 +457,17 @@ CREATE TABLE persona_metrics (
 4. Load testing for large datasets
 5. Polish UI animations and transitions
 
+### Phase 8: Interactive Enhancements (New)
+**Files:**
+- `src/components/training/PlaygroundModal.astro`
+- `src/components/training/Sparkline.astro`
+- `src/components/training/OutputDiffViewer.astro`
+
+**Tasks:**
+1. **Live Playground**: Implement `PlaygroundModal.astro` for single-row testing.
+2. **Sparklines**: Add SVG sparklines to `SimpleMetrics.astro` to visualize F1/Pass Rate trends.
+3. **Output Diffing**: Create `OutputDiffViewer.astro` to compare generated outputs side-by-side between versions.
+
 ## Critical Files to Modify
 
 ### Database
@@ -471,6 +499,9 @@ CREATE TABLE persona_metrics (
 - `src/components/training/PassFailBadge.astro` - NEW
 - `src/components/training/OptimizationSuggestion.astro` - NEW
 - `src/components/training/SimpleMetrics.astro` - NEW
+- `src/components/training/PlaygroundModal.astro` - NEW
+- `src/components/training/Sparkline.astro` - NEW
+- `src/components/training/OutputDiffViewer.astro` - NEW
 
 ### Deprecated (Move to `src/lib/training/deprecated/`)
 - `src/lib/training/training-loop.ts`
