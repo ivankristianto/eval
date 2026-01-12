@@ -1,0 +1,224 @@
+---
+/**
+ * CollapsiblePanel Component
+ *
+ * A reusable collapsible panel component with localStorage persistence.
+ * Features smooth transitions, keyboard accessibility, and collapse/expand toggle.
+ *
+ * @example
+ * <CollapsiblePanel
+ *   panelId="training-workspace-left"
+ *   defaultExpanded={true}
+ *   position="left"
+ * >
+ *   <div slot="panel-content">Panel content here</div>
+ *   <div slot="main-content">Main content here</div>
+ * </CollapsiblePanel>
+ *
+ * @param panelId - Unique identifier for localStorage persistence
+ * @param defaultExpanded - Initial collapsed state (default: true)
+ * @param position - Panel position for appropriate styling (left/right)
+ */
+
+interface Props {
+  panelId: string;
+  defaultExpanded?: boolean;
+  position?: 'left' | 'right';
+}
+
+const { panelId, defaultExpanded = true, position = 'left' } = Astro.props;
+---
+
+<div class="flex-1 h-full overflow-hidden grid grid-cols-1 lg:grid-cols-12 relative">
+  <!-- Panel -->
+  <div
+    id={`collapse-panel-${panelId}`}
+    data-collapse-panel
+    data-panel-id={panelId}
+    data-default-expanded={defaultExpanded}
+    class={[
+      'overflow-hidden transition-all duration-300 ease-in-out border-base-300/50 bg-base-50/30',
+      'lg:col-span-3', // Default expanded width (3/12 = 25%)
+      position === 'left' ? 'border-r' : 'border-l',
+    ].join(' ')}
+  >
+    <div class="h-full overflow-y-auto p-4 pb-24 space-y-4">
+      <slot name="panel-content" />
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div
+    id={`collapse-main-${panelId}`}
+    data-collapse-main
+    data-panel-id={panelId}
+    class={[
+      'h-full flex flex-col overflow-hidden p-4',
+      'lg:col-span-9', // Default main width (9/12 = 75%)
+      'transition-all duration-300 ease-in-out',
+    ].join(' ')}
+  >
+    <slot name="main-content" />
+  </div>
+
+  <!-- Toggle Button (fixed position, floating) -->
+  <button
+    id={`collapse-toggle-${panelId}`}
+    data-collapse-toggle
+    data-panel-id={panelId}
+    aria-label={position === 'left' ? 'Toggle left panel' : 'Toggle right panel'}
+    aria-expanded={defaultExpanded}
+    class={[
+      'fixed z-10 btn btn-sm btn-ghost shadow-lg',
+      'transition-all duration-300 ease-in-out',
+      'top-1/2 -translate-y-1/2',
+      position === 'left' ? 'left-3' : 'right-3',
+    ].join(' ')}
+    type="button"
+  >
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke-width="2"
+      stroke="currentColor"
+      class="w-4 h-4 transition-transform duration-300"
+      id={`collapse-icon-${panelId}`}
+      data-collapse-icon
+    >
+      {
+        position === 'left' ? (
+          <>
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+          </>
+        ) : (
+          <>
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+          </>
+        )
+      }
+    </svg>
+  </button>
+</div>
+
+<script define:vars={{ panelId, defaultExpanded, position }}>
+  // localStorage key for persistence
+  const STORAGE_KEY = `panel-collapsed-${panelId}`;
+
+  /**
+   * Get the initial collapsed state from localStorage or use default
+   */
+  function getInitialState() {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored !== null) {
+        return stored === 'false';
+      }
+    } catch (error) {
+      console.warn('Failed to read panel state from localStorage:', error);
+    }
+    return defaultExpanded;
+  }
+
+  /**
+   * Save the collapsed state to localStorage
+   */
+  function saveState(isExpanded) {
+    try {
+      localStorage.setItem(STORAGE_KEY, String(isExpanded));
+    } catch (error) {
+      console.warn('Failed to save panel state to localStorage:', error);
+    }
+  }
+
+  /**
+   * Apply the collapsed/expanded state to the DOM
+   */
+  function applyState(isExpanded) {
+    const panel = document.querySelector(`[data-panel-id="${panelId}"][data-collapse-panel]`);
+    const main = document.querySelector(`[data-panel-id="${panelId}"][data-collapse-main]`);
+    const toggle = document.querySelector(`[data-panel-id="${panelId}"][data-collapse-toggle]`);
+    const icon = document.querySelector(`#collapse-icon-${panelId}`);
+
+    if (!panel || !main || !toggle || !icon) {
+      console.warn('Collapse panel elements not found');
+      return;
+    }
+
+    // Update panel width/visibility
+    if (isExpanded) {
+      // Panel is expanded
+      panel.classList.remove('lg:col-span-0', 'w-0', 'opacity-0', 'p-0');
+      panel.classList.add('lg:col-span-3', 'opacity-100');
+
+      // Main content takes remaining space
+      main.classList.remove('lg:col-span-12');
+      main.classList.add('lg:col-span-9');
+
+      // Rotate icon based on position
+      const svgIcon = icon;
+      svgIcon.style.transform = position === 'left' ? 'rotate(0deg)' : 'rotate(0deg)';
+    } else {
+      // Panel is collapsed
+      panel.classList.remove('lg:col-span-3', 'opacity-100');
+      panel.classList.add('lg:col-span-0', 'w-0', 'opacity-0', 'p-0');
+
+      // Main content takes full width
+      main.classList.remove('lg:col-span-9');
+      main.classList.add('lg:col-span-12');
+
+      // Rotate icon based on position
+      const svgIcon = icon;
+      svgIcon.style.transform = position === 'left' ? 'rotate(180deg)' : 'rotate(-180deg)';
+    }
+
+    // Update button aria state
+    toggle.setAttribute('aria-expanded', String(isExpanded));
+
+    // Save state
+    saveState(isExpanded);
+  }
+
+  /**
+   * Toggle the panel state
+   */
+  function togglePanel() {
+    const panel = document.querySelector(`[data-panel-id="${panelId}"][data-collapse-panel]`);
+    if (!panel) return;
+
+    // Check current state by class presence
+    const isExpanded = panel.classList.contains('lg:col-span-3');
+    const newState = !isExpanded;
+    applyState(newState);
+  }
+
+  // Initialize on DOM content loaded
+  document.addEventListener('DOMContentLoaded', () => {
+    const initialState = getInitialState();
+    applyState(initialState);
+
+    // Attach toggle button listener
+    const toggleBtn = document.querySelector(`[data-panel-id="${panelId}"][data-collapse-toggle]`);
+    toggleBtn?.addEventListener('click', togglePanel);
+
+    // Keyboard accessibility: Space/Enter to toggle
+    toggleBtn?.addEventListener('keydown', (e) => {
+      const keyboardEvent = e;
+      if (keyboardEvent.key === ' ' || keyboardEvent.key === 'Enter') {
+        e.preventDefault();
+        togglePanel();
+      }
+    });
+  });
+</script>
+
+<style>
+  /* Ensure smooth transitions for all panel elements */
+  [data-collapse-panel] {
+    transition-property: grid-column, width, opacity, padding;
+  }
+
+  [data-collapse-main] {
+    transition-property: grid-column;
+  }
+</style>
