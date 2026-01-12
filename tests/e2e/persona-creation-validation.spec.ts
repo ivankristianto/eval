@@ -42,7 +42,9 @@ test.describe('Persona Creation Form Validation', () => {
       await page.waitForTimeout(100);
 
       // Check for HTML5 validation message
-      const isNameValid = await nameInput.evaluate((el) => (el as HTMLInputElement).checkValidity());
+      const isNameValid = await nameInput.evaluate((el) =>
+        (el as HTMLInputElement).checkValidity()
+      );
       expect(isNameValid).toBe(false);
 
       // Browser should show validation message
@@ -123,12 +125,12 @@ test.describe('Persona Creation Form Validation', () => {
     test('should submit form successfully with all required fields filled', async ({ page }) => {
       // Fill in all required fields
       await page.locator('[data-test="persona-name"]').fill('E2E Test Persona');
-      await page.locator('[data-test="task-prompt"]').fill(
-        'You are a helpful assistant. Respond to the user query.'
-      );
-      await page.locator('[data-test="judge-prompt"]').fill(
-        'Evaluate if the response is helpful and accurate.'
-      );
+      await page
+        .locator('[data-test="task-prompt"]')
+        .fill('You are a helpful assistant. Respond to the user query.');
+      await page
+        .locator('[data-test="judge-prompt"]')
+        .fill('Evaluate if the response is helpful and accurate.');
 
       // Select models (if available)
       const taskModelSelect = page.locator('[data-test="task-model"]');
@@ -143,7 +145,9 @@ test.describe('Persona Creation Form Validation', () => {
 
         // Select judge model (different provider if available)
         const judgeModelSelect = page.locator('[data-test="judge-model"]');
-        const judgeModelOptions = await judgeModelSelect.locator('option:not([value=""]):not(:disabled)').count();
+        const judgeModelOptions = await judgeModelSelect
+          .locator('option:not([value=""]):not(:disabled)')
+          .count();
 
         if (judgeModelOptions > 0) {
           await judgeModelSelect.selectOption({ index: 1 });
@@ -253,9 +257,7 @@ test.describe('Persona Creation Form Validation', () => {
       }
     });
 
-    test('should disable provider options in other selects after selection', async ({
-      page,
-    }) => {
+    test('should disable provider options in other selects after selection', async ({ page }) => {
       // Fill in required fields
       await page.locator('[data-test="persona-name"]').fill('Test Persona');
       await page.locator('[data-test="task-prompt"]').fill('Test task prompt');
@@ -441,19 +443,17 @@ test.describe('Persona Creation Form Validation', () => {
             // Submit form
             await page.locator('[data-test="create-persona-submit"]').click();
 
-            // Check for error toast
+            // Check for error toast - explicitly wait for it to appear
             const toastContainer = page.locator('#toast-container');
             await expect(toastContainer).toBeVisible({ timeout: 5000 });
 
-            // Look for error toast
             const errorToast = toastContainer.locator('.alert-error');
-            const toastCount = await errorToast.count();
+            // Must have at least one error toast
+            await expect(errorToast).toHaveCount(1, { timeout: 5000 });
+            await expect(errorToast.first()).toBeVisible();
 
-            if (toastCount > 0) {
-              await expect(errorToast.first()).toBeVisible();
-              const toastMessage = await errorToast.first().textContent();
-              expect(toastMessage).toContain('Failed to create persona');
-            }
+            const toastMessage = await errorToast.first().textContent();
+            expect(toastMessage).toContain('Failed to create persona');
 
             // Verify form is re-enabled after error
             const submitBtn = page.locator('[data-test="create-persona-submit"]');
@@ -501,19 +501,17 @@ test.describe('Persona Creation Form Validation', () => {
             // Submit form
             await page.locator('[data-test="create-persona-submit"]').click();
 
-            // Check for error toast
+            // Check for error toast - explicitly wait for it to appear
             const toastContainer = page.locator('#toast-container');
             await expect(toastContainer).toBeVisible({ timeout: 5000 });
 
-            // Look for error toast
             const errorToast = toastContainer.locator('.alert-error');
-            const toastCount = await errorToast.count();
+            // Must have at least one error toast
+            await expect(errorToast).toHaveCount(1, { timeout: 5000 });
+            await expect(errorToast.first()).toBeVisible();
 
-            if (toastCount > 0) {
-              await expect(errorToast.first()).toBeVisible();
-              const toastMessage = await errorToast.first().textContent();
-              expect(toastMessage).toContain('Failed to create persona');
-            }
+            const toastMessage = await errorToast.first().textContent();
+            expect(toastMessage).toContain('Failed to create persona');
 
             // Verify form is re-enabled after error
             const submitBtn = page.locator('[data-test="create-persona-submit"]');
@@ -655,9 +653,7 @@ test.describe('Persona Creation Form Validation', () => {
       }
     });
 
-    test('should show loading spinner on submit button during submission', async ({
-      page,
-    }) => {
+    test('should show loading spinner on submit button during submission', async ({ page }) => {
       // Mock API to delay response
       await page.route('**/api/personas', async (route) => {
         await new Promise((resolve) => setTimeout(resolve, 300));
@@ -775,7 +771,9 @@ test.describe('Persona Creation Form Validation', () => {
 
             // Check error message content
             const errorMessage = await validationError.textContent();
-            expect(errorMessage).toContain('Task model and Judge model must be from different providers');
+            expect(errorMessage).toContain(
+              'Task model and Judge model must be from different providers'
+            );
 
             // Check error styling
             await expect(validationError).toHaveClass(/alert-error/);
@@ -784,9 +782,7 @@ test.describe('Persona Creation Form Validation', () => {
       }
     });
 
-    test('should display multiple validation errors joined by separator', async ({
-      page,
-    }) => {
+    test('should display multiple validation errors joined by separator', async ({ page }) => {
       // Mock API to return multiple validation errors
       await page.route('**/api/personas', async (route) => {
         await route.fulfill({
@@ -842,7 +838,9 @@ test.describe('Persona Creation Form Validation', () => {
 
             // Check both error messages are present
             const errorMessage = await validationError.textContent();
-            expect(errorMessage).toContain('Task model and Judge model must be from different providers');
+            expect(errorMessage).toContain(
+              'Task model and Judge model must be from different providers'
+            );
             expect(errorMessage).toContain(
               'Judge model and Prompt Engineer model must be from different providers'
             );
