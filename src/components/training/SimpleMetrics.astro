@@ -11,6 +11,7 @@
  */
 
 import InfoIcon from '@components/icons/InfoIcon.astro';
+import Sparkline from './Sparkline.astro';
 
 const metricDefinitions = {
   f1: 'The harmonic mean of precision and recall, providing a balanced measure of model performance.',
@@ -52,10 +53,23 @@ interface Props {
     pass_rate: number;
   };
   showComparison?: boolean;
+  // Historical data for sparklines
+  f1History?: number[];
+  precisionHistory?: number[];
+  recallHistory?: number[];
+  passRateHistory?: number[];
 }
 
 // Support both new metrics format and legacy judge/human format
-const { metrics, judgeMetrics, humanMetrics } = Astro.props;
+const {
+  metrics,
+  judgeMetrics,
+  humanMetrics,
+  f1History,
+  precisionHistory,
+  recallHistory,
+  passRateHistory,
+} = Astro.props;
 
 // Use new metrics if provided, otherwise fall back to legacy format
 const displayMetrics = metrics || {
@@ -122,6 +136,21 @@ const formatNumber = (value: number | undefined) => {
         >
           {formatPercentage(displayMetrics.f1_score)}
         </div>
+        <!-- F1 Trend Sparkline -->
+        {
+          f1History && f1History.length > 1 && (
+            <div class="mt-2">
+              <Sparkline
+                data={f1History}
+                label="F1 Trend"
+                color="primary"
+                height="24px"
+                showMin={false}
+                showMax={false}
+              />
+            </div>
+          )
+        }
       </div>
 
       <!-- Cohen's Kappa - Highlighted -->
@@ -190,6 +219,21 @@ const formatNumber = (value: number | undefined) => {
         >
           {formatPercentage(displayMetrics.precision)}
         </div>
+        <!-- Precision Trend Sparkline -->
+        {
+          precisionHistory && precisionHistory.length > 1 && (
+            <div class="mt-1">
+              <Sparkline
+                data={precisionHistory}
+                label="Precision Trend"
+                color="success"
+                height="20px"
+                showMin={false}
+                showMax={false}
+              />
+            </div>
+          )
+        }
       </div>
 
       <!-- Recall -->
@@ -224,8 +268,43 @@ const formatNumber = (value: number | undefined) => {
         >
           {formatPercentage(displayMetrics.recall)}
         </div>
+        <!-- Recall Trend Sparkline -->
+        {
+          recallHistory && recallHistory.length > 1 && (
+            <div class="mt-1">
+              <Sparkline
+                data={recallHistory}
+                label="Recall Trend"
+                color="info"
+                height="20px"
+                showMin={false}
+                showMax={false}
+              />
+            </div>
+          )
+        }
       </div>
     </div>
+
+    <!-- Pass Rate Trend (if using judge/human metrics) -->
+    {
+      passRateHistory && passRateHistory.length > 1 && (
+        <div class="bg-base-100/80 rounded-lg p-3 shadow-md border border-base-300/50 mb-3">
+          <div class="text-xs font-semibold mb-2 opacity-70 flex items-center gap-2">
+            <span class="w-1.5 h-1.5 rounded-full bg-base-content/40" />
+            Pass Rate Trend
+          </div>
+          <Sparkline
+            data={passRateHistory}
+            label="Pass Rate"
+            color="accent"
+            height="32px"
+            showMin={true}
+            showMax={true}
+          />
+        </div>
+      )
+    }
 
     <!-- Confusion Matrix -->
     {

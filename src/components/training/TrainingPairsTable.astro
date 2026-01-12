@@ -12,6 +12,7 @@
  */
 
 import PassFailBadge from './PassFailBadge.astro';
+import PlaygroundModal from './PlaygroundModal.astro';
 
 interface TrainingPairResult {
   id: string;
@@ -334,6 +335,32 @@ const totalPages = Math.max(1, Math.ceil(pairs.length / pageSize));
                           </a>
                         </li>
                         <li>
+                          <a
+                            data-action="open-playground"
+                            data-pair-id={pair.id}
+                            data-pair-input={pair.input}
+                            data-pair-expected={pair.expected_output}
+                          >
+                            <span class="flex items-center gap-2">
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke-width="1.5"
+                                stroke="currentColor"
+                                class="w-3 h-3 text-primary"
+                              >
+                                <path
+                                  stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                  d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z"
+                                />
+                              </svg>
+                              Test in Playground
+                            </span>
+                          </a>
+                        </li>
+                        <li>
                           <a data-action="regenerate" data-pair-id={pair.id}>
                             Regenerate Output
                           </a>
@@ -435,6 +462,9 @@ const totalPages = Math.max(1, Math.ceil(pairs.length / pageSize));
       )
     }
   </div>
+
+  <!-- Playground Modal (for testing individual rows) -->
+  <PlaygroundModal modalId="playground-modal" personaId={personaId || ''} />
 </div>
 
 <script define:vars={{ pageSize, pairs }} is:inline>
@@ -836,6 +866,49 @@ const totalPages = Math.max(1, Math.ceil(pairs.length / pageSize));
           window.toast.error(
             error instanceof Error ? error.message : 'Failed to delete training pair'
           );
+        }
+      }
+    });
+  });
+
+  // Open playground action
+  document.querySelectorAll('[data-action="open-playground"]').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      const target = e.currentTarget;
+      const pairId = target.dataset.pairId;
+      const pairInput = target.dataset.pairInput || '';
+      const pairExpected = target.dataset.pairExpected || '';
+
+      console.log('Opening playground for pair:', pairId);
+
+      // Open the playground modal
+      const modalCheckbox = document.getElementById('playground-modal');
+      if (modalCheckbox instanceof HTMLInputElement) {
+        modalCheckbox.checked = true;
+
+        // Pre-fill the playground with pair data
+        const inputTextarea = document.getElementById('playground-input');
+        const expectedOutputTextarea = document.getElementById('playground-expected-output');
+
+        if (inputTextarea instanceof HTMLTextAreaElement) {
+          inputTextarea.value = pairInput;
+        }
+        if (expectedOutputTextarea instanceof HTMLTextAreaElement) {
+          expectedOutputTextarea.value = pairExpected;
+        }
+
+        // Update character counts
+        const taskPromptChars = document.getElementById('task-prompt-chars');
+        const judgePromptChars = document.getElementById('judge-prompt-chars');
+
+        const taskPromptTextarea = document.getElementById('playground-task-prompt');
+        const judgePromptTextarea = document.getElementById('playground-judge-prompt');
+
+        if (taskPromptChars && taskPromptTextarea instanceof HTMLTextAreaElement) {
+          taskPromptChars.textContent = `${taskPromptTextarea.value.length} chars`;
+        }
+        if (judgePromptChars && judgePromptTextarea instanceof HTMLTextAreaElement) {
+          judgePromptChars.textContent = `${judgePromptTextarea.value.length} chars`;
         }
       }
     });

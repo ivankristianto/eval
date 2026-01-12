@@ -1,0 +1,577 @@
+---
+/**
+ * PlaygroundModal Component
+ *
+ * Modal for live playground testing of individual training pairs.
+ * Allows instant testing with real-time output streaming and judge evaluation.
+ * User can tweak prompts inside the playground for instant feedback.
+ *
+ * @param modalId - Unique ID for the modal
+ * @param personaId - Persona ID for API calls
+ * @param pairId - Optional training pair ID (if editing existing)
+ * @param inputData - Optional initial input data
+ */
+
+interface PlaygroundData {
+  input: string;
+  expected_output?: string;
+  task_prompt?: string;
+  judge_prompt?: string;
+}
+
+interface Props {
+  modalId: string;
+  personaId: string;
+  pairId?: string;
+  initialData?: PlaygroundData;
+}
+
+const { modalId, personaId, initialData } = Astro.props;
+
+// Default empty state
+const defaultInput = initialData?.input || '';
+const defaultExpectedOutput = initialData?.expected_output || '';
+const defaultTaskPrompt = initialData?.task_prompt || '';
+const defaultJudgePrompt = initialData?.judge_prompt || '';
+---
+
+<!-- Modal with daisyui -->
+<input type="checkbox" id={modalId} class="modal-toggle" />
+
+<div class="modal modal-open" role="dialog" data-modal-content={modalId}>
+  <div class="modal-box max-w-6xl h-[85vh] flex flex-col p-0">
+    <!-- Modal Header -->
+    <div
+      class="flex items-center justify-between px-6 py-4 border-b border-base-300/80 bg-base-200/50"
+    >
+      <div class="flex items-center gap-3">
+        <div
+          class="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-primary/20 to-primary/10"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="1.5"
+            stroke="currentColor"
+            class="w-4 h-4 text-primary"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z"
+            ></path>
+          </svg>
+        </div>
+        <div>
+          <h3 class="font-bold text-lg">Live Playground</h3>
+          <p class="text-xs text-base-content/60">
+            Test your prompts instantly with real-time output streaming
+          </p>
+        </div>
+      </div>
+      <label for={modalId} class="btn btn-sm btn-circle btn-ghost">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke-width="1.5"
+          stroke="currentColor"
+          class="w-5 h-5"
+        >
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+      </label>
+    </div>
+
+    <!-- Modal Body -->
+    <div class="flex-1 overflow-y-auto p-6">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
+        <!-- Left Panel: Input Configuration -->
+        <div class="flex flex-col gap-4">
+          <!-- Input Section -->
+          <div class="card bg-base-100 border border-base-300/50">
+            <div class="card-body p-4">
+              <div class="flex items-center gap-2 mb-3">
+                <div class="w-1 h-4 rounded-full bg-primary"></div>
+                <h4 class="font-semibold text-sm">Input</h4>
+              </div>
+              <textarea
+                id="playground-input"
+                class="textarea textarea-bordered textarea-sm w-full min-h-[80px] resize-y"
+                placeholder="Enter your input here..."
+                data-playground-field="input"
+              >
+                {defaultInput}
+              </textarea>
+            </div>
+          </div>
+
+          <!-- Expected Output Section -->
+          <div class="card bg-base-100 border border-base-300/50">
+            <div class="card-body p-4">
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                  <div class="w-1 h-4 rounded-full bg-success"></div>
+                  <h4 class="font-semibold text-sm">Expected Output</h4>
+                </div>
+                <div class="tooltip" data-tip="Ground truth for comparison">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke-width="1.5"
+                    stroke="currentColor"
+                    class="w-4 h-4 text-base-content/40"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z"
+                    ></path>
+                  </svg>
+                </div>
+              </div>
+              <textarea
+                id="playground-expected-output"
+                class="textarea textarea-bordered textarea-sm w-full min-h-[80px] resize-y"
+                placeholder="Enter expected output (optional)..."
+                data-playground-field="expected_output"
+              >
+                {defaultExpectedOutput}
+              </textarea>
+            </div>
+          </div>
+
+          <!-- Task Prompt Section -->
+          <div class="card bg-base-100 border border-base-300/50">
+            <div class="card-body p-4">
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                  <div class="w-1 h-4 rounded-full bg-info"></div>
+                  <h4 class="font-semibold text-sm">Task Prompt</h4>
+                </div>
+                <span class="badge badge-ghost badge-xs">Editable</span>
+              </div>
+              <textarea
+                id="playground-task-prompt"
+                class="textarea textarea-bordered textarea-sm w-full min-h-[120px] resize-y font-mono text-xs"
+                placeholder="Task prompt for generating output..."
+                data-playground-field="task_prompt"
+              >
+                {defaultTaskPrompt}
+              </textarea>
+              <div class="text-xs text-base-content/60 mt-2 flex justify-between">
+                <span>Used to generate the output</span>
+                <span class="font-mono" id="task-prompt-chars">
+                  {defaultTaskPrompt.length} chars
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Judge Prompt Section -->
+          <div class="card bg-base-100 border border-base-300/50">
+            <div class="card-body p-4">
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                  <div class="w-1 h-4 rounded-full bg-warning"></div>
+                  <h4 class="font-semibold text-sm">Judge Prompt</h4>
+                </div>
+                <span class="badge badge-ghost badge-xs">Editable</span>
+              </div>
+              <textarea
+                id="playground-judge-prompt"
+                class="textarea textarea-bordered textarea-sm w-full min-h-[120px] resize-y font-mono text-xs"
+                placeholder="Judge prompt for evaluation..."
+                data-playground-field="judge_prompt"
+              >
+                {defaultJudgePrompt}
+              </textarea>
+              <div class="text-xs text-base-content/60 mt-2 flex justify-between">
+                <span>Used to evaluate the output</span>
+                <span class="font-mono" id="judge-prompt-chars">
+                  {defaultJudgePrompt.length} chars
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Panel: Output & Results -->
+        <div class="flex flex-col gap-4">
+          <!-- Generated Output Section -->
+          <div class="card bg-base-100 border border-base-300/50 flex-1">
+            <div class="card-body p-4 h-full flex flex-col">
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                  <div class="w-1 h-4 rounded-full bg-secondary"></div>
+                  <h4 class="font-semibold text-sm">Generated Output</h4>
+                </div>
+                <div
+                  id="playground-status"
+                  class="hidden items-center gap-2 text-xs text-base-content/60"
+                >
+                  <span class="loading loading-spinner loading-xs"></span>
+                  <span>Generating...</span>
+                </div>
+              </div>
+
+              <!-- Output Display -->
+              <div
+                id="playground-output"
+                class="flex-1 min-h-[150px] bg-base-200/50 rounded-lg p-3 text-sm whitespace-pre-wrap break-words overflow-y-auto border border-base-300/30"
+                data-playground-output="true"
+              >
+                <span class="opacity-50 italic" id="playground-output-placeholder">
+                  Output will appear here after generation...
+                </span>
+              </div>
+
+              <!-- Streaming indicator -->
+              <div id="playground-streaming-indicator" class="hidden mt-2">
+                <div class="flex items-center gap-2 text-xs text-info">
+                  <span class="relative flex h-2 w-2">
+                    <span
+                      class="animate-ping absolute inline-flex h-full w-full rounded-full bg-info opacity-75"
+                    ></span>
+                    <span class="relative inline-flex rounded-full h-2 w-2 bg-info"></span>
+                  </span>
+                  <span>Streaming output...</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Judge Evaluation Section -->
+          <div class="card bg-base-100 border border-base-300/50">
+            <div class="card-body p-4">
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                  <div class="w-1 h-4 rounded-full bg-accent"></div>
+                  <h4 class="font-semibold text-sm">Judge Evaluation</h4>
+                </div>
+                <div
+                  id="judge-status"
+                  class="hidden items-center gap-2 text-xs text-base-content/60"
+                >
+                  <span class="loading loading-spinner loading-xs"></span>
+                  <span>Evaluating...</span>
+                </div>
+              </div>
+
+              <!-- Judge Result -->
+              <div id="playground-judge-result" class="space-y-3">
+                <div class="text-sm opacity-50 italic text-center py-4">
+                  Judge evaluation will appear here...
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="flex gap-2">
+            <button
+              id="playground-run-button"
+              class="btn btn-primary btn-sm flex-1 gap-2"
+              data-action="playground-run"
+              data-persona-id={personaId}
+              data-modal-id={modalId}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke-width="1.5"
+                stroke="currentColor"
+                class="w-4 h-4"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z"
+                ></path>
+              </svg>
+              Run Playground
+            </button>
+            <button
+              id="playground-reset-button"
+              class="btn btn-ghost btn-sm"
+              data-action="playground-reset"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke-width="1.5"
+                stroke="currentColor"
+                class="w-4 h-4"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"
+                ></path>
+              </svg>
+              Reset
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Backdrop (click to close) -->
+  <label for={modalId} class="modal-backdrop cursor-pointer"></label>
+</div>
+
+<script>
+  // Character count updates for prompt textareas
+  const taskPromptTextarea = document.getElementById('playground-task-prompt');
+  const judgePromptTextarea = document.getElementById('playground-judge-prompt');
+  const taskPromptChars = document.getElementById('task-prompt-chars');
+  const judgePromptChars = document.getElementById('judge-prompt-chars');
+
+  taskPromptTextarea?.addEventListener('input', (e) => {
+    const target = e.target as HTMLTextAreaElement;
+    if (taskPromptChars) {
+      taskPromptChars.textContent = `${target.value.length} chars`;
+    }
+  });
+
+  judgePromptTextarea?.addEventListener('input', (e) => {
+    const target = e.target as HTMLTextAreaElement;
+    if (judgePromptChars) {
+      judgePromptChars.textContent = `${target.value.length} chars`;
+    }
+  });
+
+  // Reset button handler
+  document.getElementById('playground-reset-button')?.addEventListener('click', () => {
+    const taskPromptTextarea = document.getElementById('playground-task-prompt');
+    const judgePromptTextarea = document.getElementById('playground-judge-prompt');
+
+    if (taskPromptTextarea instanceof HTMLTextAreaElement) {
+      taskPromptTextarea.value = '';
+    }
+    if (judgePromptTextarea instanceof HTMLTextAreaElement) {
+      judgePromptTextarea.value = '';
+    }
+
+    const inputTextarea = document.getElementById('playground-input');
+    const expectedOutputTextarea = document.getElementById('playground-expected-output');
+    const outputDiv = document.getElementById('playground-output');
+    const judgeResultDiv = document.getElementById('playground-judge-result');
+
+    if (inputTextarea instanceof HTMLTextAreaElement) {
+      inputTextarea.value = '';
+    }
+    if (expectedOutputTextarea instanceof HTMLTextAreaElement) {
+      expectedOutputTextarea.value = '';
+    }
+
+    // Reset output display
+    if (outputDiv) {
+      outputDiv.innerHTML =
+        '<span class="opacity-50 italic">Output will appear here after generation...</span>';
+    }
+
+    // Reset judge result
+    if (judgeResultDiv) {
+      judgeResultDiv.innerHTML =
+        '<div class="text-sm opacity-50 italic text-center py-4">Judge evaluation will appear here...</div>';
+    }
+
+    // Reset character counts
+    if (taskPromptChars) taskPromptChars.textContent = '0 chars';
+    if (judgePromptChars) judgePromptChars.textContent = '0 chars';
+  });
+
+  // Run playground button handler
+  document.getElementById('playground-run-button')?.addEventListener('click', async (e) => {
+    const button = e.currentTarget as HTMLButtonElement;
+
+    // Get input values
+    const inputTextarea = document.getElementById('playground-input');
+    const taskPromptTextarea = document.getElementById('playground-task-prompt');
+    const judgePromptTextarea = document.getElementById('playground-judge-prompt');
+
+    const input = inputTextarea instanceof HTMLTextAreaElement ? inputTextarea.value : '';
+    const taskPrompt =
+      taskPromptTextarea instanceof HTMLTextAreaElement ? taskPromptTextarea.value : '';
+    const judgePrompt =
+      judgePromptTextarea instanceof HTMLTextAreaElement ? judgePromptTextarea.value : '';
+
+    if (!input.trim()) {
+      if (window.toast) {
+        window.toast.error('Please enter an input to test');
+      }
+      return;
+    }
+
+    if (!taskPrompt.trim()) {
+      if (window.toast) {
+        window.toast.error('Please enter a task prompt');
+      }
+      return;
+    }
+
+    // Show loading state
+    button.classList.add('loading');
+    button.setAttribute('disabled', 'true');
+
+    const statusEl = document.getElementById('playground-status');
+    const outputDiv = document.getElementById('playground-output');
+    const streamingIndicator = document.getElementById('playground-streaming-indicator');
+
+    // Show generating status
+    if (statusEl) {
+      statusEl.classList.remove('hidden');
+      statusEl.classList.add('flex');
+    }
+
+    // Clear previous output
+    if (outputDiv) {
+      outputDiv.innerHTML = '';
+    }
+
+    try {
+      // Step 1: Generate output with task prompt
+      let generatedOutput = '';
+
+      // For now, simulate generation (replace with actual API call)
+      // TODO: Call /api/playground/generate endpoint
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+
+      // Simulate streaming effect
+      if (outputDiv) {
+        const mockOutput = `This is a simulated output for: "${input.substring(0, 50)}${input.length > 50 ? '...' : ''}"\n\nGenerated with task prompt version.`;
+        generatedOutput = mockOutput;
+
+        // Streaming animation
+        if (streamingIndicator) {
+          streamingIndicator.classList.remove('hidden');
+        }
+
+        let i = 0;
+        const streamInterval = setInterval(() => {
+          if (i < mockOutput.length) {
+            outputDiv.textContent = mockOutput.substring(0, i + 1);
+            outputDiv.scrollTop = outputDiv.scrollHeight;
+            i += 2; // Speed of streaming
+          } else {
+            clearInterval(streamInterval);
+            if (streamingIndicator) {
+              streamingIndicator.classList.add('hidden');
+            }
+          }
+        }, 20);
+      }
+
+      // Wait for streaming to complete
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
+      // Step 2: Evaluate with judge prompt (if provided)
+      if (judgePrompt.trim() && generatedOutput) {
+        const judgeStatusEl = document.getElementById('judge-status');
+        const judgeResultDiv = document.getElementById('playground-judge-result');
+
+        // Show evaluating status
+        if (judgeStatusEl) {
+          judgeStatusEl.classList.remove('hidden');
+          judgeStatusEl.classList.add('flex');
+        }
+
+        // TODO: Call /api/playground/evaluate endpoint
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+
+        // Simulate judge evaluation
+        const mockJudgeResult = {
+          rating: 'pass',
+          reasoning:
+            'The output appropriately addresses the input and follows the task requirements.',
+        };
+
+        if (judgeResultDiv) {
+          judgeResultDiv.innerHTML = `
+            <div class="flex items-center gap-3 mb-3">
+              <span class="badge badge-${mockJudgeResult.rating === 'pass' ? 'success' : 'error'} badge-lg">
+                ${mockJudgeResult.rating.toUpperCase()}
+              </span>
+              <span class="text-xs text-base-content/60">Judge Decision</span>
+            </div>
+            <div class="bg-base-200/50 rounded-lg p-3">
+              <div class="text-xs font-medium mb-1 opacity-70">Reasoning:</div>
+              <div class="text-sm">${mockJudgeResult.reasoning}</div>
+            </div>
+          `;
+        }
+
+        if (judgeStatusEl) {
+          judgeStatusEl.classList.add('hidden');
+          judgeStatusEl.classList.remove('flex');
+        }
+      }
+
+      if (window.toast) {
+        window.toast.success('Playground execution complete!');
+      }
+    } catch (error) {
+      console.error('Playground run error:', error);
+      if (window.toast) {
+        window.toast.error(error instanceof Error ? error.message : 'Failed to run playground');
+      }
+
+      // Show error in output
+      if (outputDiv) {
+        outputDiv.innerHTML = `<span class="text-error">Error: ${error instanceof Error ? error.message : 'Unknown error'}</span>`;
+      }
+    } finally {
+      // Reset button state
+      button.classList.remove('loading');
+      button.removeAttribute('disabled');
+
+      if (statusEl) {
+        statusEl.classList.add('hidden');
+        statusEl.classList.remove('flex');
+      }
+    }
+  });
+</script>
+
+<style>
+  /* Custom scrollbar for output area */
+  #playground-output::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  #playground-output::-webkit-scrollbar-track {
+    background: hsl(var(--b2));
+    border-radius: 3px;
+  }
+
+  #playground-output::-webkit-scrollbar-thumb {
+    background: hsl(var(--bc) / 0.3);
+    border-radius: 3px;
+  }
+
+  #playground-output::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--bc) / 0.5);
+  }
+
+  /* Smooth transitions */
+  .card {
+    transition: all 0.2s ease-in-out;
+  }
+
+  .card:hover {
+    border-color: hsl(var(--bc) / 0.2);
+  }
+
+  /* Textarea focus state */
+  textarea:focus {
+    outline: none;
+    border-color: hsl(var(--p));
+    box-shadow: 0 0 0 3px hsl(var(--p) / 0.1);
+  }
+</style>
