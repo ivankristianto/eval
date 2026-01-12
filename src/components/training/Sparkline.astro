@@ -1,0 +1,324 @@
+---
+/**
+ * Sparkline Component
+ *
+ * SVG sparkline for visualizing metrics trends over time.
+ * Displays F1 Score, Pass Rate, Precision, Recall trends in a compact format.
+ *
+ * @param data - Array of numeric values representing metric history
+ * @param label - Optional label for the sparkline
+ * @param color - Color theme for the sparkline (default: primary)
+ * @param width - Width of the SVG (default: 100%)
+ * @param height - Height of the SVG (default: 40px)
+ * @param showMin - Show minimum value indicator (default: true)
+ * @param showMax - Show maximum value indicator (default: true)
+ * @param showLatest - Show latest value indicator (default: true)
+ * @param tooltip - Optional tooltip text for hover
+ */
+
+interface SparklinePoint {
+  value: number;
+  label?: string;
+  timestamp?: string;
+}
+
+interface Props {
+  data: number[] | SparklinePoint[];
+  label?: string;
+  color?: 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info' | 'accent';
+  width?: string;
+  height?: string;
+  showMin?: boolean;
+  showMax?: boolean;
+  showLatest?: boolean;
+  tooltip?: string;
+  strokeWidth?: number;
+}
+
+const {
+  data,
+  label,
+  color = 'primary',
+  width = '100%',
+  height = '40px',
+  showMin = true,
+  showMax = true,
+  showLatest = true,
+  tooltip,
+  strokeWidth = 2,
+} = Astro.props;
+
+// Normalize data to number array
+const values: number[] =
+  Array.isArray(data) && typeof data[0] === 'object'
+    ? (data as SparklinePoint[]).map((p) => p.value)
+    : (data as number[]);
+
+// Calculate statistics
+const min = Math.min(...values);
+const max = Math.max(...values);
+const latest = values[values.length - 1] ?? 0;
+const range = max - min || 1; // Avoid division by zero
+
+// Color mapping
+const colorMap = {
+  primary: 'hsl(var(--p))',
+  secondary: 'hsl(var(--s))',
+  success: 'hsl(var(--su))',
+  warning: 'hsl(var(--wa))',
+  error: 'hsl(var(--er))',
+  info: 'hsl(var(--in))',
+  accent: 'hsl(var(--a))',
+};
+
+const strokeColor = colorMap[color];
+const fillColor = strokeColor.replace(')', ', 0.1)').replace('hsl', 'hsla');
+
+// SVG dimensions
+const svgWidth = 200; // Internal coordinate system
+const svgHeight = 40;
+const padding = 2;
+
+// Generate path data
+const getX = (index: number) =>
+  (index / (values.length - 1 || 1)) * (svgWidth - padding * 2) + padding;
+const getY = (value: number) =>
+  svgHeight - ((value - min) / range) * (svgHeight - padding * 2) - padding;
+
+// Build the line path
+let linePath = '';
+let areaPath = '';
+
+values.forEach((value, index) => {
+  const x = getX(index);
+  const y = getY(value);
+
+  if (index === 0) {
+    linePath += `M ${x} ${y}`;
+    areaPath += `M ${x} ${svgHeight} L ${x} ${y}`;
+  } else {
+    // Use bezier curves for smooth lines
+    if (values.length > 2) {
+      const prevX = getX(index - 1);
+      const prevY = getY(values[index - 1]);
+      const cp1x = prevX + (x - prevX) / 3;
+      const cp1y = prevY;
+      const cp2x = prevX + (2 * (x - prevX)) / 3;
+      const cp2y = y;
+      linePath += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${x} ${y}`;
+      areaPath += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${x} ${y}`;
+    } else {
+      linePath += ` L ${x} ${y}`;
+      areaPath += ` L ${x} ${y}`;
+    }
+  }
+
+  if (index === values.length - 1) {
+    areaPath += ` L ${x} ${svgHeight} Z`;
+  }
+});
+
+// Calculate indicator positions
+const minIndex = values.indexOf(min);
+const maxIndex = values.indexOf(max);
+
+const minX = getX(minIndex);
+const minY = getY(min);
+const maxX = getX(maxIndex);
+const maxY = getY(max);
+const latestX = getX(values.length - 1);
+const latestY = getY(latest);
+
+// Format values for display
+const formatValue = (val: number) => {
+  if (val >= 0 && val <= 1) {
+    return `${(val * 100).toFixed(1)}%`;
+  }
+  return val.toFixed(2);
+};
+---
+
+<div class:list={['sparkline-container', tooltip && 'tooltip']} data-tip={tooltip}>
+  {
+    label && (
+      <div class="flex items-center justify-between mb-1">
+        <span class="text-xs font-medium opacity-70">{label}</span>
+        <span class="text-xs font-mono opacity-60">{formatValue(latest)}</span>
+      </div>
+    )
+  }
+
+  <div class="relative" style={`width: ${width}; height: ${height};`}>
+    <svg
+      width={svgWidth}
+      height={svgHeight}
+      viewBox={`0 0 ${svgWidth} ${svgHeight}`}
+      preserveAspectRatio="none"
+      class="overflow-visible"
+    >
+      <!-- Area fill -->
+      <path
+        d={areaPath}
+        fill={fillColor}
+        stroke="none"
+        class="sparkline-area transition-opacity duration-300"></path>
+
+      <!-- Line -->
+      <path
+        d={linePath}
+        fill="none"
+        stroke={strokeColor}
+        stroke-width={strokeWidth}
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        class="sparkline-line transition-all duration-300"></path>
+
+      <!-- Minimum indicator -->
+      {
+        showMin && values.length > 1 && (
+          <circle
+            cx={minX}
+            cy={minY}
+            r="3"
+            fill="hsl(var(--b1))"
+            stroke={strokeColor}
+            stroke-width="1.5"
+            class="sparkline-point sparkline-min transition-all duration-200"
+          />
+        )
+      }
+
+      <!-- Maximum indicator -->
+      {
+        showMax && values.length > 1 && (
+          <circle
+            cx={maxX}
+            cy={maxY}
+            r="3"
+            fill="hsl(var(--b1))"
+            stroke={strokeColor}
+            stroke-width="1.5"
+            class="sparkline-point sparkline-max transition-all duration-200"
+          />
+        )
+      }
+
+      <!-- Latest value indicator -->
+      {
+        showLatest && (
+          <circle
+            cx={latestX}
+            cy={latestY}
+            r="4"
+            fill={strokeColor}
+            class="sparkline-point sparkline-latest transition-all duration-200"
+          >
+            <animate attributeName="r" values="4;5;4" dur="2s" repeatCount="indefinite" />
+          </circle>
+        )
+      }
+    </svg>
+
+    <!-- Tooltip overlay -->
+    <div
+      class="sparkline-tooltip absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+    >
+      <div
+        class="bg-base-300 text-base-content text-xs rounded px-2 py-1 shadow-lg pointer-events-none"
+      >
+        Min: {formatValue(min)} | Max: {formatValue(max)} | Latest: {formatValue(latest)}
+      </div>
+    </div>
+  </div>
+
+  <!-- Legend -->
+  {
+    values.length > 1 && (
+      <div class="flex items-center justify-between mt-1 text-xs opacity-50">
+        <span>Min: {formatValue(min)}</span>
+        <span>Max: {formatValue(max)}</span>
+      </div>
+    )
+  }
+</div>
+
+<style>
+  /* Sparkline animations */
+  .sparkline-container {
+    position: relative;
+  }
+
+  .sparkline-line {
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+  }
+
+  .sparkline-point {
+    transition:
+      r 0.2s ease,
+      stroke-width 0.2s ease;
+    cursor: pointer;
+  }
+
+  .sparkline-point:hover {
+    r: 5 !important;
+    stroke-width: 2;
+  }
+
+  /* Tooltip positioning */
+  .sparkline-tooltip {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 100%;
+  }
+
+  /* Fade in animation on load */
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .sparkline-container {
+    animation: fadeIn 0.3s ease-out;
+  }
+
+  /* Group hover for tooltip */
+  .sparkline-container:has(.sparkline-point:hover) .sparkline-tooltip {
+    opacity: 1;
+  }
+
+  /* Gradient fill animation */
+  .sparkline-area {
+    animation: areaFadeIn 0.5s ease-out;
+  }
+
+  @keyframes areaFadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  /* Pulsing animation for latest point */
+  @keyframes pulse {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.7;
+    }
+  }
+
+  .sparkline-latest {
+    animation: pulse 2s ease-in-out infinite;
+  }
+</style>

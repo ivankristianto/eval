@@ -1,0 +1,460 @@
+---
+/**
+ * OutputDiffViewer Component
+ *
+ * Side-by-side comparison of generated outputs across different versions.
+ * Highlights differences between outputs to help analyze prompt improvements.
+ *
+ * @param leftOutput - Left/older output to compare
+ * @param rightOutput - Right/newer output to compare
+ * @param leftLabel - Label for left panel (default: "Version N")
+ * @param rightLabel - Label for right panel (default: "Version N+1")
+ * @param leftVersion - Version number for left output
+ * @param rightVersion - Version number for right output
+ * @param highlightDifferences - Whether to highlight text differences (default: true)
+ * @param showMetadata - Show metadata like timestamp, tokens (default: true)
+ */
+
+interface OutputMetadata {
+  version?: number;
+  timestamp?: string;
+  tokens?: number;
+  duration_ms?: number;
+  rating?: 'pass' | 'fail';
+}
+
+interface Props {
+  leftOutput: string;
+  rightOutput: string;
+  leftLabel?: string;
+  rightLabel?: string;
+  leftVersion?: number;
+  rightVersion?: number;
+  highlightDifferences?: boolean;
+  showMetadata?: boolean;
+  leftMetadata?: OutputMetadata;
+  rightMetadata?: OutputMetadata;
+}
+
+const {
+  leftOutput,
+  rightOutput,
+  leftLabel = 'Previous Version',
+  rightLabel = 'Current Version',
+  highlightDifferences = true,
+  showMetadata = true,
+  leftMetadata,
+  rightMetadata,
+} = Astro.props;
+
+// Simple word-level diff for highlighting differences
+function computeDiff(
+  oldText: string,
+  newText: string
+): Array<{
+  value: string;
+  type: 'same' | 'added' | 'removed';
+}> {
+  const oldWords = oldText.split(/\s+/);
+  const newWords = newText.split(/\s+/);
+  const diff: Array<{ value: string; type: 'same' | 'added' | 'removed' }> = [];
+
+  // Simple LCS-based diff (simplified for inline use)
+  const matrix: number[][] = Array(oldWords.length + 1)
+    .fill(0)
+    .map(() => Array(newWords.length + 1).fill(0));
+
+  for (let i = 1; i <= oldWords.length; i++) {
+    for (let j = 1; j <= newWords.length; j++) {
+      if (oldWords[i - 1] === newWords[j - 1]) {
+        matrix[i][j] = matrix[i - 1][j - 1] + 1;
+      } else {
+        matrix[i][j] = Math.max(matrix[i - 1][j], matrix[i][j - 1]);
+      }
+    }
+  }
+
+  // Backtrack to find diff
+  let i = oldWords.length;
+  let j = newWords.length;
+
+  while (i > 0 || j > 0) {
+    if (i > 0 && j > 0 && oldWords[i - 1] === newWords[j - 1]) {
+      diff.unshift({ value: oldWords[i - 1], type: 'same' });
+      i--;
+      j--;
+    } else if (j > 0 && (i === 0 || matrix[i][j - 1] >= matrix[i - 1][j])) {
+      diff.unshift({ value: newWords[j - 1], type: 'added' });
+      j--;
+    } else {
+      diff.unshift({ value: oldWords[i - 1], type: 'removed' });
+      i--;
+    }
+  }
+
+  return diff;
+}
+
+const diffResult = highlightDifferences ? computeDiff(leftOutput, rightOutput) : null;
+
+// Render diff as HTML with highlighting
+function renderDiff(diff: Array<{ value: string; type: 'same' | 'added' | 'removed' }>): string {
+  return diff
+    .map((item) => {
+      let className = '';
+      let prefix = '';
+
+      switch (item.type) {
+        case 'added':
+          className = 'bg-success/20 text-success font-semibold';
+          prefix = '+ ';
+          break;
+        case 'removed':
+          className = 'bg-error/20 text-error line-through opacity-60';
+          prefix = '- ';
+          break;
+        default:
+          className = 'text-base-content';
+          prefix = '';
+      }
+
+      return `<span class="${className}">${prefix}${item.value}</span>`;
+    })
+    .join(' ');
+}
+
+// Format metadata
+const formatMetadata = (meta: OutputMetadata | undefined): string => {
+  if (!meta) return '';
+  const parts: string[] = [];
+
+  if (meta.version !== undefined) parts.push(`v${meta.version}`);
+  if (meta.tokens) parts.push(`${meta.tokens} tokens`);
+  if (meta.duration_ms) parts.push(`${(meta.duration_ms / 1000).toFixed(2)}s`);
+  if (meta.rating) parts.push(meta.rating.toUpperCase());
+
+  return parts.join(' • ');
+};
+---
+
+<div class="output-diff-viewer">
+  <!-- Header -->
+  <div class="flex items-center justify-between mb-3">
+    <h4 class="font-semibold text-sm flex items-center gap-2">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke-width="1.5"
+        stroke="currentColor"
+        class="w-4 h-4 text-primary"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          d="M7.5 21h9m-9 0H6a3 3 0 01-3-3V5.25a3 3 0 013-3h13.5A3 3 0 0121 5.25V18a3 3 0 01-3 3h-1.5m-9 0H9m0 0h1.5"
+        ></path>
+      </svg>
+      Output Comparison
+    </h4>
+    <div class="flex items-center gap-2 text-xs">
+      <span class="flex items-center gap-1">
+        <span class="w-2 h-2 rounded-full bg-error"></span>
+        Removed
+      </span>
+      <span class="flex items-center gap-1">
+        <span class="w-2 h-2 rounded-full bg-success"></span>
+        Added
+      </span>
+    </div>
+  </div>
+
+  <!-- Diff Viewer -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+    <!-- Left Panel (Previous Version) -->
+    <div class="diff-panel">
+      <div
+        class="flex items-center justify-between px-3 py-2 bg-base-200/80 rounded-t-lg border border-base-300/50"
+      >
+        <span class="text-sm font-medium">{leftLabel}</span>
+        {
+          showMetadata && leftMetadata && (
+            <span class="text-xs text-base-content/60">{formatMetadata(leftMetadata)}</span>
+          )
+        }
+      </div>
+      <div
+        class="diff-content bg-base-100 rounded-b-lg border border-t-0 border-base-300/50 p-3 min-h-[150px] max-h-[400px] overflow-y-auto"
+      >
+        {
+          highlightDifferences && diffResult ? (
+            <div class="diff-view text-sm whitespace-pre-wrap break-words">
+              <span class="text-base-content">{leftOutput}</span>
+            </div>
+          ) : (
+            <div class="text-sm whitespace-pre-wrap break-words text-base-content/90">
+              {leftOutput || <span class="italic opacity-50">No output</span>}
+            </div>
+          )
+        }
+      </div>
+    </div>
+
+    <!-- Right Panel (Current Version) -->
+    <div class="diff-panel">
+      <div
+        class="flex items-center justify-between px-3 py-2 bg-primary/10 rounded-t-lg border border-primary/30"
+      >
+        <span class="text-sm font-medium">{rightLabel}</span>
+        {
+          showMetadata && rightMetadata && (
+            <span class="text-xs text-base-content/60">{formatMetadata(rightMetadata)}</span>
+          )
+        }
+      </div>
+      <div
+        class="diff-content bg-base-100 rounded-b-lg border border-t-0 border-base-300/50 p-3 min-h-[150px] max-h-[400px] overflow-y-auto"
+      >
+        {
+          highlightDifferences && diffResult ? (
+            <div
+              class="diff-view text-sm whitespace-pre-wrap break-words"
+              set:html={renderDiff(diffResult)}
+            />
+          ) : (
+            <div class="text-sm whitespace-pre-wrap break-words text-base-content/90">
+              {rightOutput || <span class="italic opacity-50">No output</span>}
+            </div>
+          )
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats Footer -->
+  {
+    showMetadata && (leftMetadata || rightMetadata) && (
+      <div class="flex items-center justify-between mt-3 pt-3 border-t border-base-300/50 text-xs text-base-content/60">
+        <div class="flex items-center gap-4">
+          {leftMetadata?.duration_ms && rightMetadata?.duration_ms && (
+            <span>
+              Speed change:
+              {rightMetadata.duration_ms > leftMetadata.duration_ms ? (
+                <span class="text-warning">
+                  +
+                  {(
+                    ((rightMetadata.duration_ms - leftMetadata.duration_ms) /
+                      leftMetadata.duration_ms) *
+                    100
+                  ).toFixed(1)}
+                  %
+                </span>
+              ) : (
+                <span class="text-success">
+                  {(
+                    ((rightMetadata.duration_ms - leftMetadata.duration_ms) /
+                      leftMetadata.duration_ms) *
+                    100
+                  ).toFixed(1)}
+                  %
+                </span>
+              )}
+            </span>
+          )}
+          {leftMetadata?.tokens && rightMetadata?.tokens && (
+            <span>
+              Tokens: {leftMetadata.tokens} → {rightMetadata.tokens}
+            </span>
+          )}
+        </div>
+        <button
+          class="btn btn-ghost btn-xs"
+          data-action="toggle-diff-mode"
+          title="Toggle diff highlighting"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="1.5"
+            stroke="currentColor"
+            class="w-3 h-3"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"
+            />
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+            />
+          </svg>
+          Toggle Diff
+        </button>
+      </div>
+    )
+  }
+</div>
+
+<script>
+  // Toggle diff mode button handler
+  document.querySelector('[data-action="toggle-diff-mode"]')?.addEventListener('click', (e) => {
+    const button = e.currentTarget as HTMLButtonElement;
+    const container = button.closest('.output-diff-viewer');
+    if (!container) return;
+
+    // Find all diff views and toggle their visibility
+    const diffViews = container.querySelectorAll('.diff-view');
+    const isDiffMode = button.hasAttribute('data-diff-mode');
+
+    diffViews.forEach((view) => {
+      if (isDiffMode) {
+        // Switch to side-by-side without diff
+        view.classList.remove('diff-mode');
+      } else {
+        view.classList.add('diff-mode');
+      }
+    });
+
+    button.setAttribute('data-diff-mode', isDiffMode ? '' : 'true');
+  });
+
+  // Synchronized scrolling
+  const leftPanel = document.querySelector('.diff-panel:first-child .diff-content');
+  const rightPanel = document.querySelector('.diff-panel:last-child .diff-content');
+
+  let isScrollingLeft = false;
+  let isScrollingRight = false;
+
+  leftPanel?.addEventListener('scroll', () => {
+    if (!isScrollingRight && rightPanel) {
+      isScrollingLeft = true;
+      rightPanel.scrollTop = leftPanel.scrollTop;
+      rightPanel.scrollLeft = leftPanel.scrollLeft;
+      setTimeout(() => {
+        isScrollingLeft = false;
+      }, 100);
+    }
+  });
+
+  rightPanel?.addEventListener('scroll', () => {
+    if (!isScrollingLeft && leftPanel) {
+      isScrollingRight = true;
+      leftPanel.scrollTop = rightPanel.scrollTop;
+      leftPanel.scrollLeft = rightPanel.scrollLeft;
+      setTimeout(() => {
+        isScrollingRight = false;
+      }, 100);
+    }
+  });
+</script>
+
+<style>
+  /* Diff viewer styling */
+  .output-diff-viewer {
+    --diff-added-bg: hsl(var(--su) / 0.2);
+    --diff-removed-bg: hsl(var(--er) / 0.2);
+    --diff-added-text: hsl(var(--su));
+    --diff-removed-text: hsl(var(--er));
+  }
+
+  .diff-panel {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .diff-content {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--bc) / 0.3) hsl(var(--b2));
+  }
+
+  .diff-content::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .diff-content::-webkit-scrollbar-track {
+    background: hsl(var(--b2));
+    border-radius: 3px;
+  }
+
+  .diff-content::-webkit-scrollbar-thumb {
+    background: hsl(var(--bc) / 0.3);
+    border-radius: 3px;
+  }
+
+  .diff-content::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--bc) / 0.5);
+  }
+
+  /* Diff highlighting */
+  .diff-view .bg-success\/20 {
+    background-color: var(--diff-added-bg);
+    color: var(--diff-added-text);
+    padding: 1px 2px;
+    border-radius: 2px;
+  }
+
+  .diff-view .bg-error\/20 {
+    background-color: var(--diff-removed-bg);
+    color: var(--diff-removed-text);
+    padding: 1px 2px;
+    border-radius: 2px;
+  }
+
+  .diff-view .text-success {
+    color: var(--diff-added-text);
+  }
+
+  .diff-view .text-error {
+    color: var(--diff-removed-text);
+  }
+
+  /* Hover effects */
+  .diff-content:hover {
+    border-color: hsl(var(--bc) / 0.3);
+  }
+
+  /* Smooth transitions */
+  .diff-panel {
+    transition: all 0.2s ease-in-out;
+  }
+
+  /* Diff mode toggle animation */
+  .diff-view {
+    transition: opacity 0.2s ease;
+  }
+
+  .diff-view.diff-mode {
+    opacity: 0.8;
+  }
+
+  /* Line-by-line comparison mode */
+  @media (min-width: 1024px) {
+    .output-diff-viewer {
+      position: relative;
+    }
+
+    .diff-panel {
+      position: relative;
+    }
+
+    .diff-panel::before {
+      content: '';
+      position: absolute;
+      left: -0.5rem;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: linear-gradient(to bottom, transparent, hsl(var(--bc) / 0.2), transparent);
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+
+    .diff-panel:hover::before {
+      opacity: 1;
+    }
+  }
+</style>
