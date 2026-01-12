@@ -429,7 +429,7 @@ const {
 
       // Update the optimization modal with the results
       const modalId = `optimization-modal-${type}`;
-      const modal = document.getElementById(modalId);
+      const modal = document.querySelector(`div[data-modal-content="${modalId}"]`);
 
       if (modal) {
         // Update modal content dynamically
