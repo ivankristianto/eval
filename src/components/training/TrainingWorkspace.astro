@@ -215,8 +215,8 @@ const {
   <OptimizationSuggestion
     type="task"
     currentPrompt={taskPrompt.text}
-    suggestedPrompt="Write a detailed response that answers the user's question about {topic}. Include:\n1. A clear explanation of the concept\n2. Relevant examples\n3. Common misconceptions to avoid\n\nEnsure the response is beginner-friendly and uses simple language."
-    rationale="Added structure with numbered list for clarity. Specified 'beginner-friendly' and 'simple language' to address cases where previous outputs were too technical. These changes directly address the 5 failed examples where responses lacked structure."
+    suggestedPrompt=""
+    rationale=""
     modalId="optimization-modal-task"
     personaId={personaId}
   />
@@ -224,8 +224,8 @@ const {
   <OptimizationSuggestion
     type="judge"
     currentPrompt={judgePrompt.text}
-    suggestedPrompt="Evaluate if the generated output correctly addresses the user's question.\n\nCheck that the output:\n- Directly answers the question asked\n- Provides accurate information\n- Includes relevant examples when appropriate\n- Avoids hallucinations or unsupported claims\n\nMark as PASS only if all criteria are met. Mark as FAIL if any criterion is not satisfied, and explain which specific criterion failed."
-    rationale="Added explicit evaluation criteria with bullet points. Specified 'mark as PASS only if ALL criteria are met' to reduce false positives. Added requirement to explain which criterion failed to improve feedback quality."
+    suggestedPrompt=""
+    rationale=""
     modalId="optimization-modal-judge"
     personaId={personaId}
   />
@@ -455,6 +455,37 @@ const {
       if (window.toast) {
         window.toast.error(error instanceof Error ? error.message : 'Failed to optimize prompt');
       }
+    }
+  });
+
+  // Handle suggestion-accepted events from OptimizationSuggestion modal
+  document.addEventListener('suggestion-accepted', (e) => {
+    const { type, suggestedPrompt } = (
+      e as CustomEvent<{
+        type: string;
+        suggestedPrompt: string;
+      }>
+    ).detail;
+
+    // Update the textarea with the suggested prompt
+    const textareaId = `${type}-prompt-editor`;
+    const textarea = document.getElementById(textareaId) as HTMLTextAreaElement | null;
+
+    if (textarea) {
+      textarea.value = suggestedPrompt;
+
+      // Update char count
+      const charCountLabel = textarea
+        .closest('.card')
+        ?.querySelector('.label-text-alt') as HTMLElement;
+      if (charCountLabel) {
+        charCountLabel.textContent = `${suggestedPrompt.length} chars`;
+      }
+
+      // Trigger input event to ensure any listeners are notified
+      textarea.dispatchEvent(new Event('input', { bubbles: true }));
+    } else {
+      console.error(`Textarea not found: ${textareaId}`);
     }
   });
 
