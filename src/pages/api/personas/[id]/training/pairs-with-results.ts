@@ -3,10 +3,11 @@
  *
  * Retrieves all training pairs for a persona with their latest results.
  * Supports polling for real-time updates as generation/evaluation progresses.
+ * Also returns current iteration metrics (F1, precision, recall, Cohen's Kappa).
  */
 
 import type { APIRoute } from 'astro';
-import { getPersona } from '@lib/db/persona-db';
+import { getPersona, getLatestIteration } from '@lib/db/persona-db';
 import { getDatabase } from '@lib/db';
 import { badRequest, notFound, createErrorResponse } from '@lib/api-error-handler';
 import { createLogger } from '@lib/logger';
@@ -24,6 +25,20 @@ interface TrainingPairWithResults {
   human_feedback?: string;
   created_at: string;
   result_updated_at?: string;
+}
+
+interface IterationMetricsData {
+  f1_score?: number;
+  precision?: number;
+  recall?: number;
+  cohens_kappa?: number;
+  accuracy?: number;
+  confusion_matrix?: {
+    true_positives?: number;
+    true_negatives?: number;
+    false_positives?: number;
+    false_negatives?: number;
+  };
 }
 
 /**
@@ -103,6 +118,56 @@ export const GET: APIRoute = async ({ params }) => {
       with_human_rating: pairsWithResults.filter((p) => p.human_rating).length,
     };
 
+    // Get latest iteration metrics if available
+    let metrics: IterationMetricsData | undefined;
+    const latestIteration = getLatestIteration(id, db);
+    if (latestIteration) {
+      const metricsResult = db
+        .prepare(
+          `SELECT
+            f1_score,
+            precision,
+            recall,
+            cohens_kappa,
+            accuracy,
+            true_positives,
+            true_negatives,
+            false_positives,
+            false_negatives
+          FROM iteration_metrics
+          WHERE iteration_id = ?`
+        )
+        .get(latestIteration.id) as
+        | {
+            f1_score: number;
+            precision: number;
+            recall: number;
+            cohens_kappa: number;
+            accuracy: number;
+            true_positives: number;
+            true_negatives: number;
+            false_positives: number;
+            false_negatives: number;
+          }
+        | undefined;
+
+      if (metricsResult) {
+        metrics = {
+          f1_score: metricsResult.f1_score,
+          precision: metricsResult.precision,
+          recall: metricsResult.recall,
+          cohens_kappa: metricsResult.cohens_kappa,
+          accuracy: metricsResult.accuracy,
+          confusion_matrix: {
+            true_positives: metricsResult.true_positives,
+            true_negatives: metricsResult.true_negatives,
+            false_positives: metricsResult.false_positives,
+            false_negatives: metricsResult.false_negatives,
+          },
+        };
+      }
+    }
+
     logger.logApiRequest(
       'GET',
       `/api/personas/${id}/training/pairs-with-results`,
@@ -115,6 +180,7 @@ export const GET: APIRoute = async ({ params }) => {
         persona_id: id,
         stats,
         pairs: pairsWithResults,
+        metrics,
         timestamp: new Date().toISOString(),
       }),
       {
