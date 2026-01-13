@@ -183,28 +183,12 @@ const {
   <!-- Main Workspace with Collapsible Panel -->
   <CollapsiblePanel panelId="training-workspace-left" defaultExpanded={true} position="left">
     <div slot="panel-content">
-      <!-- Tabbed Prompt Editors Interface -->
+      <!-- Task Prompt Editor -->
       <div
-        class="card bg-base-100/80 backdrop-blur-sm border border-base-300/50 shadow-lg rounded-xl overflow-hidden"
+        class="card bg-base-100/80 backdrop-blur-sm border border-base-300/50 shadow-lg rounded-xl mb-4"
       >
-        <!-- Tabs -->
-        <div role="tablist" class="tabs tabs-bordered px-4 pt-3 bg-base-200/50">
-          <input
-            type="radio"
-            name="prompt-editor-tabs"
-            role="tab"
-            class="tab [--tab-bg:transparent] [--tab-border-color:transparent]"
-            aria-label="Task Prompt"
-            aria-controls="task-prompt-panel"
-            id="tab-task"
-            checked
-          />
-          <label
-            for="tab-task"
-            role="button"
-            class="gap-2 font-semibold text-sm"
-            data-tab-target="task-prompt-panel"
-          >
+        <div class="card-body p-4">
+          <h3 class="card-title text-sm font-semibold flex items-center gap-2">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
@@ -220,23 +204,22 @@ const {
               ></path>
             </svg>
             Task Prompt
-          </label>
-
-          <input
-            type="radio"
-            name="prompt-editor-tabs"
-            role="tab"
-            class="tab [--tab-bg:transparent] [--tab-border-color:transparent]"
-            aria-label="Judge Prompt"
-            aria-controls="judge-prompt-panel"
-            id="tab-judge"
+          </h3>
+          <PromptEditor
+            type="task"
+            promptText={taskPrompt.text}
+            versions={taskPrompt.versions}
+            selectedVersion={taskPrompt.selectedVersion}
           />
-          <label
-            for="tab-judge"
-            role="button"
-            class="gap-2 font-semibold text-sm"
-            data-tab-target="judge-prompt-panel"
-          >
+        </div>
+      </div>
+
+      <!-- Judge Prompt Editor -->
+      <div
+        class="card bg-base-100/80 backdrop-blur-sm border border-base-300/50 shadow-lg rounded-xl"
+      >
+        <div class="card-body p-4">
+          <h3 class="card-title text-sm font-semibold flex items-center gap-2">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
@@ -252,40 +235,13 @@ const {
               ></path>
             </svg>
             Judge Prompt
-          </label>
-        </div>
-
-        <!-- Tab Panels -->
-        <div class="px-4 pb-4">
-          <!-- Task Prompt Panel -->
-          <div
-            id="task-prompt-panel"
-            role="tabpanel"
-            class="tab-content h-full"
-            data-tab-panel="task-prompt-panel"
-          >
-            <PromptEditor
-              type="task"
-              promptText={taskPrompt.text}
-              versions={taskPrompt.versions}
-              selectedVersion={taskPrompt.selectedVersion}
-            />
-          </div>
-
-          <!-- Judge Prompt Panel -->
-          <div
-            id="judge-prompt-panel"
-            role="tabpanel"
-            class="tab-content hidden h-full"
-            data-tab-panel="judge-prompt-panel"
-          >
-            <PromptEditor
-              type="judge"
-              promptText={judgePrompt.text}
-              versions={judgePrompt.versions}
-              selectedVersion={judgePrompt.selectedVersion}
-            />
-          </div>
+          </h3>
+          <PromptEditor
+            type="judge"
+            promptText={judgePrompt.text}
+            versions={judgePrompt.versions}
+            selectedVersion={judgePrompt.selectedVersion}
+          />
         </div>
       </div>
     </div>
@@ -1581,25 +1537,6 @@ const {
       stopPolling();
     }
   });
-
-  // Tab switching for prompt editors
-  document.querySelectorAll('[data-tab-target]').forEach((tabLabel) => {
-    tabLabel.addEventListener('click', (e) => {
-      const targetId = (e.currentTarget as HTMLElement).dataset.tabTarget;
-      if (!targetId) return;
-
-      // Hide all tab panels
-      document.querySelectorAll('[data-tab-panel]').forEach((panel) => {
-        panel.classList.add('hidden');
-      });
-
-      // Show target panel
-      const targetPanel = document.querySelector(`[data-tab-panel="${targetId}"]`);
-      if (targetPanel) {
-        targetPanel.classList.remove('hidden');
-      }
-    });
-  });
 </script>
 
 <style>
@@ -1612,10 +1549,5 @@ const {
   .input-loading {
     border-color: hsl(var(--p)) !important;
     opacity: 0.7;
-  }
-
-  /* Smooth tab transitions */
-  [data-tab-panel] {
-    transition: opacity 0.2s ease-in-out;
   }
 </style>
