@@ -464,7 +464,8 @@ const totalPages = Math.max(1, Math.ceil(pairs.length / pageSize));
   </div>
 
   <!-- Playground Modal (for testing individual rows) -->
-  <PlaygroundModal modalId="playground-modal" personaId={personaId || ''} />
+  <!-- Note: Modal will be opened dynamically per training pair in future implementation -->
+  <PlaygroundModal trainingPairId={pairs[0]?.id || '0'} />
 </div>
 
 <script define:vars={{ pageSize, pairs }} is:inline>
