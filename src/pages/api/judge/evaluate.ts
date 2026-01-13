@@ -33,6 +33,7 @@ const logger = createLogger('API:Judge:Evaluate');
  *   total_results: number;
  *   evaluated_results: number;
  *   judge_prompt_version_id?: string; // Included if new version was created
+ *   results: Array<{id, training_pair_id, judge_rating, judge_feedback, judge_reasoning, updated_at}>; // For optimistic updates
  * }
  */
 export const POST: APIRoute = async ({ request }) => {
@@ -221,12 +222,21 @@ export const POST: APIRoute = async ({ request }) => {
 
     logger.logApiRequest('POST', '/api/judge/evaluate', 200, Date.now() - startTime);
 
+    // Return results for optimistic updates - include the actual judge decisions
     return new Response(
       JSON.stringify({
         evaluation_run_id: result.evaluation_run_id,
         total_results: result.total_results,
         evaluated_results: result.evaluated_results,
         judge_prompt_version_id: judgePromptVersionId,
+        results: result.results.map((r) => ({
+          id: r.id,
+          training_pair_id: r.training_pair_id,
+          judge_rating: r.judge_rating,
+          judge_feedback: r.judge_feedback,
+          judge_reasoning: r.judge_reasoning,
+          updated_at: r.updated_at,
+        })),
       }),
       {
         status: 200,
