@@ -245,33 +245,6 @@ if (currentTab === 'training-progress') {
                   {persona.task_prompt}
                 </p>
               </div>
-
-              <div class="space-y-4">
-                <div>
-                  <div class="text-base-content/60 text-sm uppercase tracking-wide mb-2">
-                    Target F1 Score
-                  </div>
-                  <div class="font-mono font-semibold text-2xl text-primary">
-                    {(persona.target_pass_rate * 100).toFixed(0)}%
-                  </div>
-                </div>
-
-                {persona.best_pass_rate !== null && (
-                  <div>
-                    <div class="text-base-content/60 text-sm uppercase tracking-wide mb-2">
-                      Best Pass Rate
-                    </div>
-                    <div class="font-mono font-semibold text-2xl text-success">
-                      {(persona.best_pass_rate * 100).toFixed(1)}%
-                    </div>
-                    {persona.best_pass_rate_updated_at && (
-                      <div class="text-sm text-base-content/60">
-                        Updated {new Date(persona.best_pass_rate_updated_at).toLocaleDateString()}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
             </div>
           </div>
         </div>
@@ -373,27 +346,6 @@ if (currentTab === 'training-progress') {
                   class="textarea textarea-bordered w-full h-24"
                   set:text={persona.description || ''}
                 />
-              </div>
-
-              <div class="form-control">
-                <label class="label">
-                  <span class="label-text font-semibold">Target F1 Score</span>
-                </label>
-                <input
-                  type="number"
-                  name="target_pass_rate"
-                  value={persona.target_pass_rate}
-                  step="0.01"
-                  min="0"
-                  max="1"
-                  class="input input-bordered w-full md:w-1/2"
-                  required
-                />
-                <label class="label">
-                  <span class="label-text-alt text-base-content/60">
-                    Target F1 score (0.0 to 1.0) for convergence
-                  </span>
-                </label>
               </div>
 
               <div class="card-actions justify-end">
