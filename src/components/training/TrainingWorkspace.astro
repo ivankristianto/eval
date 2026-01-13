@@ -165,7 +165,7 @@ const {
       <!-- Action Buttons -->
       <div class="flex flex-wrap gap-2">
         <button
-          class="btn btn-sm shadow-md hover:shadow-lg transition-all duration-200"
+          class="btn btn-luxe btn-sm"
           data-action="generate-outputs"
           data-persona-id={personaId}
         >
@@ -185,7 +185,7 @@ const {
           Generate Outputs
         </button>
         <button
-          class="btn btn-sm shadow-md hover:shadow-lg transition-all duration-200"
+          class="btn btn-luxe btn-sm"
           data-action="generate-judge"
           data-persona-id={personaId}
         >
@@ -206,7 +206,7 @@ const {
           Generate Judge
         </button>
         <button
-          class="btn btn-sm btn-primary shadow-md hover:shadow-lg transition-all duration-200"
+          class="btn btn-luxe btn-luxe-primary btn-sm"
           data-action="evaluate-all"
           data-persona-id={personaId}
         >
@@ -234,9 +234,7 @@ const {
   <CollapsiblePanel panelId="training-workspace-left" defaultExpanded={true} position="left">
     <div slot="panel-content">
       <!-- Task Prompt Editor -->
-      <div
-        class="card bg-base-100/80 backdrop-blur-sm border border-base-300/50 shadow-lg rounded-xl mb-4"
-      >
+      <div class="card-luxe mb-4">
         <div class="card-body p-4">
           <h3 class="card-title text-sm font-semibold flex items-center gap-2">
             <svg
@@ -265,9 +263,7 @@ const {
       </div>
 
       <!-- Judge Prompt Editor -->
-      <div
-        class="card bg-base-100/80 backdrop-blur-sm border border-base-300/50 shadow-lg rounded-xl"
-      >
+      <div class="card-luxe">
         <div class="card-body p-4">
           <h3 class="card-title text-sm font-semibold flex items-center gap-2">
             <svg

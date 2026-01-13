@@ -70,7 +70,7 @@ const historyModalId = `${type}-prompt-history`;
     {
       showOptimize && (
         <button
-          class="btn btn-primary btn-sm flex-1 shadow-md hover:shadow-lg transition-all duration-200"
+          class="btn btn-luxe btn-luxe-primary btn-sm flex-1"
           data-action="optimize"
           data-type={type}
           aria-label={`Optimize ${type} prompt`}
@@ -98,7 +98,7 @@ const historyModalId = `${type}-prompt-history`;
       showHistory && (
         <label
           for={historyModalId}
-          class="btn btn-ghost btn-sm border border-base-300 hover:bg-base-200 transition-all duration-200"
+          class="btn btn-luxe btn-sm"
           data-action="view-history"
           data-type={type}
           aria-label={`View ${type} prompt history`}
@@ -131,7 +131,7 @@ const historyModalId = `${type}-prompt-history`;
     <>
       <input type="checkbox" id={historyModalId} class="modal-toggle" />
       <div class="modal" role="dialog">
-        <div class="modal-box max-w-3xl border border-base-300 shadow-2xl rounded-xl">
+        <div class="card-luxe max-w-3xl p-6">
           <div class="flex items-center justify-between mb-5 pb-3 border-b border-base-300">
             <h3 class="font-bold text-lg capitalize flex items-center gap-2">
               <span class="w-2 h-2 rounded-full bg-primary" />
