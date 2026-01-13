@@ -105,15 +105,9 @@ const createdDate = new Date(persona.created_at).toLocaleDateString();
     </div>
 
     <div class="card-actions justify-end mt-4">
-      <a href={`/personas/${persona.id}`} class="btn btn-sm btn-primary"> View Details </a>
-
-      {
-        persona.status === 'draft' && (
-          <button class="btn btn-sm btn-success start-training-btn" data-persona-id={persona.id}>
-            Start Training
-          </button>
-        )
-      }
+      <a href={`/personas/${persona.id}/workspace`} class="btn btn-sm btn-primary">
+        Open Workspace
+      </a>
 
       <div class="dropdown dropdown-end">
         <label tabindex="0" class="btn btn-sm btn-ghost">

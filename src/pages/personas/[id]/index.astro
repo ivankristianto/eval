@@ -11,7 +11,6 @@ import type { Persona } from '@src-types/training';
 // Extended persona type with fields from related tables
 interface ExtendedPersona extends Persona {
   task_prompt?: string;
-  max_iterations?: number;
   current_iteration?: number;
 }
 
@@ -376,47 +375,25 @@ if (currentTab === 'training-progress') {
                 />
               </div>
 
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="form-control">
-                  <label class="label">
-                    <span class="label-text font-semibold">Target F1 Score</span>
-                  </label>
-                  <input
-                    type="number"
-                    name="target_pass_rate"
-                    value={persona.target_pass_rate}
-                    step="0.01"
-                    min="0"
-                    max="1"
-                    class="input input-bordered w-full"
-                    required
-                  />
-                  <label class="label">
-                    <span class="label-text-alt text-base-content/60">
-                      Target F1 score (0.0 to 1.0) for convergence
-                    </span>
-                  </label>
-                </div>
-
-                <div class="form-control">
-                  <label class="label">
-                    <span class="label-text font-semibold">Max Iterations</span>
-                  </label>
-                  <input
-                    type="number"
-                    name="max_iterations"
-                    value={persona.max_iterations}
-                    min="1"
-                    max="50"
-                    class="input input-bordered w-full"
-                    required
-                  />
-                  <label class="label">
-                    <span class="label-text-alt text-base-content/60">
-                      Maximum number of training iterations
-                    </span>
-                  </label>
-                </div>
+              <div class="form-control">
+                <label class="label">
+                  <span class="label-text font-semibold">Target F1 Score</span>
+                </label>
+                <input
+                  type="number"
+                  name="target_pass_rate"
+                  value={persona.target_pass_rate}
+                  step="0.01"
+                  min="0"
+                  max="1"
+                  class="input input-bordered w-full md:w-1/2"
+                  required
+                />
+                <label class="label">
+                  <span class="label-text-alt text-base-content/60">
+                    Target F1 score (0.0 to 1.0) for convergence
+                  </span>
+                </label>
               </div>
 
               <div class="card-actions justify-end">
@@ -703,7 +680,6 @@ if (currentTab === 'training-progress') {
         name: formData.get('name') as string,
         description: formData.get('description') as string,
         target_pass_rate: parseFloat(formData.get('target_pass_rate') as string),
-        max_iterations: parseInt(formData.get('max_iterations') as string, 10),
       };
 
       try {
