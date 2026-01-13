@@ -702,10 +702,9 @@ const {
     if (textarea) {
       textarea.value = suggestedPrompt;
 
-      // Update char count
-      const charCountLabel = textarea
-        .closest('.card')
-        ?.querySelector('.label-text-alt') as HTMLElement;
+      // Update char count - find in same form-control
+      const formControl = textarea.closest('.form-control');
+      const charCountLabel = formControl?.querySelector('.label-text-alt') as HTMLElement;
       if (charCountLabel) {
         charCountLabel.textContent = `${suggestedPrompt.length} chars`;
       }
@@ -765,10 +764,9 @@ const {
         if (textarea) {
           textarea.value = matchedVersion.prompt_text;
 
-          // Update char count
-          const charCountLabel = textarea
-            .closest('.card')
-            ?.querySelector('.label-text-alt') as HTMLElement;
+          // Update char count - find in same form-control
+          const formControl = textarea.closest('.form-control');
+          const charCountLabel = formControl?.querySelector('.label-text-alt') as HTMLElement;
           if (charCountLabel) {
             charCountLabel.textContent = `${matchedVersion.prompt_text.length} chars`;
           }

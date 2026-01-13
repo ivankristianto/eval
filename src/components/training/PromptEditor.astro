@@ -59,7 +59,7 @@ const historyModalId = `${type}-prompt-history`;
     <textarea
       id={editorId}
       class="textarea textarea-bordered textarea-sm font-mono text-xs leading-relaxed w-full resize-y bg-base-50 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200"
-      style="min-height: 200px; max-height: calc(100vh - 400px);"
+      style="min-height: 200px; max-height: calc(100vh - 500px);"
       placeholder={`Enter your ${type} prompt here...`}
       data-prompt-editor={type}>{promptText}</textarea
     >
@@ -257,9 +257,9 @@ const historyModalId = `${type}-prompt-history`;
   document.querySelectorAll('[data-prompt-editor]').forEach((textarea) => {
     textarea.addEventListener('input', (e) => {
       const target = e.target as HTMLTextAreaElement;
-      const charCountLabel = target
-        .closest('.card')
-        ?.querySelector('.label-text-alt') as HTMLElement;
+      // Find the closest label-text-alt in the same form-control
+      const formControl = target.closest('.form-control');
+      const charCountLabel = formControl?.querySelector('.label-text-alt') as HTMLElement;
       if (charCountLabel) {
         charCountLabel.textContent = `${target.value.length} chars`;
       }
