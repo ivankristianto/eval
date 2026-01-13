@@ -232,6 +232,10 @@ const {
   /**
    * Helper to add flash animation with proper timer cleanup
    * Prevents memory leaks by clearing previous timers
+   *
+   * @param element - DOM element to animate
+   * @param className - CSS class name for flash effect (default: 'bg-success/10')
+   * @param duration - Animation duration in milliseconds (default: 1000)
    */
   function flashElement(element: Element, className = 'bg-success/10', duration = 1000) {
     // Clear any existing timer on this element
@@ -283,11 +287,13 @@ const {
         }
 
         // OPTIMISTIC UPDATE: Immediately update UI with returned data
+        // Note: generated_output is nullable, but API only returns successful results
+        // which always have generated_output populated
         if (result.results && Array.isArray(result.results)) {
           result.results.forEach(
             (item: {
               training_pair_id: string;
-              generated_output: string;
+              generated_output: string; // Non-null in successful API responses
               created_at: string;
               updated_at: string;
             }) => {
@@ -375,13 +381,15 @@ const {
         }
 
         // OPTIMISTIC UPDATE: Immediately update UI with returned data
+        // Note: judge_feedback and judge_reasoning are nullable. The API returns
+        // judge_feedback when available, otherwise falls back to judge_reasoning.
         if (result.results && Array.isArray(result.results)) {
           result.results.forEach(
             (item: {
               training_pair_id: string;
-              judge_rating: string;
-              judge_feedback: string | null;
-              judge_reasoning: string | null;
+              judge_rating: string; // Non-null in successful API responses
+              judge_feedback: string | null; // May be null if only reasoning provided
+              judge_reasoning: string | null; // Always populated in successful responses
               updated_at: string;
             }) => {
               // Find row by pair ID
@@ -686,6 +694,19 @@ const {
   });
 
   // Real-time polling for training pairs updates
+  //
+  // NOTE: Optimistic Updates vs Polling Behavior
+  // ------------------------------------------------
+  // Individual actions ("Generate Outputs", "Generate Judge") apply optimistic updates
+  // immediately from API responses. These do NOT trigger polling to avoid race conditions.
+  //
+  // Only the "Evaluate All" action triggers polling (via 'operation-started' event) because
+  // it performs sequential operations where the user expects real-time status updates.
+  //
+  // Polling respects optimistic updates by checking data-cell-type presence before
+  // overwriting. The updateTrainingPairsTable() function only updates cells that have
+  // placeholder elements, leaving already-optimized content untouched.
+  //
   let pollingInterval: ReturnType<typeof setInterval> | null = null;
   let isPolling = false;
   let consecutiveErrors = 0;
@@ -822,6 +843,8 @@ const {
   /**
    * Update metrics in the SimpleMetrics component
    * Uses data-metric attributes to find and update individual metric values
+   *
+   * @param metrics - Object containing optional metric values (all fields are nullable)
    */
   function updateMetrics(metrics: {
     f1_score?: number;
@@ -887,6 +910,12 @@ const {
   /**
    * Update the training pairs table with new data
    * Uses data-cell-type attributes for robust cell selection regardless of column position
+   *
+   * IMPORTANT: This function respects optimistic updates by only updating cells that
+   * have placeholder elements ([data-placeholder]). Cells with content divs ([data-content])
+   * are left untouched, preventing polling from overwriting optimistic updates.
+   *
+   * @param pairs - Array of training pair data with optional nullable fields
    */
   function updateTrainingPairsTable(pairs: TrainingPairData[]) {
     const tbody = document.querySelector('#training-pairs-body');
