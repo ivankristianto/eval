@@ -190,8 +190,8 @@ const { panelId, defaultExpanded = true, position = 'left' } = Astro.props;
 
         // Update panel width/visibility
         if (isExpanded) {
-          // Panel is expanded
-          panel.classList.remove('lg:col-span-0', 'w-0', 'opacity-0', 'p-0');
+          // Panel is expanded - show it and use grid layout
+          panel.classList.remove('hidden');
           panel.classList.add('lg:col-span-3', 'opacity-100');
 
           // Main content takes remaining space
@@ -201,9 +201,9 @@ const { panelId, defaultExpanded = true, position = 'left' } = Astro.props;
           // Rotate icon to indicate expandability
           (icon as HTMLElement).style.transform = 'rotate(0deg)';
         } else {
-          // Panel is collapsed
+          // Panel is collapsed - completely hide it from layout
           panel.classList.remove('lg:col-span-3', 'opacity-100');
-          panel.classList.add('lg:col-span-0', 'w-0', 'opacity-0', 'p-0');
+          panel.classList.add('hidden');
 
           // Main content takes full width
           main.classList.remove('lg:col-span-9');
