@@ -44,87 +44,84 @@ const editorId = `${type}-prompt-editor`;
 const historyModalId = `${type}-prompt-history`;
 ---
 
-<div
-  class="card bg-base-100/80 backdrop-blur-sm border border-base-300/50 shadow-lg rounded-xl overflow-hidden"
->
-  <div class="card-body p-4">
-    <!-- Header with Version Selector -->
-    <div class="mb-3">
-      <VersionSelector versions={versions} selectedVersion={selectedVersion} type={type} />
-    </div>
+<div class="prompt-editor-wrapper flex flex-col h-full">
+  <!-- Header with Version Selector -->
+  <div class="mb-3">
+    <VersionSelector versions={versions} selectedVersion={selectedVersion} type={type} />
+  </div>
 
-    <!-- Prompt Textarea -->
-    <div class="form-control">
-      <label class="label py-1.5 px-0" for={editorId}>
-        <span class="label-text font-semibold capitalize text-xs tracking-wide">{type} Prompt</span>
-        <span class="label-text-alt text-xs font-mono">{promptText.length} chars</span>
-      </label>
-      <textarea
-        id={editorId}
-        class="textarea textarea-bordered textarea-sm h-36 font-mono text-xs leading-relaxed w-full resize-y bg-base-50 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200"
-        placeholder={`Enter your ${type} prompt here...`}
-        data-prompt-editor={type}>{promptText}</textarea
-      >
-    </div>
+  <!-- Prompt Textarea -->
+  <div class="form-control flex-1 min-h-0">
+    <label class="label py-1.5 px-0" for={editorId}>
+      <span class="label-text font-semibold capitalize text-xs tracking-wide">{type} Prompt</span>
+      <span class="label-text-alt text-xs font-mono">{promptText.length} chars</span>
+    </label>
+    <textarea
+      id={editorId}
+      class="textarea textarea-bordered textarea-sm font-mono text-xs leading-relaxed w-full resize-y bg-base-50 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+      style="min-height: 200px; max-height: calc(100vh - 400px);"
+      placeholder={`Enter your ${type} prompt here...`}
+      data-prompt-editor={type}>{promptText}</textarea
+    >
+  </div>
 
-    <!-- Action Buttons -->
-    <div class="flex gap-2 mt-3 z-10 py-2">
-      {
-        showOptimize && (
-          <button
-            class="btn btn-primary btn-sm flex-1 shadow-md hover:shadow-lg transition-all duration-200"
-            data-action="optimize"
-            data-type={type}
-            aria-label={`Optimize ${type} prompt`}
-            title={`Optimize ${type} prompt`}
+  <!-- Action Buttons -->
+  <div class="flex gap-2 mt-3 z-10 py-2">
+    {
+      showOptimize && (
+        <button
+          class="btn btn-primary btn-sm flex-1 shadow-md hover:shadow-lg transition-all duration-200"
+          data-action="optimize"
+          data-type={type}
+          aria-label={`Optimize ${type} prompt`}
+          title={`Optimize ${type} prompt`}
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="1.5"
+            stroke="currentColor"
+            class="w-3.5 h-3.5"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke-width="1.5"
-              stroke="currentColor"
-              class="w-3.5 h-3.5"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z"
-              />
-            </svg>
-            Optimize
-          </button>
-        )
-      }
-      {
-        showHistory && (
-          <label
-            for={historyModalId}
-            class="btn btn-ghost btn-sm border border-base-300 hover:bg-base-200 transition-all duration-200"
-            data-action="view-history"
-            data-type={type}
-            aria-label={`View ${type} prompt history`}
-            title={`View ${type} prompt history`}
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z"
+            />
+          </svg>
+          Optimize
+        </button>
+      )
+    }
+    {
+      showHistory && (
+        <label
+          for={historyModalId}
+          class="btn btn-ghost btn-sm border border-base-300 hover:bg-base-200 transition-all duration-200"
+          data-action="view-history"
+          data-type={type}
+          aria-label={`View ${type} prompt history`}
+          title={`View ${type} prompt history`}
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="1.5"
+            stroke="currentColor"
+            class="w-3.5 h-3.5"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke-width="1.5"
-              stroke="currentColor"
-              class="w-3.5 h-3.5"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            History
-          </label>
-        )
-      }
-    </div>
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+          History
+        </label>
+      )
+    }
   </div>
 </div>
 

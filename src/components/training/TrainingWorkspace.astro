@@ -183,28 +183,128 @@ const {
   <!-- Main Workspace with Collapsible Panel -->
   <CollapsiblePanel panelId="training-workspace-left" defaultExpanded={true} position="left">
     <div slot="panel-content">
-      <!-- Metrics Summary -->
-      <SimpleMetrics metrics={metrics} judgeMetrics={judgeMetrics} humanMetrics={humanMetrics} />
+      <!-- Tabbed Prompt Editors Interface -->
+      <div
+        class="card bg-base-100/80 backdrop-blur-sm border border-base-300/50 shadow-lg rounded-xl overflow-hidden"
+      >
+        <!-- Tabs -->
+        <div role="tablist" class="tabs tabs-bordered px-4 pt-3 bg-base-200/50">
+          <input
+            type="radio"
+            name="prompt-editor-tabs"
+            role="tab"
+            class="tab [--tab-bg:transparent] [--tab-border-color:transparent]"
+            aria-label="Task Prompt"
+            aria-controls="task-prompt-panel"
+            id="tab-task"
+            checked
+          />
+          <label
+            for="tab-task"
+            role="button"
+            class="gap-2 font-semibold text-sm"
+            data-tab-target="task-prompt-panel"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke-width="1.5"
+              stroke="currentColor"
+              class="w-4 h-4"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"
+              ></path>
+            </svg>
+            Task Prompt
+          </label>
 
-      <!-- Task Prompt Editor -->
-      <PromptEditor
-        type="task"
-        promptText={taskPrompt.text}
-        versions={taskPrompt.versions}
-        selectedVersion={taskPrompt.selectedVersion}
-      />
+          <input
+            type="radio"
+            name="prompt-editor-tabs"
+            role="tab"
+            class="tab [--tab-bg:transparent] [--tab-border-color:transparent]"
+            aria-label="Judge Prompt"
+            aria-controls="judge-prompt-panel"
+            id="tab-judge"
+          />
+          <label
+            for="tab-judge"
+            role="button"
+            class="gap-2 font-semibold text-sm"
+            data-tab-target="judge-prompt-panel"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke-width="1.5"
+              stroke="currentColor"
+              class="w-4 h-4"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z"
+              ></path>
+            </svg>
+            Judge Prompt
+          </label>
+        </div>
 
-      <!-- Judge Prompt Editor -->
-      <PromptEditor
-        type="judge"
-        promptText={judgePrompt.text}
-        versions={judgePrompt.versions}
-        selectedVersion={judgePrompt.selectedVersion}
-      />
+        <!-- Tab Panels -->
+        <div class="px-4 pb-4">
+          <!-- Task Prompt Panel -->
+          <div
+            id="task-prompt-panel"
+            role="tabpanel"
+            class="tab-content h-full"
+            data-tab-panel="task-prompt-panel"
+          >
+            <PromptEditor
+              type="task"
+              promptText={taskPrompt.text}
+              versions={taskPrompt.versions}
+              selectedVersion={taskPrompt.selectedVersion}
+            />
+          </div>
+
+          <!-- Judge Prompt Panel -->
+          <div
+            id="judge-prompt-panel"
+            role="tabpanel"
+            class="tab-content hidden h-full"
+            data-tab-panel="judge-prompt-panel"
+          >
+            <PromptEditor
+              type="judge"
+              promptText={judgePrompt.text}
+              versions={judgePrompt.versions}
+              selectedVersion={judgePrompt.selectedVersion}
+            />
+          </div>
+        </div>
+      </div>
     </div>
 
-    <div slot="main-content">
-      <TrainingPairsTable pairs={trainingPairs} personaId={personaId} />
+    <div slot="main-content" class="flex flex-col min-h-0">
+      <!-- Metrics Dashboard Strip -->
+      <div class="flex-shrink-0 mb-4">
+        <SimpleMetrics
+          metrics={metrics}
+          judgeMetrics={judgeMetrics}
+          humanMetrics={humanMetrics}
+          variant="compact"
+        />
+      </div>
+
+      <!-- Training Pairs Table -->
+      <div class="flex-1 min-h-0">
+        <TrainingPairsTable pairs={trainingPairs} personaId={personaId} />
+      </div>
     </div>
   </CollapsiblePanel>
 
@@ -1483,6 +1583,25 @@ const {
       stopPolling();
     }
   });
+
+  // Tab switching for prompt editors
+  document.querySelectorAll('[data-tab-target]').forEach((tabLabel) => {
+    tabLabel.addEventListener('click', (e) => {
+      const targetId = (e.currentTarget as HTMLElement).dataset.tabTarget;
+      if (!targetId) return;
+
+      // Hide all tab panels
+      document.querySelectorAll('[data-tab-panel]').forEach((panel) => {
+        panel.classList.add('hidden');
+      });
+
+      // Show target panel
+      const targetPanel = document.querySelector(`[data-tab-panel="${targetId}"]`);
+      if (targetPanel) {
+        targetPanel.classList.remove('hidden');
+      }
+    });
+  });
 </script>
 
 <style>
@@ -1495,5 +1614,10 @@ const {
   .input-loading {
     border-color: hsl(var(--p)) !important;
     opacity: 0.7;
+  }
+
+  /* Smooth tab transitions */
+  [data-tab-panel] {
+    transition: opacity 0.2s ease-in-out;
   }
 </style>
