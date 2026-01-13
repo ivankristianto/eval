@@ -18,6 +18,7 @@ import PromptEditor from './PromptEditor.astro';
 import TrainingPairsTable from './TrainingPairsTable.astro';
 import SimpleMetrics from './SimpleMetrics.astro';
 import OptimizationSuggestion from './OptimizationSuggestion.astro';
+import PromptHistoryDrawer from './PromptHistoryDrawer.astro';
 import CollapsiblePanel from '@components/ui/CollapsiblePanel.astro';
 
 interface PromptConfig {
@@ -27,6 +28,7 @@ interface PromptConfig {
     created_by: 'human' | 'ai';
     created_at: string;
     improvement_rationale?: string;
+    prompt_text?: string;
   }>;
   selectedVersion: number;
 }
@@ -110,6 +112,54 @@ const {
         <span class="loading loading-spinner loading-xs"></span>
         <span>Updating...</span>
         <span id="polling-progress" class="text-info/70 font-mono"></span>
+      </div>
+
+      <!-- Prompt History Buttons -->
+      <div class="flex gap-2">
+        <button
+          class="btn btn-sm btn-ghost gap-2"
+          data-action="open-history-drawer"
+          data-drawer-type="task"
+          title="View task prompt history"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="1.5"
+            stroke="currentColor"
+            class="w-4 h-4"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"
+            ></path>
+          </svg>
+          Task History
+        </button>
+        <button
+          class="btn btn-sm btn-ghost gap-2"
+          data-action="open-history-drawer"
+          data-drawer-type="judge"
+          title="View judge prompt history"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="1.5"
+            stroke="currentColor"
+            class="w-4 h-4"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"
+            ></path>
+          </svg>
+          Judge History
+        </button>
       </div>
 
       <!-- Action Buttons -->
@@ -247,8 +297,18 @@ const {
     </div>
 
     <div slot="main-content" class="flex flex-col min-h-0">
-      <!-- Metrics Dashboard Strip -->
-      <div class="flex-shrink-0 mb-4">
+      <!-- Metrics Dashboard Strip with Loading Indicator -->
+      <div class="flex-shrink-0 mb-4 relative">
+        <!-- Metrics Loading Overlay -->
+        <div
+          id="metrics-loading-overlay"
+          class="absolute inset-0 bg-base-100/80 backdrop-blur-sm z-10 hidden items-center justify-center rounded-xl transition-all duration-200"
+        >
+          <div class="flex items-center gap-2 text-sm text-info">
+            <span class="loading loading-spinner loading-sm"></span>
+            <span>Updating metrics...</span>
+          </div>
+        </div>
         <SimpleMetrics
           metrics={metrics}
           judgeMetrics={judgeMetrics}
@@ -281,6 +341,35 @@ const {
     rationale=""
     modalId="optimization-modal-judge"
     personaId={personaId}
+  />
+
+  <!-- Prompt History Drawers -->
+  <PromptHistoryDrawer
+    type="task"
+    versions={taskPrompt.versions.map((v) => ({
+      id: `task-${v.version_number}`,
+      version_number: v.version_number,
+      prompt_text: v.prompt_text || taskPrompt.text,
+      created_by: v.created_by,
+      created_at: v.created_at,
+      improvement_rationale: v.improvement_rationale,
+    }))}
+    modalId="task-history-drawer"
+    currentPromptText={taskPrompt.text}
+  />
+
+  <PromptHistoryDrawer
+    type="judge"
+    versions={judgePrompt.versions.map((v) => ({
+      id: `judge-${v.version_number}`,
+      version_number: v.version_number,
+      prompt_text: v.prompt_text || judgePrompt.text,
+      created_by: v.created_by,
+      created_at: v.created_at,
+      improvement_rationale: v.improvement_rationale,
+    }))}
+    modalId="judge-history-drawer"
+    currentPromptText={judgePrompt.text}
   />
 </div>
 
@@ -315,6 +404,29 @@ const {
       )._animationTimer = null;
     }, duration);
   }
+
+  // Handle "Open History Drawer" button clicks
+  document.querySelectorAll('[data-action="open-history-drawer"]').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      const button = e.currentTarget as HTMLButtonElement;
+      const drawerType = button.dataset.drawerType;
+
+      if (!drawerType) return;
+
+      // Map drawer type to modal ID
+      const modalId = `${drawerType}-history-drawer`;
+      const modalCheckbox = document.getElementById(`${modalId}-input`) as HTMLInputElement | null;
+
+      if (modalCheckbox) {
+        modalCheckbox.checked = true;
+      } else {
+        console.error(`Drawer not found: ${modalId}`);
+        if (window.toast) {
+          window.toast.error(`Failed to open ${drawerType} history drawer`);
+        }
+      }
+    });
+  });
 
   // Generate outputs action
   document.querySelectorAll('[data-action="generate-outputs"]').forEach((btn) => {
@@ -917,6 +1029,13 @@ const {
     const container = document.querySelector('[data-metrics-container="true"]');
     if (!container) return;
 
+    // Show loading indicator before updating
+    const loadingOverlay = document.getElementById('metrics-loading-overlay');
+    if (loadingOverlay) {
+      loadingOverlay.classList.remove('hidden');
+      loadingOverlay.classList.add('flex');
+    }
+
     // Helper to format and update a metric value
     const updateMetricValue = (metricName: string, value: number | undefined) => {
       const element = container.querySelector(`[data-metric="${metricName}"]`);
@@ -958,6 +1077,14 @@ const {
         updateMetricValue('false_positives', cm.false_positives);
       if (cm.false_negatives !== undefined)
         updateMetricValue('false_negatives', cm.false_negatives);
+    }
+
+    // Hide loading indicator after updating
+    if (loadingOverlay) {
+      setTimeout(() => {
+        loadingOverlay.classList.add('hidden');
+        loadingOverlay.classList.remove('flex');
+      }, 300);
     }
   }
 

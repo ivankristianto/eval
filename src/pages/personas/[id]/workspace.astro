@@ -170,6 +170,7 @@ const humanMetrics = getHumanMetricsFromResults(id);
         created_by: v.created_by as 'human' | 'ai',
         created_at: v.created_at,
         improvement_rationale: v.improvement_rationale ?? undefined,
+        prompt_text: v.prompt_text,
       })),
       selectedVersion: selectedTaskVersion,
     }}
@@ -180,6 +181,7 @@ const humanMetrics = getHumanMetricsFromResults(id);
         created_by: v.created_by as 'human' | 'ai',
         created_at: v.created_at,
         improvement_rationale: v.improvement_rationale ?? undefined,
+        prompt_text: v.prompt_text,
       })),
       selectedVersion: selectedJudgeVersion,
     }}

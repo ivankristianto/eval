@@ -1,0 +1,282 @@
+---
+/**
+ * PromptHistoryDrawer Component
+ *
+ * A drawer component for viewing prompt history (task or judge).
+ * Displays version history with diff viewer capability in a side panel.
+ */
+
+interface PromptVersion {
+  id: string;
+  version_number: number;
+  prompt_text: string;
+  created_by: 'human' | 'ai';
+  created_at: string;
+  improvement_rationale?: string;
+}
+
+interface Props {
+  type: 'task' | 'judge';
+  versions: PromptVersion[];
+  modalId: string;
+  currentPromptText?: string;
+}
+
+const { type, versions, modalId, currentPromptText = '' } = Astro.props;
+
+const title = type === 'task' ? 'Task Prompt History' : 'Judge Prompt History';
+
+// Get current active prompt (latest version or provided text)
+const activePrompt = versions.length > 0 ? versions[0].prompt_text : currentPromptText;
+---
+
+<!-- Drawer Modal -->
+<div id={modalId} class="drawer drawer-end z-50">
+  <input id={`${modalId}-input`} type="checkbox" class="drawer-toggle" />
+
+  <!-- Drawer Content -->
+  <div class="drawer-side">
+    <label for={`${modalId}-input`} aria-label="close drawer" class="drawer-overlay"></label>
+
+    <div
+      class="menu bg-base-200 min-h-screen w-[480px] max-w-[90vw] p-0 flex flex-col border-l border-base-300"
+    >
+      <!-- Drawer Header -->
+      <div class="px-6 py-4 border-b border-base-300 bg-base-100/50 backdrop-blur-sm flex-shrink-0">
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-xl font-bold font-display tracking-tight">{title}</h2>
+            <p class="text-sm text-base-content/60 mt-1">
+              {versions.length} version{versions.length !== 1 && 's'}
+            </p>
+          </div>
+          <label for={`${modalId}-input`} class="btn btn-sm btn-circle btn-ghost">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke-width="1.5"
+              stroke="currentColor"
+              class="w-5 h-5"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </label>
+        </div>
+      </div>
+
+      <!-- Drawer Body -->
+      <div class="flex-1 overflow-y-auto p-6 space-y-4">
+        {
+          versions.length === 0 ? (
+            <div class="alert alert-info">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                class="stroke-info shrink-0 w-6 h-6"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              <span>
+                No {type} prompt versions yet. Versions will appear after training iterations.
+              </span>
+            </div>
+          ) : (
+            <div>
+              <div class="card bg-base-100 shadow-md border border-primary/20 mb-4">
+                <div class="card-body p-4">
+                  <div class="flex items-center justify-between mb-2">
+                    <h3 class="font-semibold text-sm">Current Active Prompt</h3>
+                    <div class="badge badge-primary badge-sm">Active</div>
+                  </div>
+                  <div class="bg-base-200 rounded-lg p-3 max-h-40 overflow-y-auto">
+                    <pre class="text-xs whitespace-pre-wrap font-mono">{activePrompt}</pre>
+                  </div>
+                  {versions.length > 0 && (
+                    <div class="text-xs text-base-content/60 mt-2">
+                      Last updated: Iteration {versions[0].version_number} (
+                      {new Date(versions[0].created_at).toLocaleDateString()})
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div class="divider text-sm font-semibold opacity-70">Version History</div>
+
+              <div class="space-y-3">
+                {versions.map((version, index) => {
+                  const isLatest = index === 0;
+                  const previousVersion = versions[index + 1];
+
+                  return (
+                    <div class="card bg-base-100 shadow-sm border border-base-300/50">
+                      <div class="card-body p-4">
+                        <div class="flex items-center justify-between mb-2">
+                          <div class="flex items-center gap-2">
+                            <span class="font-semibold text-sm">
+                              Iteration {version.version_number}
+                            </span>
+                            {isLatest && <div class="badge badge-primary badge-sm">Current</div>}
+                            <div
+                              class="badge badge-sm"
+                              class:list={[
+                                version.created_by === 'ai' ? 'badge-info' : 'badge-secondary',
+                              ]}
+                            >
+                              {version.created_by === 'ai'
+                                ? type === 'task'
+                                  ? 'AI-Refined'
+                                  : 'AI-Generated'
+                                : 'Human'}
+                            </div>
+                          </div>
+                          <div class="text-xs text-base-content/60">
+                            {new Date(version.created_at).toLocaleDateString()}
+                          </div>
+                        </div>
+
+                        {version.improvement_rationale && (
+                          <div class="mb-2">
+                            <div class="text-xs font-semibold text-base-content/60 uppercase tracking-wide mb-1">
+                              Rationale
+                            </div>
+                            <p class="text-xs opacity-80">{version.improvement_rationale}</p>
+                          </div>
+                        )}
+
+                        <div class="mb-2">
+                          <div class="text-xs font-semibold text-base-content/60 uppercase tracking-wide mb-1">
+                            Prompt
+                          </div>
+                          <div class="bg-base-200 rounded-lg p-2 max-h-32 overflow-y-auto">
+                            <pre class="text-xs whitespace-pre-wrap font-mono">
+                              {version.prompt_text}
+                            </pre>
+                          </div>
+                        </div>
+
+                        {previousVersion && (
+                          <div class="card-actions justify-end mt-2">
+                            <button
+                              class="btn btn-xs btn-outline compare-prompts-btn"
+                              data-current-prompt={version.prompt_text}
+                              data-previous-prompt={previousVersion.prompt_text}
+                              data-current-iteration={version.version_number}
+                              data-previous-iteration={previousVersion.version_number}
+                              data-drawer-id={modalId}
+                            >
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke-width="1.5"
+                                stroke="currentColor"
+                                class="w-3 h-3"
+                              >
+                                <path
+                                  stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                  d="M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0115 18.257V17.25m6-12V15a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 15V5.25m18 0A2.25 2.25 0 0018.75 3H5.25A2.25 2.25 0 003 5.25m18 0V12a2.25 2.25 0 01-2.25 2.25H5.25"
+                                />
+                              </svg>
+                              Compare with v{previousVersion.version_number}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )
+        }
+      </div>
+
+      <!-- Drawer Footer -->
+      <div class="px-6 py-4 border-t border-base-300 bg-base-100/50 flex-shrink-0">
+        <label for={`${modalId}-input`} class="btn btn-block"> Close </label>
+      </div>
+    </div>
+  </div>
+
+  <!-- Prompt Diff Modal (nested inside drawer) -->
+  <dialog id={`${modalId}-diff-modal`} class="modal">
+    <div class="modal-box max-w-5xl">
+      <form method="dialog">
+        <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+      </form>
+      <h3 class="font-bold text-lg mb-4" id={`${modalId}-diff-title`}>Comparing Prompts</h3>
+      <div
+        id={`${modalId}-diff-content`}
+        class="bg-base-200 rounded-lg p-4 max-h-96 overflow-y-auto"
+      >
+        <p class="text-sm opacity-70">Select a version comparison to view the diff.</p>
+      </div>
+    </div>
+    <form method="dialog" class="modal-backdrop">
+      <button>close</button>
+    </form>
+  </dialog>
+</div>
+
+<script>
+  // Handle "Compare with Previous" button clicks
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.compare-prompts-btn').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        const button = e.currentTarget as HTMLButtonElement;
+        const currentPrompt = button.dataset.currentPrompt;
+        const previousPrompt = button.dataset.previousPrompt;
+        const currentIteration = button.dataset.currentIteration;
+        const previousIteration = button.dataset.previousIteration;
+        const drawerId = button.dataset.drawerId;
+
+        if (!currentPrompt || !previousPrompt || !drawerId) return;
+
+        // Update diff modal content
+        const diffModal = document.getElementById(`${drawerId}-diff-modal`) as HTMLDialogElement;
+        const diffTitle = document.getElementById(`${drawerId}-diff-title`);
+        const diffContent = document.getElementById(`${drawerId}-diff-content`);
+
+        if (diffTitle) {
+          diffTitle.textContent = `Comparing Iteration ${previousIteration} → ${currentIteration}`;
+        }
+
+        if (diffContent) {
+          // Simple diff visualization
+          const diffHtml = `
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <div class="text-xs font-semibold text-base-content/60 uppercase tracking-wide mb-2">
+                  Iteration ${previousIteration} (Before)
+                </div>
+                <div class="bg-error/10 rounded-lg p-3 border border-error/20">
+                  <pre class="text-xs whitespace-pre-wrap font-mono">${previousPrompt}</pre>
+                </div>
+              </div>
+              <div>
+                <div class="text-xs font-semibold text-base-content/60 uppercase tracking-wide mb-2">
+                  Iteration ${currentIteration} (After)
+                </div>
+                <div class="bg-success/10 rounded-lg p-3 border border-success/20">
+                  <pre class="text-xs whitespace-pre-wrap font-mono">${currentPrompt}</pre>
+                </div>
+              </div>
+            </div>
+          `;
+          diffContent.innerHTML = diffHtml;
+        }
+
+        // Show the diff modal
+        diffModal?.showModal();
+      });
+    });
+  });
+</script>
