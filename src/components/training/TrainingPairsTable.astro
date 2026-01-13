@@ -327,9 +327,8 @@ const totalPages = Math.max(1, Math.ceil(pairs.length / pageSize));
                         data-action="open-playground"
                         data-pair-id={pair.id}
                         data-pair-input={pair.input}
-                        data-pair-expected={pair.expected_output}
                         title="Test in Playground"
-                        aria-label="Test in Playground"
+                        aria-label="Test in Playground for training pair {pair.id}"
                       >
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
@@ -890,7 +889,7 @@ const totalPages = Math.max(1, Math.ceil(pairs.length / pageSize));
       }
 
       // Show the input data in the modal
-      const inputDisplay = document.getElementById('playground-input-display');
+      const inputDisplay = document.getElementById(`playground-input-display-${pairId}`);
       if (inputDisplay) {
         inputDisplay.textContent = pairInput;
       }

@@ -86,7 +86,7 @@ const modalId = `playground-modal-${trainingPairId}`;
           <div class="card-luxe flex-1 overflow-hidden">
             <div class="h-full bg-base-100 rounded-xl p-4">
               <div
-                id="playground-input-display"
+                id={`playground-input-display-${trainingPairId}`}
                 class="h-full overflow-y-auto text-sm whitespace-pre-wrap font-mono text-base-content/80 leading-relaxed"
               >
                 <span class="opacity-50 italic">Input data will be displayed here...</span>
@@ -101,7 +101,7 @@ const modalId = `playground-modal-${trainingPairId}`;
             <div class="w-1 h-4 rounded-full bg-luxe-emerald"></div>
             <h4 class="font-semibold text-sm uppercase tracking-wide">Generated Output</h4>
             <div
-              id="output-status-indicator"
+              id={`output-status-indicator-${trainingPairId}`}
               class="hidden ml-auto items-center gap-1.5 text-xs text-luxe-emerald"
             >
               <span class="relative flex h-2 w-2">
@@ -116,16 +116,16 @@ const modalId = `playground-modal-${trainingPairId}`;
           <div class="card-luxe flex-1 overflow-hidden">
             <div class="h-full bg-base-100 rounded-xl p-4 relative">
               <div
-                id="playground-output-display"
+                id={`playground-output-display-${trainingPairId}`}
                 class="h-full overflow-y-auto text-sm whitespace-pre-wrap font-mono text-base-content leading-relaxed"
               >
-                <span class="opacity-50 italic" id="output-placeholder">
+                <span class="opacity-50 italic" id={`output-placeholder-${trainingPairId}`}>
                   Output will appear here after running...
                 </span>
               </div>
               <!-- Streaming cursor effect -->
               <div
-                id="streaming-cursor"
+                id={`streaming-cursor-${trainingPairId}`}
                 class="hidden absolute bottom-4 left-4 w-0.5 h-5 bg-luxe-emerald animate-pulse"
               >
               </div>
@@ -139,7 +139,7 @@ const modalId = `playground-modal-${trainingPairId}`;
             <div class="w-1 h-4 rounded-full bg-info"></div>
             <h4 class="font-semibold text-sm uppercase tracking-wide">Judge Reasoning</h4>
             <div
-              id="judge-status-indicator"
+              id={`judge-status-indicator-${trainingPairId}`}
               class="hidden ml-auto items-center gap-1.5 text-xs text-info"
             >
               <span class="loading loading-spinner loading-xs"></span>
@@ -149,10 +149,10 @@ const modalId = `playground-modal-${trainingPairId}`;
           <div class="card-luxe flex-1 overflow-hidden">
             <div class="h-full bg-base-100 rounded-xl p-4">
               <div
-                id="playground-judge-display"
+                id={`playground-judge-display-${trainingPairId}`}
                 class="h-full overflow-y-auto text-sm whitespace-pre-wrap font-mono text-base-content leading-relaxed"
               >
-                <span class="opacity-50 italic" id="judge-placeholder">
+                <span class="opacity-50 italic" id={`judge-placeholder-${trainingPairId}`}>
                   Judge reasoning will appear here...
                 </span>
               </div>
@@ -170,9 +170,9 @@ const modalId = `playground-modal-${trainingPairId}`;
         </div>
         <div class="flex gap-3">
           <button
-            id="playground-reset-button"
+            id={`playground-reset-button-${trainingPairId}`}
             class="btn btn-ghost btn-sm"
-            onclick="resetPlayground()"
+            onclick={`resetPlayground('${trainingPairId}')`}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -191,9 +191,9 @@ const modalId = `playground-modal-${trainingPairId}`;
             Reset
           </button>
           <button
-            id="playground-run-button"
+            id={`playground-run-button-${trainingPairId}`}
             class="btn btn-luxe btn-luxe-primary btn-sm gap-2"
-            onclick="runPlayground('{trainingPairId}')"
+            onclick={`runPlayground('${trainingPairId}')`}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -282,16 +282,17 @@ The model provided the correct answer with appropriate brevity and accuracy.`;
 
   /**
    * Resets all playground panes to their initial state.
+   * @param {string} pairId - The training pair ID to scope element IDs
    */
-  function resetPlayground() {
-    const inputDisplay = document.getElementById('playground-input-display');
-    const outputDisplay = document.getElementById('playground-output-display');
-    const judgeDisplay = document.getElementById('playground-judge-display');
-    const outputPlaceholder = document.getElementById('output-placeholder');
-    const judgePlaceholder = document.getElementById('judge-placeholder');
-    const outputStatus = document.getElementById('output-status-indicator');
-    const judgeStatus = document.getElementById('judge-status-indicator');
-    const streamingCursor = document.getElementById('streaming-cursor');
+  function resetPlayground(pairId) {
+    const inputDisplay = document.getElementById(`playground-input-display-${pairId}`);
+    const outputDisplay = document.getElementById(`playground-output-display-${pairId}`);
+    const judgeDisplay = document.getElementById(`playground-judge-display-${pairId}`);
+    const outputPlaceholder = document.getElementById(`output-placeholder-${pairId}`);
+    const judgePlaceholder = document.getElementById(`judge-placeholder-${pairId}`);
+    const outputStatus = document.getElementById(`output-status-indicator-${pairId}`);
+    const judgeStatus = document.getElementById(`judge-status-indicator-${pairId}`);
+    const streamingCursor = document.getElementById(`streaming-cursor-${pairId}`);
 
     // Reset input display
     if (inputDisplay) {
@@ -328,15 +329,16 @@ The model provided the correct answer with appropriate brevity and accuracy.`;
   /**
    * Runs the playground simulation with mock data.
    * Displays input, streams output, then shows judge reasoning.
+   * @param {string} pairId - The training pair ID to scope element IDs
    */
-  async function runPlayground(_pairId) {
-    const runButton = document.getElementById('playground-run-button');
-    const inputDisplay = document.getElementById('playground-input-display');
-    const outputDisplay = document.getElementById('playground-output-display');
-    const judgeDisplay = document.getElementById('playground-judge-display');
-    const outputStatus = document.getElementById('output-status-indicator');
-    const judgeStatus = document.getElementById('judge-status-indicator');
-    const streamingCursor = document.getElementById('streaming-cursor');
+  async function runPlayground(pairId) {
+    const runButton = document.getElementById(`playground-run-button-${pairId}`);
+    const inputDisplay = document.getElementById(`playground-input-display-${pairId}`);
+    const outputDisplay = document.getElementById(`playground-output-display-${pairId}`);
+    const judgeDisplay = document.getElementById(`playground-judge-display-${pairId}`);
+    const outputStatus = document.getElementById(`output-status-indicator-${pairId}`);
+    const judgeStatus = document.getElementById(`judge-status-indicator-${pairId}`);
+    const streamingCursor = document.getElementById(`streaming-cursor-${pairId}`);
 
     // Show input data immediately
     if (inputDisplay) {
@@ -362,7 +364,7 @@ The model provided the correct answer with appropriate brevity and accuracy.`;
     if (outputDisplay) {
       outputDisplay.innerHTML = '';
     }
-    await streamText('playground-output-display', mockOutput, 15);
+    await streamText(`playground-output-display-${pairId}`, mockOutput, 15);
 
     // Hide output streaming indicator
     if (outputStatus) {
@@ -384,7 +386,7 @@ The model provided the correct answer with appropriate brevity and accuracy.`;
       judgeDisplay.innerHTML = '';
     }
     await new Promise((resolve) => setTimeout(resolve, 500)); // Small delay before judge reasoning
-    await streamText('playground-judge-display', mockJudgeReasoning, 20);
+    await streamText(`playground-judge-display-${pairId}`, mockJudgeReasoning, 20);
 
     // Hide judge evaluation indicator
     if (judgeStatus) {
@@ -406,29 +408,29 @@ The model provided the correct answer with appropriate brevity and accuracy.`;
 
 <style>
   /* Custom scrollbar styling for all panes */
-  #playground-input-display::-webkit-scrollbar,
-  #playground-output-display::-webkit-scrollbar,
-  #playground-judge-display::-webkit-scrollbar {
+  [id^='playground-input-display']::-webkit-scrollbar,
+  [id^='playground-output-display']::-webkit-scrollbar,
+  [id^='playground-judge-display']::-webkit-scrollbar {
     width: 6px;
   }
 
-  #playground-input-display::-webkit-scrollbar-track,
-  #playground-output-display::-webkit-scrollbar-track,
-  #playground-judge-display::-webkit-scrollbar-track {
+  [id^='playground-input-display']::-webkit-scrollbar-track,
+  [id^='playground-output-display']::-webkit-scrollbar-track,
+  [id^='playground-judge-display']::-webkit-scrollbar-track {
     background: hsl(var(--b2));
     border-radius: 3px;
   }
 
-  #playground-input-display::-webkit-scrollbar-thumb,
-  #playground-output-display::-webkit-scrollbar-thumb,
-  #playground-judge-display::-webkit-scrollbar-thumb {
+  [id^='playground-input-display']::-webkit-scrollbar-thumb,
+  [id^='playground-output-display']::-webkit-scrollbar-thumb,
+  [id^='playground-judge-display']::-webkit-scrollbar-thumb {
     background: hsl(var(--bc) / 0.3);
     border-radius: 3px;
   }
 
-  #playground-input-display::-webkit-scrollbar-thumb:hover,
-  #playground-output-display::-webkit-scrollbar-thumb:hover,
-  #playground-judge-display::-webkit-scrollbar-thumb:hover {
+  [id^='playground-input-display']::-webkit-scrollbar-thumb:hover,
+  [id^='playground-output-display']::-webkit-scrollbar-thumb:hover,
+  [id^='playground-judge-display']::-webkit-scrollbar-thumb:hover {
     background: hsl(var(--bc) / 0.5);
   }
 
@@ -443,8 +445,8 @@ The model provided the correct answer with appropriate brevity and accuracy.`;
   }
 
   /* Smooth status transitions */
-  #output-status-indicator,
-  #judge-status-indicator {
+  [id^='output-status-indicator'],
+  [id^='judge-status-indicator'] {
     transition: opacity 0.3s ease-in-out;
   }
 
@@ -473,7 +475,7 @@ The model provided the correct answer with appropriate brevity and accuracy.`;
     }
   }
 
-  #streaming-cursor.animate-pulse {
+  [id^='streaming-cursor'].animate-pulse {
     animation: blink 1s infinite;
   }
 </style>
