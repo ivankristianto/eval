@@ -61,7 +61,7 @@ const { panelId, defaultExpanded = true, position = 'left' } = Astro.props;
     <slot name="main-content" />
   </div>
 
-  <!-- Toggle Button (fixed position, floating) -->
+  <!-- Toggle Button (edge-mounted handle with label) -->
   <button
     id={`collapse-toggle-${panelId}`}
     data-collapse-toggle
@@ -69,35 +69,64 @@ const { panelId, defaultExpanded = true, position = 'left' } = Astro.props;
     aria-label={position === 'left' ? 'Toggle left panel' : 'Toggle right panel'}
     aria-expanded={defaultExpanded}
     class={[
-      'fixed z-10 btn btn-sm btn-ghost shadow-lg',
-      'transition-all duration-300 ease-in-out',
+      'group fixed z-20 flex items-center gap-2',
+      'px-3 py-2 rounded-full shadow-xl',
+      'bg-primary text-primary-content',
+      'hover:bg-primary-focus hover:scale-105 hover:shadow-2xl',
+      'transition-all duration-200 ease-out',
+      'cursor-pointer select-none',
       'top-1/2 -translate-y-1/2',
-      position === 'left' ? 'left-3' : 'right-3',
+      position === 'left'
+        ? 'left-0 -translate-x-1/2 hover:translate-x-0'
+        : 'right-0 translate-x-1/2 hover:translate-x-0',
     ].join(' ')}
     type="button"
   >
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke-width="2"
-      stroke="currentColor"
-      class="w-4 h-4 transition-transform duration-300"
-      id={`collapse-icon-${panelId}`}
-      data-collapse-icon
+    <!-- Icon container with subtle background on hover -->
+    <span class="relative flex items-center justify-center">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke-width="2.5"
+        stroke="currentColor"
+        class={['w-5 h-5 transition-transform duration-300', 'group-hover:scale-110'].join(' ')}
+        id={`collapse-icon-${panelId}`}
+        data-collapse-icon
+      >
+        {
+          position === 'left' ? (
+            <>
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M15.75 19.5L8.25 12l7.5-7.5"
+              />
+            </>
+          ) : (
+            <>
+              <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+            </>
+          )
+        }
+      </svg>
+      <!-- Subtle glow effect -->
+      <span
+        class="absolute inset-0 bg-white/20 rounded-full blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+      ></span>
+    </span>
+
+    <!-- Label that appears on hover -->
+    <span
+      class={[
+        'text-sm font-medium whitespace-nowrap',
+        'opacity-0 group-hover:opacity-100',
+        'transition-opacity duration-200',
+        'max-w-0 group-hover:max-w-xs overflow-hidden',
+      ].join(' ')}
     >
-      {
-        position === 'left' ? (
-          <>
-            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-          </>
-        ) : (
-          <>
-            <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-          </>
-        )
-      }
-    </svg>
+      Panel
+    </span>
   </button>
 </div>
 
@@ -235,7 +264,6 @@ const { panelId, defaultExpanded = true, position = 'left' } = Astro.props;
        */
       function initPanel() {
         const initialState = getInitialState();
-        console.log('Anything > getInitialState', initialState);
         applyState(initialState);
 
         // Attach toggle button listener
@@ -277,5 +305,37 @@ const { panelId, defaultExpanded = true, position = 'left' } = Astro.props;
 
   [data-collapse-main] {
     transition-property: grid-column;
+  }
+
+  /* Enhanced toggle button styles */
+  [data-collapse-toggle] {
+    /* Subtle pulse animation to draw attention */
+    animation: pulse-subtle 3s ease-in-out infinite;
+  }
+
+  [data-collapse-toggle]:hover {
+    /* Stop pulse on hover, focus on interaction */
+    animation: none;
+  }
+
+  @keyframes pulse-subtle {
+    0%,
+    100% {
+      box-shadow:
+        0 10px 15px -3px rgb(0 0 0 / 0.1),
+        0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
+    50% {
+      box-shadow:
+        0 20px 25px -5px rgb(0 0 0 / 0.15),
+        0 8px 10px -6px rgb(0 0 0 / 0.1);
+    }
+  }
+
+  /* Smooth label reveal with width transition */
+  [data-collapse-toggle] span:last-child {
+    transition:
+      max-width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+      opacity 0.2s ease-in-out;
   }
 </style>
