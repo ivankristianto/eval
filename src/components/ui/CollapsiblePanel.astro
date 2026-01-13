@@ -143,18 +143,18 @@ const { panelId, defaultExpanded = true, position = 'left' } = Astro.props;
 
       if (!panelId) return;
 
-      // localStorage key for persistence
-      const STORAGE_KEY = `panel-collapsed-${panelId}`;
+      // localStorage key for persistence (stores expanded state)
+      const STORAGE_KEY = `panel-expanded-${panelId}`;
 
       /**
-       * Get the initial collapsed state from localStorage or use default
+       * Get the initial expanded state from localStorage or use default
        * @returns {boolean} Initial expanded state
        */
       function getInitialState() {
         try {
           const stored = localStorage.getItem(STORAGE_KEY);
           if (stored !== null) {
-            return stored === 'false';
+            return stored === 'true';
           }
         } catch (error) {
           console.warn('Failed to read panel state from localStorage:', error);
@@ -163,7 +163,7 @@ const { panelId, defaultExpanded = true, position = 'left' } = Astro.props;
       }
 
       /**
-       * Save the collapsed state to localStorage
+       * Save the expanded state to localStorage
        * @param {boolean} isExpanded - Whether the panel is expanded
        */
       function saveState(isExpanded: boolean) {
@@ -235,6 +235,7 @@ const { panelId, defaultExpanded = true, position = 'left' } = Astro.props;
        */
       function initPanel() {
         const initialState = getInitialState();
+        console.log('Anything > getInitialState', initialState);
         applyState(initialState);
 
         // Attach toggle button listener
