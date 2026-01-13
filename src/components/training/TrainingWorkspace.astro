@@ -563,9 +563,9 @@ const {
       const modal = document.querySelector(`div[data-modal-content="${modalId}"]`);
 
       if (modal) {
-        // Update modal content dynamically using robust data attribute selectors
-        const rationaleEl = modal.querySelector('[data-element="optimization-rationale"]');
-        const suggestedCodeEl = modal.querySelector('[data-element="suggested-prompt"]');
+        // Update modal content dynamically
+        const rationaleEl = modal.querySelector('.alert-info p');
+        const suggestedCodeEl = modal.querySelectorAll('.mockup-code pre code')[1];
 
         if (rationaleEl) rationaleEl.textContent = result.rationale;
         if (suggestedCodeEl) suggestedCodeEl.textContent = result.suggested_prompt;
