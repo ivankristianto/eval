@@ -101,127 +101,143 @@ const { panelId, defaultExpanded = true, position = 'left' } = Astro.props;
   </button>
 </div>
 
-<script define:vars={{ panelId, defaultExpanded }}>
+<script>
   import { initializeOnce } from '@lib/utils/client-utils';
 
-  // localStorage key for persistence
-  const STORAGE_KEY = `panel-collapsed-${panelId}`;
-
   /**
-   * Get the initial collapsed state from localStorage or use default
-   * @returns {boolean} Initial expanded state
+   * Initialize all collapsible panels on the page.
+   * Reads panelId and defaultExpanded from data attributes.
    */
-  function getInitialState() {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored !== null) {
-        return stored === 'false';
+  function initCollapsiblePanels() {
+    // Find all panel elements
+    const panels = document.querySelectorAll('[data-panel-id][data-collapse-panel]');
+
+    panels.forEach((panelElement) => {
+      const panel = panelElement as HTMLElement;
+      const panelId = panel.dataset.panelId;
+      const defaultExpanded = panel.dataset.defaultExpanded !== 'false'; // true by default
+
+      if (!panelId) return;
+
+      // localStorage key for persistence
+      const STORAGE_KEY = `panel-collapsed-${panelId}`;
+
+      /**
+       * Get the initial collapsed state from localStorage or use default
+       * @returns {boolean} Initial expanded state
+       */
+      function getInitialState() {
+        try {
+          const stored = localStorage.getItem(STORAGE_KEY);
+          if (stored !== null) {
+            return stored === 'false';
+          }
+        } catch (error) {
+          console.warn('Failed to read panel state from localStorage:', error);
+        }
+        return defaultExpanded;
       }
-    } catch (error) {
-      console.warn('Failed to read panel state from localStorage:', error);
-    }
-    return defaultExpanded;
-  }
 
-  /**
-   * Save the collapsed state to localStorage
-   * @param {boolean} isExpanded - Whether the panel is expanded
-   */
-  function saveState(isExpanded) {
-    try {
-      localStorage.setItem(STORAGE_KEY, String(isExpanded));
-    } catch (error) {
-      console.warn('Failed to save panel state to localStorage:', error);
-    }
-  }
-
-  /**
-   * Apply the collapsed/expanded state to the DOM
-   * @param {boolean} isExpanded - Whether the panel is expanded
-   */
-  function applyState(isExpanded) {
-    const panel = document.querySelector(`[data-panel-id="${panelId}"][data-collapse-panel]`);
-    const main = document.querySelector(`[data-panel-id="${panelId}"][data-collapse-main]`);
-    const toggle = document.querySelector(`[data-panel-id="${panelId}"][data-collapse-toggle]`);
-    const icon = document.querySelector(`#collapse-icon-${panelId}`);
-
-    if (!panel || !main || !toggle || !icon) {
-      console.warn('Collapse panel elements not found');
-      return;
-    }
-
-    // Update panel width/visibility
-    if (isExpanded) {
-      // Panel is expanded
-      panel.classList.remove('lg:col-span-0', 'w-0', 'opacity-0', 'p-0');
-      panel.classList.add('lg:col-span-3', 'opacity-100');
-
-      // Main content takes remaining space
-      main.classList.remove('lg:col-span-12');
-      main.classList.add('lg:col-span-9');
-
-      // Rotate icon to indicate expandability (same rotation for both positions since SVG paths differ)
-      const svgIcon = icon;
-      svgIcon.style.transform = 'rotate(0deg)';
-    } else {
-      // Panel is collapsed
-      panel.classList.remove('lg:col-span-3', 'opacity-100');
-      panel.classList.add('lg:col-span-0', 'w-0', 'opacity-0', 'p-0');
-
-      // Main content takes full width
-      main.classList.remove('lg:col-span-9');
-      main.classList.add('lg:col-span-12');
-
-      // Rotate icon to indicate expandability (same rotation for both positions since SVG paths differ)
-      const svgIcon = icon;
-      svgIcon.style.transform = 'rotate(180deg)';
-    }
-
-    // Update button aria state
-    toggle.setAttribute('aria-expanded', String(isExpanded));
-
-    // Save state
-    saveState(isExpanded);
-  }
-
-  /**
-   * Toggle the panel state
-   */
-  function togglePanel() {
-    const panel = document.querySelector(`[data-panel-id="${panelId}"][data-collapse-panel]`);
-    if (!panel) return;
-
-    // Check current state by class presence
-    const isExpanded = panel.classList.contains('lg:col-span-3');
-    const newState = !isExpanded;
-    applyState(newState);
-  }
-
-  /**
-   * Initialize panel event listeners and apply initial state
-   */
-  function initPanel() {
-    const initialState = getInitialState();
-    applyState(initialState);
-
-    // Attach toggle button listener
-    const toggleBtn = document.querySelector(`[data-panel-id="${panelId}"][data-collapse-toggle]`);
-    toggleBtn?.addEventListener('click', togglePanel);
-
-    // Keyboard accessibility: Space/Enter to toggle
-    toggleBtn?.addEventListener('keydown', (e) => {
-      const keyboardEvent = e;
-      if (keyboardEvent.key === ' ' || keyboardEvent.key === 'Enter') {
-        e.preventDefault();
-        togglePanel();
+      /**
+       * Save the collapsed state to localStorage
+       * @param {boolean} isExpanded - Whether the panel is expanded
+       */
+      function saveState(isExpanded: boolean) {
+        try {
+          localStorage.setItem(STORAGE_KEY, String(isExpanded));
+        } catch (error) {
+          console.warn('Failed to save panel state to localStorage:', error);
+        }
       }
+
+      /**
+       * Apply the collapsed/expanded state to the DOM
+       * @param {boolean} isExpanded - Whether the panel is expanded
+       */
+      function applyState(isExpanded: boolean) {
+        const main = document.querySelector(`[data-panel-id="${panelId}"][data-collapse-main]`);
+        const toggle = document.querySelector(`[data-panel-id="${panelId}"][data-collapse-toggle]`);
+        const icon = document.querySelector(`#collapse-icon-${panelId}`);
+
+        if (!main || !toggle || !icon) {
+          console.warn('Collapse panel elements not found for panelId:', panelId);
+          return;
+        }
+
+        // Update panel width/visibility
+        if (isExpanded) {
+          // Panel is expanded
+          panel.classList.remove('lg:col-span-0', 'w-0', 'opacity-0', 'p-0');
+          panel.classList.add('lg:col-span-3', 'opacity-100');
+
+          // Main content takes remaining space
+          main.classList.remove('lg:col-span-12');
+          main.classList.add('lg:col-span-9');
+
+          // Rotate icon to indicate expandability
+          (icon as HTMLElement).style.transform = 'rotate(0deg)';
+        } else {
+          // Panel is collapsed
+          panel.classList.remove('lg:col-span-3', 'opacity-100');
+          panel.classList.add('lg:col-span-0', 'w-0', 'opacity-0', 'p-0');
+
+          // Main content takes full width
+          main.classList.remove('lg:col-span-9');
+          main.classList.add('lg:col-span-12');
+
+          // Rotate icon to indicate expandability
+          (icon as HTMLElement).style.transform = 'rotate(180deg)';
+        }
+
+        // Update button aria state
+        toggle.setAttribute('aria-expanded', String(isExpanded));
+
+        // Save state
+        saveState(isExpanded);
+      }
+
+      /**
+       * Toggle the panel state
+       */
+      function togglePanel() {
+        // Check current state by class presence
+        const isExpanded = panel.classList.contains('lg:col-span-3');
+        const newState = !isExpanded;
+        applyState(newState);
+      }
+
+      /**
+       * Initialize panel event listeners and apply initial state
+       */
+      function initPanel() {
+        const initialState = getInitialState();
+        applyState(initialState);
+
+        // Attach toggle button listener
+        const toggleBtn = document.querySelector(
+          `[data-panel-id="${panelId}"][data-collapse-toggle]`
+        );
+        toggleBtn?.addEventListener('click', togglePanel);
+
+        // Keyboard accessibility: Space/Enter to toggle
+        toggleBtn?.addEventListener('keydown', (e) => {
+          const keyboardEvent = e as KeyboardEvent;
+          if (keyboardEvent.key === ' ' || keyboardEvent.key === 'Enter') {
+            e.preventDefault();
+            togglePanel();
+          }
+        });
+      }
+
+      // Initialize this panel
+      initializeOnce(`collapsiblePanel-${panelId}`, initPanel);
     });
   }
 
-  // Initialize once and re-initialize on Astro page transitions
-  initializeOnce(`collapsiblePanel-${panelId}`, initPanel);
+  // Initialize on page load and re-initialize on Astro page transitions
+  initializeOnce('collapsiblePanels', initCollapsiblePanels);
   document.addEventListener('astro:page-load', () => {
-    initializeOnce(`collapsiblePanel-${panelId}`, initPanel);
+    initializeOnce('collapsiblePanels', initCollapsiblePanels);
   });
 </script>
 
