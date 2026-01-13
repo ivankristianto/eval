@@ -73,12 +73,22 @@ test.describe('Workspace Page - UI Elements', () => {
   });
 
   /**
-   * Test: Verify PromptEditor components display (task and judge)
+   * Test: Verify PromptEditor components display in tabbed interface
    */
-  test('should display both PromptEditor components', async ({ page }) => {
+  test('should display tabbed prompt editor interface', async ({ page }) => {
     await page.goto(`/personas/${personaId}/workspace`);
 
-    // Verify task prompt editor
+    // Verify tab buttons exist
+    const taskTab = page.locator('#tab-task');
+    const judgeTab = page.locator('#tab-judge');
+    await expect(taskTab).toBeVisible();
+    await expect(judgeTab).toBeVisible();
+
+    // Verify task tab is checked by default
+    await expect(taskTab).toBeChecked();
+    await expect(judgeTab).not.toBeChecked();
+
+    // Verify task prompt editor is visible (task tab active by default)
     const taskPromptEditor = page.locator('[data-prompt-editor="task"]');
     await expect(taskPromptEditor).toBeVisible();
     await expect(taskPromptEditor).toHaveAttribute('placeholder', /Enter your task prompt/);
@@ -86,17 +96,13 @@ test.describe('Workspace Page - UI Elements', () => {
     // Verify task prompt label
     await expect(page.locator('text=Task Prompt')).toBeVisible();
 
-    // Verify judge prompt editor
-    const judgePromptEditor = page.locator('[data-prompt-editor="judge"]');
-    await expect(judgePromptEditor).toBeVisible();
-    await expect(judgePromptEditor).toHaveAttribute('placeholder', /Enter your judge prompt/);
+    // Verify judge prompt editor panel exists but is hidden
+    const judgePromptPanel = page.locator('[data-tab-panel="judge-prompt-panel"]');
+    await expect(judgePromptPanel).toHaveClass(/hidden/);
 
-    // Verify judge prompt label
-    await expect(page.locator('text=Judge Prompt')).toBeVisible();
-
-    // Verify both editors have character count displayed
-    const charCounts = page.locator('.label-text-alt:has-text("chars")');
-    await expect(charCounts).toHaveCount(2);
+    // Verify character count is displayed for visible editor
+    const charCount = page.locator('.label-text-alt:has-text("chars")');
+    await expect(charCount.first()).toBeVisible();
   });
 
   /**
@@ -219,40 +225,114 @@ test.describe('Workspace Page - UI Elements', () => {
   });
 
   /**
-   * Test: Verify user can edit prompts
+   * Test: Verify user can switch between prompt editor tabs
    */
-  test('should allow editing prompts', async ({ page }) => {
+  test('should allow switching between prompt editor tabs', async ({ page }) => {
+    await page.goto(`/personas/${personaId}/workspace`);
+
+    // Verify initial state: task tab active, judge tab inactive
+    const taskTab = page.locator('#tab-task');
+    const judgeTab = page.locator('#tab-judge');
+    const taskPanel = page.locator('[data-tab-panel="task-prompt-panel"]');
+    const judgePanel = page.locator('[data-tab-panel="judge-prompt-panel"]');
+    const taskEditor = page.locator('[data-prompt-editor="task"]');
+    const judgeEditor = page.locator('[data-prompt-editor="judge"]');
+
+    await expect(taskTab).toBeChecked();
+    await expect(judgeTab).not.toBeChecked();
+    await expect(taskPanel).not.toHaveClass(/hidden/);
+    await expect(judgePanel).toHaveClass(/hidden/);
+    await expect(taskEditor).toBeVisible();
+
+    // Click judge tab label to switch
+    await page.locator('label[for="tab-judge"]').click();
+
+    // Verify state after switching: judge tab active, task tab inactive
+    await expect(judgeTab).toBeChecked();
+    await expect(taskTab).not.toBeChecked();
+    await expect(judgePanel).not.toHaveClass(/hidden/);
+    await expect(taskPanel).toHaveClass(/hidden/);
+    await expect(judgeEditor).toBeVisible();
+
+    // Switch back to task tab
+    await page.locator('label[for="tab-task"]').click();
+
+    // Verify state after switching back: task tab active, judge tab inactive
+    await expect(taskTab).toBeChecked();
+    await expect(judgeTab).not.toBeChecked();
+    await expect(taskPanel).not.toHaveClass(/hidden/);
+    await expect(judgePanel).toHaveClass(/hidden/);
+    await expect(taskEditor).toBeVisible();
+  });
+
+  /**
+   * Test: Verify prompt content persists when switching tabs
+   */
+  test('should preserve prompt content when switching tabs', async ({ page }) => {
+    await page.goto(`/personas/${personaId}/workspace`);
+
+    const taskEditor = page.locator('[data-prompt-editor="task"]');
+    const testTaskText = 'Test content persistence in task prompt';
+
+    // Store original value
+    const originalTaskText = await taskEditor.inputValue();
+
+    // Edit task prompt
+    await taskEditor.clear();
+    await taskEditor.fill(testTaskText);
+    await expect(taskEditor).toHaveValue(testTaskText);
+
+    // Switch to judge tab
+    await page.locator('label[for="tab-judge"]').click();
+
+    // Switch back to task tab
+    await page.locator('label[for="tab-task"]').click();
+
+    // Verify content persisted
+    await expect(taskEditor).toHaveValue(testTaskText);
+
+    // Restore original value
+    await taskEditor.clear();
+    await taskEditor.fill(originalTaskText);
+  });
+
+  /**
+   * Test: Verify user can edit prompts in both tabs
+   */
+  test('should allow editing prompts in both tabs', async ({ page }) => {
     await page.goto(`/personas/${personaId}/workspace`);
 
     // Get prompt editors
     const taskEditor = page.locator('[data-prompt-editor="task"]');
-    const judgeEditor = page.locator('[data-prompt-editor="judge"]');
 
-    // Verify editors are editable
+    // Test editing task prompt (visible by default)
     await expect(taskEditor).toBeEditable();
-    await expect(judgeEditor).toBeEditable();
-
-    // Test editing task prompt
     const originalTaskText = await taskEditor.inputValue();
     const testTaskText = 'Test task prompt for E2E testing';
     await taskEditor.clear();
     await taskEditor.fill(testTaskText);
     await expect(taskEditor).toHaveValue(testTaskText);
 
-    // Restore original value
-    await taskEditor.clear();
-    await taskEditor.fill(originalTaskText);
+    // Switch to judge tab
+    await page.locator('label[for="tab-judge"]').click();
 
     // Test editing judge prompt
+    const judgeEditor = page.locator('[data-prompt-editor="judge"]');
+    await expect(judgeEditor).toBeEditable();
     const originalJudgeText = await judgeEditor.inputValue();
     const testJudgeText = 'Test judge prompt for E2E testing';
     await judgeEditor.clear();
     await judgeEditor.fill(testJudgeText);
     await expect(judgeEditor).toHaveValue(testJudgeText);
 
-    // Restore original value
+    // Restore original values
     await judgeEditor.clear();
     await judgeEditor.fill(originalJudgeText);
+
+    // Switch back to task tab and restore
+    await page.locator('label[for="tab-task"]').click();
+    await taskEditor.clear();
+    await taskEditor.fill(originalTaskText);
   });
 
   /**
