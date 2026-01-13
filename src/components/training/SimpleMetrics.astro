@@ -262,27 +262,5 @@ const formatNumber = (value: number | undefined) => {
         </div>
       )
     }
-
-    <!-- Total Pairs -->
-    {
-      displayMetrics.total_pairs && (
-        <div
-          class={`flex justify-between items-center text-xs ${variant === 'card' ? 'pt-3 border-t border-base-300/50' : ''}`}
-        >
-          <span
-            class={`font-medium ${variant === 'card' ? 'text-base-content/60' : 'text-base-content/70'}`}
-          >
-            Total Pairs
-          </span>
-          <span
-            class="font-bold font-mono text-base-content/80"
-            data-metric="total_pairs"
-            data-value={displayMetrics.total_pairs}
-          >
-            {displayMetrics.total_pairs}
-          </span>
-        </div>
-      )
-    }
   </div>
 </div>
