@@ -75,7 +75,7 @@ const { panelId, defaultExpanded = true, position = 'left' } = Astro.props;
       'hover:bg-primary-focus hover:scale-105 hover:shadow-2xl',
       'transition-all duration-200 ease-out',
       'cursor-pointer select-none',
-      'top-1/2 -translate-y-1/2',
+      'top-20', // Positioned near top, aligned with task prompt
       position === 'left'
         ? 'left-0 -translate-x-1/2 hover:translate-x-0'
         : 'right-0 translate-x-1/2 hover:translate-x-0',
