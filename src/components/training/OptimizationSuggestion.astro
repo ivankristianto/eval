@@ -60,7 +60,7 @@ const {
       >
       <div>
         <h4 class="font-semibold">Improvement Rationale</h4>
-        <p class="text-sm mt-1">{rationale}</p>
+        <p class="text-sm mt-1" data-element="optimization-rationale">{rationale}</p>
       </div>
     </div>
 
@@ -73,7 +73,7 @@ const {
           Version
         </h4>
         <div class="mockup-code bg-base-200 text-base-content text-sm max-h-64 overflow-y-auto">
-          <pre class="px-4"><code>{currentPrompt}</code></pre>
+          <pre class="px-4"><code data-element="current-prompt">{currentPrompt}</code></pre>
         </div>
       </div>
 
@@ -86,7 +86,7 @@ const {
         <div
           class="mockup-code bg-success/10 text-base-content text-sm max-h-64 overflow-y-auto border-2 border-success/30"
         >
-          <pre class="px-4"><code>{suggestedPrompt}</code></pre>
+          <pre class="px-4"><code data-element="suggested-prompt">{suggestedPrompt}</code></pre>
         </div>
       </div>
     </div>
@@ -214,7 +214,7 @@ const {
         return;
       }
       const modalContent = document.querySelector(`div[data-modal-content="${modalId}"]`);
-      const suggestedCodeEl = modalContent?.querySelector('.mockup-code code:nth-of-type(2)');
+      const suggestedCodeEl = modalContent?.querySelector('[data-element="suggested-prompt"]');
       const suggestedPrompt = suggestedCodeEl?.textContent?.trim();
 
       if (!suggestedPrompt) {
@@ -297,7 +297,7 @@ const {
 
       // Get suggested prompt from the modal using data attribute
       const modalContent = document.querySelector(`div[data-modal-content="${modalId}"]`);
-      const suggestedCodeEl = modalContent?.querySelector('.mockup-code code:nth-of-type(2)');
+      const suggestedCodeEl = modalContent?.querySelector('[data-element="suggested-prompt"]');
       const suggestedPrompt = suggestedCodeEl?.textContent?.trim();
 
       if (!suggestedPrompt) {
