@@ -229,8 +229,9 @@ const { panelId, defaultExpanded = true, position = 'left' } = Astro.props;
         });
       }
 
-      // Initialize this panel (use underscores instead of hyphens for valid dataset key)
-      initializeOnce(`collapsiblePanel_${panelId}`, initPanel);
+      // Initialize this panel (replace hyphens to create valid dataset key)
+      const safePanelId = panelId.replace(/-/g, ''); // Remove hyphens for valid dataset property name
+      initializeOnce(`collapsiblePanel_${safePanelId}`, initPanel);
     });
   }
 
