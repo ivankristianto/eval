@@ -8,7 +8,41 @@
  * - Network error handling
  */
 
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
+
+/**
+ * Helper function to select a model for a specific role.
+ * Returns true if a model was selected, false if no models were available.
+ *
+ * @param page - Playwright page instance
+ * @param role - The role to select a model for ('task', 'judge', or 'engineer')
+ * @returns Promise<boolean> - true if model was selected, false otherwise
+ */
+async function selectModelForRole(
+  page: Page,
+  role: 'task' | 'judge' | 'engineer'
+): Promise<boolean> {
+  const dataTestValue = `${role}-model`;
+  // For engineer role, the data-test attribute is 'prompt-engineer-model'
+  const select = page.locator(
+    role === 'engineer' ? '[data-test="prompt-engineer-model"]' : `[data-test="${dataTestValue}"]`
+  );
+
+  // Count available non-empty options
+  const options = await select.locator('option:not([value=""]):not(:disabled)').count();
+
+  if (options === 0) {
+    return false;
+  }
+
+  // Select first available option (index 1 because index 0 is the empty placeholder)
+  await select.selectOption({ index: 1 });
+
+  // Wait for options to update
+  await page.waitForTimeout(100);
+
+  return true;
+}
 
 test.describe('Persona Creation Form Validation', () => {
   test.beforeEach(async ({ page }) => {
@@ -133,37 +167,15 @@ test.describe('Persona Creation Form Validation', () => {
         .fill('Evaluate if the response is helpful and accurate.');
 
       // Select models (if available)
-      const taskModelSelect = page.locator('[data-test="task-model"]');
-      const taskModelOptions = await taskModelSelect.locator('option:not([value=""])').count();
+      const taskSelected = await selectModelForRole(page, 'task');
 
-      if (taskModelOptions > 0) {
-        // Select first available task model
-        await taskModelSelect.selectOption({ index: 1 });
+      if (taskSelected) {
+        const judgeSelected = await selectModelForRole(page, 'judge');
 
-        // Wait for options to update
-        await page.waitForTimeout(100);
+        if (judgeSelected) {
+          const engineerSelected = await selectModelForRole(page, 'engineer');
 
-        // Select judge model (different provider if available)
-        const judgeModelSelect = page.locator('[data-test="judge-model"]');
-        const judgeModelOptions = await judgeModelSelect
-          .locator('option:not([value=""]):not(:disabled)')
-          .count();
-
-        if (judgeModelOptions > 0) {
-          await judgeModelSelect.selectOption({ index: 1 });
-
-          // Wait for options to update
-          await page.waitForTimeout(100);
-
-          // Select prompt engineer model
-          const promptEngineerSelect = page.locator('[data-test="prompt-engineer-model"]');
-          const promptEngineerOptions = await promptEngineerSelect
-            .locator('option:not([value=""]):not(:disabled)')
-            .count();
-
-          if (promptEngineerOptions > 0) {
-            await promptEngineerSelect.selectOption({ index: 1 });
-
+          if (engineerSelected) {
             // Check validation error is not shown
             const validationError = page.locator('[data-test="validation-error"]');
             const isErrorVisible = await validationError.isVisible();
@@ -358,30 +370,15 @@ test.describe('Persona Creation Form Validation', () => {
       await page.locator('[data-test="judge-prompt"]').fill('Test judge prompt');
 
       // Select models if available
-      const taskModelSelect = page.locator('[data-test="task-model"]');
-      const taskModelOptions = await taskModelSelect.locator('option:not([value=""])').count();
+      const taskSelected = await selectModelForRole(page, 'task');
 
-      if (taskModelOptions > 0) {
-        await taskModelSelect.selectOption({ index: 1 });
-        await page.waitForTimeout(100);
+      if (taskSelected) {
+        const judgeSelected = await selectModelForRole(page, 'judge');
 
-        const judgeModelSelect = page.locator('[data-test="judge-model"]');
-        const judgeModelOptions = await judgeModelSelect
-          .locator('option:not([value=""]):not(:disabled)')
-          .count();
+        if (judgeSelected) {
+          const engineerSelected = await selectModelForRole(page, 'engineer');
 
-        if (judgeModelOptions > 0) {
-          await judgeModelSelect.selectOption({ index: 1 });
-          await page.waitForTimeout(100);
-
-          const promptEngineerSelect = page.locator('[data-test="prompt-engineer-model"]');
-          const promptEngineerOptions = await promptEngineerSelect
-            .locator('option:not([value=""]):not(:disabled)')
-            .count();
-
-          if (promptEngineerOptions > 0) {
-            await promptEngineerSelect.selectOption({ index: 1 });
-
+          if (engineerSelected) {
             // Submit form
             await page.locator('[data-test="create-persona-submit"]').click();
 
@@ -416,30 +413,15 @@ test.describe('Persona Creation Form Validation', () => {
       await page.locator('[data-test="judge-prompt"]').fill('Test judge prompt');
 
       // Select models if available
-      const taskModelSelect = page.locator('[data-test="task-model"]');
-      const taskModelOptions = await taskModelSelect.locator('option:not([value=""])').count();
+      const taskSelected = await selectModelForRole(page, 'task');
 
-      if (taskModelOptions > 0) {
-        await taskModelSelect.selectOption({ index: 1 });
-        await page.waitForTimeout(100);
+      if (taskSelected) {
+        const judgeSelected = await selectModelForRole(page, 'judge');
 
-        const judgeModelSelect = page.locator('[data-test="judge-model"]');
-        const judgeModelOptions = await judgeModelSelect
-          .locator('option:not([value=""]):not(:disabled)')
-          .count();
+        if (judgeSelected) {
+          const engineerSelected = await selectModelForRole(page, 'engineer');
 
-        if (judgeModelOptions > 0) {
-          await judgeModelSelect.selectOption({ index: 1 });
-          await page.waitForTimeout(100);
-
-          const promptEngineerSelect = page.locator('[data-test="prompt-engineer-model"]');
-          const promptEngineerOptions = await promptEngineerSelect
-            .locator('option:not([value=""]):not(:disabled)')
-            .count();
-
-          if (promptEngineerOptions > 0) {
-            await promptEngineerSelect.selectOption({ index: 1 });
-
+          if (engineerSelected) {
             // Submit form
             await page.locator('[data-test="create-persona-submit"]').click();
 
@@ -474,30 +456,15 @@ test.describe('Persona Creation Form Validation', () => {
       await page.locator('[data-test="judge-prompt"]').fill('Test judge prompt');
 
       // Select models if available
-      const taskModelSelect = page.locator('[data-test="task-model"]');
-      const taskModelOptions = await taskModelSelect.locator('option:not([value=""])').count();
+      const taskSelected = await selectModelForRole(page, 'task');
 
-      if (taskModelOptions > 0) {
-        await taskModelSelect.selectOption({ index: 1 });
-        await page.waitForTimeout(100);
+      if (taskSelected) {
+        const judgeSelected = await selectModelForRole(page, 'judge');
 
-        const judgeModelSelect = page.locator('[data-test="judge-model"]');
-        const judgeModelOptions = await judgeModelSelect
-          .locator('option:not([value=""]):not(:disabled)')
-          .count();
+        if (judgeSelected) {
+          const engineerSelected = await selectModelForRole(page, 'engineer');
 
-        if (judgeModelOptions > 0) {
-          await judgeModelSelect.selectOption({ index: 1 });
-          await page.waitForTimeout(100);
-
-          const promptEngineerSelect = page.locator('[data-test="prompt-engineer-model"]');
-          const promptEngineerOptions = await promptEngineerSelect
-            .locator('option:not([value=""]):not(:disabled)')
-            .count();
-
-          if (promptEngineerOptions > 0) {
-            await promptEngineerSelect.selectOption({ index: 1 });
-
+          if (engineerSelected) {
             // Submit form
             await page.locator('[data-test="create-persona-submit"]').click();
 
@@ -546,30 +513,15 @@ test.describe('Persona Creation Form Validation', () => {
       await page.locator('[data-test="judge-prompt"]').fill('Test judge prompt');
 
       // Select models if available
-      const taskModelSelect = page.locator('[data-test="task-model"]');
-      const taskModelOptions = await taskModelSelect.locator('option:not([value=""])').count();
+      const taskSelected = await selectModelForRole(page, 'task');
 
-      if (taskModelOptions > 0) {
-        await taskModelSelect.selectOption({ index: 1 });
-        await page.waitForTimeout(100);
+      if (taskSelected) {
+        const judgeSelected = await selectModelForRole(page, 'judge');
 
-        const judgeModelSelect = page.locator('[data-test="judge-model"]');
-        const judgeModelOptions = await judgeModelSelect
-          .locator('option:not([value=""]):not(:disabled)')
-          .count();
+        if (judgeSelected) {
+          const engineerSelected = await selectModelForRole(page, 'engineer');
 
-        if (judgeModelOptions > 0) {
-          await judgeModelSelect.selectOption({ index: 1 });
-          await page.waitForTimeout(100);
-
-          const promptEngineerSelect = page.locator('[data-test="prompt-engineer-model"]');
-          const promptEngineerOptions = await promptEngineerSelect
-            .locator('option:not([value=""]):not(:disabled)')
-            .count();
-
-          if (promptEngineerOptions > 0) {
-            await promptEngineerSelect.selectOption({ index: 1 });
-
+          if (engineerSelected) {
             const submitBtn = page.locator('[data-test="create-persona-submit"]');
 
             // Click submit
@@ -610,30 +562,15 @@ test.describe('Persona Creation Form Validation', () => {
       await page.locator('[data-test="judge-prompt"]').fill('Test judge prompt');
 
       // Select models if available
-      const taskModelSelect = page.locator('[data-test="task-model"]');
-      const taskModelOptions = await taskModelSelect.locator('option:not([value=""])').count();
+      const taskSelected = await selectModelForRole(page, 'task');
 
-      if (taskModelOptions > 0) {
-        await taskModelSelect.selectOption({ index: 1 });
-        await page.waitForTimeout(100);
+      if (taskSelected) {
+        const judgeSelected = await selectModelForRole(page, 'judge');
 
-        const judgeModelSelect = page.locator('[data-test="judge-model"]');
-        const judgeModelOptions = await judgeModelSelect
-          .locator('option:not([value=""]):not(:disabled)')
-          .count();
+        if (judgeSelected) {
+          const engineerSelected = await selectModelForRole(page, 'engineer');
 
-        if (judgeModelOptions > 0) {
-          await judgeModelSelect.selectOption({ index: 1 });
-          await page.waitForTimeout(100);
-
-          const promptEngineerSelect = page.locator('[data-test="prompt-engineer-model"]');
-          const promptEngineerOptions = await promptEngineerSelect
-            .locator('option:not([value=""]):not(:disabled)')
-            .count();
-
-          if (promptEngineerOptions > 0) {
-            await promptEngineerSelect.selectOption({ index: 1 });
-
+          if (engineerSelected) {
             const submitBtn = page.locator('[data-test="create-persona-submit"]');
 
             // Click submit
@@ -674,30 +611,15 @@ test.describe('Persona Creation Form Validation', () => {
       await page.locator('[data-test="judge-prompt"]').fill('Test judge prompt');
 
       // Select models if available
-      const taskModelSelect = page.locator('[data-test="task-model"]');
-      const taskModelOptions = await taskModelSelect.locator('option:not([value=""])').count();
+      const taskSelected = await selectModelForRole(page, 'task');
 
-      if (taskModelOptions > 0) {
-        await taskModelSelect.selectOption({ index: 1 });
-        await page.waitForTimeout(100);
+      if (taskSelected) {
+        const judgeSelected = await selectModelForRole(page, 'judge');
 
-        const judgeModelSelect = page.locator('[data-test="judge-model"]');
-        const judgeModelOptions = await judgeModelSelect
-          .locator('option:not([value=""]):not(:disabled)')
-          .count();
+        if (judgeSelected) {
+          const engineerSelected = await selectModelForRole(page, 'engineer');
 
-        if (judgeModelOptions > 0) {
-          await judgeModelSelect.selectOption({ index: 1 });
-          await page.waitForTimeout(100);
-
-          const promptEngineerSelect = page.locator('[data-test="prompt-engineer-model"]');
-          const promptEngineerOptions = await promptEngineerSelect
-            .locator('option:not([value=""]):not(:disabled)')
-            .count();
-
-          if (promptEngineerOptions > 0) {
-            await promptEngineerSelect.selectOption({ index: 1 });
-
+          if (engineerSelected) {
             const submitBtn = page.locator('[data-test="create-persona-submit"]');
 
             // Click submit
@@ -738,30 +660,15 @@ test.describe('Persona Creation Form Validation', () => {
       await page.locator('[data-test="judge-prompt"]').fill('Test judge prompt');
 
       // Select models if available
-      const taskModelSelect = page.locator('[data-test="task-model"]');
-      const taskModelOptions = await taskModelSelect.locator('option:not([value=""])').count();
+      const taskSelected = await selectModelForRole(page, 'task');
 
-      if (taskModelOptions > 0) {
-        await taskModelSelect.selectOption({ index: 1 });
-        await page.waitForTimeout(100);
+      if (taskSelected) {
+        const judgeSelected = await selectModelForRole(page, 'judge');
 
-        const judgeModelSelect = page.locator('[data-test="judge-model"]');
-        const judgeModelOptions = await judgeModelSelect
-          .locator('option:not([value=""]):not(:disabled)')
-          .count();
+        if (judgeSelected) {
+          const engineerSelected = await selectModelForRole(page, 'engineer');
 
-        if (judgeModelOptions > 0) {
-          await judgeModelSelect.selectOption({ index: 1 });
-          await page.waitForTimeout(100);
-
-          const promptEngineerSelect = page.locator('[data-test="prompt-engineer-model"]');
-          const promptEngineerOptions = await promptEngineerSelect
-            .locator('option:not([value=""]):not(:disabled)')
-            .count();
-
-          if (promptEngineerOptions > 0) {
-            await promptEngineerSelect.selectOption({ index: 1 });
-
+          if (engineerSelected) {
             // Submit form
             await page.locator('[data-test="create-persona-submit"]').click();
 
