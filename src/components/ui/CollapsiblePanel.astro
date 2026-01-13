@@ -105,10 +105,34 @@ const { panelId, defaultExpanded = true, position = 'left' } = Astro.props;
   import { initializeOnce } from '@lib/utils/client-utils';
 
   /**
+   * Clear stale panel initialization flags from previous page renders.
+   * On Astro transitions, old panels are removed but flags persist.
+   */
+  function clearStalePanelFlags() {
+    const panels = document.querySelectorAll('[data-panel-id][data-collapse-panel]');
+    const activePanelIds = new Set(
+      Array.from(panels).map((p) => (p as HTMLElement).dataset.panelId?.replace(/-/g, ''))
+    );
+
+    // Clear flags for panels that no longer exist in DOM
+    Object.keys(document.documentElement.dataset).forEach((key) => {
+      if (key.startsWith('initCollapsiblePanel_')) {
+        const panelId = key.replace('initCollapsiblePanel_', '').toLowerCase();
+        if (!activePanelIds.has(panelId)) {
+          delete document.documentElement.dataset[key];
+        }
+      }
+    });
+  }
+
+  /**
    * Initialize all collapsible panels on the page.
    * Reads panelId and defaultExpanded from data attributes.
    */
   function initCollapsiblePanels() {
+    // Clear stale flags from previous page renders
+    clearStalePanelFlags();
+
     // Find all panel elements
     const panels = document.querySelectorAll('[data-panel-id][data-collapse-panel]');
 
