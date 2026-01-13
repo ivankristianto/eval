@@ -10,6 +10,9 @@
 
 import { test, expect, type Page } from '@playwright/test';
 
+/** Delay to wait for model options to update after selection (in milliseconds) */
+const MODEL_UPDATE_DELAY = 100;
+
 /**
  * Helper function to select a model for a specific role.
  * Returns true if a model was selected, false if no models were available.
@@ -39,7 +42,7 @@ async function selectModelForRole(
   await select.selectOption({ index: 1 });
 
   // Wait for options to update
-  await page.waitForTimeout(100);
+  await page.waitForTimeout(MODEL_UPDATE_DELAY);
 
   return true;
 }
@@ -712,30 +715,15 @@ test.describe('Persona Creation Form Validation', () => {
       await page.locator('[data-test="judge-prompt"]').fill('Test judge prompt');
 
       // Select models if available
-      const taskModelSelect = page.locator('[data-test="task-model"]');
-      const taskModelOptions = await taskModelSelect.locator('option:not([value=""])').count();
+      const taskSelected = await selectModelForRole(page, 'task');
 
-      if (taskModelOptions > 0) {
-        await taskModelSelect.selectOption({ index: 1 });
-        await page.waitForTimeout(100);
+      if (taskSelected) {
+        const judgeSelected = await selectModelForRole(page, 'judge');
 
-        const judgeModelSelect = page.locator('[data-test="judge-model"]');
-        const judgeModelOptions = await judgeModelSelect
-          .locator('option:not([value=""]):not(:disabled)')
-          .count();
+        if (judgeSelected) {
+          const engineerSelected = await selectModelForRole(page, 'engineer');
 
-        if (judgeModelOptions > 0) {
-          await judgeModelSelect.selectOption({ index: 1 });
-          await page.waitForTimeout(100);
-
-          const promptEngineerSelect = page.locator('[data-test="prompt-engineer-model"]');
-          const promptEngineerOptions = await promptEngineerSelect
-            .locator('option:not([value=""]):not(:disabled)')
-            .count();
-
-          if (promptEngineerOptions > 0) {
-            await promptEngineerSelect.selectOption({ index: 1 });
-
+          if (engineerSelected) {
             // Submit form
             await page.locator('[data-test="create-persona-submit"]').click();
 
