@@ -229,6 +229,33 @@ const {
 </div>
 
 <script>
+  /**
+   * Helper to add flash animation with proper timer cleanup
+   * Prevents memory leaks by clearing previous timers
+   */
+  function flashElement(element: Element, className = 'bg-success/10', duration = 1000) {
+    // Clear any existing timer on this element
+    const animationTimer = (
+      element as unknown as { _animationTimer: ReturnType<typeof setTimeout> | null }
+    )._animationTimer;
+    if (animationTimer) {
+      clearTimeout(animationTimer);
+    }
+
+    // Add the flash class
+    element.classList.add(className);
+
+    // Set timer to remove it
+    (
+      element as unknown as { _animationTimer: ReturnType<typeof setTimeout> | null }
+    )._animationTimer = setTimeout(() => {
+      element.classList.remove(className);
+      (
+        element as unknown as { _animationTimer: ReturnType<typeof setTimeout> | null }
+      )._animationTimer = null;
+    }, duration);
+  }
+
   // Generate outputs action
   document.querySelectorAll('[data-action="generate-outputs"]').forEach((btn) => {
     btn.addEventListener('click', async (e) => {
@@ -255,15 +282,55 @@ const {
           throw new Error(result.message || 'Failed to generate outputs');
         }
 
-        // Show success notification
-        if (window.toast) {
-          window.toast.success(
-            `Generated ${result.processed_pairs} outputs successfully! Watching for updates...`
+        // OPTIMISTIC UPDATE: Immediately update UI with returned data
+        if (result.results && Array.isArray(result.results)) {
+          result.results.forEach(
+            (item: {
+              training_pair_id: string;
+              generated_output: string;
+              created_at: string;
+              updated_at: string;
+            }) => {
+              // Find row by pair ID
+              const row = document
+                .querySelector(`[data-pair-id="${item.training_pair_id}"]`)
+                ?.closest('tr');
+              if (!row) return;
+
+              // Update generated output column
+              const generatedOutputCell = row.querySelector('[data-cell-type="generated-output"]');
+              if (generatedOutputCell && item.generated_output) {
+                const placeholder = generatedOutputCell.querySelector('[data-placeholder]');
+                const contentDiv = generatedOutputCell.querySelector('[data-content]');
+
+                if (placeholder && !contentDiv) {
+                  // Replace placeholder span with content div
+                  placeholder.remove();
+                  const newDiv = document.createElement('div');
+                  newDiv.className =
+                    'text-sm whitespace-pre-wrap break-words max-h-20 overflow-y-auto';
+                  newDiv.setAttribute('data-content', '');
+                  newDiv.textContent = item.generated_output;
+                  generatedOutputCell.appendChild(newDiv);
+
+                  // Add flash animation with timer cleanup
+                  flashElement(newDiv);
+                } else if (contentDiv) {
+                  // Update existing div if content changed
+                  if (contentDiv.textContent !== item.generated_output) {
+                    contentDiv.textContent = item.generated_output;
+                    flashElement(contentDiv);
+                  }
+                }
+              }
+            }
           );
         }
 
-        // Start polling for real-time updates
-        document.dispatchEvent(new CustomEvent('operation-started'));
+        // Show success notification
+        if (window.toast) {
+          window.toast.success(`Generated ${result.processed_pairs} outputs successfully!`);
+        }
       } catch (error) {
         console.error('Generate outputs error:', error);
         if (window.toast) {
@@ -307,15 +374,71 @@ const {
           throw new Error(result.message || 'Failed to generate judge decisions');
         }
 
-        // Show success notification
-        if (window.toast) {
-          window.toast.success(
-            `Evaluated ${result.evaluated_results} results with judge! Watching for updates...`
+        // OPTIMISTIC UPDATE: Immediately update UI with returned data
+        if (result.results && Array.isArray(result.results)) {
+          result.results.forEach(
+            (item: {
+              training_pair_id: string;
+              judge_rating: string;
+              judge_feedback: string | null;
+              judge_reasoning: string | null;
+              updated_at: string;
+            }) => {
+              // Find row by pair ID
+              const row = document
+                .querySelector(`[data-pair-id="${item.training_pair_id}"]`)
+                ?.closest('tr');
+              if (!row) return;
+
+              // Update judge rating column
+              const judgeRatingCell = row.querySelector('[data-cell-type="judge-rating"]');
+              if (judgeRatingCell && item.judge_rating) {
+                const badge = judgeRatingCell.querySelector('.badge');
+                if (badge) {
+                  const newClassName = `badge badge-sm badge-${item.judge_rating === 'pass' ? 'success' : 'error'}`;
+                  if (badge.className !== newClassName) {
+                    badge.className = newClassName;
+                    badge.textContent = item.judge_rating;
+                    flashElement(badge, 'bg-success/20');
+                  }
+                }
+              }
+
+              // Update judge feedback column
+              const judgeFeedbackCell = row.querySelector('[data-cell-type="judge-feedback"]');
+              if (judgeFeedbackCell && (item.judge_feedback || item.judge_reasoning)) {
+                const feedback = item.judge_feedback || item.judge_reasoning || '';
+                const placeholder = judgeFeedbackCell.querySelector('[data-placeholder]');
+                const contentDiv = judgeFeedbackCell.querySelector('[data-content]');
+
+                if (placeholder && !contentDiv) {
+                  // Replace placeholder span with content div
+                  placeholder.remove();
+                  const newDiv = document.createElement('div');
+                  newDiv.className =
+                    'text-sm opacity-70 whitespace-pre-wrap break-words max-h-20 overflow-y-auto';
+                  newDiv.setAttribute('data-content', '');
+                  newDiv.textContent = feedback;
+                  judgeFeedbackCell.appendChild(newDiv);
+
+                  // Add flash animation with timer cleanup
+                  flashElement(newDiv);
+                } else if (contentDiv) {
+                  // Update existing div if content changed
+                  if (contentDiv.textContent !== feedback) {
+                    contentDiv.textContent = feedback;
+                    flashElement(contentDiv);
+                  }
+                }
+              }
+            }
           );
         }
 
-        // Start polling for real-time updates
-        document.dispatchEvent(new CustomEvent('operation-started'));
+        // Show success notification
+        if (window.toast) {
+          window.toast.success(`Evaluated ${result.evaluated_results} results with judge!`);
+        }
       } catch (error) {
         console.error('Generate judge error:', error);
         if (window.toast) {
@@ -567,33 +690,6 @@ const {
   let isPolling = false;
   let consecutiveErrors = 0;
   const MAX_CONSECUTIVE_ERRORS = 5;
-
-  /**
-   * Helper to add flash animation with proper timer cleanup
-   * Prevents memory leaks by clearing previous timers
-   */
-  function flashElement(element: Element, className = 'bg-success/10', duration = 1000) {
-    // Clear any existing timer on this element
-    const animationTimer = (
-      element as unknown as { _animationTimer: ReturnType<typeof setTimeout> | null }
-    )._animationTimer;
-    if (animationTimer) {
-      clearTimeout(animationTimer);
-    }
-
-    // Add the flash class
-    element.classList.add(className);
-
-    // Set timer to remove it
-    (
-      element as unknown as { _animationTimer: ReturnType<typeof setTimeout> | null }
-    )._animationTimer = setTimeout(() => {
-      element.classList.remove(className);
-      (
-        element as unknown as { _animationTimer: ReturnType<typeof setTimeout> | null }
-      )._animationTimer = null;
-    }, duration);
-  }
 
   /**
    * Show/hide polling status indicator

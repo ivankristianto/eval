@@ -32,6 +32,7 @@ const INITIAL_TASK_VERSION = 0;
  *   total_pairs: number;
  *   processed_pairs: number;
  *   task_prompt_version_id?: string; // Included if new version was created
+ *   results: Array<{id, training_pair_id, generated_output, created_at, updated_at}>; // For optimistic updates
  * }
  */
 export const POST: APIRoute = async ({ request }) => {
@@ -206,12 +207,20 @@ export const POST: APIRoute = async ({ request }) => {
 
     logger.logApiRequest('POST', '/api/task/generate', 200, Date.now() - startTime);
 
+    // Return results for optimistic updates - include the actual generated outputs
     return new Response(
       JSON.stringify({
         evaluation_run_id: result.evaluation_run_id,
         total_pairs: result.total_pairs,
         processed_pairs: result.processed_pairs,
         task_prompt_version_id: taskPromptVersionId,
+        results: result.results.map((r) => ({
+          id: r.id,
+          training_pair_id: r.training_pair_id,
+          generated_output: r.generated_output,
+          created_at: r.created_at,
+          updated_at: r.updated_at,
+        })),
       }),
       {
         status: 200,
