@@ -236,9 +236,11 @@ const { panelId, defaultExpanded = true, position = 'left' } = Astro.props;
   }
 
   // Initialize on page load and re-initialize on Astro page transitions
-  initializeOnce('collapsiblePanels', initCollapsiblePanels);
+  // Note: We don't use initializeOnce here because new panels may be added on page transitions
+  // The per-panel initializeOnce inside prevents duplicate listeners for the same panel
+  initCollapsiblePanels();
   document.addEventListener('astro:page-load', () => {
-    initializeOnce('collapsiblePanels', initCollapsiblePanels);
+    initCollapsiblePanels();
   });
 </script>
 
