@@ -8,7 +8,10 @@
  * Supports dynamic updates via data attributes for live polling.
  *
  * @param metrics - Object containing evaluation metrics
+ * @param metricsHistory - Array of historical metrics for sparklines (last 5 iterations)
  */
+
+import Sparkline from '@components/ui/Sparkline.astro';
 
 interface MetricsData {
   f1_score?: number;
@@ -23,6 +26,14 @@ interface MetricsData {
     false_negatives?: number;
   };
   total_pairs?: number;
+}
+
+interface HistoricalMetrics {
+  f1_score?: number;
+  precision?: number;
+  recall?: number;
+  cohens_kappa?: number;
+  accuracy?: number;
 }
 
 interface Props {
@@ -42,10 +53,25 @@ interface Props {
   showComparison?: boolean;
   // Display variant: 'card' (default sidebar card) or 'compact' (horizontal dashboard strip)
   variant?: 'card' | 'compact';
+  // Historical metrics data for sparklines (last 5 iterations)
+  metricsHistory?: HistoricalMetrics[];
 }
 
 // Support both new metrics format and legacy judge/human format
-const { metrics, judgeMetrics, humanMetrics, variant = 'card' } = Astro.props;
+const { metrics, judgeMetrics, humanMetrics, variant = 'card', metricsHistory = [] } = Astro.props;
+
+// Extract historical data for sparklines (last 5 iterations)
+const getHistoricalValues = (metricKey: keyof HistoricalMetrics): number[] => {
+  if (!metricsHistory || metricsHistory.length === 0) return [];
+  // Get last 5 values for the metric
+  const last5 = metricsHistory.slice(-5);
+  return last5.map((m) => m[metricKey] ?? 0).filter((v) => v > 0);
+};
+
+const f1History = getHistoricalValues('f1_score');
+const precisionHistory = getHistoricalValues('precision');
+const recallHistory = getHistoricalValues('recall');
+const kappaHistory = getHistoricalValues('cohens_kappa');
 
 // Use new metrics if provided, otherwise fall back to legacy format
 const displayMetrics = metrics || {
@@ -104,8 +130,15 @@ const formatNumber = (value: number | undefined) => {
             : 'bg-base-100/60 px-2 py-2 border-luxe-gold/20',
         ]}
       >
-        <div class="flex items-center gap-1 mb-1">
+        <div class="flex items-center justify-between gap-1 mb-1">
           <span class="metric-label">F1</span>
+          {
+            f1History.length > 1 && (
+              <div class="w-16 h-8">
+                <Sparkline data={f1History} color="gold" width={64} height={32} strokeWidth={1.5} />
+              </div>
+            )
+          }
         </div>
         <div
           class:list={[
@@ -128,8 +161,21 @@ const formatNumber = (value: number | undefined) => {
             : 'bg-base-100/60 px-2 py-2 border-luxe-gold/20',
         ]}
       >
-        <div class="flex items-center gap-1 mb-1">
+        <div class="flex items-center justify-between gap-1 mb-1">
           <span class="metric-label">Kappa</span>
+          {
+            kappaHistory.length > 1 && (
+              <div class="w-16 h-8">
+                <Sparkline
+                  data={kappaHistory}
+                  color="gold"
+                  width={64}
+                  height={32}
+                  strokeWidth={1.5}
+                />
+              </div>
+            )
+          }
         </div>
         <div
           class:list={[
@@ -152,8 +198,21 @@ const formatNumber = (value: number | undefined) => {
             : 'bg-base-100/60 px-2 py-2 border-luxe-emerald/20',
         ]}
       >
-        <div class="flex items-center gap-1 mb-1">
+        <div class="flex items-center justify-between gap-1 mb-1">
           <span class="metric-label">Prec.</span>
+          {
+            precisionHistory.length > 1 && (
+              <div class="w-16 h-8">
+                <Sparkline
+                  data={precisionHistory}
+                  color="emerald"
+                  width={64}
+                  height={32}
+                  strokeWidth={1.5}
+                />
+              </div>
+            )
+          }
         </div>
         <div
           class:list={[
@@ -176,8 +235,21 @@ const formatNumber = (value: number | undefined) => {
             : 'bg-base-100/60 px-2 py-2 border-luxe-emerald/20',
         ]}
       >
-        <div class="flex items-center gap-1 mb-1">
+        <div class="flex items-center justify-between gap-1 mb-1">
           <span class="metric-label">Recall</span>
+          {
+            recallHistory.length > 1 && (
+              <div class="w-16 h-8">
+                <Sparkline
+                  data={recallHistory}
+                  color="emerald"
+                  width={64}
+                  height={32}
+                  strokeWidth={1.5}
+                />
+              </div>
+            )
+          }
         </div>
         <div
           class:list={[

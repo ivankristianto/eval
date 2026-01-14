@@ -66,6 +66,14 @@ interface NewMetricsData {
   total_pairs?: number;
 }
 
+interface HistoricalMetrics {
+  f1_score?: number;
+  precision?: number;
+  recall?: number;
+  cohens_kappa?: number;
+  accuracy?: number;
+}
+
 interface Props {
   personaId: string;
   personaName: string;
@@ -73,6 +81,7 @@ interface Props {
   judgePrompt: PromptConfig;
   trainingPairs: TrainingPair[];
   metrics?: NewMetricsData;
+  metricsHistory?: HistoricalMetrics[];
   judgeMetrics?: MetricsData;
   humanMetrics?: MetricsData;
 }
@@ -84,6 +93,7 @@ const {
   judgePrompt,
   trainingPairs,
   metrics,
+  metricsHistory,
   judgeMetrics,
   humanMetrics,
 } = Astro.props;
@@ -307,6 +317,7 @@ const {
         </div>
         <SimpleMetrics
           metrics={metrics}
+          metricsHistory={metricsHistory}
           judgeMetrics={judgeMetrics}
           humanMetrics={humanMetrics}
           variant="compact"
