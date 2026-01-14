@@ -55,7 +55,6 @@ h6 {
 }
 
 /* Text for use ON gold backgrounds - optimal contrast across all themes */
-/* Using compound selector for proper specificity without !important */
 /* Gold gradient is bright across all themes, so dark text works universally */
 
 .bg-gradient-gold.text-on-gold,
