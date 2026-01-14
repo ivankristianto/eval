@@ -1253,6 +1253,22 @@ export class TrainingLoopManager {
    * Uses LLM (Prompt Engineer Model) to analyze human feedback patterns and
    * generate improved versions of both prompts.
    *
+   * HUMAN FEEDBACK DATA FLOW:
+   * 1. Fetches human_reviews joined with judge_decisions and training_pairs (lines 1278-1304)
+   * 2. Builds humanDisagreements array with all required fields:
+   *    - human_feedback: From human_notes DB field (human's explanatory notes)
+   *    - judge_decision, human_decision: To identify disagreement direction
+   *    - input, generated_output, expected_output: Full context
+   *    - judge_reasoning: Judge's original reasoning
+   * 3. Constructs HumanFeedbackContext (lines 1375-1383)
+   * 4. Calls refineBothPromptsFromHumanFeedback() which builds LLM prompt
+   *    with all human feedback included
+   * 5. Stores refined prompts for iteration 2
+   *
+   * CRITICAL: The human_notes field from the DB is mapped to human_feedback
+   * in the HumanFeedbackContext and is included in the prompt sent to the
+   * Prompt Engineer LLM. See docs/HUMAN_FEEDBACK_AUDIT.md for details.
+   *
    * @param iterationId - The iteration 1 ID
    * @returns Promise resolving when both prompts are refined
    */
@@ -1324,6 +1340,8 @@ export class TrainingLoopManager {
           generated_output: review.generated_output,
           expected_output: review.expected_output,
           judge_reasoning: review.judge_reasoning,
+          // CRITICAL: Map human_notes DB field to human_feedback for prompt optimization
+          // This ensures the Prompt Engineer LLM has access to human reasoning
           human_feedback: review.human_notes || 'No notes provided',
           input: review.input,
         });

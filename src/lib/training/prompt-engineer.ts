@@ -47,17 +47,36 @@ export interface BothPromptsRefinementResult {
 }
 
 /**
- * Context for refining prompts based on human feedback.
+ * Context for refining prompts based on human feedback from iteration 1.
+ *
+ * CRITICAL: The human_disagreements array contains all cases where the human
+ * reviewer disagreed with the judge's assessment. Each disagreement includes:
+ * - human_feedback: The human reviewer's explanatory notes (from human_notes DB field)
+ * - judge_decision vs human_decision: To identify the direction of disagreement
+ * - input, generated_output, expected_output: The full context for analysis
+ * - judge_reasoning: What the judge model was thinking
+ *
+ * This data is used to build a comprehensive prompt for the Prompt Engineer LLM
+ * that includes all human feedback examples for pattern analysis.
+ *
+ * See: buildHumanFeedbackPromptContext() for how this data is formatted for the LLM.
+ * Audit: docs/HUMAN_FEEDBACK_AUDIT.md
  */
 export interface HumanFeedbackContext {
   current_task_prompt: string;
   current_judge_prompt: string;
+  /**
+   * All cases where human disagreed with judge.
+   * Each entry includes human_feedback (from human_notes) which is critical
+   * for understanding WHY the human disagreed.
+   */
   human_disagreements: Array<{
     judge_decision: 'agree' | 'disagree';
     human_decision: 'agree' | 'disagree';
     generated_output: string;
     expected_output: string;
     judge_reasoning: string;
+    /** Human's explanatory notes from DB - critical for understanding disagreement */
     human_feedback: string;
     input: string;
   }>;
@@ -552,8 +571,23 @@ export async function refineBothPromptsFromHumanFeedback(
 
 /**
  * Build detailed context prompt for LLM prompt engineer based on human feedback.
- * Includes metrics, human disagreements, and current prompts.
- * @param context - Human feedback context
+ *
+ * HUMAN FEEDBACK FLOW:
+ * 1. Humans review judge decisions in iteration 1 and provide Agree/Disagree feedback
+ * 2. Disagreements are collected with human_notes explaining WHY they disagreed
+ * 3. This function builds a prompt that includes ALL disagreement examples with:
+ *    - Judge's decision and reasoning
+ *    - Human's decision and feedback notes
+ *    - Full context (input, output, expected)
+ * 4. The Prompt Engineer LLM analyzes patterns and refines both prompts
+ *
+ * CRITICAL: The human_feedback field (from human_notes DB column) is included
+ * in the prompt text at line 608 ("Human Feedback: ..."). This ensures the
+ * Prompt Engineer LLM has access to human reasoning for each disagreement.
+ *
+ * See: docs/HUMAN_FEEDBACK_AUDIT.md for complete audit of human feedback usage.
+ *
+ * @param context - Human feedback context with disagreements array
  * @returns String containing the full system prompt for the prompt engineer model
  */
 function buildHumanFeedbackPromptContext(context: HumanFeedbackContext): string {
@@ -605,7 +639,7 @@ ${idx + 1}. Judge Decision: "${d.judge_decision}" | Human Decision: "${d.human_d
    Generated Output: "${d.generated_output}"
    Expected Output: "${d.expected_output}"
    Judge Reasoning: "${d.judge_reasoning}"
-   Human Feedback: "${d.human_feedback}"
+   Human Feedback: "${d.human_feedback}"  // ← CRITICAL: Human's notes from DB (human_notes field)
 `
         )
         .join('\n')
