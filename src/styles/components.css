@@ -4,9 +4,9 @@
 
 /* Elevated Card */
 .card-luxe {
-  @apply relative rounded-2xl backdrop-blur-xl;
-  border: 1px solid var(--color-gold-border-subtle);
+  @apply relative rounded-2xl border backdrop-blur-xl;
   background: var(--color-bg-card-light);
+  border-color: var(--color-gold-border-subtle);
   box-shadow: var(--shadow-elevated);
   transition:
     transform 0.4s ease,
@@ -17,19 +17,19 @@
 [data-theme='dark'] .card-luxe,
 [data-theme='luxury'] .card-luxe {
   background: var(--color-bg-card-dark-alt);
-  border: 1px solid var(--color-gold-border);
+  border-color: var(--color-gold-border);
 }
 
 /* Card with cupcake theme */
 [data-theme='cupcake'] .card-luxe {
   background: var(--color-bg-card-light);
-  border: 1px solid var(--color-gold-border-light);
+  border-color: var(--color-gold-border-light);
 }
 
 /* Card with silk theme */
 [data-theme='silk'] .card-luxe {
   background: var(--color-bg-card-light);
-  border: 1px solid var(--color-gold-border-light);
+  border-color: var(--color-gold-border-light);
 }
 
 .card-luxe::before {
