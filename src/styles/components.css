@@ -39,12 +39,7 @@
 }
 
 .card-luxe:hover {
-  @apply -translate-y-0.5;
   box-shadow: var(--shadow-gold);
-}
-
-.card-luxe:hover::before {
-  @apply opacity-100;
 }
 
 /* SimpleMetrics card specific override to fix black border */
