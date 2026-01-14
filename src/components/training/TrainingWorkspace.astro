@@ -754,19 +754,18 @@ const {
 
       // Update the optimization modal with the results
       const modalId = `optimization-modal-${type}`;
-      const modal = document.querySelector(`div[data-modal-content="${modalId}"]`);
+      const modal = document.getElementById(modalId) as HTMLDialogElement | null;
 
       if (modal) {
         // Update modal content dynamically
         const rationaleEl = modal.querySelector('.alert-info p');
-        const suggestedCodeEl = modal.querySelectorAll('.mockup-code pre code')[1];
+        const suggestedCodeEl = modal.querySelector('[data-suggested-prompt="true"] pre code');
 
         if (rationaleEl) rationaleEl.textContent = result.rationale;
         if (suggestedCodeEl) suggestedCodeEl.textContent = result.suggested_prompt;
 
-        // Show the modal
-        const modalCheckbox = document.getElementById(modalId) as HTMLInputElement | null;
-        if (modalCheckbox) modalCheckbox.checked = true;
+        // Show the modal using dialog API
+        modal.showModal();
       }
 
       if (window.toast) {
