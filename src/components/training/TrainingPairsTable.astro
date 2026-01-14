@@ -51,7 +51,11 @@ const totalPages = Math.max(1, Math.ceil(pairs.length / pageSize));
         {
           selectable && (
             <label class="flex items-center gap-2 cursor-pointer hover:bg-base-200/50 px-2 py-1 rounded-lg transition-colors">
-              <input type="checkbox" class="checkbox checkbox-sm" id="select-all-pairs" />
+              <input
+                type="checkbox"
+                class="checkbox checkbox-sm checkbox-luxe"
+                id="select-all-pairs"
+              />
               <span class="text-sm font-medium">Select All</span>
             </label>
           )
@@ -119,7 +123,7 @@ const totalPages = Math.max(1, Math.ceil(pairs.length / pageSize));
     <div
       class="overflow-y-auto overflow-x-auto rounded-lg border border-base-300/50 flex-1 min-h-0"
     >
-      <table class="table table-sm" id="training-pairs-table">
+      <table class="table-luxe table-sm" id="training-pairs-table">
         <thead class="bg-base-200/80 sticky top-0 z-20">
           <tr>
             {selectable && <th class="w-12" />}
@@ -212,7 +216,7 @@ const totalPages = Math.max(1, Math.ceil(pairs.length / pageSize));
                   <td>
                     <input
                       type="checkbox"
-                      class="checkbox checkbox-sm pair-checkbox"
+                      class="checkbox checkbox-sm checkbox-luxe pair-checkbox"
                       data-pair-id={pair.id}
                     />
                   </td>
@@ -912,15 +916,15 @@ const totalPages = Math.max(1, Math.ceil(pairs.length / pageSize));
 
 <style>
   /* Fix zebra striping for sticky columns */
-  #training-pairs-table tbody tr:nth-child(even) .sticky-col {
+  .table-luxe tbody tr:nth-child(even) .sticky-col {
     background-color: hsl(var(--b2));
   }
 
-  #training-pairs-table tbody tr:nth-child(odd) .sticky-col {
+  .table-luxe tbody tr:nth-child(odd) .sticky-col {
     background-color: hsl(var(--b1));
   }
 
-  #training-pairs-table tbody tr:hover .sticky-col {
+  .table-luxe tbody tr:hover .sticky-col {
     background-color: hsl(var(--bc) / 0.1);
   }
 </style>
