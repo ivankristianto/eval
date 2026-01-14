@@ -1,0 +1,310 @@
+---
+/**
+ * OutputDiffViewer component.
+ * Displays two text outputs side-by-side with semantic difference highlighting.
+ * Uses the diff library to compute character-level differences and highlights
+ * additions, deletions, and unchanged text.
+ *
+ * @example
+ * <OutputDiffViewer
+ *   outputV1="The quick brown fox jumps over the lazy dog."
+ *   outputV2="The quick brown cat jumps over the lazy dog."
+ *   labelV1="Expected Output"
+ *   labelV2="Actual Output"
+ * />
+ *
+ * @param outputV1 - First text output (e.g., expected/ground truth)
+ * @param outputV2 - Second text output (e.g., actual/predicted)
+ * @param labelV1 - Label for the first output panel (default: 'Output v1')
+ * @param labelV2 - Label for the second output panel (default: 'Output v2')
+ * @param unified - Whether to show unified diff instead of side-by-side (default: false)
+ * @param class - Additional CSS classes to apply
+ */
+
+import { diffChars } from 'diff';
+
+export interface Props {
+  outputV1: string;
+  outputV2: string;
+  labelV1?: string;
+  labelV2?: string;
+  unified?: boolean;
+  class?: string;
+}
+
+const {
+  outputV1,
+  outputV2,
+  labelV1 = 'Output v1',
+  labelV2 = 'Output v2',
+  unified = false,
+  class: className = '',
+} = Astro.props;
+
+interface DiffPart {
+  value: string;
+  added?: boolean;
+  removed?: boolean;
+}
+
+/**
+ * Computes character-level diff between two strings.
+ * Returns an array of parts with added/removed flags.
+ */
+function computeDiff(text1: string, text2: string): DiffPart[] {
+  return diffChars(text1, text2);
+}
+
+/**
+ * Renders a diff part with appropriate styling.
+ * Returns HTML string with highlight classes.
+ */
+function renderDiffPart(part: DiffPart): string {
+  const { value, added, removed } = part;
+
+  if (!value) return '';
+
+  // Escape HTML to prevent XSS
+  const escaped = value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
+
+  if (added) {
+    // Added text - green background with dark text
+    return `<span class="bg-luxe-emerald/20 text-luxe-emerald px-0.5 rounded font-mono">${escaped}</span>`;
+  }
+
+  if (removed) {
+    // Removed text - red background with strikethrough
+    return `<span class="bg-luxe-ruby/20 text-luxe-ruby line-through px-0.5 rounded font-mono decoration-luxe-ruby/50">${escaped}</span>`;
+  }
+
+  // Unchanged text - default styling
+  return `<span class="font-mono">${escaped}</span>`;
+}
+
+/**
+ * Renders diff parts preserving whitespace and line breaks.
+ */
+function renderDiffParts(parts: DiffPart[]): string {
+  return parts.map(renderDiffPart).join('');
+}
+
+// Compute the diff
+const diffParts = computeDiff(outputV1, outputV2);
+
+// Count statistics
+const addedCount = diffParts.filter((p) => p.added).reduce((sum, p) => sum + p.value.length, 0);
+const removedCount = diffParts.filter((p) => p.removed).reduce((sum, p) => sum + p.value.length, 0);
+const unchangedCount = diffParts
+  .filter((p) => !p.added && !p.removed)
+  .reduce((sum, p) => sum + p.value.length, 0);
+const totalChanged = addedCount + removedCount;
+
+// Calculate similarity percentage
+const totalLength = outputV1.length + outputV2.length;
+const similarityPercent = totalLength > 0 ? Math.round((unchangedCount / totalLength) * 200) : 100;
+---
+
+<div class={`output-diff-viewer ${className}`}>
+  <div class="flex items-center gap-4 mb-4 text-sm">
+    <div class="flex items-center gap-2">
+      <span class="font-semibold text-luxe-slate uppercase tracking-wider text-xs">Similarity:</span
+      >
+      <span
+        class={`font-mono font-bold ${similarityPercent >= 80 ? 'text-luxe-emerald' : similarityPercent >= 50 ? 'text-luxe-amber' : 'text-luxe-ruby'}`}
+      >
+        {similarityPercent}%
+      </span>
+    </div>
+
+    {
+      totalChanged > 0 && (
+        <>
+          <div class="w-px h-4 bg-luxe-gold/20" />
+          <div class="flex items-center gap-2">
+            <span class="bg-luxe-emerald/20 text-luxe-emerald px-2 py-0.5 rounded text-xs font-mono font-semibold">
+              +{addedCount}
+            </span>
+            <span class="bg-luxe-ruby/20 text-luxe-ruby px-2 py-0.5 rounded text-xs font-mono font-semibold">
+              -{removedCount}
+            </span>
+          </div>
+        </>
+      )
+    }
+
+    {
+      totalChanged === 0 && (
+        <span class="text-luxe-emerald text-xs font-semibold uppercase tracking-wider">
+          No differences
+        </span>
+      )
+    }
+  </div>
+
+  {
+    unified ? (
+      <div class="card-luxe p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-display text-lg font-semibold text-gradient-gold">Unified Diff</h3>
+          <span class="text-xs text-luxe-slate uppercase tracking-wider">
+            {labelV1} vs {labelV2}
+          </span>
+        </div>
+
+        <div class="bg-luxe-midnight/5 rounded-lg p-4 border border-luxe-gold/20 overflow-x-auto">
+          <pre
+            class="whitespace-pre-wrap break-words text-sm leading-relaxed font-mono"
+            set:html={renderDiffParts(diffParts)}
+          />
+        </div>
+
+        <div class="flex items-center gap-4 mt-4 text-xs text-luxe-slate">
+          <div class="flex items-center gap-1.5">
+            <span class="w-3 h-3 rounded bg-luxe-emerald/20 border border-luxe-emerald/40" />
+            <span>Added</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="w-3 h-3 rounded bg-luxe-ruby/20 border border-luxe-ruby/40" />
+            <span>Removed</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="w-3 h-3 rounded bg-transparent border border-luxe-slate/30" />
+            <span>Unchanged</span>
+          </div>
+        </div>
+      </div>
+    ) : (
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div class="card-luxe p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="font-display text-lg font-semibold text-gradient-gold">{labelV1}</h3>
+            {removedCount > 0 && (
+              <span class="bg-luxe-ruby/20 text-luxe-ruby px-2 py-1 rounded text-xs font-mono font-semibold">
+                -{removedCount}
+              </span>
+            )}
+          </div>
+
+          <div class="bg-luxe-midnight/5 rounded-lg p-4 border border-luxe-gold/20 min-h-[200px] max-h-[500px] overflow-y-auto">
+            {outputV1 ? (
+              <pre class="whitespace-pre-wrap break-words text-sm leading-relaxed font-mono text-luxe-slate">
+                {outputV1}
+              </pre>
+            ) : (
+              <div class="text-luxe-slate/50 text-sm italic">No output</div>
+            )}
+          </div>
+        </div>
+
+        <div class="card-luxe p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="font-display text-lg font-semibold text-gradient-gold">{labelV2}</h3>
+            {addedCount > 0 && (
+              <span class="bg-luxe-emerald/20 text-luxe-emerald px-2 py-1 rounded text-xs font-mono font-semibold">
+                +{addedCount}
+              </span>
+            )}
+          </div>
+
+          <div class="bg-luxe-midnight/5 rounded-lg p-4 border border-luxe-gold/20 min-h-[200px] max-h-[500px] overflow-y-auto">
+            {outputV2 ? (
+              <pre class="whitespace-pre-wrap break-words text-sm leading-relaxed font-mono text-luxe-slate">
+                {outputV2}
+              </pre>
+            ) : (
+              <div class="text-luxe-slate/50 text-sm italic">No output</div>
+            )}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  {
+    !unified && totalChanged > 0 && (
+      <details class="mt-4 group">
+        <summary class="cursor-pointer select-none">
+          <div class="card-luxe p-4 flex items-center justify-between transition-all duration-200 hover:border-luxe-gold/50">
+            <span class="font-display text-base font-semibold text-luxe-slate group-hover:text-gradient-gold transition-all">
+              View Detailed Diff
+            </span>
+            <span class="transform group-open:rotate-180 transition-transform duration-200 text-luxe-gold">
+              &#9662;
+            </span>
+          </div>
+        </summary>
+
+        <div class="card-luxe mt-2 p-6 border-t-0 rounded-t-none">
+          <div class="bg-luxe-midnight/5 rounded-lg p-4 border border-luxe-gold/20 overflow-x-auto">
+            <pre
+              class="whitespace-pre-wrap break-words text-sm leading-relaxed font-mono"
+              set:html={renderDiffParts(diffParts)}
+            />
+          </div>
+
+          <div class="flex items-center gap-4 mt-4 text-xs text-luxe-slate">
+            <div class="flex items-center gap-1.5">
+              <span class="w-3 h-3 rounded bg-luxe-emerald/20 border border-luxe-emerald/40" />
+              <span>Added to {labelV2}</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <span class="w-3 h-3 rounded bg-luxe-ruby/20 border border-luxe-ruby/40" />
+              <span>Removed from {labelV1}</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <span class="w-3 h-3 rounded bg-transparent border border-luxe-slate/30" />
+              <span>Unchanged</span>
+            </div>
+          </div>
+        </div>
+      </details>
+    )
+  }
+</div>
+
+<style>
+  /* Custom scrollbar for diff panels */
+  .output-diff-viewer pre {
+    font-size: 0.875rem;
+    line-height: 1.6;
+  }
+
+  /* Smooth animation for diff highlights */
+  .output-diff-viewer span[class*='bg-'] {
+    transition:
+      background-color 0.2s ease,
+      color 0.2s ease;
+  }
+
+  /* Details summary animation */
+  details > summary {
+    list-style: none;
+  }
+
+  details > summary::-webkit-details-marker {
+    display: none;
+  }
+
+  /* Custom scrollbar styling */
+  .output-diff-viewer ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .output-diff-viewer ::-webkit-scrollbar-track {
+    @apply rounded-lg bg-luxe-midnight/5;
+  }
+
+  .output-diff-viewer ::-webkit-scrollbar-thumb {
+    @apply rounded-lg bg-luxe-gold/30;
+  }
+
+  .output-diff-viewer ::-webkit-scrollbar-thumb:hover {
+    @apply bg-luxe-gold/50;
+  }
+</style>
