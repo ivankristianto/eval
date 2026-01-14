@@ -374,13 +374,33 @@ textarea.border-gold,
 }
 
 /* Remove scrollbar animations to prevent flashing during re-render and click */
-::-webkit-scrollbar {
+::-webkit-scrollbar,
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-thumb,
+::-webkit-scrollbar-corner {
   animation: none !important;
   transition: none !important;
 }
 
-*:focus-visible::-webkit-scrollbar {
+/* Also target focus states */
+*:focus-visible::-webkit-scrollbar,
+*:focus-visible::-webkit-scrollbar-track,
+*:focus-visible::-webkit-scrollbar-thumb,
+*:focus-visible::-webkit-scrollbar-corner {
   animation: none !important;
+  transition: none !important;
+}
+
+/* Prevent scrollbar color transitions (scrollbar colors inherit from 'color' property) */
+html::-webkit-scrollbar,
+html::-webkit-scrollbar-track,
+html::-webkit-scrollbar-thumb,
+html::-webkit-scrollbar-corner,
+body::-webkit-scrollbar,
+body::-webkit-scrollbar-track,
+body::-webkit-scrollbar-thumb,
+body::-webkit-scrollbar-corner {
+  transition: none !important;
 }
 
 /* Badge enhancements - prevent wrapping */
