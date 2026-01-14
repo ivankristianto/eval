@@ -35,6 +35,7 @@ const { panelId, defaultExpanded = true, position = 'left' } = Astro.props;
     id={`collapse-panel-${panelId}`}
     data-collapse-panel
     data-panel-id={panelId}
+    data-position={position}
     data-default-expanded={defaultExpanded}
     class={[
       'overflow-hidden transition-all duration-300 ease-in-out border-base-300/50 bg-base-50/30',
@@ -46,6 +47,49 @@ const { panelId, defaultExpanded = true, position = 'left' } = Astro.props;
       <slot name="panel-content" />
     </div>
   </div>
+
+  <!-- Toggle Button - positioned absolutely relative to container, always visible -->
+  <button
+    id={`collapse-toggle-${panelId}`}
+    data-collapse-toggle
+    data-panel-id={panelId}
+    aria-label={position === 'left' ? 'Toggle left panel' : 'Toggle right panel'}
+    aria-expanded={defaultExpanded}
+    class={[
+      'absolute top-1/2 -translate-y-1/2 z-20',
+      'w-10 h-10 rounded-full shadow-lg flex items-center justify-center',
+      'bg-luxe-gold text-base-100',
+      'hover:bg-luxe-gold-light hover:scale-110',
+      'transition-all duration-200 ease-out',
+      'cursor-pointer select-none',
+      // Position will be updated by JS based on panel state
+      position === 'left' ? 'left-[25%]' : 'right-[25%]',
+    ].join(' ')}
+    type="button"
+  >
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke-width={2.5}
+      stroke="currentColor"
+      class={['w-5 h-5 transition-transform duration-300'].join(' ')}
+      id={`collapse-icon-${panelId}`}
+      data-collapse-icon
+    >
+      {
+        position === 'left' ? (
+          <>
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+          </>
+        ) : (
+          <>
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+          </>
+        )
+      }
+    </svg>
+  </button>
 
   <!-- Main Content -->
   <div
@@ -60,74 +104,6 @@ const { panelId, defaultExpanded = true, position = 'left' } = Astro.props;
   >
     <slot name="main-content" />
   </div>
-
-  <!-- Toggle Button (edge-mounted handle with label) -->
-  <button
-    id={`collapse-toggle-${panelId}`}
-    data-collapse-toggle
-    data-panel-id={panelId}
-    aria-label={position === 'left' ? 'Toggle left panel' : 'Toggle right panel'}
-    aria-expanded={defaultExpanded}
-    class={[
-      'group fixed z-20 flex items-center gap-2',
-      'px-3 py-2 rounded-full shadow-xl',
-      'bg-primary text-primary-content',
-      'hover:bg-primary-focus hover:scale-105 hover:shadow-2xl',
-      'transition-all duration-200 ease-out',
-      'cursor-pointer select-none',
-      'top-45', // Positioned below header, aligned with task prompt
-      position === 'left'
-        ? 'left-0 -translate-x-1/2 hover:translate-x-0'
-        : 'right-0 translate-x-1/2 hover:translate-x-0',
-    ].join(' ')}
-    type="button"
-  >
-    <!-- Icon container with subtle background on hover -->
-    <span class="relative flex items-center justify-center">
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke-width="2.5"
-        stroke="currentColor"
-        class={['w-5 h-5 transition-transform duration-300', 'group-hover:scale-110'].join(' ')}
-        id={`collapse-icon-${panelId}`}
-        data-collapse-icon
-      >
-        {
-          position === 'left' ? (
-            <>
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M15.75 19.5L8.25 12l7.5-7.5"
-              />
-            </>
-          ) : (
-            <>
-              <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-            </>
-          )
-        }
-      </svg>
-      <!-- Subtle glow effect -->
-      <span
-        class="absolute inset-0 bg-white/20 rounded-full blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-      ></span>
-    </span>
-
-    <!-- Label that appears on hover -->
-    <span
-      class={[
-        'text-sm font-medium whitespace-nowrap',
-        'opacity-0 group-hover:opacity-100',
-        'transition-opacity duration-200',
-        'max-w-0 group-hover:max-w-xs overflow-hidden',
-      ].join(' ')}
-    >
-      Panel
-    </span>
-  </button>
 </div>
 
 <script>
@@ -211,6 +187,7 @@ const { panelId, defaultExpanded = true, position = 'left' } = Astro.props;
         const main = document.querySelector(`[data-panel-id="${panelId}"][data-collapse-main]`);
         const toggle = document.querySelector(`[data-panel-id="${panelId}"][data-collapse-toggle]`);
         const icon = document.querySelector(`#collapse-icon-${panelId}`);
+        const position = (panel.dataset.position as 'left' | 'right') || 'left';
 
         if (!main || !toggle || !icon) {
           console.warn('Collapse panel elements not found for panelId:', panelId);
@@ -227,6 +204,15 @@ const { panelId, defaultExpanded = true, position = 'left' } = Astro.props;
           main.classList.remove('lg:col-span-12');
           main.classList.add('lg:col-span-9');
 
+          // Position button at the edge of the panel (25%)
+          if (position === 'left') {
+            (toggle as HTMLElement).style.left = '25%';
+            (toggle as HTMLElement).style.right = 'auto';
+          } else {
+            (toggle as HTMLElement).style.right = '25%';
+            (toggle as HTMLElement).style.left = 'auto';
+          }
+
           // Rotate icon to indicate expandability
           (icon as HTMLElement).style.transform = 'rotate(0deg)';
         } else {
@@ -237,6 +223,15 @@ const { panelId, defaultExpanded = true, position = 'left' } = Astro.props;
           // Main content takes full width
           main.classList.remove('lg:col-span-9');
           main.classList.add('lg:col-span-12');
+
+          // Position button at the left edge of main content (0%)
+          if (position === 'left') {
+            (toggle as HTMLElement).style.left = '0%';
+            (toggle as HTMLElement).style.right = 'auto';
+          } else {
+            (toggle as HTMLElement).style.right = '0%';
+            (toggle as HTMLElement).style.left = 'auto';
+          }
 
           // Rotate icon to indicate expandability
           (icon as HTMLElement).style.transform = 'rotate(180deg)';
@@ -307,35 +302,15 @@ const { panelId, defaultExpanded = true, position = 'left' } = Astro.props;
     transition-property: grid-column;
   }
 
-  /* Enhanced toggle button styles */
+  /* Smooth transition for toggle button position */
   [data-collapse-toggle] {
-    /* Subtle pulse animation to draw attention */
-    animation: pulse-subtle 3s ease-in-out infinite;
+    transition-property: left, right, transform, background-color;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  [data-collapse-toggle]:hover {
-    /* Stop pulse on hover, focus on interaction */
-    animation: none;
-  }
-
-  @keyframes pulse-subtle {
-    0%,
-    100% {
-      box-shadow:
-        0 10px 15px -3px rgb(0 0 0 / 0.1),
-        0 4px 6px -4px rgb(0 0 0 / 0.1);
-    }
-    50% {
-      box-shadow:
-        0 20px 25px -5px rgb(0 0 0 / 0.15),
-        0 8px 10px -6px rgb(0 0 0 / 0.1);
-    }
-  }
-
-  /* Smooth label reveal with width transition */
-  [data-collapse-toggle] span:last-child {
-    transition:
-      max-width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-      opacity 0.2s ease-in-out;
+  /* Smooth icon rotation */
+  [data-collapse-icon] {
+    transition-property: transform;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   }
 </style>

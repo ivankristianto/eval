@@ -73,14 +73,19 @@ const precisionHistory = getHistoricalValues('precision');
 const recallHistory = getHistoricalValues('recall');
 const kappaHistory = getHistoricalValues('cohens_kappa');
 
-// Use new metrics if provided, otherwise fall back to legacy format
-const displayMetrics = metrics || {
-  f1_score: judgeMetrics?.pass_rate || 0,
-  precision: judgeMetrics?.pass_rate || 0,
-  recall: humanMetrics?.pass_rate || 0,
-  cohens_kappa: 0.7,
-  total_pairs: judgeMetrics?.total_pairs || 0,
-};
+// Use new metrics if provided and has actual data, otherwise fall back to legacy format
+// Prefer judgeMetrics/humanMetrics when available since they're computed from actual results
+const displayMetrics =
+  metrics && (metrics.f1_score ?? 0) > 0
+    ? metrics
+    : {
+        f1_score: judgeMetrics?.pass_rate ?? 0,
+        precision: judgeMetrics?.pass_rate ?? 0,
+        recall: humanMetrics?.pass_rate ?? 0,
+        cohens_kappa: metrics?.cohens_kappa ?? 0.7,
+        total_pairs: judgeMetrics?.total_pairs ?? 0,
+        confusion_matrix: metrics?.confusion_matrix,
+      };
 
 const formatPercentage = (value: number | undefined) => {
   if (value === undefined || value === null) return 'N/A';
@@ -124,10 +129,10 @@ const formatNumber = (value: number | undefined) => {
       <!-- F1 Score - Highlighted -->
       <div
         class:list={[
-          'stat rounded-lg shadow-md border',
+          'stat rounded-lg shadow-md',
           variant === 'card'
-            ? 'bg-base-100 px-3 py-3 border-luxe-gold/20'
-            : 'bg-base-100/60 px-2 py-2 border-luxe-gold/20',
+            ? 'bg-base-100 px-3 py-3 border border-luxe-gold/20'
+            : 'bg-base-100/60 px-2 py-2 border border-luxe-gold/20',
         ]}
       >
         <div class="flex items-center justify-between gap-1 mb-1">
@@ -155,10 +160,10 @@ const formatNumber = (value: number | undefined) => {
       <!-- Cohen's Kappa - Highlighted -->
       <div
         class:list={[
-          'stat rounded-lg shadow-md border',
+          'stat rounded-lg shadow-md',
           variant === 'card'
-            ? 'bg-base-100 px-3 py-3 border-luxe-gold/20'
-            : 'bg-base-100/60 px-2 py-2 border-luxe-gold/20',
+            ? 'bg-base-100 px-3 py-3 border border-luxe-gold/20'
+            : 'bg-base-100/60 px-2 py-2 border border-luxe-gold/20',
         ]}
       >
         <div class="flex items-center justify-between gap-1 mb-1">
@@ -192,10 +197,10 @@ const formatNumber = (value: number | undefined) => {
       <!-- Precision -->
       <div
         class:list={[
-          'stat rounded-lg shadow-sm border',
+          'stat rounded-lg shadow-sm',
           variant === 'card'
-            ? 'bg-base-100/60 px-3 py-2.5 border-luxe-emerald/20'
-            : 'bg-base-100/60 px-2 py-2 border-luxe-emerald/20',
+            ? 'bg-base-100/60 px-3 py-2.5 border border-luxe-emerald/20'
+            : 'bg-base-100/60 px-2 py-2 border border-luxe-emerald/20',
         ]}
       >
         <div class="flex items-center justify-between gap-1 mb-1">
@@ -229,10 +234,10 @@ const formatNumber = (value: number | undefined) => {
       <!-- Recall -->
       <div
         class:list={[
-          'stat rounded-lg shadow-sm border',
+          'stat rounded-lg shadow-sm',
           variant === 'card'
-            ? 'bg-base-100/60 px-3 py-2.5 border-luxe-emerald/20'
-            : 'bg-base-100/60 px-2 py-2 border-luxe-emerald/20',
+            ? 'bg-base-100/60 px-3 py-2.5 border border-luxe-emerald/20'
+            : 'bg-base-100/60 px-2 py-2 border border-luxe-emerald/20',
         ]}
       >
         <div class="flex items-center justify-between gap-1 mb-1">
