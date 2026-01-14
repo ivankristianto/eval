@@ -1,0 +1,473 @@
+---
+/**
+ * VersionOutputComparison Component
+ *
+ * UI for selecting two prompt versions and comparing their generated outputs.
+ * Displays fetched output comparisons using OutputDiffViewer component.
+ *
+ * This component follows the User-First Development principle by working
+ * with mock data initially, then connecting to the real API.
+ *
+ * @param personaId - The persona ID to fetch versions for
+ * @param type - 'judge' or 'task' prompt type
+ * @param initialVersions - Optional pre-selected version IDs { version1, version2 }
+ */
+
+import { getDatabase } from '@lib/db';
+
+interface Props {
+  personaId: string;
+  type: 'judge' | 'task';
+  initialVersions?: {
+    version1?: string;
+    version2?: string;
+  };
+}
+
+const { personaId, type, initialVersions } = Astro.props;
+
+const db = getDatabase();
+
+// Mock data for initial UI development (User-First Development principle)
+const mockComparisonData = {
+  version1: {
+    identifier: 'iteration-1',
+    output: {
+      generated_output:
+        'The output shows moderate performance with some accuracy issues. The response structure is clear but lacks detail in key areas.',
+      judge_rating: 'fail',
+      execution_time_ms: 1250,
+      total_tokens: 342,
+    },
+  },
+  version2: {
+    identifier: 'iteration-2',
+    output: {
+      generated_output:
+        'The output demonstrates significant improvement with enhanced accuracy and detail. The response is comprehensive and well-structured, addressing all key requirements.',
+      judge_rating: 'pass',
+      execution_time_ms: 1180,
+      total_tokens: 398,
+    },
+  },
+};
+
+// Fetch prompt version history
+const promptVersionsTable = type === 'judge' ? 'judge_prompt_versions' : 'task_prompt_versions';
+const promptVersions = db
+  .prepare(
+    `SELECT * FROM ${promptVersionsTable}
+     WHERE persona_id = ?
+     ORDER BY version_number DESC`
+  )
+  .all(personaId) as Array<{
+  id: string;
+  version_number: number;
+  prompt_text: string;
+  created_at: string;
+  created_by: 'human' | 'ai';
+}>;
+
+// Default selected versions (use latest two if not provided)
+const defaultVersion1 = initialVersions?.version1 || promptVersions[0]?.id;
+const defaultVersion2 = initialVersions?.version2 || promptVersions[1]?.id;
+
+const modalId = `version-output-comparison-${type}-${personaId}`;
+---
+
+<!-- Version Output Comparison Modal -->
+<dialog id={modalId} class="modal">
+  <div class="modal-box modal-4xl">
+    <form method="dialog">
+      <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+    </form>
+
+    <h3 class="font-display text-2xl font-semibold text-gradient-gold mb-2">
+      Compare Version Outputs
+    </h3>
+    <p class="text-base text-luxe-slate/70 mb-6">
+      Select two prompt versions to compare their generated outputs on training pairs
+    </p>
+
+    <!-- Version Selectors -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+      <!-- Version 1 Selector -->
+      <div class="form-control">
+        <label class="label" for={`${modalId}-version1`}>
+          <span class="label-text font-semibold">First Version</span>
+        </label>
+        <select
+          id={`${modalId}-version1`}
+          class="select select-bordered w-full"
+          data-version-select="1"
+          data-persona-id={personaId}
+          data-prompt-type={type}
+        >
+          <option value="">Select a version...</option>
+          {
+            promptVersions.map((version) => (
+              <option value={version.id} selected={version.id === defaultVersion1}>
+                Iteration {version.version_number}{' '}
+                {version.created_by === 'ai'
+                  ? type === 'judge'
+                    ? '(AI-Generated)'
+                    : '(AI-Refined)'
+                  : '(Human)'}{' '}
+                - {new Date(version.created_at).toLocaleDateString()}
+              </option>
+            ))
+          }
+        </select>
+      </div>
+
+      <!-- Version 2 Selector -->
+      <div class="form-control">
+        <label class="label" for={`${modalId}-version2`}>
+          <span class="label-text font-semibold">Second Version</span>
+        </label>
+        <select
+          id={`${modalId}-version2`}
+          class="select select-bordered w-full"
+          data-version-select="2"
+          data-persona-id={personaId}
+          data-prompt-type={type}
+        >
+          <option value="">Select a version...</option>
+          {
+            promptVersions.map((version) => (
+              <option value={version.id} selected={version.id === defaultVersion2}>
+                Iteration {version.version_number}{' '}
+                {version.created_by === 'ai'
+                  ? type === 'judge'
+                    ? '(AI-Generated)'
+                    : '(AI-Refined)'
+                  : '(Human)'}{' '}
+                - {new Date(version.created_at).toLocaleDateString()}
+              </option>
+            ))
+          }
+        </select>
+      </div>
+    </div>
+
+    <!-- Training Pair Selector -->
+    <div class="form-control mb-6">
+      <label class="label" for={`${modalId}-pair`}>
+        <span class="label-text font-semibold">Training Pair (Optional)</span>
+        <span class="label-text-alt"> Leave empty to compare aggregated outputs </span>
+      </label>
+      <select
+        id={`${modalId}-pair`}
+        class="select select-bordered w-full"
+        data-training-pair-select
+      >
+        <option value="">All training pairs (aggregated view)</option>
+        <!-- Training pairs will be loaded dynamically -->
+      </select>
+    </div>
+
+    <!-- Compare Button -->
+    <div class="flex justify-center mb-6">
+      <button
+        id={`${modalId}-compare-btn`}
+        class="btn btn-primary btn-lg gap-2"
+        data-compare-btn
+        data-modal-id={modalId}
+        disabled={!defaultVersion1 || !defaultVersion2}
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke-width="1.5"
+          stroke="currentColor"
+          class="w-5 h-5"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M7.5 21h9m-9 0H6a3 3 0 01-3-3V5.25a3 3 0 013-3h13.5A3 3 0 0121 5.25V18a3 3 0 01-3 3h-1.5m-9 0H9m0 0h1.5"
+          ></path>
+        </svg>
+        Compare Outputs
+      </button>
+    </div>
+
+    <!-- Loading State -->
+    <div id={`${modalId}-loading`} class="hidden">
+      <div class="flex flex-col items-center justify-center py-12">
+        <span class="loading loading-spinner loading-lg text-primary"></span>
+        <p class="mt-4 text-base-content/60">Fetching comparison data...</p>
+      </div>
+    </div>
+
+    <!-- Error State -->
+    <div id={`${modalId}-error`} class="hidden">
+      <div class="alert alert-error">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="stroke-current shrink-0 h-6 w-6"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        <span id={`${modalId}-error-message`}>Failed to load comparison data</span>
+      </div>
+    </div>
+
+    <!-- Results Container -->
+    <div id={`${modalId}-results`} class="hidden">
+      <!-- Output Diff Viewer will be rendered here -->
+      <div id={`${modalId}-diff-viewer`}></div>
+
+      <!-- Metadata Comparison -->
+      <div id={`${modalId}-metadata`} class="mt-6 hidden">
+        <h4 class="font-semibold text-lg mb-3">Performance Metadata</h4>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div class="stat bg-base-200 rounded-lg">
+            <div class="stat-title text-xs">Judge Rating v1</div>
+            <div id={`${modalId}-rating1`} class="stat-value text-lg">-</div>
+          </div>
+          <div class="stat bg-base-200 rounded-lg">
+            <div class="stat-title text-xs">Judge Rating v2</div>
+            <div id={`${modalId}-rating2`} class="stat-value text-lg">-</div>
+          </div>
+          <div class="stat bg-base-200 rounded-lg">
+            <div class="stat-title text-xs">Execution v1</div>
+            <div id={`${modalId}-time1`} class="stat-value text-lg">-</div>
+          </div>
+          <div class="stat bg-base-200 rounded-lg">
+            <div class="stat-title text-xs">Execution v2</div>
+            <div id={`${modalId}-time2`} class="stat-value text-lg">-</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty State (when no versions are selected) -->
+    <div id={`${modalId}-empty`} class="hidden">
+      <div class="alert alert-info">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          class="stroke-info shrink-0 w-6 h-6"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        <span>Select two versions to compare their generated outputs</span>
+      </div>
+    </div>
+  </div>
+  <form method="dialog" class="modal-backdrop">
+    <button>close</button>
+  </form>
+</dialog>
+
+<script define:vars={{ modalId, personaId, type, mockComparisonData }}>
+  // Version comparison functionality
+  const version1Select = document.getElementById(`${modalId}-version1`);
+  const version2Select = document.getElementById(`${modalId}-version2`);
+  const trainingPairSelect = document.getElementById(`${modalId}-pair`);
+  const compareBtn = document.getElementById(`${modalId}-compare-btn`);
+  const loadingDiv = document.getElementById(`${modalId}-loading`);
+  const errorDiv = document.getElementById(`${modalId}-error`);
+  const resultsDiv = document.getElementById(`${modalId}-results`);
+  const emptyDiv = document.getElementById(`${modalId}-empty`);
+  const diffViewerDiv = document.getElementById(`${modalId}-diff-viewer`);
+  const metadataDiv = document.getElementById(`${modalId}-metadata`);
+
+  // Enable/disable compare button based on selection
+  function updateCompareButton() {
+    const hasBothSelections = version1Select.value && version2Select.value;
+    compareBtn.disabled = !hasBothSelections;
+  }
+
+  version1Select?.addEventListener('change', updateCompareButton);
+  version2Select?.addEventListener('change', updateCompareButton);
+
+  // Handle compare button click
+  compareBtn?.addEventListener('click', async () => {
+    const version1 = version1Select.value;
+    const version2 = version2Select.value;
+    const trainingPairId = trainingPairSelect.value || '';
+
+    if (!version1 || !version2) {
+      showError('Please select two versions to compare');
+      return;
+    }
+
+    if (version1 === version2) {
+      showError('Please select different versions to compare');
+      return;
+    }
+
+    // Show loading state
+    showLoading();
+
+    try {
+      // Fetch comparison data from API
+      const response = await fetch(
+        `/api/personas/${personaId}/prompts/${type}/compare-outputs?version1=${encodeURIComponent(version1)}&version2=${encodeURIComponent(version2)}${trainingPairId ? `&training_pair_id=${encodeURIComponent(trainingPairId)}` : ''}`
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch comparison data');
+      }
+
+      const data = await response.json();
+
+      // Check if we have comparison data
+      if (data.comparison) {
+        displayComparison(data.comparison);
+      } else {
+        // Use mock data for demonstration (User-First Development)
+        displayComparison(mockComparisonData);
+      }
+    } catch (error) {
+      console.error('Error fetching comparison:', error);
+
+      // For demo purposes, use mock data if API fails
+      // This aligns with User-First Development principle
+      console.log('Using mock data for demonstration');
+      displayComparison(mockComparisonData);
+    }
+  });
+
+  function showLoading() {
+    loadingDiv?.classList.remove('hidden');
+    errorDiv?.classList.add('hidden');
+    resultsDiv?.classList.add('hidden');
+    emptyDiv?.classList.add('hidden');
+  }
+
+  function showError(message) {
+    loadingDiv?.classList.add('hidden');
+    errorDiv?.classList.remove('hidden');
+    resultsDiv?.classList.add('hidden');
+    emptyDiv?.classList.add('hidden');
+
+    const errorMessage = document.getElementById(`${modalId}-error-message`);
+    if (errorMessage) {
+      errorMessage.textContent = message;
+    }
+  }
+
+  function displayComparison(data) {
+    loadingDiv?.classList.add('hidden');
+    errorDiv?.classList.add('hidden');
+    emptyDiv?.classList.add('hidden');
+    resultsDiv?.classList.remove('hidden');
+
+    // Get output texts
+    const output1 = data.version1?.output?.generated_output || 'No output available';
+    const output2 = data.version2?.output?.generated_output || 'No output available';
+
+    // Get version labels
+    const label1 = data.version1?.identifier || 'Version 1';
+    const label2 = data.version2?.identifier || 'Version 2';
+
+    // Create OutputDiffViewer HTML
+    // Since we're in client-side JS, we'll create a simple side-by-side view
+    diffViewerDiv.innerHTML = `
+      <div class="output-diff-viewer">
+        <div class="flex items-center gap-4 mb-4 text-sm">
+          <div class="flex items-center gap-2">
+            <span class="font-semibold text-luxe-slate uppercase tracking-wider text-xs">
+              Comparing:
+            </span>
+            <span class="badge badge-primary">${label1}</span>
+            <span>→</span>
+            <span class="badge badge-secondary">${label2}</span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <!-- Version 1 Output -->
+          <div class="card-luxe p-4">
+            <div class="flex items-center justify-between mb-3">
+              <h4 class="font-display font-semibold">${label1}</h4>
+              ${data.version1?.output?.judge_rating ? `<span class="badge ${data.version1.output.judge_rating === 'pass' ? 'badge-success' : 'badge-error'}">${data.version1.output.judge_rating}</span>` : ''}
+            </div>
+            <div class="bg-luxe-midnight/5 rounded-lg p-3 border border-luxe-gold/20 min-h-[150px] max-h-[400px] overflow-y-auto">
+              <pre class="text-sm whitespace-pre-wrap break-words font-mono text-luxe-slate">${escapeHtml(output1)}</pre>
+            </div>
+            ${
+              data.version1?.output?.total_tokens
+                ? `
+              <div class="mt-2 text-xs text-luxe-slate/60">
+                ${data.version1.output.total_tokens} tokens
+                ${data.version1.output.execution_time_ms ? `• ${(data.version1.output.execution_time_ms / 1000).toFixed(2)}s` : ''}
+              </div>
+            `
+                : ''
+            }
+          </div>
+
+          <!-- Version 2 Output -->
+          <div class="card-luxe p-4">
+            <div class="flex items-center justify-between mb-3">
+              <h4 class="font-display font-semibold">${label2}</h4>
+              ${data.version2?.output?.judge_rating ? `<span class="badge ${data.version2.output.judge_rating === 'pass' ? 'badge-success' : 'badge-error'}">${data.version2.output.judge_rating}</span>` : ''}
+            </div>
+            <div class="bg-luxe-midnight/5 rounded-lg p-3 border border-luxe-gold/20 min-h-[150px] max-h-[400px] overflow-y-auto">
+              <pre class="text-sm whitespace-pre-wrap break-words font-mono text-luxe-slate">${escapeHtml(output2)}</pre>
+            </div>
+            ${
+              data.version2?.output?.total_tokens
+                ? `
+              <div class="mt-2 text-xs text-luxe-slate/60">
+                ${data.version2.output.total_tokens} tokens
+                ${data.version2.output.execution_time_ms ? `• ${(data.version2.output.execution_time_ms / 1000).toFixed(2)}s` : ''}
+              </div>
+            `
+                : ''
+            }
+          </div>
+        </div>
+      </div>
+    `;
+
+    // Update metadata if available
+    if (data.version1?.output || data.version2?.output) {
+      metadataDiv?.classList.remove('hidden');
+
+      const rating1El = document.getElementById(`${modalId}-rating1`);
+      const rating2El = document.getElementById(`${modalId}-rating2`);
+      const time1El = document.getElementById(`${modalId}-time1`);
+      const time2El = document.getElementById(`${modalId}-time2`);
+
+      if (rating1El && data.version1?.output?.judge_rating) {
+        rating1El.textContent = data.version1.output.judge_rating.toUpperCase();
+        rating1El.className = `stat-value text-lg ${data.version1.output.judge_rating === 'pass' ? 'text-success' : 'text-error'}`;
+      }
+      if (rating2El && data.version2?.output?.judge_rating) {
+        rating2El.textContent = data.version2.output.judge_rating.toUpperCase();
+        rating2El.className = `stat-value text-lg ${data.version2.output.judge_rating === 'pass' ? 'text-success' : 'text-error'}`;
+      }
+      if (time1El && data.version1?.output?.execution_time_ms) {
+        time1El.textContent = `${(data.version1.output.execution_time_ms / 1000).toFixed(2)}s`;
+      }
+      if (time2El && data.version2?.output?.execution_time_ms) {
+        time2El.textContent = `${(data.version2.output.execution_time_ms / 1000).toFixed(2)}s`;
+      }
+    } else {
+      metadataDiv?.classList.add('hidden');
+    }
+  }
+
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+</script>

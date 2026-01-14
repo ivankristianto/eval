@@ -9,6 +9,7 @@ import Badge from '@components/ui/Badge.astro';
 import Breadcrumbs from '@components/ui/Breadcrumbs.astro';
 import PersonaTabs from '@components/PersonaTabs.astro';
 import PromptDiffViewer from '@components/PromptDiffViewer.astro';
+import VersionOutputComparison from '@components/training/VersionOutputComparison.astro';
 
 const { id } = Astro.params;
 
@@ -115,8 +116,48 @@ const breadcrumbItems = [
       </div>
     </div>
 
+    <!-- Version Output Comparison -->
+    {
+      promptVersions.length >= 2 && (
+        <div class="mb-6 animate-reveal delay-300">
+          <div class="card bg-gradient-to-r from-luxe-gold/5 to-luxe-emerald/5 border border-luxe-gold/20 shadow-md">
+            <div class="card-body">
+              <div class="flex items-center justify-between">
+                <div>
+                  <h3 class="card-title text-lg">Compare Version Outputs</h3>
+                  <p class="text-sm text-base-content/60 mt-1">
+                    Select two prompt versions to compare their generated outputs on training pairs
+                  </p>
+                </div>
+                <button
+                  class="btn btn-primary gap-2"
+                  onclick={`document.getElementById('version-output-comparison-judge-${id}')?.showModal()`}
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke-width="1.5"
+                    stroke="currentColor"
+                    class="w-5 h-5"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M7.5 21h9m-9 0H6a3 3 0 01-3-3V5.25a3 3 0 013-3h13.5A3 3 0 0121 5.25V18a3 3 0 01-3 3h-1.5m-9 0H9m0 0h1.5"
+                    />
+                  </svg>
+                  Compare Outputs
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )
+    }
+
     <!-- Version History -->
-    <div class="mb-6 animate-reveal delay-300">
+    <div class="mb-6 animate-reveal delay-400">
       <h2 class="text-2xl font-bold mb-4">Version History</h2>
 
       {
@@ -239,6 +280,9 @@ const breadcrumbItems = [
         );
       })
     }
+
+    <!-- Version Output Comparison Modal -->
+    <VersionOutputComparison personaId={id} type="judge" />
   </div>
 </Layout>
 
