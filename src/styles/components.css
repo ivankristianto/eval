@@ -4,10 +4,14 @@
 
 /* Elevated Card */
 .card-luxe {
-  @apply relative rounded-2xl border backdrop-blur-xl transition-all duration-400;
+  @apply relative rounded-2xl border backdrop-blur-xl;
   background: var(--color-bg-card-light);
   border-color: var(--color-gold-border-subtle);
   box-shadow: var(--shadow-elevated);
+  transition:
+    transform 0.4s ease,
+    box-shadow 0.4s ease,
+    border-color 0.4s ease;
 }
 
 [data-theme='dark'] .card-luxe,
@@ -94,8 +98,11 @@
 }
 
 .table-luxe tbody tr {
-  @apply transition-all duration-200 border-b;
+  @apply border-b;
   border-bottom-color: var(--color-border-subtle);
+  transition:
+    transform 0.2s ease,
+    background-color 0.2s ease;
 }
 
 .table-luxe tbody tr:hover {
@@ -230,9 +237,14 @@ textarea.border-gold,
 
 /* All buttons - base styling */
 .btn {
-  @apply font-semibold tracking-wide rounded-lg transition-all duration-200;
+  @apply font-semibold tracking-wide rounded-lg;
   font-family: var(--font-family-body);
   box-shadow: var(--shadow-soft);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    background-color 0.2s ease,
+    border-color 0.2s ease;
 }
 
 .btn:hover {
@@ -316,7 +328,10 @@ textarea.border-gold,
 
 /* Checkbox consistency */
 .checkbox {
-  @apply rounded border-2 transition-all duration-200;
+  @apply rounded border-2;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease;
 }
 
 .checkbox:checked {
@@ -325,8 +340,11 @@ textarea.border-gold,
 
 /* Luxe checkbox - gold themed variant */
 .checkbox-luxe {
-  @apply rounded border-2 transition-all duration-200;
+  @apply rounded border-2;
   border-color: var(--color-gold-border-strong);
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease;
 }
 
 .checkbox-luxe:checked {
@@ -341,20 +359,26 @@ textarea.border-gold,
 
 /* Luxe range slider - gold themed variant */
 .range-luxe {
-  @apply appearance-none h-2 rounded-full transition-all duration-200;
+  @apply appearance-none h-2 rounded-full;
   background: var(--color-gold-border);
 }
 
 .range-luxe::-webkit-slider-thumb {
-  @apply appearance-none w-5 h-5 rounded-full cursor-pointer transition-all duration-200;
+  @apply appearance-none w-5 h-5 rounded-full cursor-pointer;
   background: var(--gradient-gold);
   box-shadow: 0 2px 8px var(--color-gold-glow-medium);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .range-luxe::-moz-range-thumb {
-  @apply w-5 h-5 rounded-full border-0 cursor-pointer transition-all duration-200;
+  @apply w-5 h-5 rounded-full border-0 cursor-pointer;
   background: var(--gradient-gold);
   box-shadow: 0 2px 8px var(--color-gold-glow-medium);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .range-luxe::-webkit-slider-thumb:hover {
@@ -371,36 +395,6 @@ textarea.border-gold,
 *:focus-visible {
   @apply outline-2 outline-offset-2;
   outline-color: var(--color-luxe-gold);
-}
-
-/* Remove scrollbar animations to prevent flashing during re-render and click */
-::-webkit-scrollbar,
-::-webkit-scrollbar-track,
-::-webkit-scrollbar-thumb,
-::-webkit-scrollbar-corner {
-  animation: none !important;
-  transition: none !important;
-}
-
-/* Also target focus states */
-*:focus-visible::-webkit-scrollbar,
-*:focus-visible::-webkit-scrollbar-track,
-*:focus-visible::-webkit-scrollbar-thumb,
-*:focus-visible::-webkit-scrollbar-corner {
-  animation: none !important;
-  transition: none !important;
-}
-
-/* Prevent scrollbar color transitions (scrollbar colors inherit from 'color' property) */
-html::-webkit-scrollbar,
-html::-webkit-scrollbar-track,
-html::-webkit-scrollbar-thumb,
-html::-webkit-scrollbar-corner,
-body::-webkit-scrollbar,
-body::-webkit-scrollbar-track,
-body::-webkit-scrollbar-thumb,
-body::-webkit-scrollbar-corner {
-  transition: none !important;
 }
 
 /* Badge enhancements - prevent wrapping */
