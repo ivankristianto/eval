@@ -102,7 +102,9 @@ const formatNumber = (value: number | undefined) => {
   id="simple-metrics-card"
   class:list={[
     'overflow-hidden',
-    variant === 'card' ? 'card-luxe' : 'bg-base-100/90 backdrop-blur-sm rounded-xl shadow-lg',
+    variant === 'card'
+      ? 'card-luxe'
+      : 'border bg-base-100/90 backdrop-blur-sm rounded-xl shadow-lg',
   ]}
   data-metrics-container="true"
   data-variant={variant}
