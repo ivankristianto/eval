@@ -373,7 +373,12 @@ textarea.border-gold,
   outline-color: var(--color-luxe-gold);
 }
 
-/* Remove scrollbar animation to prevent flashing on click */
+/* Remove scrollbar animations to prevent flashing during re-render and click */
+::-webkit-scrollbar {
+  animation: none !important;
+  transition: none !important;
+}
+
 *:focus-visible::-webkit-scrollbar {
   animation: none !important;
 }
