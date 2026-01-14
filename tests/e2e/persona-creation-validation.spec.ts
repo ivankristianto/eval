@@ -643,6 +643,70 @@ test.describe('Persona Creation Form Validation', () => {
   });
 
   test.describe('Validation Error Message Display', () => {
+    test('should display validation error when all three models from same provider', async ({
+      page,
+    }) => {
+      // Mock API to return validation errors for all three models from same provider
+      await page.route('**/api/personas', async (route) => {
+        await route.fulfill({
+          status: 400,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            error: 'Validation failed',
+            code: 'VALIDATION_ERROR',
+            details: [
+              'Task model and Judge model must be from different providers',
+              'Task model and Prompt Engineer model must be from different providers',
+              'Judge model and Prompt Engineer model must be from different providers',
+            ],
+          }),
+        });
+      });
+
+      // Fill in form
+      await page.locator('[data-test="persona-name"]').fill('Test Persona');
+      await page.locator('[data-test="task-prompt"]').fill('Test task prompt');
+      await page.locator('[data-test="judge-prompt"]').fill('Test judge prompt');
+
+      // Select models if available
+      const taskSelected = await selectModelForRole(page, 'task');
+
+      if (taskSelected) {
+        const judgeSelected = await selectModelForRole(page, 'judge');
+
+        if (judgeSelected) {
+          const engineerSelected = await selectModelForRole(page, 'engineer');
+
+          if (engineerSelected) {
+            // Submit form
+            await page.locator('[data-test="create-persona-submit"]').click();
+
+            // Check validation error is visible
+            const validationError = page.locator('[data-test="validation-error"]');
+            await expect(validationError).toBeVisible({ timeout: 5000 });
+
+            // Check all three error messages are present
+            const errorMessage = await validationError.textContent();
+            expect(errorMessage).toContain(
+              'Task model and Judge model must be from different providers'
+            );
+            expect(errorMessage).toContain(
+              'Task model and Prompt Engineer model must be from different providers'
+            );
+            expect(errorMessage).toContain(
+              'Judge model and Prompt Engineer model must be from different providers'
+            );
+
+            // Verify error is clear and actionable - check styling
+            await expect(validationError).toHaveClass(/alert-error/);
+
+            // Verify the error messages are properly joined with separators
+            expect(errorMessage).toContain('. ');
+          }
+        }
+      }
+    });
+
     test('should display validation error messages correctly', async ({ page }) => {
       // Mock API to return validation errors
       await page.route('**/api/personas', async (route) => {
