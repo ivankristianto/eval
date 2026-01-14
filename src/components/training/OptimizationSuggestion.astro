@@ -12,6 +12,8 @@
  * @param modalId - Unique ID for the modal (default: 'optimization-modal')
  */
 
+import Modal from '@components/ui/Modal.astro';
+
 interface Props {
   type: 'task' | 'judge';
   currentPrompt: string;
@@ -31,21 +33,10 @@ const {
 } = Astro.props;
 ---
 
-<!-- Modal Toggle (hidden checkbox) -->
-<input type="checkbox" id={modalId} class="modal-toggle" />
-
-<!-- Modal -->
-<div class="modal" role="dialog" data-modal-content={modalId}>
-  <div class="modal-box max-w-4xl">
-    <!-- Header -->
-    <div class="flex items-center justify-between mb-4">
-      <h3 class="font-bold text-lg capitalize">
-        🤖 Optimized {type} Prompt Suggestion
-      </h3>
-      <label for={modalId} class="btn btn-sm btn-circle btn-ghost">✕</label>
-    </div>
-
-    <!-- Rationale -->
+<!-- Modal using native dialog element -->
+<Modal id={modalId} title={`🤖 Optimized ${type} Prompt Suggestion`} size="3xl">
+  <!-- Rationale -->
+  <div slot="content">
     <div class="alert alert-info mb-4">
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -85,6 +76,7 @@ const {
         </h4>
         <div
           class="mockup-code bg-success/10 text-base-content text-sm max-h-64 overflow-y-auto border-2 border-success/30"
+          data-suggested-prompt="true"
         >
           <pre class="px-4"><code>{suggestedPrompt}</code></pre>
         </div>
@@ -108,87 +100,109 @@ const {
       </svg>
       <span>Changes: Added specificity, improved clarity, addressed failure patterns</span>
     </div>
-
-    <!-- Actions -->
-    <div class="modal-action">
-      <label for={modalId} class="btn btn-ghost">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke-width="1.5"
-          stroke="currentColor"
-          class="w-5 h-5"
-        >
-          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path>
-        </svg>
-        Reject
-      </label>
-      <button
-        class="btn btn-primary"
-        data-action="save-suggestion"
-        data-modal-id={modalId}
-        data-type={type}
-        data-persona-id={personaId || ''}
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke-width="1.5"
-          stroke="currentColor"
-          class="w-5 h-5"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"
-          ></path>
-        </svg>
-        Save as New Version
-      </button>
-      <button class="btn btn-secondary" data-action="edit-suggestion" data-modal-id={modalId}>
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke-width="1.5"
-          stroke="currentColor"
-          class="w-5 h-5"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"
-          ></path>
-        </svg>
-        Edit & Accept
-      </button>
-      <button
-        class="btn btn-success"
-        data-action="accept-suggestion"
-        data-modal-id={modalId}
-        data-type={type}
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke-width="1.5"
-          stroke="currentColor"
-          class="w-5 h-5"
-        >
-          <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"></path>
-        </svg>
-        Accept
-      </button>
-    </div>
   </div>
-  <label class="modal-backdrop" for={modalId}>Close</label>
-</div>
+
+  <!-- Actions -->
+  <div slot="footer" class="modal-action">
+    <button
+      type="button"
+      class="btn btn-ghost"
+      data-action="reject-suggestion"
+      data-modal-id={modalId}
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke-width="1.5"
+        stroke="currentColor"
+        class="w-5 h-5"
+      >
+        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path>
+      </svg>
+      Reject
+    </button>
+    <button
+      type="button"
+      class="btn btn-primary"
+      data-action="save-suggestion"
+      data-modal-id={modalId}
+      data-type={type}
+      data-persona-id={personaId || ''}
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke-width="1.5"
+        stroke="currentColor"
+        class="w-5 h-5"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"
+        ></path>
+      </svg>
+      Save as New Version
+    </button>
+    <button
+      type="button"
+      class="btn btn-secondary"
+      data-action="edit-suggestion"
+      data-modal-id={modalId}
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke-width="1.5"
+        stroke="currentColor"
+        class="w-5 h-5"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"
+        ></path>
+      </svg>
+      Edit & Accept
+    </button>
+    <button
+      type="button"
+      class="btn btn-success"
+      data-action="accept-suggestion"
+      data-modal-id={modalId}
+      data-type={type}
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke-width="1.5"
+        stroke="currentColor"
+        class="w-5 h-5"
+      >
+        <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"></path>
+      </svg>
+      Accept
+    </button>
+  </div>
+</Modal>
 
 <script>
-  // Client-side interaction handling
+  // Helper function to get suggested prompt from modal
+  function getSuggestedPrompt(modalId: string): string | null {
+    const modal = document.getElementById(modalId);
+    if (!modal) return null;
+
+    // Select the code element from the suggested prompt column (has data-suggested-prompt attribute)
+    const suggestedContainer = modal.querySelector('[data-suggested-prompt="true"]');
+    const suggestedCodeEl = suggestedContainer?.querySelector('pre code');
+    return suggestedCodeEl?.textContent?.trim() || null;
+  }
+
+  // Save suggestion handler
   document.querySelectorAll('[data-action="save-suggestion"]').forEach((btn) => {
     btn.addEventListener('click', async (e) => {
       const button = e.currentTarget as HTMLElement;
@@ -204,8 +218,6 @@ const {
         return;
       }
 
-      // Get suggested prompt from the modal
-      // Note: modalCheckbox is the input element, we need to query from the modal container using data attribute
       if (!modalId) {
         console.error('No modalId provided');
         if (window.toast) {
@@ -213,12 +225,8 @@ const {
         }
         return;
       }
-      const modalContent = document.querySelector(`div[data-modal-content="${modalId}"]`);
-      // Fix: Select the code element from the suggested prompt column (second mockup-code)
-      const suggestedCodeEl = modalContent?.querySelector(
-        '.mockup-code.bg-success\\/10 pre code, .mockup-code:nth-child(2) pre code'
-      );
-      const suggestedPrompt = suggestedCodeEl?.textContent?.trim();
+
+      const suggestedPrompt = getSuggestedPrompt(modalId);
 
       if (!suggestedPrompt) {
         console.error('Could not find suggested prompt');
@@ -254,10 +262,8 @@ const {
         }
 
         // Close modal
-        if (modalId) {
-          const modalCheckbox = document.getElementById(modalId) as HTMLInputElement | null;
-          if (modalCheckbox) modalCheckbox.checked = false;
-        }
+        const modal = document.getElementById(modalId) as HTMLDialogElement | null;
+        if (modal) modal.close();
 
         // Dispatch event to refresh versions list
         const event = new CustomEvent('prompt-saved', {
@@ -283,6 +289,7 @@ const {
     });
   });
 
+  // Accept suggestion handler
   document.querySelectorAll('[data-action="accept-suggestion"]').forEach((btn) => {
     btn.addEventListener('click', (e) => {
       const button = e.currentTarget as HTMLElement;
@@ -298,13 +305,7 @@ const {
         return;
       }
 
-      // Get suggested prompt from the modal using data attribute
-      const modalContent = document.querySelector(`div[data-modal-content="${modalId}"]`);
-      // Fix: Select the code element from the suggested prompt column (second mockup-code)
-      const suggestedCodeEl = modalContent?.querySelector(
-        '.mockup-code.bg-success\\/10 pre code, .mockup-code:nth-child(2) pre code'
-      );
-      const suggestedPrompt = suggestedCodeEl?.textContent?.trim();
+      const suggestedPrompt = getSuggestedPrompt(modalId);
 
       if (!suggestedPrompt) {
         console.error('Could not find suggested prompt');
@@ -315,8 +316,8 @@ const {
       }
 
       // Close modal
-      const modalCheckboxElement = document.getElementById(modalId) as HTMLInputElement | null;
-      if (modalCheckboxElement) modalCheckboxElement.checked = false;
+      const modal = document.getElementById(modalId) as HTMLDialogElement | null;
+      if (modal) modal.close();
 
       // Dispatch custom event with the suggested prompt
       const event = new CustomEvent('suggestion-accepted', {
@@ -332,11 +333,43 @@ const {
     });
   });
 
+  // Reject suggestion handler
+  document.querySelectorAll('[data-action="reject-suggestion"]').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      const button = e.currentTarget as HTMLElement;
+      const modalId = button.dataset.modalId;
+
+      if (!modalId) {
+        console.error('No modalId provided');
+        return;
+      }
+
+      // Close modal
+      const modal = document.getElementById(modalId) as HTMLDialogElement | null;
+      if (modal) modal.close();
+
+      // Show notification
+      if (window.toast) {
+        window.toast.info('Optimization suggestion rejected');
+      }
+    });
+  });
+
+  // Edit suggestion handler
   document.querySelectorAll('[data-action="edit-suggestion"]').forEach((btn) => {
     btn.addEventListener('click', (e) => {
       const button = e.currentTarget as HTMLElement;
       const modalId = button.dataset.modalId;
       console.log('Edit suggestion clicked');
+
+      if (!modalId) {
+        console.error('No modalId provided');
+        return;
+      }
+
+      // Close modal first
+      const modal = document.getElementById(modalId) as HTMLDialogElement | null;
+      if (modal) modal.close();
 
       // Dispatch custom event for parent to handle
       const event = new CustomEvent('suggestion-edit', {
