@@ -14,6 +14,7 @@
  */
 
 import VersionSelector from './VersionSelector.astro';
+import Modal from '@components/ui/Modal.astro';
 
 interface Version {
   version_number: number;
@@ -96,11 +97,11 @@ const historyModalId = `${type}-prompt-history`;
     }
     {
       showHistory && (
-        <label
-          for={historyModalId}
+        <button
           class="btn btn-luxe btn-sm"
           data-action="view-history"
           data-type={type}
+          data-modal-id={historyModalId}
           aria-label={`View ${type} prompt history`}
           title={`View ${type} prompt history`}
         >
@@ -119,7 +120,7 @@ const historyModalId = `${type}-prompt-history`;
             />
           </svg>
           History
-        </label>
+        </button>
       )
     }
   </div>
@@ -128,82 +129,61 @@ const historyModalId = `${type}-prompt-history`;
 <!-- Version History Modal -->
 {
   showHistory && (
-    <>
-      <input type="checkbox" id={historyModalId} class="modal-toggle" />
-      <div class="modal" role="dialog">
-        <div class="card-luxe modal-2xl p-6">
-          <div class="flex items-center justify-between mb-5 pb-3 border-b border-base-300">
-            <h3 class="font-bold text-lg capitalize flex items-center gap-2">
-              <span class="w-2 h-2 rounded-full bg-primary" />
-              {type} Prompt History
-            </h3>
-            <label
-              for={historyModalId}
-              class="btn btn-sm btn-circle btn-ghost hover:bg-base-200 transition-colors"
+    <Modal id={historyModalId} title={`${type} Prompt History`} size="2xl">
+      <div slot="content" class="space-y-3">
+        {versions
+          .sort((a, b) => b.version_number - a.version_number)
+          .map((version) => (
+            <div
+              class:list={[
+                'card border transition-all duration-200',
+                version.version_number === selectedVersion
+                  ? 'bg-primary/5 border-primary/30 shadow-md'
+                  : 'bg-base-200 border-base-300 hover:border-base-400',
+              ]}
             >
-              ✕
-            </label>
-          </div>
-
-          <div class="space-y-3">
-            {versions
-              .sort((a, b) => b.version_number - a.version_number)
-              .map((version) => (
-                <div
-                  class:list={[
-                    'card border transition-all duration-200',
-                    version.version_number === selectedVersion
-                      ? 'bg-primary/5 border-primary/30 shadow-md'
-                      : 'bg-base-200 border-base-300 hover:border-base-400',
-                  ]}
-                >
-                  <div class="card-body p-4">
-                    <div class="flex items-center justify-between mb-2">
-                      <div class="flex items-center gap-2">
-                        <span class="badge badge-ghost font-mono">v{version.version_number}</span>
-                        <span class="text-xs flex items-center gap-1">
-                          <span class={version.created_by === 'ai' ? 'text-info' : 'text-warning'}>
-                            {version.created_by === 'ai' ? '✦' : '●'}
-                          </span>
-                          {version.created_by === 'ai' ? 'AI' : 'Human'}
-                        </span>
-                        {version.version_number === selectedVersion && (
-                          <span class="badge badge-primary badge-sm text-xs">Current</span>
-                        )}
-                      </div>
-                      <span class="text-xs opacity-60 font-mono">
-                        {new Date(version.created_at).toLocaleString()}
+              <div class="card-body p-4">
+                <div class="flex items-center justify-between mb-2">
+                  <div class="flex items-center gap-2">
+                    <span class="badge badge-ghost font-mono">v{version.version_number}</span>
+                    <span class="text-xs flex items-center gap-1">
+                      <span class={version.created_by === 'ai' ? 'text-info' : 'text-warning'}>
+                        {version.created_by === 'ai' ? '✦' : '●'}
                       </span>
-                    </div>
-                    {version.improvement_rationale && (
-                      <p class="text-sm opacity-80 mt-2 leading-relaxed">
-                        {version.improvement_rationale}
-                      </p>
+                      {version.created_by === 'ai' ? 'AI' : 'Human'}
+                    </span>
+                    {version.version_number === selectedVersion && (
+                      <span class="badge badge-primary badge-sm text-xs">Current</span>
                     )}
-                    <button
-                      class="btn btn-xs btn-ghost mt-3 self-start border border-base-300 hover:bg-base-300 transition-all duration-200"
-                      data-action="load-version"
-                      data-version={version.version_number}
-                      data-type={type}
-                    >
-                      Load this version
-                    </button>
                   </div>
+                  <span class="text-xs opacity-60 font-mono">
+                    {new Date(version.created_at).toLocaleString()}
+                  </span>
                 </div>
-              ))}
-          </div>
-
-          <div class="modal-action pt-4 border-t border-base-300 mt-4">
-            <label for={historyModalId} class="btn">
-              Close
-            </label>
-          </div>
-        </div>
-        <label class="modal-backdrop" for={historyModalId}>
-          Close
-        </label>
+                {version.improvement_rationale && (
+                  <p class="text-sm opacity-80 mt-2 leading-relaxed">
+                    {version.improvement_rationale}
+                  </p>
+                )}
+                <button
+                  class="btn btn-xs btn-ghost mt-3 self-start border border-base-300 hover:bg-base-300 transition-all duration-200"
+                  data-action="load-version"
+                  data-version={version.version_number}
+                  data-type={type}
+                  data-modal-id={historyModalId}
+                >
+                  Load this version
+                </button>
+              </div>
+            </div>
+          ))}
       </div>
-    </>
+      <div slot="footer" class="modal-action pt-4 border-t border-base-300 mt-4">
+        <button class="btn" data-action="close-history-modal" data-modal-id={historyModalId}>
+          Close
+        </button>
+      </div>
+    </Modal>
   )
 }
 
@@ -235,12 +215,41 @@ const historyModalId = `${type}-prompt-history`;
     });
   });
 
+  // View history button handler
+  document.querySelectorAll('[data-action="view-history"]').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      const button = e.currentTarget as HTMLElement;
+      const modalId = button.dataset.modalId;
+      if (modalId) {
+        const modal = document.getElementById(modalId) as HTMLDialogElement;
+        if (modal) {
+          modal.showModal();
+        }
+      }
+    });
+  });
+
+  // Close history modal button handler
+  document.querySelectorAll('[data-action="close-history-modal"]').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      const button = e.currentTarget as HTMLElement;
+      const modalId = button.dataset.modalId;
+      if (modalId) {
+        const modal = document.getElementById(modalId) as HTMLDialogElement;
+        if (modal) {
+          modal.close();
+        }
+      }
+    });
+  });
+
   // Load version handler
   document.querySelectorAll('[data-action="load-version"]').forEach((btn) => {
     btn.addEventListener('click', (e) => {
       const button = e.currentTarget as HTMLElement;
       const version = parseInt(button.dataset.version || '0');
       const type = button.dataset.type;
+      const modalId = button.dataset.modalId;
 
       console.log(`Load version ${version} for ${type} prompt`);
 
@@ -250,6 +259,14 @@ const historyModalId = `${type}-prompt-history`;
         detail: { type, version },
       });
       button.dispatchEvent(event);
+
+      // Close modal after loading
+      if (modalId) {
+        const modal = document.getElementById(modalId) as HTMLDialogElement;
+        if (modal) {
+          modal.close();
+        }
+      }
     });
   });
 
