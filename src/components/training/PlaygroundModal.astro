@@ -10,6 +10,8 @@
  * @param onClose - Optional callback when modal is closed
  */
 
+import Modal from '@components/ui/Modal.astro';
+
 interface Props {
   trainingPairId: string | number;
   isOpen?: boolean;
@@ -28,42 +30,20 @@ const modalId = `playground-modal-${trainingPairId}`;
 ---
 
 <!-- Modal using native dialog element -->
-<dialog id={modalId} class="modal" open={isOpen}>
-  <div class="modal-box modal-2xl h-[90vh] flex flex-col p-0">
-    <!-- Modal Header -->
-    <div
-      class="flex items-center justify-between px-6 py-4 border-b border-gold-light bg-base-200/50"
-    >
-      <div class="flex items-center gap-3">
-        <div
-          class="flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br from-luxe-gold/20 to-luxe-gold/10 border border-luxe-gold/30"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke-width="1.5"
-            stroke="currentColor"
-            class="w-5 h-5 text-luxe-gold"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z"
-            ></path>
-          </svg>
-        </div>
-        <div>
-          <h3 class="font-display text-xl font-semibold text-luxe-gold">Playground</h3>
-          <p class="text-xs text-base-content/60 font-mono">
-            Training Pair ID: {trainingPairId}
-          </p>
-        </div>
-      </div>
-      <button
-        class="btn btn-sm btn-circle btn-ghost"
-        onclick={`document.getElementById('${modalId}').close()`}
-        aria-label="Close modal"
+<Modal
+  id={modalId}
+  size="2xl"
+  open={isOpen}
+  closeOnEscape={true}
+  closeOnBackdropClick={true}
+  showCloseButton={false}
+  class="p-0 h-[90vh] flex flex-col"
+>
+  <!-- Custom Header -->
+  <div slot="header" class="mb-0 pb-0">
+    <div class="flex items-center gap-3">
+      <div
+        class="flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br from-luxe-gold/20 to-luxe-gold/10 border border-luxe-gold/30"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -71,161 +51,182 @@ const modalId = `playground-modal-${trainingPairId}`;
           viewBox="0 0 24 24"
           stroke-width="1.5"
           stroke="currentColor"
-          class="w-5 h-5"
+          class="w-5 h-5 text-luxe-gold"
         >
-          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path>
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z"
+          ></path>
         </svg>
-      </button>
+      </div>
+      <div>
+        <h3 class="font-display text-xl font-semibold text-luxe-gold">Playground</h3>
+        <p class="text-xs text-base-content/60 font-mono">
+          Training Pair ID: {trainingPairId}
+        </p>
+      </div>
     </div>
+    <button
+      class="btn btn-sm btn-circle btn-ghost absolute top-4 right-4"
+      onclick={`document.getElementById('${modalId}').close()`}
+      aria-label="Close modal"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke-width="1.5"
+        stroke="currentColor"
+        class="w-5 h-5"
+      >
+        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path>
+      </svg>
+    </button>
+  </div>
 
-    <!-- Modal Body - 3 Pane Layout -->
-    <div class="flex-1 overflow-hidden p-6">
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 h-full">
-        <!-- Pane 1: Input (Read-only) -->
-        <div class="flex flex-col h-full">
-          <div class="flex items-center gap-2 mb-3">
-            <div class="w-1 h-4 rounded-full bg-luxe-gold"></div>
-            <h4 class="font-semibold text-sm uppercase tracking-wide">Input</h4>
-            <span class="badge badge-ghost badge-xs ml-auto">Read-only</span>
-          </div>
-          <div class="card-luxe flex-1 overflow-hidden">
-            <div class="h-full bg-base-100 rounded-xl p-4">
-              <div
-                id={`playground-input-display-${trainingPairId}`}
-                class="h-full overflow-y-auto text-sm whitespace-pre-wrap font-mono text-base-content/80 leading-relaxed"
-              >
-                <span class="opacity-50 italic">Input data will be displayed here...</span>
-              </div>
-            </div>
-          </div>
+  <!-- Modal Body - 3 Pane Layout -->
+  <div slot="content" class="flex-1 overflow-hidden p-6 !py-4">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 h-full">
+      <!-- Pane 1: Input (Read-only) -->
+      <div class="flex flex-col h-full">
+        <div class="flex items-center gap-2 mb-3">
+          <div class="w-1 h-4 rounded-full bg-luxe-gold"></div>
+          <h4 class="font-semibold text-sm uppercase tracking-wide">Input</h4>
+          <span class="badge badge-ghost badge-xs ml-auto">Read-only</span>
         </div>
-
-        <!-- Pane 2: Generated Output (Streaming) -->
-        <div class="flex flex-col h-full">
-          <div class="flex items-center gap-2 mb-3">
-            <div class="w-1 h-4 rounded-full bg-luxe-emerald"></div>
-            <h4 class="font-semibold text-sm uppercase tracking-wide">Generated Output</h4>
+        <div class="card-luxe flex-1 overflow-hidden">
+          <div class="h-full bg-base-100 rounded-xl p-4">
             <div
-              id={`output-status-indicator-${trainingPairId}`}
-              class="hidden ml-auto items-center gap-1.5 text-xs text-luxe-emerald"
+              id={`playground-input-display-${trainingPairId}`}
+              class="h-full overflow-y-auto text-sm whitespace-pre-wrap font-mono text-base-content/80 leading-relaxed"
             >
-              <span class="relative flex h-2 w-2">
-                <span
-                  class="animate-ping absolute inline-flex h-full w-full rounded-full bg-luxe-emerald opacity-75"
-                ></span>
-                <span class="relative inline-flex rounded-full h-2 w-2 bg-luxe-emerald"></span>
-              </span>
-              <span class="font-mono">Streaming</span>
-            </div>
-          </div>
-          <div class="card-luxe flex-1 overflow-hidden">
-            <div class="h-full bg-base-100 rounded-xl p-4 relative">
-              <div
-                id={`playground-output-display-${trainingPairId}`}
-                class="h-full overflow-y-auto text-sm whitespace-pre-wrap font-mono text-base-content leading-relaxed"
-              >
-                <span class="opacity-50 italic" id={`output-placeholder-${trainingPairId}`}>
-                  Output will appear here after running...
-                </span>
-              </div>
-              <!-- Streaming cursor effect -->
-              <div
-                id={`streaming-cursor-${trainingPairId}`}
-                class="hidden absolute bottom-4 left-4 w-0.5 h-5 bg-luxe-emerald animate-pulse"
-              >
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Pane 3: Judge Reasoning (Streaming) -->
-        <div class="flex flex-col h-full">
-          <div class="flex items-center gap-2 mb-3">
-            <div class="w-1 h-4 rounded-full bg-info"></div>
-            <h4 class="font-semibold text-sm uppercase tracking-wide">Judge Reasoning</h4>
-            <div
-              id={`judge-status-indicator-${trainingPairId}`}
-              class="hidden ml-auto items-center gap-1.5 text-xs text-info"
-            >
-              <span class="loading loading-spinner loading-xs"></span>
-              <span class="font-mono">Evaluating</span>
-            </div>
-          </div>
-          <div class="card-luxe flex-1 overflow-hidden">
-            <div class="h-full bg-base-100 rounded-xl p-4">
-              <div
-                id={`playground-judge-display-${trainingPairId}`}
-                class="h-full overflow-y-auto text-sm whitespace-pre-wrap font-mono text-base-content leading-relaxed"
-              >
-                <span class="opacity-50 italic" id={`judge-placeholder-${trainingPairId}`}>
-                  Judge reasoning will appear here...
-                </span>
-              </div>
+              <span class="opacity-50 italic">Input data will be displayed here...</span>
             </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Modal Footer - Run Button -->
-    <div class="px-6 py-4 border-t border-gold-light bg-base-200/50">
-      <div class="flex items-center justify-between">
-        <div class="text-xs text-base-content/60">
-          <span class="font-mono">ID: {trainingPairId}</span>
+      <!-- Pane 2: Generated Output (Streaming) -->
+      <div class="flex flex-col h-full">
+        <div class="flex items-center gap-2 mb-3">
+          <div class="w-1 h-4 rounded-full bg-luxe-emerald"></div>
+          <h4 class="font-semibold text-sm uppercase tracking-wide">Generated Output</h4>
+          <div
+            id={`output-status-indicator-${trainingPairId}`}
+            class="hidden ml-auto items-center gap-1.5 text-xs text-luxe-emerald"
+          >
+            <span class="relative flex h-2 w-2">
+              <span
+                class="animate-ping absolute inline-flex h-full w-full rounded-full bg-luxe-emerald opacity-75"
+              ></span>
+              <span class="relative inline-flex rounded-full h-2 w-2 bg-luxe-emerald"></span>
+            </span>
+            <span class="font-mono">Streaming</span>
+          </div>
         </div>
-        <div class="flex gap-3">
-          <button
-            id={`playground-reset-button-${trainingPairId}`}
-            class="btn btn-ghost btn-sm"
-            onclick={`resetPlayground('${trainingPairId}')`}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke-width="1.5"
-              stroke="currentColor"
-              class="w-4 h-4"
+        <div class="card-luxe flex-1 overflow-hidden">
+          <div class="h-full bg-base-100 rounded-xl p-4 relative">
+            <div
+              id={`playground-output-display-${trainingPairId}`}
+              class="h-full overflow-y-auto text-sm whitespace-pre-wrap font-mono text-base-content leading-relaxed"
             >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"
-              ></path>
-            </svg>
-            Reset
-          </button>
-          <button
-            id={`playground-run-button-${trainingPairId}`}
-            class="btn btn-luxe btn-luxe-primary btn-sm gap-2"
-            onclick={`runPlayground('${trainingPairId}')`}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke-width="1.5"
-              stroke="currentColor"
-              class="w-4 h-4"
+              <span class="opacity-50 italic" id={`output-placeholder-${trainingPairId}`}>
+                Output will appear here after running...
+              </span>
+            </div>
+            <!-- Streaming cursor effect -->
+            <div
+              id={`streaming-cursor-${trainingPairId}`}
+              class="hidden absolute bottom-4 left-4 w-0.5 h-5 bg-luxe-emerald animate-pulse"
             >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z"
-              ></path>
-            </svg>
-            Run
-          </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pane 3: Judge Reasoning (Streaming) -->
+      <div class="flex flex-col h-full">
+        <div class="flex items-center gap-2 mb-3">
+          <div class="w-1 h-4 rounded-full bg-info"></div>
+          <h4 class="font-semibold text-sm uppercase tracking-wide">Judge Reasoning</h4>
+          <div
+            id={`judge-status-indicator-${trainingPairId}`}
+            class="hidden ml-auto items-center gap-1.5 text-xs text-info"
+          >
+            <span class="loading loading-spinner loading-xs"></span>
+            <span class="font-mono">Evaluating</span>
+          </div>
+        </div>
+        <div class="card-luxe flex-1 overflow-hidden">
+          <div class="h-full bg-base-100 rounded-xl p-4">
+            <div
+              id={`playground-judge-display-${trainingPairId}`}
+              class="h-full overflow-y-auto text-sm whitespace-pre-wrap font-mono text-base-content leading-relaxed"
+            >
+              <span class="opacity-50 italic" id={`judge-placeholder-${trainingPairId}`}>
+                Judge reasoning will appear here...
+              </span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Modal Backdrop -->
-  <form method="dialog" class="modal-backdrop">
-    <button>close</button>
-  </form>
-</dialog>
+  <!-- Modal Footer - Run Button -->
+  <div slot="footer" class="!mt-0 !pt-4">
+    <div class="flex items-center justify-between">
+      <div class="text-xs text-base-content/60">
+        <span class="font-mono">ID: {trainingPairId}</span>
+      </div>
+      <div class="flex gap-3">
+        <button
+          id={`playground-reset-button-${trainingPairId}`}
+          class="btn btn-ghost btn-sm"
+          onclick={`resetPlayground('${trainingPairId}')`}
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="1.5"
+            stroke="currentColor"
+            class="w-4 h-4"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"
+            ></path>
+          </svg>
+          Reset
+        </button>
+        <button
+          id={`playground-run-button-${trainingPairId}`}
+          class="btn btn-luxe btn-luxe-primary btn-sm gap-2"
+          onclick={`runPlayground('${trainingPairId}')`}
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="1.5"
+            stroke="currentColor"
+            class="w-4 h-4"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z"
+            ></path>
+          </svg>
+          Run
+        </button>
+      </div>
+    </div>
+  </div>
+</Modal>
 
 <script is:inline>
   /**
@@ -498,20 +499,6 @@ ${result.judgeDecision.feedback}`
   [id^='output-status-indicator'],
   [id^='judge-status-indicator'] {
     transition: opacity 0.3s ease-in-out;
-  }
-
-  /* Modal backdrop animation */
-  dialog::backdrop {
-    animation: fadeIn 0.2s ease-in-out;
-  }
-
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
   }
 
   /* Streaming cursor blink */
