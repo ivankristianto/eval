@@ -206,7 +206,6 @@
 }
 
 /* Gold Accent Border */
-/* Using element + class selectors for proper specificity without !important */
 nav.border-gold-light,
 div.border-gold-light,
 input.border-gold-light,
@@ -447,7 +446,6 @@ textarea.border-gold,
 }
 
 /* Best performer highlighting */
-/* Using element + class selector for proper specificity without !important */
 tr.best-performer,
 div.best-performer {
   @apply relative;
