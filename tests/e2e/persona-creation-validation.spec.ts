@@ -10,8 +10,23 @@
 
 import { test, expect, type Page } from '@playwright/test';
 
-/** Delay to wait for model options to update after selection (in milliseconds) */
-const MODEL_UPDATE_DELAY = 100;
+/**
+ * Timeout constants for E2E tests (in milliseconds).
+ *
+ * - SHORT: Brief pause for UI updates, browser validation rendering, and option refreshes
+ * - MEDIUM: Moderate delay for API response processing and loading state observations
+ * - LONG: Maximum wait for Playwright assertions (toBeVisible, toHaveCount, etc.)
+ */
+const TIMEOUTS = {
+  /** @deprecated Use TIMEOUTS.SHORT instead */
+  MODEL_UPDATE_DELAY: 100,
+  SHORT: 100,
+  MEDIUM: 500,
+  LONG: 5000,
+} as const;
+
+/** @deprecated Use TIMEOUTS.SHORT instead */
+const MODEL_UPDATE_DELAY = TIMEOUTS.MODEL_UPDATE_DELAY;
 
 /**
  * Helper function to select a model for a specific role.
@@ -76,7 +91,7 @@ test.describe('Persona Creation Form Validation', () => {
       await submitBtn.evaluate((btn) => (btn as HTMLButtonElement).click());
 
       // Give browser time to show validation
-      await page.waitForTimeout(100);
+      await page.waitForTimeout(TIMEOUTS.SHORT);
 
       // Check for HTML5 validation message
       const isNameValid = await nameInput.evaluate((el) =>
@@ -116,7 +131,7 @@ test.describe('Persona Creation Form Validation', () => {
       await submitBtn.evaluate((btn) => (btn as HTMLButtonElement).click());
 
       // Give browser time to show validation
-      await page.waitForTimeout(100);
+      await page.waitForTimeout(TIMEOUTS.SHORT);
 
       // Check for HTML5 validation
       const isTaskPromptValid = await taskPromptInput.evaluate((el) =>
@@ -150,7 +165,7 @@ test.describe('Persona Creation Form Validation', () => {
       await submitBtn.evaluate((btn) => (btn as HTMLButtonElement).click());
 
       // Give browser time to show validation
-      await page.waitForTimeout(100);
+      await page.waitForTimeout(TIMEOUTS.SHORT);
 
       // Check for HTML5 validation
       const isJudgePromptValid = await judgePromptInput.evaluate((el) =>
@@ -209,7 +224,7 @@ test.describe('Persona Creation Form Validation', () => {
       if (taskModelOptions.length > 0) {
         // Select first task model
         await taskModelSelect.selectOption({ index: 1 });
-        await page.waitForTimeout(100);
+        await page.waitForTimeout(TIMEOUTS.SHORT);
 
         // Get the provider of selected task model
         const selectedTaskOption = taskModelSelect.locator('option:checked');
@@ -250,7 +265,7 @@ test.describe('Persona Creation Form Validation', () => {
       if (taskModelOptions > 1) {
         // Select first available task model
         await taskModelSelect.selectOption({ index: 1 });
-        await page.waitForTimeout(100);
+        await page.waitForTimeout(TIMEOUTS.SHORT);
 
         // Get selected provider
         const selectedTaskOption = taskModelSelect.locator('option:checked');
@@ -284,7 +299,7 @@ test.describe('Persona Creation Form Validation', () => {
 
       if (taskModelOptions > 0) {
         await taskModelSelect.selectOption({ index: 1 });
-        await page.waitForTimeout(100);
+        await page.waitForTimeout(TIMEOUTS.SHORT);
 
         // Get selected provider
         const selectedTaskOption = taskModelSelect.locator('option:checked');
@@ -387,7 +402,7 @@ test.describe('Persona Creation Form Validation', () => {
 
             // Check for error message in validation error div
             const validationError = page.locator('[data-test="validation-error"]');
-            await expect(validationError).toBeVisible({ timeout: 5000 });
+            await expect(validationError).toBeVisible({ timeout: TIMEOUTS.LONG });
 
             const errorMessage = await validationError.textContent();
             expect(errorMessage).toContain('Name already exists');
@@ -401,7 +416,7 @@ test.describe('Persona Creation Form Validation', () => {
       // Mock API to return server error
       await page.route('**/api/personas', async (route) => {
         await route.fulfill({
-          status: 500,
+          status: 500, // HTTP status code, not a timeout
           contentType: 'application/json',
           body: JSON.stringify({
             error: 'Internal server error',
@@ -430,11 +445,11 @@ test.describe('Persona Creation Form Validation', () => {
 
             // Check for error toast - explicitly wait for it to appear
             const toastContainer = page.locator('#toast-container');
-            await expect(toastContainer).toBeVisible({ timeout: 5000 });
+            await expect(toastContainer).toBeVisible({ timeout: TIMEOUTS.LONG });
 
             const errorToast = toastContainer.locator('.alert-error');
             // Must have at least one error toast
-            await expect(errorToast).toHaveCount(1, { timeout: 5000 });
+            await expect(errorToast).toHaveCount(1, { timeout: TIMEOUTS.LONG });
             await expect(errorToast.first()).toBeVisible();
 
             const toastMessage = await errorToast.first().textContent();
@@ -473,11 +488,11 @@ test.describe('Persona Creation Form Validation', () => {
 
             // Check for error toast - explicitly wait for it to appear
             const toastContainer = page.locator('#toast-container');
-            await expect(toastContainer).toBeVisible({ timeout: 5000 });
+            await expect(toastContainer).toBeVisible({ timeout: TIMEOUTS.LONG });
 
             const errorToast = toastContainer.locator('.alert-error');
             // Must have at least one error toast
-            await expect(errorToast).toHaveCount(1, { timeout: 5000 });
+            await expect(errorToast).toHaveCount(1, { timeout: TIMEOUTS.LONG });
             await expect(errorToast.first()).toBeVisible();
 
             const toastMessage = await errorToast.first().textContent();
@@ -498,7 +513,7 @@ test.describe('Persona Creation Form Validation', () => {
       // Mock API to delay response
       await page.route('**/api/personas', async (route) => {
         // Delay response to observe loading state
-        await new Promise((resolve) => setTimeout(resolve, 500));
+        await new Promise((resolve) => setTimeout(resolve, TIMEOUTS.MEDIUM));
         await route.fulfill({
           status: 400,
           contentType: 'application/json',
@@ -535,7 +550,7 @@ test.describe('Persona Creation Form Validation', () => {
             await expect(submitBtn).toHaveClass(/loading/);
 
             // Wait for response
-            await page.waitForTimeout(600);
+            await page.waitForTimeout(TIMEOUTS.MEDIUM); // Using MEDIUM (600ms ≈ MEDIUM)
 
             // After error, button should be re-enabled
             await expect(submitBtn).not.toBeDisabled();
@@ -580,7 +595,7 @@ test.describe('Persona Creation Form Validation', () => {
             await submitBtn.click();
 
             // Wait for error response
-            await page.waitForTimeout(500);
+            await page.waitForTimeout(TIMEOUTS.MEDIUM);
 
             // Button should be re-enabled after error
             await expect(submitBtn).not.toBeDisabled();
@@ -596,7 +611,7 @@ test.describe('Persona Creation Form Validation', () => {
     test('should show loading spinner on submit button during submission', async ({ page }) => {
       // Mock API to delay response
       await page.route('**/api/personas', async (route) => {
-        await new Promise((resolve) => setTimeout(resolve, 300));
+        await new Promise((resolve) => setTimeout(resolve, 300)); // Short mock delay, intentionally not using TIMEOUTS constant
         await route.fulfill({
           status: 400,
           contentType: 'application/json',
@@ -632,7 +647,7 @@ test.describe('Persona Creation Form Validation', () => {
             await expect(submitBtn).toHaveClass(/loading/);
 
             // Wait for response
-            await page.waitForTimeout(400);
+            await page.waitForTimeout(TIMEOUTS.MEDIUM); // Using MEDIUM (400ms < MEDIUM)
 
             // Loading class should be removed after error
             await expect(submitBtn).not.toHaveClass(/loading/);
@@ -683,7 +698,7 @@ test.describe('Persona Creation Form Validation', () => {
 
             // Check validation error is visible
             const validationError = page.locator('[data-test="validation-error"]');
-            await expect(validationError).toBeVisible({ timeout: 5000 });
+            await expect(validationError).toBeVisible({ timeout: TIMEOUTS.LONG });
 
             // Check all three error messages are present
             const errorMessage = await validationError.textContent();
@@ -741,7 +756,7 @@ test.describe('Persona Creation Form Validation', () => {
 
             // Check validation error is visible
             const validationError = page.locator('[data-test="validation-error"]');
-            await expect(validationError).toBeVisible({ timeout: 5000 });
+            await expect(validationError).toBeVisible({ timeout: TIMEOUTS.LONG });
 
             // Check error message content
             const errorMessage = await validationError.textContent();
@@ -793,7 +808,7 @@ test.describe('Persona Creation Form Validation', () => {
 
             // Check validation error is visible
             const validationError = page.locator('[data-test="validation-error"]');
-            await expect(validationError).toBeVisible({ timeout: 5000 });
+            await expect(validationError).toBeVisible({ timeout: TIMEOUTS.LONG });
 
             // Check both error messages are present
             const errorMessage = await validationError.textContent();
@@ -820,7 +835,7 @@ test.describe('Persona Creation Form Validation', () => {
 
       if (taskModelOptions > 0) {
         await taskModelSelect.selectOption({ index: 1 });
-        await page.waitForTimeout(100);
+        await page.waitForTimeout(TIMEOUTS.SHORT);
 
         // Verify selection
         const selectedValue = await taskModelSelect.inputValue();
@@ -829,7 +844,7 @@ test.describe('Persona Creation Form Validation', () => {
         // Click clear button
         const clearButton = page.locator('button[data-target="task-model-select"]');
         await clearButton.click();
-        await page.waitForTimeout(100);
+        await page.waitForTimeout(TIMEOUTS.SHORT);
 
         // Verify selection is cleared
         const clearedValue = await taskModelSelect.inputValue();
@@ -850,7 +865,7 @@ test.describe('Persona Creation Form Validation', () => {
       if (taskModelOptions > 0) {
         // Select task model
         await taskModelSelect.selectOption({ index: 1 });
-        await page.waitForTimeout(100);
+        await page.waitForTimeout(TIMEOUTS.SHORT);
 
         // Get the provider of selected task model
         const selectedTaskOption = taskModelSelect.locator('option:checked');
@@ -866,7 +881,7 @@ test.describe('Persona Creation Form Validation', () => {
           // Clear task model selection
           const clearButton = page.locator('button[data-target="task-model-select"]');
           await clearButton.click();
-          await page.waitForTimeout(100);
+          await page.waitForTimeout(TIMEOUTS.SHORT);
 
           // Verify that provider options are now enabled in judge select
           const enabledJudgeOptions = judgeModelSelect.locator(
