@@ -280,8 +280,9 @@ textarea.border-gold,
 .input,
 .textarea,
 .select {
-  @apply rounded-lg border transition-all duration-200;
+  @apply rounded-lg border;
   box-shadow: var(--shadow-soft);
+  transition: none;
 }
 
 .input:focus,
@@ -290,6 +291,9 @@ textarea.border-gold,
   @apply outline-none;
   box-shadow: var(--shadow-medium);
   border-color: var(--color-luxe-gold);
+  transition:
+    border-color 200ms ease,
+    box-shadow 200ms ease;
 }
 
 .input-bordered,
