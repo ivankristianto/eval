@@ -130,9 +130,7 @@ const formatNumber = (value: number | undefined) => {
       <div
         class:list={[
           'stat rounded-lg shadow-md',
-          variant === 'card'
-            ? 'bg-base-100 px-3 py-3 border border-luxe-gold/20'
-            : 'bg-base-100/60 px-2 py-2 border border-luxe-gold/20',
+          variant === 'card' ? 'bg-base-100 px-3 py-3' : 'bg-base-100/60 px-2 py-2',
         ]}
       >
         <div class="flex items-center justify-between gap-1 mb-1">
@@ -161,9 +159,7 @@ const formatNumber = (value: number | undefined) => {
       <div
         class:list={[
           'stat rounded-lg shadow-md',
-          variant === 'card'
-            ? 'bg-base-100 px-3 py-3 border border-luxe-gold/20'
-            : 'bg-base-100/60 px-2 py-2 border border-luxe-gold/20',
+          variant === 'card' ? 'bg-base-100 px-3 py-3' : 'bg-base-100/60 px-2 py-2',
         ]}
       >
         <div class="flex items-center justify-between gap-1 mb-1">
@@ -198,9 +194,7 @@ const formatNumber = (value: number | undefined) => {
       <div
         class:list={[
           'stat rounded-lg shadow-sm',
-          variant === 'card'
-            ? 'bg-base-100/60 px-3 py-2.5 border border-luxe-emerald/20'
-            : 'bg-base-100/60 px-2 py-2 border border-luxe-emerald/20',
+          variant === 'card' ? 'bg-base-100/60 px-3 py-2.5' : 'bg-base-100/60 px-2 py-2',
         ]}
       >
         <div class="flex items-center justify-between gap-1 mb-1">
@@ -235,9 +229,7 @@ const formatNumber = (value: number | undefined) => {
       <div
         class:list={[
           'stat rounded-lg shadow-sm',
-          variant === 'card'
-            ? 'bg-base-100/60 px-3 py-2.5 border border-luxe-emerald/20'
-            : 'bg-base-100/60 px-2 py-2 border border-luxe-emerald/20',
+          variant === 'card' ? 'bg-base-100/60 px-3 py-2.5' : 'bg-base-100/60 px-2 py-2',
         ]}
       >
         <div class="flex items-center justify-between gap-1 mb-1">
@@ -272,10 +264,7 @@ const formatNumber = (value: number | undefined) => {
     <!-- Confusion Matrix (only in card variant) -->
     {
       variant === 'card' && displayMetrics.confusion_matrix && (
-        <div
-          class="bg-base-100/80 rounded-lg p-3 shadow-md border border-luxe-gold/20 mb-3"
-          data-confusion-matrix="true"
-        >
+        <div class="bg-base-100/80 rounded-lg p-3 shadow-md mb-3" data-confusion-matrix="true">
           <div class="metric-label mb-3 flex items-center gap-2">
             <span class="w-1.5 h-1.5 rounded-full bg-luxe-gold" />
             Confusion Matrix
