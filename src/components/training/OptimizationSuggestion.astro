@@ -214,7 +214,10 @@ const {
         return;
       }
       const modalContent = document.querySelector(`div[data-modal-content="${modalId}"]`);
-      const suggestedCodeEl = modalContent?.querySelector('.mockup-code code:nth-of-type(2)');
+      // Fix: Select the code element from the suggested prompt column (second mockup-code)
+      const suggestedCodeEl = modalContent?.querySelector(
+        '.mockup-code.bg-success\\/10 pre code, .mockup-code:nth-child(2) pre code'
+      );
       const suggestedPrompt = suggestedCodeEl?.textContent?.trim();
 
       if (!suggestedPrompt) {
@@ -297,7 +300,10 @@ const {
 
       // Get suggested prompt from the modal using data attribute
       const modalContent = document.querySelector(`div[data-modal-content="${modalId}"]`);
-      const suggestedCodeEl = modalContent?.querySelector('.mockup-code code:nth-of-type(2)');
+      // Fix: Select the code element from the suggested prompt column (second mockup-code)
+      const suggestedCodeEl = modalContent?.querySelector(
+        '.mockup-code.bg-success\\/10 pre code, .mockup-code:nth-child(2) pre code'
+      );
       const suggestedPrompt = suggestedCodeEl?.textContent?.trim();
 
       if (!suggestedPrompt) {

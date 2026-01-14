@@ -35,11 +35,11 @@ const activePrompt = versions.length > 0 ? versions[0].prompt_text : currentProm
   <input id={`${modalId}-input`} type="checkbox" class="drawer-toggle" />
 
   <!-- Drawer Content -->
-  <div class="drawer-side">
-    <label for={`${modalId}-input`} aria-label="close drawer" class="drawer-overlay"></label>
+  <div class="drawer-side z-[70]">
+    <label for={`${modalId}-input`} aria-label="close drawer" class="drawer-overlay z-[60]"></label>
 
     <div
-      class="menu bg-base-200 min-h-screen w-[480px] max-w-[90vw] p-0 flex flex-col border-l border-base-300"
+      class="menu bg-base-200 min-h-screen w-[480px] max-w-[90vw] p-0 flex flex-col border-l border-base-300 relative z-[70]"
     >
       <!-- Drawer Header -->
       <div class="px-6 py-4 border-b border-base-300 bg-base-100/50 backdrop-blur-sm flex-shrink-0">

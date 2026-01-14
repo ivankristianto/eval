@@ -369,6 +369,11 @@ textarea.border-gold,
   outline-color: var(--color-luxe-gold);
 }
 
+/* Remove scrollbar animation to prevent flashing on click */
+*:focus-visible::-webkit-scrollbar {
+  animation: none !important;
+}
+
 /* Badge enhancements - prevent wrapping */
 .badge {
   @apply whitespace-nowrap;
