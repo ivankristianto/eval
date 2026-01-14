@@ -1,0 +1,232 @@
+---
+/**
+ * Modal base component.
+ * Provides a reusable modal dialog with flexible slot-based content structure,
+ * configurable size variants, and accessibility features.
+ *
+ * @example
+ * // Basic usage with title, content, and footer
+ * <Modal id="my-modal" title="My Modal" size="md">
+ *   <p slot="content">Modal content goes here</p>
+ *   <div slot="footer">
+ *     <button class="btn btn-ghost">Cancel</button>
+ *     <button class="btn btn-primary">Confirm</button>
+ *   </div>
+ * </Modal>
+ *
+ * @example
+ * // With custom header (replaces default title)
+ * <Modal id="custom-modal" size="lg">
+ *   <div slot="header" class="flex items-center gap-3">
+ *     <icon />
+ *     <h3 class="font-bold text-lg">Custom Header</h3>
+ *   </div>
+ *   <p slot="content">Content</p>
+ * </Modal>
+ *
+ * @example
+ * // Full screen modal for dashboards
+ * <Modal id="fullscreen-modal" size="full" closeOnBackdropClick={false}>
+ *   <p slot="content">Full screen content</p>
+ * </Modal>
+ *
+ * @param id - Unique identifier for the modal (required for accessibility)
+ * @param title - Modal title (used if header slot is not provided)
+ * @param size - Modal size variant (default: 'md')
+ * @param open - Whether the modal is initially open (default: false)
+ * @param closeOnEscape - Allow closing with ESC key (default: true)
+ * @param closeOnBackdropClick - Allow closing by clicking backdrop (default: true)
+ * @param showCloseButton - Show X button in header (default: true)
+ * @param class - Additional CSS classes to apply to modal-box
+ */
+export interface Props {
+  id: string;
+  title?: string;
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | 'full';
+  open?: boolean;
+  closeOnEscape?: boolean;
+  closeOnBackdropClick?: boolean;
+  showCloseButton?: boolean;
+  class?: string;
+}
+
+const {
+  id,
+  title,
+  size = 'md',
+  open = false,
+  closeOnEscape = true,
+  closeOnBackdropClick = true,
+  showCloseButton = true,
+  class: className = '',
+} = Astro.props;
+
+// Generate IDs for accessibility
+const titleId = `${id}-title`;
+const describedBy = `${id}-desc`;
+
+// Build modal-box classes
+const modalBoxClasses = [
+  'modal-box',
+  `modal-${size}`,
+  'rounded-2xl',
+  'border',
+  'shadow-elevated',
+  className,
+]
+  .filter(Boolean)
+  .join(' ');
+---
+
+<dialog
+  id={id}
+  class="modal"
+  open={open}
+  aria-labelledby={title ? titleId : undefined}
+  aria-describedby={describedBy}
+>
+  <div class={modalBoxClasses}>
+    <!-- Header Slot or Default Header -->
+    <slot name="header">
+      {
+        (title || showCloseButton) && (
+          <div class="flex items-center justify-between mb-4">
+            {title && (
+              <h3 id={titleId} class="font-display text-xl font-semibold text-luxe-gold">
+                {title}
+              </h3>
+            )}
+            {showCloseButton && (
+              <button
+                class="btn btn-sm btn-circle btn-ghost"
+                onclick={`document.getElementById('${id}').close()`}
+                aria-label="Close modal"
+                type="button"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke-width="1.5"
+                  stroke="currentColor"
+                  class="w-5 h-5"
+                >
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
+          </div>
+        )
+      }
+    </slot>
+
+    <!-- Content Slot -->
+    <div id={describedBy} class="py-4">
+      <slot name="content" />
+    </div>
+
+    <!-- Footer Slot -->
+    <div class="modal-action">
+      <slot name="footer" />
+    </div>
+  </div>
+
+  <!-- Backdrop -->
+  <form method="dialog" class="modal-backdrop">
+    <button>close</button>
+  </form>
+</dialog>
+
+<script is:inline define:vars={{ id, closeOnEscape, closeOnBackdropClick }}>
+  /**
+   * Modal client-side functionality.
+   * Handles ESC key closing, backdrop click closing, and focus management.
+   */
+  const modal = document.getElementById(id);
+
+  if (!modal) return;
+
+  // Store the element that had focus before modal opened
+  let previousFocus = null;
+
+  // Handle ESC key
+  if (closeOnEscape) {
+    modal.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        modal.close();
+      }
+    });
+  }
+
+  // Handle backdrop click
+  if (closeOnBackdropClick) {
+    modal.addEventListener('click', (e) => {
+      const rect = modal.getBoundingClientRect();
+      const isInDialog =
+        e.clientX >= rect.left &&
+        e.clientX <= rect.right &&
+        e.clientY >= rect.top &&
+        e.clientY <= rect.bottom;
+
+      if (!isInDialog) {
+        modal.close();
+      }
+    });
+  }
+
+  // Focus management
+  modal.addEventListener('close', () => {
+    // Restore focus to previous element
+    if (previousFocus) {
+      previousFocus.focus();
+    }
+  });
+
+  modal.addEventListener('open', () => {
+    // Store current focus and move focus to modal
+    previousFocus = document.activeElement;
+
+    // Focus first focusable element in modal
+    const focusableSelector =
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+    const firstFocusable = modal.querySelector(focusableSelector);
+
+    if (firstFocusable) {
+      firstFocusable.focus();
+    }
+  });
+</script>
+
+<style>
+  /* Modal backdrop styling - consistent with components.css */
+  dialog::backdrop {
+    backdrop-filter: blur(12px);
+    background: var(--color-backdrop);
+  }
+
+  /* Modal box transitions */
+  .modal-box {
+    transition:
+      opacity var(--modal-transition-duration) var(--modal-transition-easing),
+      transform var(--modal-transition-duration) var(--modal-transition-easing);
+  }
+
+  /* Ensure proper z-index stacking */
+  .modal {
+    z-index: 100;
+  }
+
+  /* Smooth backdrop animation */
+  @keyframes modalBackdropFade {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  dialog::backdrop {
+    animation: modalBackdropFade var(--modal-backdrop-duration) var(--modal-backdrop-easing);
+  }
+</style>
