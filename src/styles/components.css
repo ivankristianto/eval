@@ -488,9 +488,10 @@ dialog {
 
 /* Consistent modal box styling */
 .modal-box {
-  @apply rounded-2xl border max-w-2xl;
+  @apply rounded-2xl border;
   box-shadow: var(--shadow-elevated);
   border-color: var(--color-gold-border-subtle);
+  /* Width is controlled by modal size classes (modal-xs, modal-sm, etc.) */
 }
 
 [data-theme='dark'] .modal-box,
