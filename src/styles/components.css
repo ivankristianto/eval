@@ -57,6 +57,16 @@
   border: 1px solid var(--color-gold-border);
 }
 
+/* Compact variant (used in TrainingWorkspace) - has border but no card-luxe class */
+#simple-metrics-card:not(.card-luxe) {
+  border-color: var(--color-gold-border-subtle);
+}
+
+[data-theme='dark'] #simple-metrics-card:not(.card-luxe),
+[data-theme='luxury'] #simple-metrics-card:not(.card-luxe) {
+  border-color: var(--color-gold-border);
+}
+
 /* Metric Display */
 .metric-display {
   @apply text-5xl font-bold leading-none tracking-tighter;
