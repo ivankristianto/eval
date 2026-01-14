@@ -47,6 +47,16 @@
   @apply opacity-100;
 }
 
+/* SimpleMetrics card specific override to fix black border */
+#simple-metrics-card.card-luxe {
+  border: 1px solid var(--color-gold-border-subtle);
+}
+
+[data-theme='dark'] #simple-metrics-card.card-luxe,
+[data-theme='luxury'] #simple-metrics-card.card-luxe {
+  border: 1px solid var(--color-gold-border);
+}
+
 /* Metric Display */
 .metric-display {
   @apply text-5xl font-bold leading-none tracking-tighter;
