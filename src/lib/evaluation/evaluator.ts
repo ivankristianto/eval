@@ -21,7 +21,6 @@ import { ClientFactory } from '@lib/utils/api-clients';
 import { calculateAccuracy } from './accuracy';
 import {
   getModelById,
-  getEvaluation,
   updateEvaluationStatus,
   updateResult,
   getResults,
@@ -286,27 +285,6 @@ export function startEvaluation(options: EvaluationOptions): void {
   executor.execute(options).finally(() => {
     activeEvaluations.delete(options.evaluationId);
   });
-}
-
-/**
- * Cancels a running evaluation by ID.
- * @param evaluationId - Evaluation to cancel
- * @returns True if evaluation was found and cancelled
- */
-export function cancelEvaluation(evaluationId: string): boolean {
-  const executor = activeEvaluations.get(evaluationId);
-  if (executor) {
-    executor.abort();
-    activeEvaluations.delete(evaluationId);
-
-    const evaluation = getEvaluation(evaluationId);
-    if (evaluation && evaluation.status !== 'completed') {
-      updateEvaluationStatus(evaluationId, 'failed', 'Cancelled by user');
-    }
-
-    return true;
-  }
-  return false;
 }
 
 /**
