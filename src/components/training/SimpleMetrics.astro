@@ -70,10 +70,10 @@ const formatNumber = (value: number | undefined) => {
 <div
   id="simple-metrics-card"
   class:list={[
-    'border shadow-lg rounded-xl overflow-hidden',
+    'overflow-hidden',
     variant === 'card'
-      ? 'card bg-gradient-to-br from-base-200 to-base-100 border-base-300/50'
-      : 'bg-base-100/90 backdrop-blur-sm border-base-300/50',
+      ? 'card-luxe'
+      : 'border bg-base-100/90 backdrop-blur-sm rounded-xl shadow-lg',
   ]}
   data-metrics-container="true"
   data-variant={variant}
@@ -82,7 +82,7 @@ const formatNumber = (value: number | undefined) => {
     {
       variant === 'card' && (
         <div class="flex items-center gap-2 mb-4">
-          <div class="w-1 h-5 rounded-full bg-gradient-to-b from-primary to-primary/50" />
+          <div class="w-1 h-5 rounded-full bg-gradient-gold" />
           <h3 class="card-title text-sm font-semibold">Evaluation Metrics</h3>
         </div>
       )
@@ -100,19 +100,17 @@ const formatNumber = (value: number | undefined) => {
         class:list={[
           'stat rounded-lg shadow-md border',
           variant === 'card'
-            ? 'bg-base-100 px-3 py-3 border-primary/10'
-            : 'bg-base-100/60 px-2 py-2 border-primary/10',
+            ? 'bg-base-100 px-3 py-3 border-luxe-gold/20'
+            : 'bg-base-100/60 px-2 py-2 border-luxe-gold/20',
         ]}
       >
         <div class="flex items-center gap-1 mb-1">
-          <span class={`font-medium ${variant === 'card' ? 'text-xs' : 'text-xs opacity-70'}`}
-            >F1</span
-          >
+          <span class="metric-label">F1</span>
         </div>
         <div
           class:list={[
-            'stat-value font-mono font-bold tracking-tight',
-            variant === 'card' ? 'text-2xl text-primary' : 'text-lg text-primary',
+            'metric-display text-luxe-gold',
+            variant === 'card' ? 'text-4xl' : 'text-2xl',
           ]}
           data-metric="f1_score"
           data-value={displayMetrics.f1_score ?? 0}
@@ -126,19 +124,17 @@ const formatNumber = (value: number | undefined) => {
         class:list={[
           'stat rounded-lg shadow-md border',
           variant === 'card'
-            ? 'bg-base-100 px-3 py-3 border-secondary/10'
-            : 'bg-base-100/60 px-2 py-2 border-secondary/10',
+            ? 'bg-base-100 px-3 py-3 border-luxe-gold/20'
+            : 'bg-base-100/60 px-2 py-2 border-luxe-gold/20',
         ]}
       >
         <div class="flex items-center gap-1 mb-1">
-          <span class={`font-medium ${variant === 'card' ? 'text-xs' : 'text-xs opacity-70'}`}
-            >Kappa</span
-          >
+          <span class="metric-label">Kappa</span>
         </div>
         <div
           class:list={[
-            'stat-value font-mono font-bold tracking-tight',
-            variant === 'card' ? 'text-xl text-secondary' : 'text-base text-secondary',
+            'metric-display text-luxe-gold',
+            variant === 'card' ? 'text-3xl' : 'text-xl',
           ]}
           data-metric="cohens_kappa"
           data-value={displayMetrics.cohens_kappa ?? 0}
@@ -152,22 +148,17 @@ const formatNumber = (value: number | undefined) => {
         class:list={[
           'stat rounded-lg shadow-sm border',
           variant === 'card'
-            ? 'bg-base-100/60 px-3 py-2.5 border-success/10'
-            : 'bg-base-100/60 px-2 py-2 border-success/10',
+            ? 'bg-base-100/60 px-3 py-2.5 border-luxe-emerald/20'
+            : 'bg-base-100/60 px-2 py-2 border-luxe-emerald/20',
         ]}
       >
         <div class="flex items-center gap-1 mb-1">
-          <span
-            class={`font-medium ${variant === 'card' ? 'text-xs opacity-60' : 'text-xs opacity-70'}`}
-            >Prec.</span
-          >
+          <span class="metric-label">Prec.</span>
         </div>
         <div
           class:list={[
-            'stat-value font-mono tracking-tight',
-            variant === 'card'
-              ? 'text-lg font-semibold text-success'
-              : 'text-base font-semibold text-success',
+            'metric-display metric-success',
+            variant === 'card' ? 'text-2xl' : 'text-xl',
           ]}
           data-metric="precision"
           data-value={displayMetrics.precision ?? 0}
@@ -181,22 +172,17 @@ const formatNumber = (value: number | undefined) => {
         class:list={[
           'stat rounded-lg shadow-sm border',
           variant === 'card'
-            ? 'bg-base-100/60 px-3 py-2.5 border-info/10'
-            : 'bg-base-100/60 px-2 py-2 border-info/10',
+            ? 'bg-base-100/60 px-3 py-2.5 border-luxe-emerald/20'
+            : 'bg-base-100/60 px-2 py-2 border-luxe-emerald/20',
         ]}
       >
         <div class="flex items-center gap-1 mb-1">
-          <span
-            class={`font-medium ${variant === 'card' ? 'text-xs opacity-60' : 'text-xs opacity-70'}`}
-            >Recall</span
-          >
+          <span class="metric-label">Recall</span>
         </div>
         <div
           class:list={[
-            'stat-value font-mono tracking-tight',
-            variant === 'card'
-              ? 'text-lg font-semibold text-info'
-              : 'text-base font-semibold text-info',
+            'metric-display metric-success',
+            variant === 'card' ? 'text-2xl' : 'text-xl',
           ]}
           data-metric="recall"
           data-value={displayMetrics.recall ?? 0}
@@ -210,18 +196,18 @@ const formatNumber = (value: number | undefined) => {
     {
       variant === 'card' && displayMetrics.confusion_matrix && (
         <div
-          class="bg-base-100/80 rounded-lg p-3 shadow-md border border-base-300/50 mb-3"
+          class="bg-base-100/80 rounded-lg p-3 shadow-md border border-luxe-gold/20 mb-3"
           data-confusion-matrix="true"
         >
-          <div class="text-xs font-semibold mb-3 opacity-70 flex items-center gap-2">
-            <span class="w-1.5 h-1.5 rounded-full bg-base-content/40" />
+          <div class="metric-label mb-3 flex items-center gap-2">
+            <span class="w-1.5 h-1.5 rounded-full bg-luxe-gold" />
             Confusion Matrix
           </div>
           <div class="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
             <div class="flex justify-between items-center">
               <span class="opacity-60">True Positives</span>
               <span
-                class="font-mono font-bold text-success"
+                class="font-mono font-bold text-luxe-emerald metric-success"
                 data-metric="true_positives"
                 data-value={displayMetrics.confusion_matrix.true_positives ?? 0}
               >
@@ -231,7 +217,7 @@ const formatNumber = (value: number | undefined) => {
             <div class="flex justify-between items-center">
               <span class="opacity-60">True Negatives</span>
               <span
-                class="font-mono font-bold text-success"
+                class="font-mono font-bold text-luxe-emerald metric-success"
                 data-metric="true_negatives"
                 data-value={displayMetrics.confusion_matrix.true_negatives ?? 0}
               >
@@ -241,7 +227,7 @@ const formatNumber = (value: number | undefined) => {
             <div class="flex justify-between items-center">
               <span class="opacity-60">False Positives</span>
               <span
-                class="font-mono font-bold text-error"
+                class="font-mono font-bold text-luxe-ruby"
                 data-metric="false_positives"
                 data-value={displayMetrics.confusion_matrix.false_positives ?? 0}
               >
@@ -251,7 +237,7 @@ const formatNumber = (value: number | undefined) => {
             <div class="flex justify-between items-center">
               <span class="opacity-60">False Negatives</span>
               <span
-                class="font-mono font-bold text-error"
+                class="font-mono font-bold text-luxe-ruby"
                 data-metric="false_negatives"
                 data-value={displayMetrics.confusion_matrix.false_negatives ?? 0}
               >
