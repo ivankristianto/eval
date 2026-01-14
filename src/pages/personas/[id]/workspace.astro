@@ -67,6 +67,15 @@ const trainingPairs = getTrainingPairs(id);
 // Fetch latest metrics
 const personaMetrics = getPersonaMetrics(id);
 
+// Fetch historical metrics for sparklines (last 5 iterations)
+const metricsHistory = personaMetrics.slice(-5).map((m) => ({
+  f1_score: m.f1_score ?? undefined,
+  precision: m.precision ?? undefined,
+  recall: m.recall ?? undefined,
+  cohens_kappa: m.cohens_kappa ?? undefined,
+  accuracy: m.accuracy ?? undefined,
+}));
+
 // Transform training pairs to match expected interface with result data
 const db = getDatabase();
 const enrichedTrainingPairs = trainingPairs.map((pair) => {
@@ -187,6 +196,7 @@ const humanMetrics = getHumanMetricsFromResults(id);
     }}
     trainingPairs={enrichedTrainingPairs}
     metrics={personaMetricsData}
+    metricsHistory={metricsHistory}
     judgeMetrics={judgeMetrics}
     humanMetrics={humanMetrics}
   />
