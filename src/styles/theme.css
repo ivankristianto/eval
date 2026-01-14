@@ -92,3 +92,146 @@
   --color-luxe-ice: #0a1628;
   --color-luxe-midnight: #e8f4f8;
 }
+
+/* ===================================
+   MODAL SIZE VARIANTS
+   Size tokens and utilities for daisyUI modal components
+   Usage: <div class="modal-box modal-xs">...</div>
+   =================================== */
+
+:root {
+  /* Modal max-width sizes - xs through full */
+  --modal-max-width-xs: 20rem; /* 320px - compact dialogs */
+  --modal-max-width-sm: 24rem; /* 384px - small forms */
+  --modal-max-width-md: 32rem; /* 512px - default, medium content */
+  --modal-max-width-lg: 48rem; /* 768px - wide tables, detailed views */
+  --modal-max-width-xl: 64rem; /* 1024px - large dashboards */
+  --modal-max-width-2xl: 80rem; /* 1280px - full-featured content */
+  --modal-max-width-full: 95vw; /* near viewport width */
+
+  /* Responsive viewport-based sizing */
+  --modal-max-width-mobile: 90vw; /* 90% viewport width on mobile */
+  --modal-max-width-mobile-lg: 95vw; /* 95% on larger mobile */
+  --modal-max-width-tablet: 85vw; /* 85% on tablet */
+
+  /* Modal padding - for maximizing usable space */
+  --modal-padding-xs: 1rem; /* 16px - compact modals */
+  --modal-padding-sm: 1.25rem; /* 20px */
+  --modal-padding-md: 1.5rem; /* 24px - default */
+  --modal-padding-lg: 2rem; /* 32px - spacious */
+  --modal-padding-xl: 2.5rem; /* 40px - very spacious */
+
+  /* Modal transition timing */
+  --modal-transition-duration: 200ms; /* Fast, responsive feel */
+  --modal-transition-easing: cubic-bezier(0.4, 0, 0.2, 1); /* Material ease */
+
+  /* Backdrop animation */
+  --modal-backdrop-duration: 150ms; /* Slightly faster than modal */
+  --modal-backdrop-easing: ease-out; /* Smooth fade */
+}
+
+/* Modal size utilities - apply to .modal-box or custom modal containers */
+.modal-xs {
+  max-width: var(--modal-max-width-xs);
+  width: 100%;
+}
+
+.modal-sm {
+  max-width: var(--modal-max-width-sm);
+  width: 100%;
+}
+
+.modal-md {
+  max-width: var(--modal-max-width-md);
+  width: 100%;
+}
+
+.modal-lg {
+  max-width: var(--modal-max-width-lg);
+  width: 100%;
+}
+
+.modal-xl {
+  max-width: var(--modal-max-width-xl);
+  width: 100%;
+}
+
+.modal-2xl {
+  max-width: var(--modal-max-width-2xl);
+  width: 100%;
+}
+
+.modal-full {
+  max-width: var(--modal-max-width-full);
+  width: 100%;
+  height: 100vh;
+  max-height: 100vh;
+  border-radius: 0;
+}
+
+/* Responsive modal adjustments */
+@media (max-width: 640px) {
+  .modal-xs,
+  .modal-sm,
+  .modal-md,
+  .modal-lg,
+  .modal-xl,
+  .modal-2xl {
+    max-width: var(--modal-max-width-mobile);
+  }
+}
+
+@media (min-width: 641px) and (max-width: 768px) {
+  .modal-xs,
+  .modal-sm {
+    max-width: var(--modal-max-width-mobile-lg);
+  }
+  .modal-md,
+  .modal-lg {
+    max-width: var(--modal-max-width-tablet);
+  }
+}
+
+/* Modal padding utilities */
+.modal-padding-compact {
+  padding: var(--modal-padding-xs);
+}
+
+.modal-padding-normal {
+  padding: var(--modal-padding-md);
+}
+
+.modal-padding-spacious {
+  padding: var(--modal-padding-lg);
+}
+
+/* Modal transition utilities */
+.modal-transition-smooth {
+  transition:
+    opacity var(--modal-transition-duration) var(--modal-transition-easing),
+    transform var(--modal-transition-duration) var(--modal-transition-easing);
+}
+
+.modal-backdrop-fade {
+  animation: modalBackdropFade var(--modal-backdrop-duration) var(--modal-backdrop-easing);
+}
+
+/* Backdrop fade keyframe animation */
+@keyframes modalBackdropFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Usage examples (for reference):
+   <dialog class="modal">
+     <div class="modal-box modal-lg modal-transition-smooth">
+       <h3 class="font-bold text-lg">Title</h3>
+       <p class="py-4">Content</p>
+     </div>
+     <form method="dialog" class="modal-backdrop modal-backdrop-fade"></form>
+   </dialog>
+*/

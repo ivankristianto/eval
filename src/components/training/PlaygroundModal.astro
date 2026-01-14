@@ -19,11 +19,7 @@ interface Props {
 
 // personaId is passed to client-side script via data attribute in TrainingPairsTable
 // It is declared here for the Props interface but used only on client-side
-const {
-  trainingPairId,
-  isOpen = false,
-  personaId: personaIdUnused,
-} = Astro.props;
+const { trainingPairId, isOpen = false, personaId: personaIdUnused } = Astro.props;
 // Mark as intentionally unused for server-side
 void personaIdUnused;
 
