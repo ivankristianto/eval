@@ -1,0 +1,158 @@
+---
+/**
+ * Sparkline component.
+ * Renders a lightweight SVG line chart from an array of numbers.
+ * Responsive, theme-aware, and styled with the luxe design system.
+ *
+ * @example
+ * <Sparkline data={[10, 25, 15, 30, 20, 45, 35]} />
+ * <Sparkline data={[0.5, 0.7, 0.6, 0.9]} color="emerald" />
+ *
+ * @param data - Array of numeric values to plot
+ * @param color - Color theme for the line (default: 'gold')
+ * @param width - Width of the SVG in pixels (default: 200)
+ * @param height - Height of the SVG in pixels (default: 60)
+ * @param strokeWidth - Width of the line stroke (default: 2)
+ * @param showArea - Whether to fill the area under the line (default: false)
+ * @param smooth - Whether to use smooth curves (default: true)
+ * @param class - Additional CSS classes to apply
+ */
+export interface Props {
+  data: number[];
+  color?: 'gold' | 'emerald' | 'ruby' | 'amber' | 'slate';
+  width?: number;
+  height?: number;
+  strokeWidth?: number;
+  showArea?: boolean;
+  smooth?: boolean;
+  class?: string;
+}
+
+const {
+  data,
+  color = 'gold',
+  width = 200,
+  height = 60,
+  strokeWidth = 2,
+  showArea = false,
+  smooth = true,
+  class: className = '',
+} = Astro.props;
+
+// Map color names to luxe theme tokens
+const colorMap: Record<string, string> = {
+  gold: 'var(--color-luxe-gold)',
+  emerald: 'var(--color-luxe-emerald)',
+  ruby: 'var(--color-luxe-ruby)',
+  amber: 'var(--color-luxe-amber)',
+  slate: 'var(--color-luxe-slate)',
+};
+
+const strokeColor = colorMap[color] || colorMap.gold;
+const fillColor = colorMap[color] || colorMap.gold;
+
+// Generate smooth bezier curve path or straight lines
+const generatePath = (values: number[], includeArea = false): string => {
+  if (values.length === 0) return '';
+  if (values.length === 1) {
+    const y = height / 2;
+    return `M 0,${y} L ${width},${y}`;
+  }
+
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const range = max - min || 1;
+
+  const padding = strokeWidth * 2;
+  const effectiveHeight = height - padding * 2;
+  const effectiveWidth = width;
+
+  const getPoint = (index: number) => {
+    const x = (index / (values.length - 1)) * effectiveWidth;
+    const y = effectiveHeight - ((values[index] - min) / range) * effectiveHeight + padding;
+    return [x, y];
+  };
+
+  if (!smooth || values.length < 3) {
+    // Straight lines
+    const points = values.map((_, i) => getPoint(i)).map(([x, y]) => `L ${x} ${y}`);
+    const path = `M ${getPoint(0)[0]} ${getPoint(0)[1]} ${points.join(' ')}`;
+
+    if (includeArea) {
+      return `${path} L ${width} ${height} L 0 ${height} Z`;
+    }
+    return path;
+  }
+
+  // Smooth bezier curves
+  const points = values.map((_, i) => getPoint(i));
+  let path = `M ${points[0][0]} ${points[0][1]}`;
+
+  for (let i = 0; i < points.length - 1; i++) {
+    const [x0, y0] = points[i];
+    const [x1, y1] = points[i + 1];
+
+    if (i === 0) {
+      // First segment
+      path += ` L ${x0} ${y0}`;
+    }
+
+    // Control points for bezier curve (catmull-rom spline approximation)
+    const cp1x = x0 + (x1 - x0) * 0.5;
+    const cp1y = y0;
+    const cp2x = x1 - (x1 - x0) * 0.5;
+    const cp2y = y1;
+
+    path += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${x1} ${y1}`;
+  }
+
+  if (includeArea) {
+    return `${path} L ${width} ${height} L 0 ${height} Z`;
+  }
+  return path;
+};
+
+const areaPath = showArea ? generatePath(data, true) : '';
+const linePath = generatePath(data, false);
+
+// Container classes for responsive design
+const containerClasses = ['inline-block', 'w-full', 'max-w-full', 'overflow-hidden', className]
+  .filter(Boolean)
+  .join(' ');
+---
+
+<div class={containerClasses}>
+  <svg
+    width="100%"
+    height="100%"
+    viewBox={`0 0 ${width} ${height}`}
+    preserveAspectRatio="none"
+    class="block"
+    style={`max-width: ${width}px; aspect-ratio: ${width} / ${height};`}
+    aria-label="Sparkline chart"
+  >
+    <!-- Area fill (optional) -->
+    {
+      showArea && areaPath && (
+        <path d={areaPath} fill={fillColor} fill-opacity="0.15" stroke="none" />
+      )
+    }
+
+    <!-- Line path -->
+    <path
+      d={linePath}
+      fill="none"
+      stroke={strokeColor}
+      stroke-width={strokeWidth}
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      class="transition-opacity duration-200"></path>
+  </svg>
+</div>
+
+<style>
+  /* Ensure responsive scaling */
+  svg {
+    display: block;
+  }
+</style>
