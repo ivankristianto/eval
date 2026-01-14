@@ -467,7 +467,7 @@ const totalPages = Math.max(1, Math.ceil(pairs.length / pageSize));
   </div>
 
   <!-- Playground Modals (one for each training pair) -->
-  {pairs.map((pair) => <PlaygroundModal trainingPairId={pair.id} />)}
+  {pairs.map((pair) => <PlaygroundModal trainingPairId={pair.id} personaId={personaId} />)}
 </div>
 
 <script define:vars={{ pageSize, pairs }} is:inline>
@@ -890,6 +890,12 @@ const totalPages = Math.max(1, Math.ceil(pairs.length / pageSize));
       if (!modal) {
         console.warn('Playground modal not found for pair:', pairId);
         return;
+      }
+
+      // Store personaId on the modal for the inline script to access
+      const personaId = evaluateSelectedBtn?.dataset.personaId;
+      if (personaId) {
+        modal.dataset.personaId = personaId;
       }
 
       // Show the input data in the modal

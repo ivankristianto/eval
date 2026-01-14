@@ -14,9 +14,18 @@ interface Props {
   trainingPairId: string | number;
   isOpen?: boolean;
   onClose?: () => void;
+  personaId?: string;
 }
 
-const { trainingPairId, isOpen = false } = Astro.props;
+// personaId is passed to client-side script via data attribute in TrainingPairsTable
+// It is declared here for the Props interface but used only on client-side
+const {
+  trainingPairId,
+  isOpen = false,
+  personaId: personaIdUnused,
+} = Astro.props;
+// Mark as intentionally unused for server-side
+void personaIdUnused;
 
 // Generate unique ID for this modal instance
 const modalId = `playground-modal-${trainingPairId}`;
@@ -223,135 +232,116 @@ const modalId = `playground-modal-${trainingPairId}`;
 </dialog>
 
 <script is:inline>
-  // Mock data for UI demonstration - use IIFE to avoid duplicate declarations
-  (function () {
-    const mockInput = `Evaluate the following response for accuracy and completeness:
+  /**
+   * Simulates streaming text effect for output and judge reasoning panes.
+   * @param {string} elementId - The ID of the element to stream text into
+   * @param {string} text - The text to stream
+   * @param {number} speed - Milliseconds between characters (default: 20)
+   * @returns Promise that resolves when streaming is complete
+   */
+  function streamText(elementId, text, speed = 20) {
+    return new Promise((resolve) => {
+      const element = document.getElementById(elementId);
+      if (!element) {
+        resolve();
+        return;
+      }
 
-Question: What is the capital of France?
-Expected Answer: Paris
-Model Response: The capital of France is Paris.
+      let index = 0;
+      element.innerHTML = '';
 
-Please assess whether the model response is correct and provide reasoning.`;
-
-    const mockOutput = `The model response is **correct**.
-
-**Reasoning:**
-1. The model correctly identifies Paris as the capital of France.
-2. The response is direct and unambiguous.
-3. No additional irrelevant information is included.
-4. The response matches the expected answer exactly.
-
-**Score: 1.0 (Correct)**`;
-
-    const mockJudgeReasoning = `Analyzing the model response...
-
-**Evaluation Process:**
-- Compared model response to expected answer
-- Checked for factual accuracy
-- Assessed completeness of the response
-- Verified no hallucinations present
-
-**Decision: PASS**
-The model provided the correct answer with appropriate brevity and accuracy.`;
-
-    /**
-     * Simulates streaming text effect for output and judge reasoning panes.
-     */
-    function streamText(elementId, text, speed = 20) {
-      return new Promise((resolve) => {
-        const element = document.getElementById(elementId);
-        if (!element) {
+      const interval = setInterval(() => {
+        if (index < text.length) {
+          element.innerHTML += text[index];
+          element.scrollTop = element.scrollHeight;
+          index++;
+        } else {
+          clearInterval(interval);
           resolve();
-          return;
         }
+      }, speed);
+    });
+  }
 
-        let index = 0;
-        element.innerHTML = '';
+  /**
+   * Resets all playground panes to their initial state.
+   * @param {string} pairId - The training pair ID to scope element IDs
+   */
+  function resetPlayground(pairId) {
+    const inputDisplay = document.getElementById(`playground-input-display-${pairId}`);
+    const outputDisplay = document.getElementById(`playground-output-display-${pairId}`);
+    const judgeDisplay = document.getElementById(`playground-judge-display-${pairId}`);
+    const outputPlaceholder = document.getElementById(`output-placeholder-${pairId}`);
+    const judgePlaceholder = document.getElementById(`judge-placeholder-${pairId}`);
+    const outputStatus = document.getElementById(`output-status-indicator-${pairId}`);
+    const judgeStatus = document.getElementById(`judge-status-indicator-${pairId}`);
+    const streamingCursor = document.getElementById(`streaming-cursor-${pairId}`);
 
-        const interval = setInterval(() => {
-          if (index < text.length) {
-            element.innerHTML += text[index];
-            element.scrollTop = element.scrollHeight;
-            index++;
-          } else {
-            clearInterval(interval);
-            resolve();
-          }
-        }, speed);
-      });
+    // Reset input display
+    if (inputDisplay) {
+      inputDisplay.innerHTML =
+        '<span class="opacity-50 italic">Input data will be displayed here...</span>';
     }
 
-    /**
-     * Resets all playground panes to their initial state.
-     * @param {string} pairId - The training pair ID to scope element IDs
-     */
-    function resetPlayground(pairId) {
-      const inputDisplay = document.getElementById(`playground-input-display-${pairId}`);
-      const outputDisplay = document.getElementById(`playground-output-display-${pairId}`);
-      const judgeDisplay = document.getElementById(`playground-judge-display-${pairId}`);
-      const outputPlaceholder = document.getElementById(`output-placeholder-${pairId}`);
-      const judgePlaceholder = document.getElementById(`judge-placeholder-${pairId}`);
-      const outputStatus = document.getElementById(`output-status-indicator-${pairId}`);
-      const judgeStatus = document.getElementById(`judge-status-indicator-${pairId}`);
-      const streamingCursor = document.getElementById(`streaming-cursor-${pairId}`);
-
-      // Reset input display
-      if (inputDisplay) {
-        inputDisplay.innerHTML =
-          '<span class="opacity-50 italic">Input data will be displayed here...</span>';
-      }
-
-      // Reset output display
-      if (outputDisplay && outputPlaceholder) {
-        outputDisplay.innerHTML =
-          '<span class="opacity-50 italic">Output will appear here after running...</span>';
-      }
-
-      // Reset judge display
-      if (judgeDisplay && judgePlaceholder) {
-        judgeDisplay.innerHTML =
-          '<span class="opacity-50 italic">Judge reasoning will appear here...</span>';
-      }
-
-      // Hide status indicators
-      if (outputStatus) {
-        outputStatus.classList.add('hidden');
-        outputStatus.classList.remove('flex');
-      }
-      if (judgeStatus) {
-        judgeStatus.classList.add('hidden');
-        judgeStatus.classList.remove('flex');
-      }
-      if (streamingCursor) {
-        streamingCursor.classList.add('hidden');
-      }
+    // Reset output display
+    if (outputDisplay && outputPlaceholder) {
+      outputDisplay.innerHTML =
+        '<span class="opacity-50 italic">Output will appear here after running...</span>';
     }
 
-    /**
-     * Runs the playground simulation with mock data.
-     * Displays input, streams output, then shows judge reasoning.
-     * @param {string} pairId - The training pair ID to scope element IDs
-     */
-    async function runPlayground(pairId) {
-      const runButton = document.getElementById(`playground-run-button-${pairId}`);
-      const inputDisplay = document.getElementById(`playground-input-display-${pairId}`);
-      const outputDisplay = document.getElementById(`playground-output-display-${pairId}`);
-      const judgeDisplay = document.getElementById(`playground-judge-display-${pairId}`);
-      const outputStatus = document.getElementById(`output-status-indicator-${pairId}`);
-      const judgeStatus = document.getElementById(`judge-status-indicator-${pairId}`);
-      const streamingCursor = document.getElementById(`streaming-cursor-${pairId}`);
+    // Reset judge display
+    if (judgeDisplay && judgePlaceholder) {
+      judgeDisplay.innerHTML =
+        '<span class="opacity-50 italic">Judge reasoning will appear here...</span>';
+    }
 
-      // Show input data immediately
-      if (inputDisplay) {
-        inputDisplay.textContent = mockInput;
+    // Hide status indicators
+    if (outputStatus) {
+      outputStatus.classList.add('hidden');
+      outputStatus.classList.remove('flex');
+    }
+    if (judgeStatus) {
+      judgeStatus.classList.add('hidden');
+      judgeStatus.classList.remove('flex');
+    }
+    if (streamingCursor) {
+      streamingCursor.classList.add('hidden');
+    }
+  }
+
+  /**
+   * Runs the playground with real API calls.
+   * Calls POST /api/playground/run, streams the output and judge reasoning.
+   * @param {string} pairId - The training pair ID to scope element IDs
+   */
+  async function runPlayground(pairId) {
+    const runButton = document.getElementById(`playground-run-button-${pairId}`);
+    const outputDisplay = document.getElementById(`playground-output-display-${pairId}`);
+    const judgeDisplay = document.getElementById(`playground-judge-display-${pairId}`);
+    const outputStatus = document.getElementById(`output-status-indicator-${pairId}`);
+    const judgeStatus = document.getElementById(`judge-status-indicator-${pairId}`);
+    const streamingCursor = document.getElementById(`streaming-cursor-${pairId}`);
+
+    // Get personaId from the modal's data attribute
+    const modalId = `playground-modal-${pairId}`;
+    const modal = document.getElementById(modalId);
+    const personaId = modal?.dataset.personaId;
+
+    if (!personaId) {
+      console.error('No personaId found on modal');
+      if (window.toast) {
+        window.toast.error('Unable to run: missing persona ID');
       }
+      return;
+    }
 
-      // Disable run button and show loading state
-      if (runButton) {
-        runButton.disabled = true;
-        runButton.classList.add('loading');
-      }
+    // Disable run button and show loading state
+    if (runButton) {
+      runButton.disabled = true;
+      runButton.classList.add('loading');
+    }
 
+    try {
       // Show streaming indicator for output
       if (outputStatus) {
         outputStatus.classList.remove('hidden');
@@ -361,11 +351,29 @@ The model provided the correct answer with appropriate brevity and accuracy.`;
         streamingCursor.classList.remove('hidden');
       }
 
-      // Clear placeholder and stream output
+      // Clear placeholder for output
       if (outputDisplay) {
         outputDisplay.innerHTML = '';
       }
-      await streamText(`playground-output-display-${pairId}`, mockOutput, 15);
+
+      // Call the playground API
+      const response = await fetch('/api/playground/run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          personaId,
+          pairId,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || 'Failed to run playground');
+      }
+
+      // Stream the task output
+      await streamText(`playground-output-display-${pairId}`, result.taskOutput, 15);
 
       // Hide output streaming indicator
       if (outputStatus) {
@@ -386,8 +394,22 @@ The model provided the correct answer with appropriate brevity and accuracy.`;
       if (judgeDisplay) {
         judgeDisplay.innerHTML = '';
       }
+
+      // Build judge reasoning text from decision
+      const judgeText = `**Rating:** ${result.judgeDecision.rating.toUpperCase()}
+
+**Reasoning:**
+${result.judgeDecision.reasoning}${
+        result.judgeDecision.feedback
+          ? `
+
+**Feedback:**
+${result.judgeDecision.feedback}`
+          : ''
+      }`;
+
       await new Promise((resolve) => setTimeout(resolve, 500)); // Small delay before judge reasoning
-      await streamText(`playground-judge-display-${pairId}`, mockJudgeReasoning, 20);
+      await streamText(`playground-judge-display-${pairId}`, judgeText, 20);
 
       // Hide judge evaluation indicator
       if (judgeStatus) {
@@ -395,17 +417,47 @@ The model provided the correct answer with appropriate brevity and accuracy.`;
         judgeStatus.classList.remove('flex');
       }
 
+      // Show success notification
+      if (window.toast) {
+        window.toast.success('Playground run completed successfully');
+      }
+    } catch (error) {
+      console.error('Playground run error:', error);
+
+      // Hide all status indicators
+      if (outputStatus) {
+        outputStatus.classList.add('hidden');
+        outputStatus.classList.remove('flex');
+      }
+      if (judgeStatus) {
+        judgeStatus.classList.add('hidden');
+        judgeStatus.classList.remove('flex');
+      }
+      if (streamingCursor) {
+        streamingCursor.classList.add('hidden');
+      }
+
+      // Show error in output display
+      if (outputDisplay) {
+        outputDisplay.innerHTML = `<span class="text-luxe-ruby">Error: ${error instanceof Error ? error.message : 'Failed to run playground'}</span>`;
+      }
+
+      // Show error notification
+      if (window.toast) {
+        window.toast.error(error instanceof Error ? error.message : 'Failed to run playground');
+      }
+    } finally {
       // Re-enable run button
       if (runButton) {
         runButton.disabled = false;
         runButton.classList.remove('loading');
       }
     }
+  }
 
-    // Expose functions to global scope for onclick handlers
-    window.resetPlayground = resetPlayground;
-    window.runPlayground = runPlayground;
-  })();
+  // Expose functions to global scope for onclick handlers
+  window.resetPlayground = resetPlayground;
+  window.runPlayground = runPlayground;
 </script>
 
 <style>
