@@ -57,6 +57,16 @@
   border: 1px solid var(--color-gold-border);
 }
 
+/* Disable hover effects for SimpleMetrics - no layout shift or top border */
+#simple-metrics-card.card-luxe:hover {
+  transform: none;
+  box-shadow: var(--shadow-elevated);
+}
+
+#simple-metrics-card.card-luxe:hover::before {
+  opacity: 0;
+}
+
 /* Metric Display */
 .metric-display {
   @apply text-5xl font-bold leading-none tracking-tighter;
