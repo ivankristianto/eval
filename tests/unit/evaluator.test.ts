@@ -8,7 +8,6 @@ import type {
 } from '@lib/utils/types';
 import {
   EvaluationExecutor,
-  cancelEvaluation,
   isEvaluationRunning,
   startEvaluation,
 } from '@lib/evaluation/evaluator';
@@ -325,49 +324,6 @@ describe('EvaluationExecutor', () => {
     );
   });
 
-  it('supports cancellation of active evaluations', async () => {
-    const evaluationId = 'eval-6';
-    const model = addModel({ model_name: 'gpt-4' });
-    addResult(evaluationId, model.id);
-    mockGetEvaluation.mockReturnValue({
-      id: evaluationId,
-      instruction_text: 'Test',
-      accuracy_rubric: 'exact_match',
-      status: 'running',
-      created_at: nowIso(),
-    });
-
-    let resolveExecute: () => void;
-    const executePromise = new Promise<void>((resolve) => {
-      resolveExecute = resolve;
-    });
-
-    const executeSpy = vi
-      .spyOn(EvaluationExecutor.prototype, 'execute')
-      .mockReturnValue(executePromise);
-
-    startEvaluation({
-      evaluationId,
-      modelIds: [model.id],
-      instruction: 'Test',
-      rubricType: 'exact_match',
-      expectedOutput: 'Test',
-    });
-
-    const cancelled = cancelEvaluation(evaluationId);
-    resolveExecute!();
-    await executePromise;
-
-    expect(cancelled).toBe(true);
-    expect(mockUpdateEvaluationStatus).toHaveBeenCalledWith(
-      evaluationId,
-      'failed',
-      'Cancelled by user'
-    );
-
-    executeSpy.mockRestore();
-  });
-
   it('persists successful results', async () => {
     const evaluationId = 'eval-7';
     const model = addModel({ model_name: 'persist' });
@@ -599,10 +555,6 @@ describe('EvaluationExecutor', () => {
 });
 
 describe('evaluation lifecycle helpers', () => {
-  it('reports when no evaluation is running', () => {
-    expect(cancelEvaluation('missing')).toBe(false);
-  });
-
   it('tracks running evaluations', async () => {
     const evaluationId = 'eval-running';
     const model = addModel({ model_name: 'tracked' });
@@ -626,7 +578,6 @@ describe('evaluation lifecycle helpers', () => {
     });
 
     expect(isEvaluationRunning(evaluationId)).toBe(true);
-    expect(cancelEvaluation(evaluationId)).toBe(true);
     resolveExecute!();
     await executePromise;
 

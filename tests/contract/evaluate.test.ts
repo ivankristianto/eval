@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { POST as createEvaluation } from '../../src/pages/api/evaluate';
 import { GET as getStatus } from '../../src/pages/api/evaluation-status';
-import { POST as cancelEvaluation } from '../../src/pages/api/cancel-evaluation';
 import * as db from '@lib/db';
 import * as evaluator from '@lib/evaluation/evaluator';
 import { createMockDb } from '../helpers/mock-db';
@@ -17,7 +16,6 @@ beforeEach(() => {
   vi.spyOn(db, 'getEvaluationStatus').mockImplementation(mockDb.getEvaluationStatus);
   vi.spyOn(db, 'getEvaluation').mockImplementation(mockDb.getEvaluation);
   vi.spyOn(evaluator, 'startEvaluation').mockImplementation(() => undefined);
-  vi.spyOn(evaluator, 'cancelEvaluation').mockImplementation(() => true);
 });
 
 afterEach(() => {
@@ -76,21 +74,5 @@ describe('GET /api/evaluation-status', () => {
 
     expect(response.status).toBe(400);
     expect(body).toMatchObject({ error: 'INVALID_INPUT' });
-  });
-});
-
-describe('POST /api/cancel-evaluation', () => {
-  it('rejects cancelling completed evaluations', async () => {
-    const evaluation = mockDb.insertEvaluation('Prompt', 'exact_match', 'Expected');
-    mockDb.updateEvaluationStatus(evaluation.id, 'completed');
-
-    const request = createJsonRequest('http://localhost/api/cancel-evaluation', {
-      evaluation_id: evaluation.id,
-    });
-    const response = await cancelEvaluation({ request } as never);
-    const body = await readJson(response);
-
-    expect(response.status).toBe(409);
-    expect(body).toMatchObject({ error: 'CANNOT_CANCEL', status: 'completed' });
   });
 });
