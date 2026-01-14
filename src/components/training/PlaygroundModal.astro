@@ -32,7 +32,7 @@ const modalId = `playground-modal-${trainingPairId}`;
 <!-- Modal using native dialog element -->
 <Modal
   id={modalId}
-  size="2xl"
+  size="4xl"
   open={isOpen}
   closeOnEscape={true}
   closeOnBackdropClick={true}
@@ -40,10 +40,10 @@ const modalId = `playground-modal-${trainingPairId}`;
   class="p-0 h-[90vh] flex flex-col"
 >
   <!-- Custom Header -->
-  <div slot="header" class="mb-0 pb-0">
+  <div slot="header" class="flex items-center justify-between gap-4">
     <div class="flex items-center gap-3">
       <div
-        class="flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br from-luxe-gold/20 to-luxe-gold/10 border border-luxe-gold/30"
+        class="flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br from-luxe-gold/20 to-luxe-gold/10 border border-luxe-gold/30 flex-shrink-0"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -68,7 +68,8 @@ const modalId = `playground-modal-${trainingPairId}`;
       </div>
     </div>
     <button
-      class="btn btn-sm btn-circle btn-ghost absolute top-4 right-4"
+      type="button"
+      class="btn btn-sm btn-circle btn-ghost flex-shrink-0"
       onclick={`document.getElementById('${modalId}').close()`}
       aria-label="Close modal"
     >

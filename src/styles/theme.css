@@ -107,6 +107,8 @@
   --modal-max-width-lg: 48rem; /* 768px - wide tables, detailed views */
   --modal-max-width-xl: 64rem; /* 1024px - large dashboards */
   --modal-max-width-2xl: 80rem; /* 1280px - full-featured content */
+  --modal-max-width-3xl: 96rem; /* 1536px - extra wide dashboards */
+  --modal-max-width-4xl: 112rem; /* 1792px - ultra wide content */
   --modal-max-width-full: 95vw; /* near viewport width */
 
   /* Responsive viewport-based sizing */
@@ -161,6 +163,16 @@
   width: 100%;
 }
 
+.modal-3xl {
+  max-width: var(--modal-max-width-3xl);
+  width: 100%;
+}
+
+.modal-4xl {
+  max-width: var(--modal-max-width-4xl);
+  width: 100%;
+}
+
 .modal-full {
   max-width: var(--modal-max-width-full);
   width: 100%;
@@ -176,7 +188,9 @@
   .modal-md,
   .modal-lg,
   .modal-xl,
-  .modal-2xl {
+  .modal-2xl,
+  .modal-3xl,
+  .modal-4xl {
     max-width: var(--modal-max-width-mobile);
   }
 }
