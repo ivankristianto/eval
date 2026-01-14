@@ -129,7 +129,7 @@ const historyModalId = `${type}-prompt-history`;
 <!-- Version History Modal -->
 {
   showHistory && (
-    <Modal id={historyModalId} title={`${type} Prompt History`} size="2xl">
+    <Modal id={historyModalId} title={`${type} Prompt History`} size="3xl">
       <div slot="content" class="space-y-3">
         {versions
           .sort((a, b) => b.version_number - a.version_number)
