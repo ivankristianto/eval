@@ -134,7 +134,27 @@ const formatNumber = (value: number | undefined) => {
         ]}
       >
         <div class="flex items-center justify-between gap-1 mb-1">
-          <span class="metric-label">F1</span>
+          <div class="flex items-center gap-1">
+            <span class="metric-label">F1</span>
+            <div
+              class="tooltip tooltip-right"
+              data-tip="F1 Score: Harmonic mean of precision and recall. Measures overall accuracy by balancing false positives and false negatives."
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-3.5 w-3.5 text-base-content/40"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+            </div>
+          </div>
           {
             f1History.length > 1 && (
               <div class="w-16 h-8">
@@ -163,7 +183,27 @@ const formatNumber = (value: number | undefined) => {
         ]}
       >
         <div class="flex items-center justify-between gap-1 mb-1">
-          <span class="metric-label">Kappa</span>
+          <div class="flex items-center gap-1">
+            <span class="metric-label">Kappa</span>
+            <div
+              class="tooltip tooltip-right"
+              data-tip="Cohen's Kappa: Measures inter-rater agreement between two raters (judge vs human). Values range from -1 (complete disagreement) to 1 (perfect agreement), with 0 indicating agreement by chance."
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-3.5 w-3.5 text-base-content/40"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+            </div>
+          </div>
           {
             kappaHistory.length > 1 && (
               <div class="w-16 h-8">
@@ -198,7 +238,27 @@ const formatNumber = (value: number | undefined) => {
         ]}
       >
         <div class="flex items-center justify-between gap-1 mb-1">
-          <span class="metric-label">Prec.</span>
+          <div class="flex items-center gap-1">
+            <span class="metric-label">Prec.</span>
+            <div
+              class="tooltip tooltip-right"
+              data-tip="Precision: Ratio of correctly predicted positive observations to total predicted positives. High precision means low false positive rate."
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-3.5 w-3.5 text-base-content/40"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+            </div>
+          </div>
           {
             precisionHistory.length > 1 && (
               <div class="w-16 h-8">
@@ -233,7 +293,27 @@ const formatNumber = (value: number | undefined) => {
         ]}
       >
         <div class="flex items-center justify-between gap-1 mb-1">
-          <span class="metric-label">Recall</span>
+          <div class="flex items-center gap-1">
+            <span class="metric-label">Recall</span>
+            <div
+              class="tooltip tooltip-right"
+              data-tip="Recall: Ratio of correctly predicted positive observations to all actual positives. High recall means low false negative rate."
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-3.5 w-3.5 text-base-content/40"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+            </div>
+          </div>
           {
             recallHistory.length > 1 && (
               <div class="w-16 h-8">
