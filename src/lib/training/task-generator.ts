@@ -11,6 +11,45 @@ import { createLogger } from '@lib/logger';
 const logger = createLogger('TaskGenerator');
 
 /**
+ * Clear feedback fields from training_pair_results for specific training pairs.
+ * This is used when regenerating outputs with a new task prompt version to allow fresh evaluation.
+ *
+ * Clears: human_feedback, human_rating, judge_feedback, judge_reasoning, judge_rating
+ *
+ * @param personaId - Persona ID
+ * @param trainingPairIds - Array of training pair IDs to clear feedback for
+ * @param db - Database connection
+ * @returns Number of results that had their feedback cleared
+ */
+export function clearFeedbackForTrainingPairs(
+  personaId: string,
+  trainingPairIds: string[],
+  db: Database
+): number {
+  if (trainingPairIds.length === 0) {
+    return 0;
+  }
+
+  const placeholders = trainingPairIds.map(() => '?').join(',');
+  const now = new Date().toISOString();
+
+  const stmt = db.prepare(
+    `UPDATE training_pair_results
+     SET human_feedback = NULL,
+         human_rating = NULL,
+         judge_feedback = NULL,
+         judge_reasoning = NULL,
+         judge_rating = NULL,
+         updated_at = ?
+     WHERE persona_id = ?
+       AND training_pair_id IN (${placeholders})`
+  );
+
+  const result = stmt.run(now, personaId, ...trainingPairIds);
+  return result.changes;
+}
+
+/**
  * Configuration for task generation
  */
 export interface TaskGeneratorConfig {
@@ -114,6 +153,18 @@ export async function generateTaskOutputs(
   );
 
   logger.info('Evaluation run created', { runId, totalPairs: pairsToProcess.length });
+
+  // Clear existing feedback when regenerating with new task prompt version
+  // This allows fresh evaluation with the new prompt
+  const pairIdsToProcess = pairsToProcess.map((p) => p.id);
+  const clearedCount = clearFeedbackForTrainingPairs(persona_id, pairIdsToProcess, db);
+  if (clearedCount > 0) {
+    logger.info('Cleared existing feedback for training pairs', {
+      persona_id,
+      count: clearedCount,
+      task_prompt_version_id,
+    });
+  }
 
   // Generate outputs for each pair
   const results: TrainingPairResult[] = [];
