@@ -179,13 +179,11 @@ CREATE TABLE IF NOT EXISTS human_reviews (
   judge_decision_id TEXT NOT NULL UNIQUE,
   human_decision TEXT NOT NULL CHECK(human_decision IN ('agree', 'disagree')),
   human_notes TEXT,
-  reviewer_id TEXT,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (judge_decision_id) REFERENCES judge_decisions(id) ON DELETE CASCADE
 );
 
 CREATE INDEX IF NOT EXISTS idx_human_reviews_decision ON human_reviews(judge_decision_id);
-CREATE INDEX IF NOT EXISTS idx_human_reviews_reviewer ON human_reviews(reviewer_id);
 
 -- 6. IterationMetrics table
 -- Calculated metrics for each iteration (confusion matrix, F1, Cohen's Kappa)

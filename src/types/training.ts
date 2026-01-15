@@ -148,7 +148,6 @@ export interface HumanReview {
   judge_decision_id: string;
   human_decision: HumanDecisionType;
   human_notes: string | null;
-  reviewer_id: string | null;
   created_at: string;
 }
 
@@ -159,7 +158,6 @@ export interface CreateHumanReviewInput {
   judge_decision_id: string;
   human_decision: HumanDecisionType;
   human_notes?: string;
-  reviewer_id?: string;
 }
 
 /**

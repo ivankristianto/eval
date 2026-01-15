@@ -800,8 +800,8 @@ export function createHumanReview(
 
   const stmt = database.prepare(`
     INSERT INTO human_reviews (
-      id, judge_decision_id, human_decision, human_notes, reviewer_id, created_at
-    ) VALUES (?, ?, ?, ?, ?, ?)
+      id, judge_decision_id, human_decision, human_notes, created_at
+    ) VALUES (?, ?, ?, ?, ?)
   `);
 
   stmt.run(
@@ -809,7 +809,6 @@ export function createHumanReview(
     input.judge_decision_id,
     input.human_decision,
     input.human_notes || null,
-    input.reviewer_id || null,
     now
   );
 

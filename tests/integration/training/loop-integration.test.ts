@@ -509,9 +509,9 @@ describe('TrainingLoopManager Integration Tests', () => {
 
       // Add human review
       db.prepare(
-        `INSERT INTO human_reviews (id, judge_decision_id, human_decision, human_notes, reviewer_id, created_at)
-         VALUES (?, ?, ?, ?, ?, ?)`
-      ).run(reviewId, decisionId, 'agree', 'Looks good', 'reviewer-1', new Date().toISOString());
+        `INSERT INTO human_reviews (id, judge_decision_id, human_decision, human_notes, created_at)
+         VALUES (?, ?, ?, ?, ?)`
+      ).run(reviewId, decisionId, 'agree', 'Looks good', new Date().toISOString());
 
       const review = db
         .prepare('SELECT * FROM human_reviews WHERE judge_decision_id = ?')
@@ -585,9 +585,9 @@ describe('TrainingLoopManager Integration Tests', () => {
 
       // Only review one
       db.prepare(
-        `INSERT INTO human_reviews (id, judge_decision_id, human_decision, human_notes, reviewer_id, created_at)
-         VALUES (?, ?, ?, ?, ?, ?)`
-      ).run('review-1', decision1, 'agree', 'Good', 'reviewer-1', new Date().toISOString());
+        `INSERT INTO human_reviews (id, judge_decision_id, human_decision, human_notes, created_at)
+         VALUES (?, ?, ?, ?, ?)`
+      ).run('review-1', decision1, 'agree', 'Good', new Date().toISOString());
 
       // Check for unreviewed decisions
       const unreviewed = db
