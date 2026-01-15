@@ -1,0 +1,409 @@
+---
+/**
+ * ResultsTable Component
+ *
+ * Paginated table displaying CSV data with evaluation results side-by-side for each model.
+ * Features row selection, sticky columns, status indicators, and horizontal scroll for many columns.
+ *
+ * @example
+ * <ResultsTable dataset={dataset} run={run} results={results} />
+ *
+ * @param dataset - Bulk dataset containing CSV data
+ * @param run - Evaluation run with configuration
+ * @param results - Array of row results for each model
+ */
+
+import type {
+  BulkDataset,
+  EvaluationRun,
+  RowResult,
+} from '@lib/db';
+import Icon from '@components/ui/Icon.astro';
+
+interface Props {
+  dataset: BulkDataset;
+  run: EvaluationRun;
+  results: RowResult[];
+}
+
+const { dataset, run, results } = Astro.props;
+
+// Parse CSV data from dataset
+const csvData = JSON.parse(dataset.csv_data) as Record<string, unknown>[];
+const headers = csvData.length > 0 ? Object.keys(csvData[0]) : [];
+
+// Parse selected models from run
+const selectedModels = JSON.parse(run.selected_models) as string[];
+
+// Group results by row index and model for easy lookup
+const resultsMap = new Map<string, RowResult>();
+for (const result of results) {
+  const key = `${result.original_row_index}-${result.model_id}`;
+  resultsMap.set(key, result);
+}
+
+// Default page size
+const pageSize = 20;
+const totalPages = Math.max(1, Math.ceil(csvData.length / pageSize));
+---
+
+<div
+  class="card bg-base-100/90 backdrop-blur-sm border border-base-300/50 shadow-lg rounded-xl h-full flex flex-col overflow-hidden"
+>
+  <div class="card-body p-3 flex flex-col min-h-0">
+    <!-- Table Header -->
+    <div class="flex items-center justify-between px-1 py-2 border-b border-base-300/80 flex-shrink-0">
+      <div class="flex items-center gap-3">
+        <label class="flex items-center gap-2 cursor-pointer hover:bg-base-200/50 px-2 py-1 rounded-lg transition-colors">
+          <input
+            type="checkbox"
+            class="checkbox checkbox-sm checkbox-luxe"
+            id="select-all-rows"
+          />
+          <span class="text-sm font-medium">Select All</span>
+        </label>
+        <span class="text-sm text-base-content/60 font-medium">{csvData.length} rows</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="badge badge-ghost">
+          {selectedModels.length} model{selectedModels.length !== 1 ? 's' : ''}
+        </span>
+      </div>
+    </div>
+
+    <!-- Table with horizontal and vertical scroll -->
+    <div class="overflow-x-auto overflow-y-auto rounded-lg border border-base-300/50 flex-1 min-h-0">
+      <table class="table-luxe table-sm" id="results-table">
+        <thead class="bg-base-200/80 sticky top-0 z-20">
+          <tr>
+            <!-- Row checkbox column -->
+            <th class="w-12 sticky left-0 z-30 bg-base-200/90 hover:bg-base-300">
+              <span class="sr-only">Select</span>
+            </th>
+            <!-- Row number column -->
+            <th class="w-16 sticky left-[3rem] z-30 bg-base-200/90 hover:bg-base-300">
+              #
+            </th>
+            <!-- CSV data columns -->
+            {headers.map((header, index) => (
+              <th
+                class="sticky z-10 bg-base-200/90 hover:bg-base-300"
+                style={`left: calc(6rem + ${index * 12}rem)`}
+              >
+                <div class="flex items-center gap-2">
+                  <span>{header}</span>
+                </div>
+              </th>
+            ))}
+            <!-- Model output columns -->
+            {selectedModels.map((modelId) => (
+              <th class="min-w-[200px] max-w-[300px]">
+                <div class="flex items-center gap-2">
+                  <span>Output</span>
+                  <span class="badge badge-sm badge-neutral">{modelId}</span>
+                </div>
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody id="results-body">
+          {csvData.map((row, rowIndex) => (
+            <tr class="hover" data-row-index={rowIndex}>
+              <!-- Row checkbox -->
+              <td class="sticky left-0 z-10 bg-base-100">
+                <input
+                  type="checkbox"
+                  class="checkbox checkbox-sm checkbox-luxe row-checkbox"
+                  data-row-index={rowIndex}
+                />
+              </td>
+              <!-- Row number -->
+              <td class="sticky left-[3rem] z-10 bg-base-100 tabular-nums text-base-content/60">
+                {rowIndex + 1}
+              </td>
+              <!-- CSV data cells -->
+              {headers.map((header, cellIndex) => {
+                const value = String(row[header] ?? '');
+                return (
+                  <td
+                    class="sticky z-10 bg-base-100 max-w-[12rem]"
+                    style={`left: calc(6rem + ${cellIndex * 12}rem)`}
+                  >
+                    <div
+                      class="text-sm whitespace-pre-wrap break-words max-h-20 overflow-y-auto"
+                      title={value}
+                    >
+                      {value || <span class="opacity-30">-</span>}
+                    </div>
+                  </td>
+                );
+              })}
+              <!-- Model output cells -->
+              {selectedModels.map((modelId) => {
+                const resultKey = `${rowIndex}-${modelId}`;
+                const result = resultsMap.get(resultKey);
+
+                return (
+                  <td class="min-w-[200px] max-w-[300px]">
+                    {result?.status === 'completed' ? (
+                      <div
+                        class="text-sm whitespace-pre-wrap break-words max-h-20 overflow-y-auto"
+                        title={result.output_text || ''}
+                      >
+                        {result.output_text || <span class="opacity-30 italic">No output</span>}
+                      </div>
+                    ) : result?.status === 'failed' ? (
+                      <div class="flex items-center gap-2 text-error">
+                        <Icon name="error" size="sm" />
+                        <span class="text-xs" title={result.error_message}>
+                          Failed
+                        </span>
+                      </div>
+                    ) : result?.status === 'pending' ? (
+                      <div class="flex items-center gap-2 text-warning">
+                        <span class="loading loading-spinner loading-xs"></span>
+                        <span class="text-xs">Pending</span>
+                      </div>
+                    ) : (
+                      <div class="flex items-center gap-2 text-base-content/40">
+                        <span class="text-xs italic">Not started</span>
+                      </div>
+                    )}
+                  </td>
+                );
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="flex items-center justify-between px-2 py-2 border-t border-base-300/80 flex-shrink-0">
+      <div class="text-sm text-base-content/60 font-medium">
+        <span id="pagination-info">
+          Showing 1-{Math.min(pageSize, csvData.length)} of {csvData.length} rows
+        </span>
+      </div>
+      <div class="join">
+        <button class="join-item btn btn-xs btn-ghost" data-action="prev-page" disabled>«</button>
+        <button class="join-item btn btn-xs btn-active" data-page="1">1</button>
+        {
+          totalPages > 1 && (
+            <button class="join-item btn btn-xs btn-ghost" data-page="2">
+              2
+            </button>
+          )
+        }
+        {totalPages > 2 && <span class="join-item btn btn-xs btn-disabled btn-ghost">...</span>}
+        {
+          totalPages > 2 && (
+            <button class="join-item btn btn-xs btn-ghost" data-page={totalPages}>
+              {totalPages}
+            </button>
+          )
+        }
+        <button class="join-item btn btn-xs btn-ghost" data-action="next-page" disabled>»</button>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    {
+      csvData.length === 0 && (
+        <div class="p-12 text-center">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="1.5"
+            stroke="currentColor"
+            class="w-16 h-16 mx-auto opacity-30 mb-4"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"
+            />
+          </svg>
+          <h3 class="text-lg font-semibold mb-2">No Data Available</h3>
+          <p class="text-sm text-base-content/70">Upload a CSV file to get started</p>
+        </div>
+      )
+    }
+  </div>
+</div>
+
+<script is:inline define:vars={{ pageSize, csvData }}>
+  /**
+   * Client-side functionality for results table.
+   * Handles pagination, row selection, and status updates.
+   */
+
+  let currentPage = 1;
+  const totalRows = csvData.length;
+  const totalPages = Math.max(1, Math.ceil(totalRows / pageSize));
+
+  const selectAllCheckbox = document.getElementById('select-all-rows');
+  const paginationInfo = document.getElementById('pagination-info');
+
+  /**
+   * Update checkboxes based on visible rows
+   */
+  function updateCheckboxes() {
+    const rowCheckboxes = document.querySelectorAll('.row-checkbox');
+
+    selectAllCheckbox?.addEventListener('change', (e) => {
+      const isChecked = e.target.checked;
+      rowCheckboxes.forEach((checkbox) => {
+        const row = checkbox.closest('tr');
+        const isVisible = row && row.style.display !== 'none';
+        if (isVisible) {
+          checkbox.checked = isChecked;
+        }
+      });
+    });
+
+    rowCheckboxes.forEach((checkbox) => {
+      checkbox.addEventListener('change', () => {
+        // Check if all visible rows are selected
+        const visibleCheckboxes = Array.from(rowCheckboxes).filter((cb) => {
+          const row = cb.closest('tr');
+          return row && row.style.display !== 'none';
+        });
+
+        const allSelected = visibleCheckboxes.every((cb) => cb.checked);
+
+        if (selectAllCheckbox) {
+          selectAllCheckbox.checked = allSelected && visibleCheckboxes.length > 0;
+        }
+      });
+    });
+  }
+
+  /**
+   * Update pagination display and visible rows
+   */
+  function updatePagination() {
+    const start = (currentPage - 1) * pageSize + 1;
+    const end = Math.min(currentPage * pageSize, totalRows);
+
+    if (paginationInfo) {
+      paginationInfo.textContent = `Showing ${start}-${end} of ${totalRows} rows`;
+    }
+
+    // Update page buttons
+    document.querySelectorAll('[data-page]').forEach((btn) => {
+      const pageNum = parseInt(btn.dataset.page || '0');
+      if (pageNum === currentPage) {
+        btn.classList.add('btn-active');
+      } else {
+        btn.classList.remove('btn-active');
+      }
+    });
+
+    // Update prev/next buttons
+    const prevBtn = document.querySelector('[data-action="prev-page"]');
+    const nextBtn = document.querySelector('[data-action="next-page"]');
+    if (prevBtn) prevBtn.disabled = currentPage === 1;
+    if (nextBtn) nextBtn.disabled = currentPage === totalPages;
+
+    // Show/hide rows based on current page
+    const tbody = document.querySelector('#results-body');
+    if (tbody) {
+      const rows = tbody.querySelectorAll('tr[data-row-index]');
+      rows.forEach((row, index) => {
+        const rowNumber = index + 1;
+        const shouldShow = rowNumber >= start && rowNumber <= end;
+        row.style.display = shouldShow ? '' : 'none';
+      });
+    }
+  }
+
+  /**
+   * Handle page button clicks
+   */
+  document.querySelectorAll('[data-page]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const page = parseInt(btn.dataset.page || '1');
+      currentPage = page;
+      updatePagination();
+
+      // Reset select all checkbox when changing pages
+      if (selectAllCheckbox) {
+        selectAllCheckbox.checked = false;
+      }
+
+      // Dispatch event for parent to handle
+      const event = new CustomEvent('page-change', {
+        bubbles: true,
+        detail: { page },
+      });
+      btn.dispatchEvent(event);
+    });
+  });
+
+  /**
+   * Handle previous page button
+   */
+  document.querySelector('[data-action="prev-page"]')?.addEventListener('click', () => {
+    if (currentPage > 1) {
+      currentPage--;
+      updatePagination();
+
+      if (selectAllCheckbox) {
+        selectAllCheckbox.checked = false;
+      }
+
+      document.dispatchEvent(new CustomEvent('page-change', { detail: { page: currentPage } }));
+    }
+  });
+
+  /**
+   * Handle next page button
+   */
+  document.querySelector('[data-action="next-page"]')?.addEventListener('click', () => {
+    if (currentPage < totalPages) {
+      currentPage++;
+      updatePagination();
+
+      if (selectAllCheckbox) {
+        selectAllCheckbox.checked = false;
+      }
+
+      document.dispatchEvent(new CustomEvent('page-change', { detail: { page: currentPage } }));
+    }
+  });
+
+  /**
+   * Get selected row indices
+   */
+  function getSelectedRows() {
+    const rowCheckboxes = document.querySelectorAll('.row-checkbox');
+    return Array.from(rowCheckboxes)
+      .filter((cb) => cb.checked)
+      .map((cb) => parseInt(cb.dataset.rowIndex || '-1'))
+      .filter((idx) => idx >= 0);
+  }
+
+  // Expose getSelectedRows function globally for parent components
+  window.getSelectedBulkRows = getSelectedRows;
+
+  // Initialize
+  updateCheckboxes();
+  updatePagination();
+</script>
+
+<style>
+  /* Fix zebra striping for sticky columns */
+  .table-luxe tbody tr:nth-child(even) .sticky {
+    background-color: hsl(var(--b2));
+  }
+
+  .table-luxe tbody tr:nth-child(odd) .sticky {
+    background-color: hsl(var(--b1));
+  }
+
+  .table-luxe tbody tr:hover .sticky {
+    background-color: hsl(var(--bc) / 0.1);
+  }
+</style>

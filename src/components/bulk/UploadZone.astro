@@ -1,0 +1,516 @@
+---
+/**
+ * UploadZone Component
+ *
+ * Drag-and-drop zone for CSV file upload with preview functionality.
+ * Validates file format and size, displays preview table, and handles upload API calls.
+ *
+ * @example
+ * <UploadZone />
+ *
+ * Emits 'bulk-upload-success' event with { datasetId, filename, rowCount } on successful upload.
+ */
+
+// Maximum file size: 10MB (matching API limit)
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
+---
+
+<div class="card bg-base-100/90 backdrop-blur-sm border border-base-300/50 shadow-lg rounded-xl">
+  <div class="card-body p-6">
+    <!-- Upload Zone -->
+    <div
+      id="upload-zone"
+      class="border-2 border-dashed border-base-300 rounded-xl p-12 text-center transition-all duration-200 cursor-pointer hover:border-luxe-gold hover:bg-base-200/30"
+      role="button"
+      tabindex="0"
+      aria-label="Upload CSV file"
+      data-upload-zone
+    >
+      <!-- Icon -->
+      <div class="mb-4">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke-width="1.5"
+          stroke="currentColor"
+          class="w-16 h-16 mx-auto text-base-content/40"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"
+          ></path>
+        </svg>
+      </div>
+
+      <!-- Main Text -->
+      <h3 class="text-lg font-semibold mb-2">Upload CSV File</h3>
+      <p class="text-sm text-base-content/60 mb-4">
+        Drag and drop your CSV file here, or click to browse
+      </p>
+
+      <!-- File Info -->
+      <p class="text-xs text-base-content/40 mb-4">Maximum file size: 10MB. Maximum rows: 1,000.</p>
+
+      <!-- Browse Button -->
+      <button type="button" class="btn btn-sm btn-primary" data-action="browse-files">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke-width="1.5"
+          stroke="currentColor"
+          class="w-4 h-4"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"
+          ></path>
+        </svg>
+        Browse Files
+      </button>
+
+      <!-- Hidden File Input -->
+      <input
+        type="file"
+        id="csv-file-input"
+        class="hidden"
+        accept=".csv"
+        aria-label="CSV file input"
+      />
+    </div>
+
+    <!-- Error Message -->
+    <div id="upload-error" class="hidden alert alert-error mt-4" role="alert">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        class="stroke-current shrink-0 h-6 w-6"
+        fill="none"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+      </svg>
+      <span id="error-message">Error message here</span>
+    </div>
+
+    <!-- Preview Section (hidden by default) -->
+    <div id="preview-section" class="hidden mt-6">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h4 class="font-semibold text-lg">Preview</h4>
+          <p class="text-sm text-base-content/60">
+            <span id="preview-filename">filename.csv</span> •{' '}
+            <span id="preview-row-count">0</span> rows
+          </p>
+        </div>
+        <div class="flex gap-2">
+          <button
+            type="button"
+            id="clear-btn"
+            class="btn btn-sm btn-ghost"
+            data-action="clear-upload"
+          >
+            Clear
+          </button>
+          <button
+            type="button"
+            id="upload-btn"
+            class="btn btn-sm btn-luxe btn-luxe-primary"
+            data-action="upload-csv"
+          >
+            Upload
+          </button>
+        </div>
+      </div>
+
+      <!-- Preview Table -->
+      <div class="overflow-x-auto rounded-lg border border-base-300/50">
+        <table class="table-luxe table-sm" id="preview-table">
+          <thead class="bg-base-200/80">
+            <tr id="preview-headers">
+              <!-- Headers will be inserted here -->
+            </tr>
+          </thead>
+          <tbody id="preview-rows">
+            <!-- Rows will be inserted here -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Loading State (hidden by default) -->
+    <div id="loading-state" class="hidden mt-6 text-center">
+      <span class="loading loading-spinner loading-lg text-luxe-gold"></span>
+      <p class="text-sm text-base-content/60 mt-2">Uploading CSV file...</p>
+    </div>
+  </div>
+</div>
+
+<script is:inline define:vars={{ MAX_FILE_SIZE }}>
+  /**
+   * Client-side functionality for CSV upload zone.
+   * Handles drag-and-drop, file validation, preview generation, and API upload.
+   */
+
+  const uploadZone = document.querySelector('[data-upload-zone]');
+  const fileInput = document.getElementById('csv-file-input');
+  const browseBtn = document.querySelector('[data-action="browse-files"]');
+  const uploadBtn = document.querySelector('[data-action="upload-csv"]');
+  const clearBtn = document.querySelector('[data-action="clear-upload"]');
+  const errorDiv = document.getElementById('upload-error');
+  const errorMessage = document.getElementById('error-message');
+  const previewSection = document.getElementById('preview-section');
+  const loadingState = document.getElementById('loading-state');
+  const previewHeaders = document.getElementById('preview-headers');
+  const previewRows = document.getElementById('preview-rows');
+  const previewFilename = document.getElementById('preview-filename');
+  const previewRowCount = document.getElementById('preview-row-count');
+
+  let selectedFile = null;
+  let parsedPreview = null;
+
+  /**
+   * Show error message with optional details
+   */
+  function showError(message, details) {
+    errorMessage.textContent = details ? `${message}: ${details.join(', ')}` : message;
+    errorDiv.classList.remove('hidden');
+  }
+
+  /**
+   * Hide error message
+   */
+  function hideError() {
+    errorDiv.classList.add('hidden');
+  }
+
+  /**
+   * Parse CSV file on client side for preview
+   * Uses simple CSV parsing (handles quoted fields with commas)
+   */
+  function parseCSV(content) {
+    const lines = [];
+    let currentRow = [];
+    let currentField = '';
+    let inQuotes = false;
+    let i = 0;
+
+    while (i < content.length) {
+      const char = content[i];
+      const nextChar = content[i + 1];
+
+      if (inQuotes) {
+        if (char === '"') {
+          if (nextChar === '"') {
+            currentField += '"';
+            i += 2;
+            continue;
+          } else {
+            inQuotes = false;
+            i++;
+            continue;
+          }
+        } else {
+          currentField += char;
+          i++;
+          continue;
+        }
+      } else {
+        if (char === '"') {
+          inQuotes = true;
+          i++;
+          continue;
+        } else if (char === ',') {
+          currentRow.push(currentField);
+          currentField = '';
+          i++;
+          continue;
+        } else if (char === '\n') {
+          currentRow.push(currentField);
+          if (currentRow.length > 0) {
+            lines.push(currentRow);
+          }
+          currentRow = [];
+          currentField = '';
+          i++;
+          continue;
+        } else if (char === '\r' && nextChar === '\n') {
+          currentRow.push(currentField);
+          if (currentRow.length > 0) {
+            lines.push(currentRow);
+          }
+          currentRow = [];
+          currentField = '';
+          i += 2;
+          continue;
+        } else if (char === '\r') {
+          currentRow.push(currentField);
+          if (currentRow.length > 0) {
+            lines.push(currentRow);
+          }
+          currentRow = [];
+          currentField = '';
+          i++;
+          continue;
+        } else {
+          currentField += char;
+          i++;
+          continue;
+        }
+      }
+    }
+
+    // Add last field and row
+    if (currentField || currentRow.length > 0) {
+      currentRow.push(currentField);
+      if (currentRow.length > 0) {
+        lines.push(currentRow);
+      }
+    }
+
+    if (lines.length === 0) {
+      return { headers: [], rows: [] };
+    }
+
+    const headers = lines[0];
+    const dataLines = lines.slice(1);
+    const rows = [];
+
+    for (const rowData of dataLines) {
+      if (rowData.length === 0 || rowData.every((cell) => !cell.trim())) {
+        continue;
+      }
+
+      const rowObj = {};
+      for (let j = 0; j < headers.length; j++) {
+        const header = headers[j].trim();
+        const value = rowData[j] !== undefined ? rowData[j].trim() : '';
+        rowObj[header] = value;
+      }
+      rows.push(rowObj);
+    }
+
+    return { headers, rows };
+  }
+
+  /**
+   * Display preview table with first 10 rows
+   */
+  function displayPreview(data, filename) {
+    // Update metadata
+    previewFilename.textContent = filename;
+    previewRowCount.textContent = data.rows.length.toString();
+
+    // Clear existing content
+    previewHeaders.innerHTML = '';
+    previewRows.innerHTML = '';
+
+    // Add headers
+    data.headers.forEach((header) => {
+      const th = document.createElement('th');
+      th.textContent = header;
+      th.className = 'text-xs font-semibold uppercase tracking-wider px-3 py-3';
+      previewHeaders.appendChild(th);
+    });
+
+    // Add rows (max 10 for preview)
+    const previewRowsData = data.rows.slice(0, 10);
+    previewRowsData.forEach((row, index) => {
+      const tr = document.createElement('tr');
+      tr.className = index % 2 === 0 ? 'bg-base-100' : 'bg-base-200/50';
+
+      data.headers.forEach((header) => {
+        const td = document.createElement('td');
+        td.className = 'px-3 py-2 text-sm whitespace-pre-wrap break-words max-w-xs';
+        td.textContent = row[header] || '';
+        td.title = row[header] || '';
+        tr.appendChild(td);
+      });
+
+      previewRows.appendChild(tr);
+    });
+
+    // Show preview section
+    previewSection.classList.remove('hidden');
+
+    // Hide upload zone visual feedback
+    uploadZone.classList.remove('border-luxe-gold', 'bg-base-200/30');
+  }
+
+  /**
+   * Handle file selection (from input or drag-and-drop)
+   */
+  async function handleFileSelect(file) {
+    hideError();
+
+    // Validate file type
+    if (
+      !file.name.endsWith('.csv') &&
+      file.type !== 'text/csv' &&
+      file.type !== 'application/csv'
+    ) {
+      showError('Invalid file format', ['Please upload a CSV file']);
+      return;
+    }
+
+    // Validate file size
+    if (file.size > MAX_FILE_SIZE) {
+      showError('File too large', [`Maximum size is ${MAX_FILE_SIZE / 1024 / 1024}MB`]);
+      return;
+    }
+
+    selectedFile = file;
+
+    try {
+      // Parse CSV for preview
+      const content = await file.text();
+      parsedPreview = parseCSV(content);
+
+      if (parsedPreview.headers.length === 0) {
+        showError('Invalid CSV file', ['File appears to be empty or malformed']);
+        return;
+      }
+
+      if (parsedPreview.rows.length === 0) {
+        showError('Invalid CSV file', ['No data rows found']);
+        return;
+      }
+
+      // Display preview
+      displayPreview(parsedPreview, file.name);
+    } catch (err) {
+      showError('Failed to parse CSV', [err.message || 'Unknown error']);
+      selectedFile = null;
+      parsedPreview = null;
+    }
+  }
+
+  /**
+   * Clear upload and reset state
+   */
+  function clearUpload() {
+    selectedFile = null;
+    parsedPreview = null;
+    fileInput.value = '';
+    previewSection.classList.add('hidden');
+    uploadZone.classList.remove('border-luxe-gold', 'bg-base-200/30');
+    hideError();
+  }
+
+  /**
+   * Upload CSV to API
+   */
+  async function uploadCSV() {
+    if (!selectedFile) {
+      showError('No file selected', ['Please select a CSV file to upload']);
+      return;
+    }
+
+    hideError();
+    uploadBtn.disabled = true;
+    uploadBtn.classList.add('loading');
+    loadingState.classList.remove('hidden');
+    previewSection.classList.add('hidden');
+
+    try {
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+
+      const response = await fetch('/api/bulk/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || data.error || 'Upload failed');
+      }
+
+      // Dispatch custom event with dataset_id
+      const event = new CustomEvent('bulk-upload-success', {
+        bubbles: true,
+        detail: { datasetId: data.dataset_id, filename: data.filename, rowCount: data.row_count },
+      });
+      uploadZone.dispatchEvent(event);
+
+      // Reset form
+      clearUpload();
+
+      // Show success message
+      if (window.toast) {
+        window.toast.success(`Successfully uploaded ${data.filename} with ${data.row_count} rows`);
+      }
+    } catch (err) {
+      showError('Upload failed', [err.message || 'Unknown error']);
+      previewSection.classList.remove('hidden');
+    } finally {
+      uploadBtn.disabled = false;
+      uploadBtn.classList.remove('loading');
+      loadingState.classList.add('hidden');
+    }
+  }
+
+  // Drag and drop handlers
+  uploadZone?.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    uploadZone.classList.add('border-luxe-gold', 'bg-base-200/30');
+  });
+
+  uploadZone?.addEventListener('dragleave', (e) => {
+    e.preventDefault();
+    if (e.target === uploadZone) {
+      uploadZone.classList.remove('border-luxe-gold', 'bg-base-200/30');
+    }
+  });
+
+  uploadZone?.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadZone.classList.remove('border-luxe-gold', 'bg-base-200/30');
+
+    const files = e.dataTransfer?.files;
+    if (files && files.length > 0) {
+      handleFileSelect(files[0]);
+    }
+  });
+
+  // Click to browse
+  browseBtn?.addEventListener('click', () => {
+    fileInput.click();
+  });
+
+  uploadZone?.addEventListener('click', (e) => {
+    if (e.target === uploadZone || e.target instanceof SVGElement) {
+      fileInput.click();
+    }
+  });
+
+  // File input change
+  fileInput?.addEventListener('change', (e) => {
+    const target = e.target;
+    const file = target.files?.[0];
+    if (file) {
+      handleFileSelect(file);
+    }
+  });
+
+  // Clear button
+  clearBtn?.addEventListener('click', clearUpload);
+
+  // Upload button
+  uploadBtn?.addEventListener('click', uploadCSV);
+
+  // Keyboard accessibility
+  uploadZone?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      fileInput.click();
+    }
+  });
+</script>
