@@ -54,6 +54,11 @@ export function cleanTestDatabase(): void {
   const db = getTestDatabase();
 
   // Delete in correct order to respect foreign keys
+  // Bulk evaluation tables (respect FK constraints)
+  db.exec('DELETE FROM row_results');
+  db.exec('DELETE FROM evaluation_runs_bulk');
+  db.exec('DELETE FROM bulk_datasets');
+  // Training workspace tables
   db.exec('DELETE FROM training_loop_checkpoints');
   db.exec('DELETE FROM training_loop_state');
   db.exec('DELETE FROM task_prompt_versions');
