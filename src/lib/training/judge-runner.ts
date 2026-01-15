@@ -119,7 +119,7 @@ export async function evaluateWithJudge(
 
   if (resultsToEvaluate.length === 0) {
     throw new Error(
-      `No training pair results found to evaluate for persona: ${persona_id}. Results must have generated_output and no existing judge_rating.`
+      `No outputs to evaluate for persona "${persona_id}". Please generate outputs first by starting the training process.`
     );
   }
 
