@@ -7,11 +7,7 @@
  */
 
 import type { APIRoute } from 'astro';
-import {
-  createEvaluationRun,
-  getBulkDataset,
-  listEvaluationRuns,
-} from '@lib/db';
+import { createEvaluationRun, getBulkDataset, listEvaluationRuns } from '@lib/db';
 import { startBulkEvaluation, isBulkEvaluationRunning } from '@lib/bulk-evaluation/bulk-evaluator';
 import { getModels } from '@lib/db';
 import { badRequest, notFound, conflict, createErrorResponse } from '@lib/api-error-handler';
