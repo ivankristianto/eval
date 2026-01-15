@@ -152,15 +152,27 @@ export const POST: APIRoute = async ({ request }) => {
         pair_ids: training_pair_ids,
       });
 
-      // Query training_pair_results for the persona to find existing results
+      // Query only the LATEST result for each training pair
+      // Use a subquery to get the latest result per training pair
       const placeholders = training_pair_ids.map(() => '?').join(',');
       const existingResults = db
         .prepare(
-          `SELECT id, training_pair_id, generated_output, judge_rating
-           FROM training_pair_results
-           WHERE persona_id = ? AND training_pair_id IN (${placeholders})`
+          `SELECT
+             tpr.id,
+             tpr.training_pair_id,
+             tpr.generated_output,
+             tpr.judge_rating
+           FROM training_pair_results tpr
+           INNER JOIN (
+             SELECT training_pair_id, MAX(created_at) as max_created_at
+             FROM training_pair_results
+             WHERE persona_id = ? AND training_pair_id IN (${placeholders})
+             GROUP BY training_pair_id
+           ) latest ON tpr.training_pair_id = latest.training_pair_id
+                      AND tpr.created_at = latest.max_created_at
+           WHERE tpr.persona_id = ?`
         )
-        .all(persona_id, ...training_pair_ids) as Array<{
+        .all(persona_id, ...training_pair_ids, persona_id) as Array<{
         id: string;
         training_pair_id: string;
         generated_output: string | null;

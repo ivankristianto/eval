@@ -163,11 +163,7 @@ describe('TaskGenerator', () => {
     });
 
     it('should return 0 when no matching results exist', () => {
-      const clearedCount = clearFeedbackForTrainingPairs(
-        personaId,
-        ['non-existent-pair-id'],
-        db
-      );
+      const clearedCount = clearFeedbackForTrainingPairs(personaId, ['non-existent-pair-id'], db);
       expect(clearedCount).toBe(0);
     });
 
