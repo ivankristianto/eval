@@ -10,6 +10,11 @@ import { getDatabase } from './db';
 // ===== Types =====
 
 /**
+ * Maximum size for CSV data in bytes (10MB)
+ */
+const MAX_CSV_DATA_SIZE = 10_000_000;
+
+/**
  * Bulk dataset status and metadata
  */
 export interface BulkDataset {
@@ -83,14 +88,6 @@ export interface EvaluationRunWithResults extends EvaluationRun {
   results: RowResult[];
 }
 
-/**
- * Input type for creating bulk datasets
- */
-export interface CreateBulkDatasetInput {
-  filename: string;
-  csv_data: object[];
-}
-
 // ===== Database Connection =====
 
 /**
@@ -122,6 +119,7 @@ function withTransaction<T>(fn: (db: Database.Database) => T, db?: Database.Data
  * @param csvData - Array of row objects parsed from CSV
  * @param db - Optional database instance
  * @returns Created bulk dataset
+ * @throws {Error} If CSV data size exceeds 10MB limit
  */
 export function createBulkDataset(
   filename: string,
@@ -132,14 +130,26 @@ export function createBulkDataset(
   const id = uuidv4();
   const now = new Date().toISOString();
 
+  // Validate CSV data size to prevent unbounded JSON parsing
+  const jsonString = JSON.stringify(csvData);
+  if (jsonString.length > MAX_CSV_DATA_SIZE) {
+    throw new Error(
+      `CSV data too large: ${jsonString.length} bytes (max ${MAX_CSV_DATA_SIZE})`
+    );
+  }
+
   const stmt = database.prepare(`
     INSERT INTO bulk_datasets (id, filename, row_count, csv_data, created_at)
     VALUES (?, ?, ?, ?, ?)
   `);
 
-  stmt.run(id, filename, csvData.length, JSON.stringify(csvData), now);
+  stmt.run(id, filename, csvData.length, jsonString, now);
 
-  return getBulkDataset(id, database)!;
+  const result = getBulkDataset(id, database);
+  if (!result) {
+    throw new Error(`Failed to create bulk dataset: ${id}`);
+  }
+  return result;
 }
 
 /**
@@ -168,6 +178,10 @@ export function listBulkDatasets(db?: Database.Database): BulkDataset[] {
 
 /**
  * Delete a bulk dataset by ID.
+ *
+ * NOTE: This will CASCADE delete all associated evaluation runs and their row results
+ * due to foreign key constraints defined in the database schema.
+ *
  * @param id - Dataset ID
  * @param db - Optional database instance
  * @returns True if deleted, false otherwise
@@ -185,6 +199,8 @@ export function deleteBulkDataset(id: string, db?: Database.Database): boolean {
  * @param config - Evaluation configuration
  * @param db - Optional database instance
  * @returns Created evaluation run
+ * @throws {Error} If dataset is not found
+ * @throws {Error} If temperature is outside valid range [0.0, 2.0]
  */
 export function createEvaluationRun(config: EvaluationConfig, db?: Database.Database): EvaluationRun {
   const database = db || getBulkDatabase();
@@ -193,6 +209,13 @@ export function createEvaluationRun(config: EvaluationConfig, db?: Database.Data
   const dataset = getBulkDataset(config.dataset_id, database);
   if (!dataset) {
     throw new Error(`Dataset not found: ${config.dataset_id}`);
+  }
+
+  // Validate temperature is within acceptable range
+  if (config.temperature < 0.0 || config.temperature > 2.0) {
+    throw new Error(
+      `Temperature must be between 0.0 and 2.0: ${config.temperature}`
+    );
   }
 
   return withTransaction((transactionDb) => {
@@ -219,7 +242,11 @@ export function createEvaluationRun(config: EvaluationConfig, db?: Database.Data
       now
     );
 
-    return getEvaluationRun(id, transactionDb)!;
+    const result = getEvaluationRun(id, transactionDb);
+    if (!result) {
+      throw new Error(`Failed to create evaluation run: ${id}`);
+    }
+    return result;
   }, db);
 }
 
@@ -251,42 +278,52 @@ export function updateRunStatus(
   errorMessage?: string,
   db?: Database.Database
 ): EvaluationRun {
-  const database = db || getBulkDatabase();
-  const now = new Date().toISOString();
+  // Wrap in transaction to prevent race conditions when reading existing state
+  return withTransaction((transactionDb) => {
+    const now = new Date().toISOString();
 
-  const existing = getEvaluationRun(id, database);
-  if (!existing) {
-    throw new Error(`Evaluation run not found: ${id}`);
-  }
+    const existing = getEvaluationRun(id, transactionDb);
+    if (!existing) {
+      throw new Error(`Evaluation run not found: ${id}`);
+    }
 
-  let query = 'UPDATE evaluation_runs_bulk SET status = ?, processed_rows = ?, updated_at = ?';
-  const params: unknown[] = [status, processedCount, now];
+    let query = 'UPDATE evaluation_runs_bulk SET status = ?, processed_rows = ?, updated_at = ?';
+    const params: unknown[] = [status, processedCount, now];
 
-  // Update started_at when transitioning to running
-  if (status === 'running' && existing.status === 'pending') {
-    query += ', started_at = ?';
-    params.push(now);
-  }
+    // Update started_at when transitioning to running
+    if (status === 'running' && existing.status === 'pending') {
+      query += ', started_at = ?';
+      params.push(now);
+    }
 
-  // Update completed_at when transitioning to completed or failed
-  if ((status === 'completed' || status === 'failed') && existing.status !== 'completed' && existing.status !== 'failed') {
-    query += ', completed_at = ?';
-    params.push(now);
-  }
+    // Update completed_at when transitioning to completed or failed
+    if (
+      (status === 'completed' || status === 'failed') &&
+      existing.status !== 'completed' &&
+      existing.status !== 'failed'
+    ) {
+      query += ', completed_at = ?';
+      params.push(now);
+    }
 
-  // Add error message if provided
-  if (errorMessage) {
-    query += ', error_message = ?';
-    params.push(errorMessage);
-  }
+    // Add error message if provided
+    if (errorMessage) {
+      query += ', error_message = ?';
+      params.push(errorMessage);
+    }
 
-  query += ' WHERE id = ?';
-  params.push(id);
+    query += ' WHERE id = ?';
+    params.push(id);
 
-  const stmt = database.prepare(query);
-  stmt.run(...params);
+    const stmt = transactionDb.prepare(query);
+    stmt.run(...params);
 
-  return getEvaluationRun(id, database)!;
+    const result = getEvaluationRun(id, transactionDb);
+    if (!result) {
+      throw new Error(`Failed to update evaluation run: ${id}`);
+    }
+    return result;
+  }, db);
 }
 
 /**
@@ -329,6 +366,10 @@ export function listEvaluationRuns(
 
 /**
  * Delete an evaluation run by ID.
+ *
+ * NOTE: This will CASCADE delete all associated row results due to foreign key
+ * constraints defined in the database schema.
+ *
  * @param id - Run ID
  * @param db - Optional database instance
  * @returns True if deleted, false otherwise
@@ -372,7 +413,11 @@ export function createRowResult(result: Omit<RowResult, 'id' | 'created_at'>, db
     now
   );
 
-  return getRowResult(id, database)!;
+  const created = getRowResult(id, database);
+  if (!created) {
+    throw new Error(`Failed to create row result: ${id}`);
+  }
+  return created;
 }
 
 /**
@@ -389,6 +434,10 @@ export function getRowResult(id: string, db?: Database.Database): RowResult | nu
 
 /**
  * Get all row results for an evaluation run.
+ *
+ * NOTE: This loads all results into memory. For large runs (many rows x many models),
+ * consider implementing pagination to avoid memory issues.
+ *
  * @param runId - Run ID
  * @param db - Optional database instance
  * @returns Array of row results
@@ -470,19 +519,23 @@ export function updateRowResult(
   const stmt = database.prepare(`UPDATE row_results SET ${fields.join(', ')} WHERE id = ?`);
   stmt.run(...values);
 
-  return getRowResult(id, database)!;
+  const updated = getRowResult(id, database);
+  if (!updated) {
+    throw new Error(`Failed to update row result: ${id}`);
+  }
+  return updated;
 }
 
 /**
  * Delete all row results for an evaluation run.
  * @param runId - Run ID
  * @param db - Optional database instance
- * @returns Count of deleted records
+ * @returns True if any records were deleted, false otherwise
  */
-export function deleteRowResultsForRun(runId: string, db?: Database.Database): number {
+export function deleteRowResultsForRun(runId: string, db?: Database.Database): boolean {
   const database = db || getBulkDatabase();
   const result = database.prepare('DELETE FROM row_results WHERE run_id = ?').run(runId);
-  return result.changes;
+  return result.changes > 0;
 }
 
 // ===== Composite Queries =====
@@ -520,6 +573,7 @@ export function getRunWithResults(id: string, db?: Database.Database): Evaluatio
  * @param runId - Run ID
  * @param db - Optional database instance
  * @returns Statistics including status breakdown and completion percentage
+ * @throws {Error} If run is not found
  */
 export function getRunStatistics(
   runId: string,
@@ -533,12 +587,12 @@ export function getRunStatistics(
     completed: number;
     failed: number;
   };
-} | null {
+} {
   const database = db || getBulkDatabase();
 
   const run = getEvaluationRun(runId, database);
   if (!run) {
-    return null;
+    throw new Error(`Evaluation run not found: ${runId}`);
   }
 
   const results = getRowResults(runId, database);
