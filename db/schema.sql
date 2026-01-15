@@ -368,3 +368,61 @@ CREATE INDEX IF NOT EXISTS idx_persona_metrics_run ON persona_metrics(evaluation
 CREATE INDEX IF NOT EXISTS idx_persona_metrics_type ON persona_metrics(snapshot_type);
 CREATE INDEX IF NOT EXISTS idx_persona_metrics_f1 ON persona_metrics(f1_score DESC);
 
+-- ============================================
+-- Bulk Evaluation Tables
+-- ============================================
+
+-- bulk_datasets table
+-- Stores uploaded CSV metadata and parsed data for bulk evaluation
+CREATE TABLE IF NOT EXISTS bulk_datasets (
+  id TEXT PRIMARY KEY,
+  filename TEXT NOT NULL,
+  row_count INTEGER NOT NULL,
+  csv_data TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_bulk_datasets_created_at ON bulk_datasets(created_at DESC);
+
+-- evaluation_runs table (bulk evaluation)
+-- Tracks evaluation execution for bulk datasets
+CREATE TABLE IF NOT EXISTS evaluation_runs_bulk (
+  id TEXT PRIMARY KEY,
+  dataset_id TEXT NOT NULL,
+  system_prompt TEXT NOT NULL,
+  temperature REAL DEFAULT 0.3 CHECK (temperature >= 0.0 AND temperature <= 2.0),
+  selected_models TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'running', 'completed', 'failed')),
+  total_rows INTEGER NOT NULL,
+  processed_rows INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+  started_at TEXT,
+  completed_at TEXT,
+  error_message TEXT,
+  FOREIGN KEY (dataset_id) REFERENCES bulk_datasets(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_evaluation_runs_bulk_dataset_id ON evaluation_runs_bulk(dataset_id);
+CREATE INDEX IF NOT EXISTS idx_evaluation_runs_bulk_status ON evaluation_runs_bulk(status);
+
+-- row_results table (bulk evaluation)
+-- Stores per-row per-model outputs for bulk evaluation runs
+CREATE TABLE IF NOT EXISTS row_results (
+  id TEXT PRIMARY KEY,
+  run_id TEXT NOT NULL,
+  original_row_index INTEGER NOT NULL,
+  model_id TEXT NOT NULL,
+  prompt_used TEXT NOT NULL,
+  output_text TEXT,
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'completed', 'failed')),
+  error_message TEXT,
+  duration_ms INTEGER,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  FOREIGN KEY (run_id) REFERENCES evaluation_runs_bulk(id) ON DELETE CASCADE,
+  FOREIGN KEY (model_id) REFERENCES ModelConfiguration(id) ON DELETE RESTRICT
+);
+
+CREATE INDEX IF NOT EXISTS idx_row_results_run_id ON row_results(run_id);
+CREATE INDEX IF NOT EXISTS idx_row_results_model_id ON row_results(model_id);
+
