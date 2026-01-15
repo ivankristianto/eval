@@ -74,6 +74,9 @@ declare global {
     /** CSV upload polling interval (internal use) */
     __csvUploadInterval?: ReturnType<typeof setInterval>;
   }
+
+  /** Test database instance for unit tests (set in vitest setup) */
+  var __TEST_DB__: import('better-sqlite3').Database | undefined;
 }
 
 export {};

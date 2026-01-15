@@ -8,14 +8,9 @@ import Database from 'better-sqlite3';
 import { open } from 'node:fs/promises';
 import { unlink } from 'node:fs/promises';
 import { join } from 'node:path';
-import { getDatabase } from '@lib/db';
-import {
-  clearFeedbackForTrainingPairs,
-  generateTaskOutputs,
-} from '@lib/training/task-generator';
+import { clearFeedbackForTrainingPairs } from '@lib/training/task-generator';
 import { createPersona } from '@lib/db/persona-db';
 import { createTrainingPairs } from '@lib/db/persona-db';
-import type { TrainingPairResult } from '@src-types/training';
 
 describe('TaskGenerator', () => {
   let db: Database.Database;
@@ -252,11 +247,6 @@ describe('TaskGenerator', () => {
         [{ input: 'Input 1', expected_output: 'Output 1' }],
         db
       );
-
-      // Get task prompt version
-      const taskPromptVersion = db
-        .prepare('SELECT id FROM task_prompt_versions WHERE persona_id = ? LIMIT 1')
-        .get(personaId) as { id: string };
 
       // Insert existing result with feedback
       const now = new Date().toISOString();
