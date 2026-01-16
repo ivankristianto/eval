@@ -1,0 +1,234 @@
+---
+/**
+ * DetailDrawer Component
+ *
+ * Slide-out drawer for displaying full details of a bulk evaluation row result.
+ * Shows original CSV row data, interpolated prompt, model output, and execution metadata.
+ *
+ * @example
+ * <DetailDrawer result={result} rowData={rowData} />
+ *
+ * @param result - RowResult containing prompt, output, status, and metadata
+ * @param rowData - Original CSV row data as key-value pairs
+ *
+ * Opens via `window.showBulkRowDetails(result, rowData)` global function.
+ */
+
+import Drawer from '@components/ui/Drawer.astro';
+import type { RowResult } from '@lib/db';
+
+interface Props {
+  result: RowResult;
+  rowData: Record<string, string>;
+}
+
+// Props are used by client-side script via window.showBulkRowDetails()
+const { result, rowData } = Astro.props;
+void result; // Mark as used for client-side hydration
+void rowData;
+---
+
+<Drawer id="bulk-detail-drawer" width="lg">
+  <Fragment slot="title">
+    <h2
+      class="font-display text-2xl font-semibold text-gradient-gold"
+      id="bulk-detail-drawer-title"
+    >
+      Row Details
+    </h2>
+  </Fragment>
+
+  <!-- Content -->
+  <div class="space-y-6">
+    <!-- Status Indicator -->
+    <div id="bulk-detail-status" class="flex items-center gap-2">
+      <!-- Populated by client script -->
+    </div>
+
+    <!-- Original CSV Row Data -->
+    <div>
+      <h3 class="text-sm font-semibold text-base-content/70 mb-2">Original CSV Data:</h3>
+      <div id="bulk-detail-csv-data" class="bg-base-200 p-4 rounded-lg">
+        <table class="table table-sm">
+          <tbody id="bulk-detail-csv-body">
+            <!-- Populated by client script -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Interpolated Prompt -->
+    <div>
+      <h3 class="text-sm font-semibold text-base-content/70 mb-2">Interpolated Prompt:</h3>
+      <div
+        id="bulk-detail-prompt"
+        class="bg-base-200 p-3 rounded-lg text-sm whitespace-pre-wrap font-mono max-h-48 overflow-y-auto"
+      >
+        <!-- Populated by client script -->
+      </div>
+    </div>
+
+    <!-- Model Output -->
+    <div>
+      <h3 class="text-sm font-semibold text-base-content/70 mb-2">Model Output:</h3>
+      <div
+        id="bulk-detail-output"
+        class="bg-base-200 p-3 rounded-lg text-sm whitespace-pre-wrap max-h-64 overflow-y-auto"
+      >
+        <!-- Populated by client script -->
+      </div>
+    </div>
+
+    <!-- Error Message (shown only when failed) -->
+    <div id="bulk-detail-error-section" class="hidden">
+      <h3 class="text-sm font-semibold text-base-content/70 mb-2">Error:</h3>
+      <div
+        id="bulk-detail-error"
+        class="bg-error/10 border border-error/30 p-3 rounded-lg text-sm text-error"
+      >
+        <!-- Populated by client script -->
+      </div>
+    </div>
+
+    <!-- Metadata -->
+    <div>
+      <h3 class="text-sm font-semibold text-base-content/70 mb-2">Execution Metadata:</h3>
+      <div class="grid grid-cols-2 gap-3">
+        <div class="bg-base-200 p-3 rounded-lg">
+          <div class="text-xs text-base-content/50">Model</div>
+          <div class="font-semibold text-sm truncate" id="bulk-detail-model">-</div>
+        </div>
+        <div class="bg-base-200 p-3 rounded-lg">
+          <div class="text-xs text-base-content/50">Row Index</div>
+          <div class="font-semibold tabular-nums" id="bulk-detail-row-index">-</div>
+        </div>
+        <div class="bg-base-200 p-3 rounded-lg">
+          <div class="text-xs text-base-content/50">Execution Time</div>
+          <div class="font-semibold tabular-nums" id="bulk-detail-duration">-</div>
+        </div>
+        <div class="bg-base-200 p-3 rounded-lg">
+          <div class="text-xs text-base-content/50">Created At</div>
+          <div class="font-semibold text-sm" id="bulk-detail-created">-</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</Drawer>
+
+<script>
+  import { openDrawer } from '@lib/ui/drawer-events';
+  import { initializeOnce } from '@lib/utils/client-utils';
+  import type { RowResult } from '@lib/db';
+
+  /**
+   * Initialize bulk detail drawer functionality.
+   */
+  function initBulkDetailDrawer() {
+    /**
+     * Populates the drawer with row result data and opens it.
+     * @param result - RowResult with evaluation data
+     * @param rowData - Original CSV row data as key-value pairs
+     */
+    function showDetails(result: RowResult, rowData: Record<string, string>) {
+      // Update title
+      const title = document.getElementById('bulk-detail-drawer-title');
+      if (title) {
+        title.textContent = `Row ${result.original_row_index + 1} Details - ${result.model_id}`;
+      }
+
+      // Update status indicator
+      const statusDiv = document.getElementById('bulk-detail-status');
+      if (statusDiv) {
+        const statusLabels = {
+          completed: 'Completed',
+          failed: 'Failed',
+          pending: 'Pending',
+        };
+        statusDiv.innerHTML = `
+          <span class="badge badge-${result.status === 'completed' ? 'success' : result.status === 'failed' ? 'error' : 'warning'}">
+            ${statusLabels[result.status] || result.status}
+          </span>
+        `;
+      }
+
+      // Update CSV data table
+      const csvBody = document.getElementById('bulk-detail-csv-body');
+      if (csvBody) {
+        csvBody.innerHTML = Object.entries(rowData)
+          .map(
+            ([key, value]) => `
+          <tr>
+            <td class="font-medium text-base-content/70">${key}</td>
+            <td class="font-mono text-sm break-all">${value || '<span class="opacity-30">-</span>'}</td>
+          </tr>
+        `
+          )
+          .join('');
+      }
+
+      // Update prompt
+      const promptEl = document.getElementById('bulk-detail-prompt');
+      if (promptEl) {
+        promptEl.textContent = result.prompt_used || '-';
+      }
+
+      // Update output
+      const outputEl = document.getElementById('bulk-detail-output');
+      if (outputEl) {
+        if (result.status === 'completed' && result.output_text) {
+          outputEl.textContent = result.output_text;
+          outputEl.classList.add('font-mono');
+          outputEl.classList.remove('italic', 'text-base-content/40');
+        } else if (result.status === 'failed') {
+          outputEl.innerHTML =
+            '<span class="italic text-base-content/40">No output (failed)</span>';
+          outputEl.classList.remove('font-mono');
+        } else {
+          outputEl.innerHTML = '<span class="italic text-base-content/40">Pending...</span>';
+          outputEl.classList.remove('font-mono');
+        }
+      }
+
+      // Update error section
+      const errorSection = document.getElementById('bulk-detail-error-section');
+      const errorEl = document.getElementById('bulk-detail-error');
+      if (errorSection && errorEl) {
+        if (result.status === 'failed' && result.error_message) {
+          errorEl.textContent = result.error_message;
+          errorSection.classList.remove('hidden');
+        } else {
+          errorSection.classList.add('hidden');
+        }
+      }
+
+      // Update metadata
+      const modelEl = document.getElementById('bulk-detail-model');
+      const rowIndexEl = document.getElementById('bulk-detail-row-index');
+      const durationEl = document.getElementById('bulk-detail-duration');
+      const createdEl = document.getElementById('bulk-detail-created');
+
+      if (modelEl) modelEl.textContent = result.model_id;
+      if (rowIndexEl) rowIndexEl.textContent = `#${result.original_row_index + 1}`;
+      if (durationEl) {
+        durationEl.textContent = result.duration_ms ? `${result.duration_ms}ms` : '-';
+      }
+      if (createdEl) {
+        const date = new Date(result.created_at);
+        createdEl.textContent = date.toLocaleString();
+      }
+
+      // Open drawer
+      openDrawer('bulk-detail-drawer');
+    }
+
+    // Expose to window for use from other components
+    (window as unknown as { showBulkRowDetails: typeof showDetails }).showBulkRowDetails =
+      showDetails;
+  }
+
+  // Initialize once and re-initialize on Astro page transitions
+  initializeOnce('bulk-detail-drawer', initBulkDetailDrawer);
+  document.addEventListener('astro:page-load', () => {
+    initializeOnce('bulk-detail-drawer', initBulkDetailDrawer);
+  });
+</script>
