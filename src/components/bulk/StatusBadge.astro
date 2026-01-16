@@ -1,0 +1,94 @@
+---
+/**
+ * StatusBadge Component
+ *
+ * Displays a visual badge for evaluation status with appropriate styling.
+ * Uses CSS classes from components.css for consistent status indicators.
+ *
+ * @example
+ * <StatusBadge status="completed" size="md" />
+ * <StatusBadge status="running" size="sm" />
+ *
+ * @param status - Evaluation status: 'pending' | 'running' | 'completed' | 'failed'
+ * @param size - Badge size: 'lg' | 'md' | 'sm' | 'xs' (default: 'md')
+ * @param class - Additional CSS classes to apply
+ */
+
+export interface Props {
+  /**
+   * Evaluation status
+   */
+  status: 'pending' | 'completed' | 'failed';
+  /**
+   * Badge size (default: 'md')
+   */
+  size?: 'lg' | 'md' | 'sm' | 'xs';
+  /**
+   * Additional CSS classes
+   */
+  class?: string;
+}
+
+const { status, size = 'md', class: className = '' } = Astro.props;
+
+/**
+ * Maps status values to CSS classes from components.css
+ */
+const getStatusClass = () => {
+  switch (status) {
+    case 'pending':
+      return 'status-pending';
+    case 'completed':
+      return 'status-completed';
+    case 'failed':
+      return 'status-failed';
+    default:
+      return 'status-pending';
+  }
+};
+
+/**
+ * Maps size values to CSS classes
+ */
+const sizeClasses = {
+  xs: 'text-[10px] px-2 py-0.5',
+  sm: 'text-xs px-2.5 py-1',
+  md: 'text-sm px-3 py-1',
+  lg: 'text-base px-4 py-1.5',
+};
+
+/**
+ * Get icon for status (optional visual indicator)
+ */
+const getIcon = () => {
+  switch (status) {
+    case 'pending':
+      return '⋯';
+    case 'completed':
+      return '✓';
+    case 'failed':
+      return '✕';
+    default:
+      return '○';
+  }
+};
+
+/**
+ * Get status label text
+ */
+const getLabelText = () => {
+  const labels = {
+    pending: 'Pending',
+    completed: 'Completed',
+    failed: 'Failed',
+  };
+  return labels[status] || status;
+};
+
+const badgeClass = `${getStatusClass()} ${sizeClasses[size]} ${className}`.trim();
+---
+
+<span class={badgeClass}>
+  <span class="opacity-70 mr-1">{getIcon()}</span>
+  {getLabelText()}
+</span>
