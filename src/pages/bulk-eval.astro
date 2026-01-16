@@ -631,7 +631,20 @@ try {
                 </thead>
                 <tbody id="results-body">
                   ${rows
-                    .map((row: { index: number; data: Record<string, unknown>; results: Record<string, { output_text?: string; status: string; error_message?: string; duration_ms?: number }> }) => `
+                    .map(
+                      (row: {
+                        index: number;
+                        data: Record<string, unknown>;
+                        results: Record<
+                          string,
+                          {
+                            output_text?: string;
+                            status: string;
+                            error_message?: string;
+                            duration_ms?: number;
+                          }
+                        >;
+                      }) => `
                     <tr class="hover" data-row-index="${row.index}">
                       <td class="sticky left-0 z-10 bg-base-100 tabular-nums text-base-content/60">
                         ${row.index + 1}

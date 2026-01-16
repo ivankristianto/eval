@@ -13,11 +13,7 @@
  * @param results - Array of row results for each model
  */
 
-import type {
-  BulkDataset,
-  EvaluationRun,
-  RowResult,
-} from '@lib/db';
+import type { BulkDataset, EvaluationRun, RowResult } from '@lib/db';
 import Icon from '@components/ui/Icon.astro';
 
 interface Props {
@@ -52,14 +48,14 @@ const totalPages = Math.max(1, Math.ceil(csvData.length / pageSize));
 >
   <div class="card-body p-3 flex flex-col min-h-0">
     <!-- Table Header -->
-    <div class="flex items-center justify-between px-1 py-2 border-b border-base-300/80 flex-shrink-0">
+    <div
+      class="flex items-center justify-between px-1 py-2 border-b border-base-300/80 flex-shrink-0"
+    >
       <div class="flex items-center gap-3">
-        <label class="flex items-center gap-2 cursor-pointer hover:bg-base-200/50 px-2 py-1 rounded-lg transition-colors">
-          <input
-            type="checkbox"
-            class="checkbox checkbox-sm checkbox-luxe"
-            id="select-all-rows"
-          />
+        <label
+          class="flex items-center gap-2 cursor-pointer hover:bg-base-200/50 px-2 py-1 rounded-lg transition-colors"
+        >
+          <input type="checkbox" class="checkbox checkbox-sm checkbox-luxe" id="select-all-rows" />
           <span class="text-sm font-medium">Select All</span>
         </label>
         <span class="text-sm text-base-content/60 font-medium">{csvData.length} rows</span>
@@ -72,7 +68,9 @@ const totalPages = Math.max(1, Math.ceil(csvData.length / pageSize));
     </div>
 
     <!-- Table with horizontal and vertical scroll -->
-    <div class="overflow-x-auto overflow-y-auto rounded-lg border border-base-300/50 flex-1 min-h-0">
+    <div
+      class="overflow-x-auto overflow-y-auto rounded-lg border border-base-300/50 flex-1 min-h-0"
+    >
       <table class="table-luxe table-sm" id="results-table">
         <thead class="bg-base-200/80 sticky top-0 z-20">
           <tr>
@@ -81,105 +79,107 @@ const totalPages = Math.max(1, Math.ceil(csvData.length / pageSize));
               <span class="sr-only">Select</span>
             </th>
             <!-- Row number column -->
-            <th class="w-16 sticky left-[3rem] z-30 bg-base-200/90 hover:bg-base-300">
-              #
-            </th>
+            <th class="w-16 sticky left-[3rem] z-30 bg-base-200/90 hover:bg-base-300"> # </th>
             <!-- CSV data columns -->
-            {headers.map((header, index) => (
-              <th
-                class="sticky z-10 bg-base-200/90 hover:bg-base-300"
-                style={`left: calc(6rem + ${index * 12}rem)`}
-              >
-                <div class="flex items-center gap-2">
-                  <span>{header}</span>
-                </div>
-              </th>
-            ))}
+            {
+              headers.map((header, index) => (
+                <th
+                  class="sticky z-10 bg-base-200/90 hover:bg-base-300"
+                  style={`left: calc(6rem + ${index * 12}rem)`}
+                >
+                  <div class="flex items-center gap-2">
+                    <span>{header}</span>
+                  </div>
+                </th>
+              ))
+            }
             <!-- Model output columns -->
-            {selectedModels.map((modelId) => (
-              <th class="min-w-[200px] max-w-[300px]">
-                <div class="flex items-center gap-2">
-                  <span>Output</span>
-                  <span class="badge badge-sm badge-neutral">{modelId}</span>
-                </div>
-              </th>
-            ))}
+            {
+              selectedModels.map((modelId) => (
+                <th class="min-w-[200px] max-w-[300px]">
+                  <div class="flex items-center gap-2">
+                    <span>Output</span>
+                    <span class="badge badge-sm badge-neutral">{modelId}</span>
+                  </div>
+                </th>
+              ))
+            }
           </tr>
         </thead>
         <tbody id="results-body">
-          {csvData.map((row, rowIndex) => (
-            <tr class="hover" data-row-index={rowIndex}>
-              <!-- Row checkbox -->
-              <td class="sticky left-0 z-10 bg-base-100">
-                <input
-                  type="checkbox"
-                  class="checkbox checkbox-sm checkbox-luxe row-checkbox"
-                  data-row-index={rowIndex}
-                />
-              </td>
-              <!-- Row number -->
-              <td class="sticky left-[3rem] z-10 bg-base-100 tabular-nums text-base-content/60">
-                {rowIndex + 1}
-              </td>
-              <!-- CSV data cells -->
-              {headers.map((header, cellIndex) => {
-                const value = String(row[header] ?? '');
-                return (
-                  <td
-                    class="sticky z-10 bg-base-100 max-w-[12rem]"
-                    style={`left: calc(6rem + ${cellIndex * 12}rem)`}
-                  >
-                    <div
-                      class="text-sm whitespace-pre-wrap break-words max-h-20 overflow-y-auto"
-                      title={value}
+          {
+            csvData.map((row, rowIndex) => (
+              <tr class="hover" data-row-index={rowIndex}>
+                <td class="sticky left-0 z-10 bg-base-100">
+                  <input
+                    type="checkbox"
+                    class="checkbox checkbox-sm checkbox-luxe row-checkbox"
+                    data-row-index={rowIndex}
+                  />
+                </td>
+                <td class="sticky left-[3rem] z-10 bg-base-100 tabular-nums text-base-content/60">
+                  {rowIndex + 1}
+                </td>
+                {headers.map((header, cellIndex) => {
+                  const value = String(row[header] ?? '');
+                  return (
+                    <td
+                      class="sticky z-10 bg-base-100 max-w-[12rem]"
+                      style={`left: calc(6rem + ${cellIndex * 12}rem)`}
                     >
-                      {value || <span class="opacity-30">-</span>}
-                    </div>
-                  </td>
-                );
-              })}
-              <!-- Model output cells -->
-              {selectedModels.map((modelId) => {
-                const resultKey = `${rowIndex}-${modelId}`;
-                const result = resultsMap.get(resultKey);
-
-                return (
-                  <td class="min-w-[200px] max-w-[300px]">
-                    {result?.status === 'completed' ? (
                       <div
                         class="text-sm whitespace-pre-wrap break-words max-h-20 overflow-y-auto"
-                        title={result.output_text || ''}
+                        title={value}
                       >
-                        {result.output_text || <span class="opacity-30 italic">No output</span>}
+                        {value || <span class="opacity-30">-</span>}
                       </div>
-                    ) : result?.status === 'failed' ? (
-                      <div class="flex items-center gap-2 text-error">
-                        <Icon name="error" size="sm" />
-                        <span class="text-xs" title={result.error_message}>
-                          Failed
-                        </span>
-                      </div>
-                    ) : result?.status === 'pending' ? (
-                      <div class="flex items-center gap-2 text-warning">
-                        <span class="loading loading-spinner loading-xs"></span>
-                        <span class="text-xs">Pending</span>
-                      </div>
-                    ) : (
-                      <div class="flex items-center gap-2 text-base-content/40">
-                        <span class="text-xs italic">Not started</span>
-                      </div>
-                    )}
-                  </td>
-                );
-              })}
-            </tr>
-          ))}
+                    </td>
+                  );
+                })}
+                {selectedModels.map((modelId) => {
+                  const resultKey = `${rowIndex}-${modelId}`;
+                  const result = resultsMap.get(resultKey);
+
+                  return (
+                    <td class="min-w-[200px] max-w-[300px]">
+                      {result?.status === 'completed' ? (
+                        <div
+                          class="text-sm whitespace-pre-wrap break-words max-h-20 overflow-y-auto"
+                          title={result.output_text || ''}
+                        >
+                          {result.output_text || <span class="opacity-30 italic">No output</span>}
+                        </div>
+                      ) : result?.status === 'failed' ? (
+                        <div class="flex items-center gap-2 text-error">
+                          <Icon name="error" size="sm" />
+                          <span class="text-xs" title={result.error_message}>
+                            Failed
+                          </span>
+                        </div>
+                      ) : result?.status === 'pending' ? (
+                        <div class="flex items-center gap-2 text-warning">
+                          <span class="loading loading-spinner loading-xs" />
+                          <span class="text-xs">Pending</span>
+                        </div>
+                      ) : (
+                        <div class="flex items-center gap-2 text-base-content/40">
+                          <span class="text-xs italic">Not started</span>
+                        </div>
+                      )}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))
+          }
         </tbody>
       </table>
     </div>
 
     <!-- Pagination -->
-    <div class="flex items-center justify-between px-2 py-2 border-t border-base-300/80 flex-shrink-0">
+    <div
+      class="flex items-center justify-between px-2 py-2 border-t border-base-300/80 flex-shrink-0"
+    >
       <div class="text-sm text-base-content/60 font-medium">
         <span id="pagination-info">
           Showing 1-{Math.min(pageSize, csvData.length)} of {csvData.length} rows
