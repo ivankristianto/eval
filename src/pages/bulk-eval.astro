@@ -1,0 +1,637 @@
+---
+/**
+ * Bulk Evaluation Page
+ *
+ * Main page for bulk evaluation workflow:
+ * 1. Upload CSV file via UploadZone
+ * 2. Configure evaluation via ConfigPanel (system prompt, temperature, models)
+ * 3. Run evaluation and poll for status updates
+ * 4. View results in ResultsTable with DetailDrawer for row details
+ *
+ * State persistence: Uses sessionStorage to persist state across page navigation
+ */
+
+import Layout from '@layouts/Layout.astro';
+import UploadZone from '@components/bulk/UploadZone.astro';
+import ConfigPanel from '@components/bulk/ConfigPanel.astro';
+import DetailDrawer from '@components/bulk/DetailDrawer.astro';
+import { getModels } from '@lib/db';
+import type { ModelConfiguration } from '@lib/utils/types';
+import type { RowResult } from '@lib/db';
+
+// Fetch available models for configuration panel
+let models: ModelConfiguration[] = [];
+try {
+  models = getModels(true); // Only active models
+} catch (e) {
+  console.error('Error fetching models:', e);
+}
+---
+
+<Layout title="Bulk Evaluation - Eval AI">
+  <div class="space-y-8">
+    <!-- Page Header -->
+    <div class="flex items-center justify-between animate-reveal">
+      <div class="accent-line">
+        <h1
+          class="text-4xl md:text-5xl font-display font-semibold tracking-tight mb-3 text-gradient-gold"
+        >
+          Bulk Evaluation
+        </h1>
+        <p class="text-base-content/60 text-lg">
+          Upload CSV data, configure models, and run bulk evaluations across multiple rows
+        </p>
+      </div>
+      <button id="new-eval-btn" class="btn btn-ghost btn-sm hidden" type="button">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-4 w-4"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"
+          ></path>
+        </svg>
+        New Evaluation
+      </button>
+    </div>
+
+    <!-- Workflow Steps Indicator -->
+    <div class="flex items-center gap-4 animate-reveal delay-100" id="steps-indicator">
+      <div class="flex items-center gap-2" data-step="1">
+        <div
+          class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-all duration-300 step-badge step-badge-active"
+        >
+          1
+        </div>
+        <span class="text-sm font-medium step-label">Upload</span>
+      </div>
+      <div class="w-12 h-0.5 bg-base-300 step-connector"></div>
+      <div class="flex items-center gap-2" data-step="2">
+        <div
+          class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-all duration-300 step-badge"
+        >
+          2
+        </div>
+        <span class="text-sm font-medium text-base-content/50 step-label">Configure</span>
+      </div>
+      <div class="w-12 h-0.5 bg-base-300 step-connector"></div>
+      <div class="flex items-center gap-2" data-step="3">
+        <div
+          class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-all duration-300 step-badge"
+        >
+          3
+        </div>
+        <span class="text-sm font-medium text-base-content/50 step-label">Results</span>
+      </div>
+    </div>
+
+    <!-- Step 1: Upload Zone -->
+    <div id="step-upload" class="animate-reveal delay-200">
+      <UploadZone />
+    </div>
+
+    <!-- Step 2: Configuration Panel -->
+    <div id="step-config" class="hidden animate-reveal">
+      <ConfigPanel models={models} />
+    </div>
+
+    <!-- Step 3: Results Table -->
+    <div id="step-results" class="hidden animate-reveal">
+      <div
+        id="results-placeholder"
+        class="card bg-base-100/90 backdrop-blur-sm border border-base-300/50 shadow-lg rounded-xl p-12 text-center"
+      >
+        <span class="loading loading-spinner loading-lg text-luxe-gold"></span>
+        <p class="text-base-content/60 mt-4">Loading results...</p>
+      </div>
+    </div>
+
+    <!-- Status Bar (shown during evaluation) -->
+    <div id="status-bar" class="hidden sticky bottom-4 z-40 animate-reveal">
+      <div
+        class="card bg-base-100/95 backdrop-blur-sm border border-luxe-gold/50 shadow-elevated rounded-xl"
+      >
+        <div class="card-body p-4 flex items-center gap-4">
+          <div class="flex items-center gap-3 flex-1">
+            <span class="loading loading-spinner loading-sm text-luxe-emerald"></span>
+            <div class="flex-1">
+              <p class="font-semibold text-sm">Evaluating...</p>
+              <div class="w-full bg-base-300 rounded-full h-2 mt-1">
+                <div
+                  id="progress-bar"
+                  class="bg-gradient-emerald h-2 rounded-full transition-all duration-300"
+                  style="width: 0%"
+                >
+                </div>
+              </div>
+            </div>
+            <span id="progress-text" class="text-sm font-mono text-base-content/70">0 / 0</span>
+          </div>
+          <button id="cancel-eval-btn" class="btn btn-sm btn-ghost"> Cancel </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Detail Drawer (hidden by default) -->
+  <DetailDrawer result={{} as RowResult} rowData={{} as Record<string, string>} />
+
+  <!-- Drawer in overlays slot for proper z-index -->
+  <div slot="overlays" id="drawer-overlays"></div>
+</Layout>
+
+<style>
+  .step-badge-active {
+    background: linear-gradient(135deg, #d4af37 0%, #f0d678 100%);
+    color: var(--color-luxe-midnight);
+  }
+  .step-badge-inactive {
+    background: hsl(var(--b3));
+    color: var(--bc);
+  }
+  .step-label-active {
+    color: var(--bc);
+  }
+  .bg-gradient-emerald {
+    background: linear-gradient(135deg, #00ff87 0%, #00d9ff 100%);
+  }
+</style>
+
+<script>
+  import { addToast } from '@lib/ui/toastStore';
+  import type { BulkDataset, EvaluationRun, RowResult } from '@lib/db';
+
+  // Declare the global function added by DetailDrawer
+  declare global {
+    interface Window {
+      showBulkRowDetails?: (result: RowResult, rowData: Record<string, string>) => void;
+    }
+  }
+
+  /**
+   * Bulk Evaluation State
+   */
+  interface BulkState {
+    step: 'upload' | 'config' | 'results';
+    datasetId: string | null;
+    dataset: BulkDataset | null;
+    runId: string | null;
+    run: EvaluationRun | null;
+    config: {
+      systemPrompt: string;
+      temperature: number;
+      modelIds: string[];
+    } | null;
+    isPolling: boolean;
+    pollInterval: number | null;
+  }
+
+  // Initialize state from sessionStorage or default
+  const getInitialState = (): BulkState => {
+    const stored = sessionStorage.getItem('bulkEvalState');
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        // Reset polling state on page load
+        return {
+          ...parsed,
+          isPolling: false,
+          pollInterval: null,
+        };
+      } catch {
+        // Ignore parse errors
+      }
+    }
+    return {
+      step: 'upload',
+      datasetId: null,
+      dataset: null,
+      runId: null,
+      run: null,
+      config: null,
+      isPolling: false,
+      pollInterval: null,
+    };
+  };
+
+  let state: BulkState = getInitialState();
+
+  /**
+   * Save state to sessionStorage for persistence
+   */
+  const saveState = () => {
+    const toSave = {
+      step: state.step,
+      datasetId: state.datasetId,
+      dataset: state.dataset,
+      runId: state.runId,
+      run: state.run,
+      config: state.config,
+      isPolling: false,
+      pollInterval: null,
+    };
+    sessionStorage.setItem('bulkEvalState', JSON.stringify(toSave));
+  };
+
+  /**
+   * DOM Elements
+   */
+  const stepsIndicator = document.getElementById('steps-indicator');
+  const stepUpload = document.getElementById('step-upload');
+  const stepConfig = document.getElementById('step-config');
+  const stepResults = document.getElementById('step-results');
+  const resultsPlaceholder = document.getElementById('results-placeholder');
+  const statusBar = document.getElementById('status-bar');
+  const progressBar = document.getElementById('progress-bar');
+  const progressText = document.getElementById('progress-text');
+  const newEvalBtn = document.getElementById('new-eval-btn');
+  const cancelEvalBtn = document.getElementById('cancel-eval-btn');
+
+  /**
+   * Update UI based on current step
+   */
+  const updateStepUI = () => {
+    // Update step badges
+    const steps = stepsIndicator?.querySelectorAll('[data-step]');
+    steps?.forEach((stepEl) => {
+      const stepNum = parseInt(stepEl.getAttribute('data-step') || '0');
+      const badge = stepEl.querySelector('.step-badge') as HTMLElement;
+      const label = stepEl.querySelector('.step-label') as HTMLElement;
+
+      if (badge && label) {
+        const currentStepNum = state.step === 'upload' ? 1 : state.step === 'config' ? 2 : 3;
+        const isActive = stepNum === currentStepNum;
+        const isPast = stepNum < currentStepNum;
+
+        badge.className = `w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-all duration-300 step-badge ${
+          isActive
+            ? 'step-badge-active'
+            : isPast
+              ? 'bg-luxe-emerald text-white'
+              : 'step-badge-inactive'
+        }`;
+        label.className = `text-sm font-medium step-label ${isActive || isPast ? 'step-label-active' : 'text-base-content/50'}`;
+      }
+    });
+
+    // Show/hide step content
+    if (stepUpload) {
+      stepUpload.classList.toggle('hidden', state.step !== 'upload');
+    }
+    if (stepConfig) {
+      stepConfig.classList.toggle('hidden', state.step !== 'config');
+    }
+    if (stepResults) {
+      stepResults.classList.toggle('hidden', state.step !== 'results');
+    }
+    if (newEvalBtn) {
+      newEvalBtn.classList.toggle('hidden', state.step === 'upload');
+    }
+
+    saveState();
+  };
+
+  /**
+   * Reset to new evaluation
+   */
+  const resetEvaluation = () => {
+    stopPolling();
+    state = {
+      step: 'upload',
+      datasetId: null,
+      dataset: null,
+      runId: null,
+      run: null,
+      config: null,
+      isPolling: false,
+      pollInterval: null,
+    };
+    sessionStorage.removeItem('bulkEvalState');
+    if (resultsPlaceholder) {
+      resultsPlaceholder.classList.remove('hidden');
+      // Clear any existing ResultsTable
+      const existingTable = stepResults?.querySelector('div[class*="card"]');
+      if (existingTable && existingTable !== resultsPlaceholder) {
+        existingTable.remove();
+      }
+    }
+    updateStepUI();
+  };
+
+  /**
+   * Handle upload success event from UploadZone
+   */
+  const handleUploadSuccess = (event: CustomEvent) => {
+    const { datasetId } = event.detail;
+    state.datasetId = datasetId;
+    state.step = 'config';
+    updateStepUI();
+    addToast('Dataset uploaded successfully. Configure your evaluation.', 'success');
+  };
+
+  /**
+   * Handle config submit event from ConfigPanel
+   */
+  const handleConfigSubmit = async (event: CustomEvent) => {
+    const { system_prompt, temperature, model_ids } = event.detail;
+
+    if (!state.datasetId) {
+      addToast('No dataset selected. Please upload a file first.', 'error');
+      return;
+    }
+
+    // Store config
+    state.config = {
+      systemPrompt: system_prompt,
+      temperature,
+      modelIds: model_ids,
+    };
+
+    try {
+      // Start evaluation run
+      const response = await fetch('/api/bulk/run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          dataset_id: state.datasetId,
+          system_prompt: system_prompt,
+          temperature: temperature,
+          model_ids: model_ids,
+        }),
+      });
+
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || err.message || 'Failed to start evaluation');
+      }
+
+      const data = await response.json();
+      state.runId = data.run_id;
+      state.step = 'results';
+
+      updateStepUI();
+      addToast('Evaluation started successfully!', 'success');
+
+      // Start polling for status
+      startPolling();
+    } catch (error) {
+      addToast(
+        `Failed to start evaluation: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        'error'
+      );
+      state.step = 'config';
+      updateStepUI();
+    }
+  };
+
+  /**
+   * Poll for evaluation status updates
+   */
+  const pollStatus = async () => {
+    if (!state.runId) return;
+
+    try {
+      const response = await fetch(`/api/bulk/status?run_id=${state.runId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch status');
+      }
+
+      const data = await response.json();
+      state.run = data;
+
+      // Update progress bar
+      if (progressBar && progressText) {
+        const percentage = data.completion_percentage || 0;
+        progressBar.style.width = `${percentage}%`;
+        progressText.textContent = `${data.processed_rows} / ${data.total_rows}`;
+      }
+
+      // Check if evaluation is complete or failed
+      if (data.status === 'completed' || data.status === 'failed' || !data.is_running) {
+        stopPolling();
+        loadResults();
+
+        if (statusBar) {
+          statusBar.classList.add('hidden');
+        }
+
+        if (data.status === 'completed') {
+          addToast('Evaluation completed successfully!', 'success');
+        } else if (data.status === 'failed') {
+          addToast(`Evaluation failed: ${data.error_message || 'Unknown error'}`, 'error');
+        }
+      }
+    } catch (error) {
+      console.error('Error polling status:', error);
+      // Don't stop polling on transient errors
+    }
+  };
+
+  /**
+   * Start polling for status
+   */
+  const startPolling = () => {
+    if (state.isPolling || !state.runId) return;
+
+    state.isPolling = true;
+
+    // Show status bar
+    if (statusBar) {
+      statusBar.classList.remove('hidden');
+    }
+
+    // Poll immediately, then every 1.5 seconds
+    pollStatus();
+    state.pollInterval = window.setInterval(pollStatus, 1500);
+  };
+
+  /**
+   * Stop polling for status
+   */
+  const stopPolling = () => {
+    if (state.pollInterval) {
+      clearInterval(state.pollInterval);
+      state.pollInterval = null;
+    }
+    state.isPolling = false;
+  };
+
+  /**
+   * Load and render results table
+   */
+  const loadResults = async () => {
+    if (!state.runId || !stepResults) return;
+
+    try {
+      const response = await fetch(`/api/bulk/results?run_id=${state.runId}`);
+      if (!response.ok) {
+        throw new Error('Failed to load results');
+      }
+
+      const data = await response.json();
+
+      // Store dataset and run for detail drawer
+      state.dataset = data.dataset;
+      state.run = data.run;
+      saveState();
+
+      // Hide placeholder
+      if (resultsPlaceholder) {
+        resultsPlaceholder.classList.add('hidden');
+      }
+
+      // Clear existing results table
+      const existingTable = stepResults.querySelector(
+        'div[class*="card"][id!="results-placeholder"]'
+      );
+      if (existingTable) {
+        existingTable.remove();
+      }
+
+      // Create container for results table
+      const resultsContainer = document.createElement('div');
+      resultsContainer.className = 'animate-reveal';
+
+      // We need to re-render the ResultsTable with server-side data
+      // For now, reload the page with the run_id in sessionStorage
+      // The ResultsTable component will handle hydration
+      window.location.reload();
+    } catch (error) {
+      addToast(
+        `Failed to load results: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        'error'
+      );
+      if (resultsPlaceholder) {
+        resultsPlaceholder.classList.remove('hidden');
+        resultsPlaceholder.innerHTML = `
+          <div class="text-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-error mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <h3 class="text-lg font-semibold mb-2">Error Loading Results</h3>
+            <p class="text-sm text-base-content/60">Please try again or start a new evaluation.</p>
+          </div>
+        `;
+      }
+    }
+  };
+
+  /**
+   * Handle row click to show details
+   */
+  const handleRowClick = (event: Event) => {
+    const target = event.target as HTMLElement;
+    const row = target.closest('tr[data-row-index]');
+    if (!row || !state.run) return;
+
+    const rowIndex = parseInt(row.getAttribute('data-row-index') || '-1');
+    if (rowIndex < 0) return;
+
+    // Get the model_id from the clicked cell
+    const cell = target.closest('td[data-model-id]');
+    const modelId = cell?.getAttribute('data-model-id');
+
+    if (!modelId) {
+      addToast('Click on a model output cell to view details', 'info');
+      return;
+    }
+
+    // Find the result for this row and model
+    fetch(`/api/bulk/results?run_id=${state.runId}`)
+      .then((res) => res.json())
+      .then((data) => {
+        const result = data.results?.find(
+          (r: RowResult) => r.original_row_index === rowIndex && r.model_id === modelId
+        );
+
+        if (result && state.dataset) {
+          const csvData = JSON.parse(state.dataset.csv_data) as Record<string, unknown>[];
+          const rowData = csvData[rowIndex] as Record<string, string>;
+
+          // Call the global function exposed by DetailDrawer
+          if (window.showBulkRowDetails) {
+            window.showBulkRowDetails(result, rowData);
+          }
+        }
+      })
+      .catch(() => {
+        addToast('Failed to load row details', 'error');
+      });
+  };
+
+  /**
+   * Setup event listeners
+   */
+  const setupEventListeners = () => {
+    // Upload zone events
+    const uploadHandler = (event: Event): void => {
+      handleUploadSuccess(event as CustomEvent);
+    };
+    document.addEventListener('bulk-upload-success', uploadHandler);
+
+    // Config panel events
+    const configHandler = (event: Event): void => {
+      handleConfigSubmit(event as CustomEvent);
+    };
+    document.addEventListener('bulk-config-submit', configHandler);
+
+    // Row click events
+    stepResults?.addEventListener('click', handleRowClick);
+
+    // New evaluation button
+    newEvalBtn?.addEventListener('click', resetEvaluation);
+
+    // Cancel evaluation button
+    cancelEvalBtn?.addEventListener('click', () => {
+      stopPolling();
+      if (statusBar) {
+        statusBar.classList.add('hidden');
+      }
+      addToast('Evaluation cancelled', 'info');
+    });
+
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', () => {
+      stopPolling();
+    });
+  };
+
+  /**
+   * Restore previous evaluation state if exists
+   */
+  const restoreState = async () => {
+    if (state.runId && state.step === 'results') {
+      // We have a completed or in-progress run
+      if (resultsPlaceholder) {
+        resultsPlaceholder.classList.remove('hidden');
+      }
+
+      try {
+        // Check if run is still running
+        const statusResponse = await fetch(`/api/bulk/status?run_id=${state.runId}`);
+        if (statusResponse.ok) {
+          const statusData = await statusResponse.json();
+
+          if (statusData.is_running) {
+            // Resume polling
+            startPolling();
+          } else {
+            // Load completed results
+            loadResults();
+          }
+        }
+      } catch (error) {
+        console.error('Error restoring state:', error);
+        // Reset to upload state on error
+        resetEvaluation();
+      }
+    }
+  };
+
+  // Initialize
+  updateStepUI();
+  setupEventListeners();
+  restoreState();
+</script>
