@@ -205,7 +205,17 @@ try {
     } | null;
     isPolling: boolean;
     pollInterval: number | null;
+    consecutiveFailures: number;
+    currentBackoffMs: number;
   }
+
+  /**
+   * Polling configuration constants
+   */
+  const MAX_CONSECUTIVE_FAILURES = 10;
+  const INITIAL_BACKOFF_MS = 1500;
+  const MAX_BACKOFF_MS = 12000;
+  const BACKOFF_MULTIPLIER = 2;
 
   // Initialize state from sessionStorage or default
   const getInitialState = (): BulkState => {
@@ -218,6 +228,8 @@ try {
           ...parsed,
           isPolling: false,
           pollInterval: null,
+          consecutiveFailures: 0,
+          currentBackoffMs: INITIAL_BACKOFF_MS,
         };
       } catch {
         // Ignore parse errors
@@ -232,6 +244,8 @@ try {
       config: null,
       isPolling: false,
       pollInterval: null,
+      consecutiveFailures: 0,
+      currentBackoffMs: INITIAL_BACKOFF_MS,
     };
   };
 
@@ -250,6 +264,8 @@ try {
       config: state.config,
       isPolling: false,
       pollInterval: null,
+      consecutiveFailures: 0,
+      currentBackoffMs: INITIAL_BACKOFF_MS,
     };
     sessionStorage.setItem('bulkEvalState', JSON.stringify(toSave));
   };
@@ -326,6 +342,8 @@ try {
       config: null,
       isPolling: false,
       pollInterval: null,
+      consecutiveFailures: 0,
+      currentBackoffMs: INITIAL_BACKOFF_MS,
     };
     sessionStorage.removeItem('bulkEvalState');
     if (resultsPlaceholder) {
@@ -406,19 +424,26 @@ try {
   };
 
   /**
-   * Poll for evaluation status updates
+   * Poll for evaluation status updates with exponential backoff
    */
   const pollStatus = async () => {
-    if (!state.runId) return;
+    if (!state.runId || !state.isPolling) return;
 
     try {
       const response = await fetch(`/api/bulk/status?run_id=${state.runId}`);
+
+      // Handle HTTP errors
       if (!response.ok) {
-        throw new Error('Failed to fetch status');
+        const errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
       state.run = data;
+
+      // Reset failure counter on successful request
+      state.consecutiveFailures = 0;
+      state.currentBackoffMs = INITIAL_BACKOFF_MS;
 
       // Update progress bar
       if (progressBar && progressText) {
@@ -443,27 +468,70 @@ try {
         }
       }
     } catch (error) {
-      console.error('Error polling status:', error);
-      // Don't stop polling on transient errors
+      state.consecutiveFailures++;
+
+      // Log polling metrics for debugging
+      console.error(
+        `[Polling error] Attempt ${state.consecutiveFailures}/${MAX_CONSECUTIVE_FAILURES}:`,
+        {
+          error: error instanceof Error ? error.message : 'Unknown error',
+          runId: state.runId,
+          currentBackoff: state.currentBackoffMs,
+        }
+      );
+
+      // Check if we've exceeded max retries
+      if (state.consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
+        stopPolling();
+        if (statusBar) {
+          statusBar.classList.add('hidden');
+        }
+        addToast(
+          `Polling failed after ${MAX_CONSECUTIVE_FAILURES} attempts. Please check your connection and try again.`,
+          'error'
+        );
+        return;
+      }
+
+      // Increase backoff time exponentially
+      state.currentBackoffMs = Math.min(
+        state.currentBackoffMs * BACKOFF_MULTIPLIER,
+        MAX_BACKOFF_MS
+      );
     }
   };
 
   /**
-   * Start polling for status
+   * Start polling for status with exponential backoff on errors
    */
   const startPolling = () => {
     if (state.isPolling || !state.runId) return;
 
     state.isPolling = true;
+    state.consecutiveFailures = 0;
+    state.currentBackoffMs = INITIAL_BACKOFF_MS;
 
     // Show status bar
     if (statusBar) {
       statusBar.classList.remove('hidden');
     }
 
-    // Poll immediately, then every 1.5 seconds
+    // Poll immediately
     pollStatus();
-    state.pollInterval = window.setInterval(pollStatus, 1500);
+
+    // Set up recursive polling with variable backoff
+    const scheduleNextPoll = () => {
+      if (!state.isPolling) return;
+
+      state.pollInterval = window.setTimeout(() => {
+        pollStatus().finally(() => {
+          // Schedule next poll with current backoff time
+          scheduleNextPoll();
+        });
+      }, state.currentBackoffMs);
+    };
+
+    scheduleNextPoll();
   };
 
   /**
@@ -471,7 +539,7 @@ try {
    */
   const stopPolling = () => {
     if (state.pollInterval) {
-      clearInterval(state.pollInterval);
+      clearTimeout(state.pollInterval);
       state.pollInterval = null;
     }
     state.isPolling = false;
