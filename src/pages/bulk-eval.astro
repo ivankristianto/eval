@@ -577,17 +577,10 @@ try {
         existingTable.remove();
       }
 
-      // Build the results table HTML directly
-      const csvData = JSON.parse(data.dataset.csv_data) as Record<string, unknown>[];
-      const headers = csvData.length > 0 ? Object.keys(csvData[0]) : [];
-      const selectedModels = JSON.parse(data.run.selected_models) as string[];
-
-      // Group results by row index and model for easy lookup
-      const resultsMap = new Map<string, RowResult>();
-      for (const result of data.results) {
-        const key = `${result.original_row_index}-${result.model_id}`;
-        resultsMap.set(key, result);
-      }
+      // API returns: { run, dataset, headers, selected_models (array), rows, summary }
+      const headers = data.headers || [];
+      const selectedModels = data.selected_models || [];
+      const rows = data.rows || [];
 
       // Build table HTML
       const tableHTML = `
@@ -596,7 +589,7 @@ try {
             <!-- Table Header -->
             <div class="flex items-center justify-between px-1 py-2 border-b border-base-300/80 flex-shrink-0">
               <div class="flex items-center gap-3">
-                <span class="text-sm text-base-content/60 font-medium">${csvData.length} rows</span>
+                <span class="text-sm text-base-content/60 font-medium">${rows.length} rows</span>
               </div>
               <div class="flex items-center gap-2">
                 <span class="badge badge-ghost">
@@ -637,16 +630,15 @@ try {
                   </tr>
                 </thead>
                 <tbody id="results-body">
-                  ${csvData
-                    .map(
-                      (row: Record<string, unknown>, rowIndex: number) => `
-                    <tr class="hover" data-row-index="${rowIndex}">
+                  ${rows
+                    .map((row: { index: number; data: Record<string, unknown>; results: Record<string, { output_text?: string; status: string; error_message?: string; duration_ms?: number }> }) => `
+                    <tr class="hover" data-row-index="${row.index}">
                       <td class="sticky left-0 z-10 bg-base-100 tabular-nums text-base-content/60">
-                        ${rowIndex + 1}
+                        ${row.index + 1}
                       </td>
                       ${headers
                         .map((header: string, cellIndex: number) => {
-                          const value = String(row[header] ?? '');
+                          const value = String(row.data[header] ?? '');
                           return `
                           <td class="sticky z-10 bg-base-100 max-w-[12rem]" style="left: calc(4rem + ${cellIndex * 12}rem)">
                             <div class="text-sm whitespace-pre-wrap break-words max-h-20 overflow-y-auto" title="${value}">
@@ -658,8 +650,7 @@ try {
                         .join('')}
                       ${selectedModels
                         .map((modelId: string) => {
-                          const resultKey = `${rowIndex}-${modelId}`;
-                          const result = resultsMap.get(resultKey);
+                          const result = row.results[modelId];
                           let cellContent = '';
 
                           if (result?.status === 'completed') {
@@ -755,18 +746,31 @@ try {
     fetch(`/api/bulk/results?run_id=${state.runId}`)
       .then((res) => res.json())
       .then((data) => {
-        const result = data.results?.find(
-          (r: RowResult) => r.original_row_index === rowIndex && r.model_id === modelId
-        );
+        // API returns { rows: [{ index, data, results }], run: {...}, ... }
+        const row = data.rows?.[rowIndex];
+        if (!row) return;
 
-        if (result && state.dataset) {
-          const csvData = JSON.parse(state.dataset.csv_data) as Record<string, unknown>[];
-          const rowData = csvData[rowIndex] as Record<string, string>;
+        const result = row.results[modelId];
+        if (!result) return;
 
-          // Call the global function exposed by DetailDrawer
-          if (window.showBulkRowDetails) {
-            window.showBulkRowDetails(result, rowData);
-          }
+        // Convert result to RowResult format expected by DetailDrawer
+        // Use run data for fields not included in the response
+        const rowResult: RowResult = {
+          id: `${data.run.id}-${rowIndex}-${modelId}`, // synthetic ID
+          run_id: data.run.id,
+          original_row_index: rowIndex,
+          model_id: modelId,
+          prompt_used: data.run.system_prompt || '',
+          output_text: result.output_text,
+          status: result.status,
+          error_message: result.error_message,
+          duration_ms: result.duration_ms,
+          created_at: data.run.created_at || '',
+        };
+
+        // Call the global function exposed by DetailDrawer
+        if (window.showBulkRowDetails) {
+          window.showBulkRowDetails(rowResult, row.data as Record<string, string>);
         }
       })
       .catch(() => {
