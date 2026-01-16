@@ -17,9 +17,10 @@ import Icon from '@components/ui/Icon.astro';
 
 interface Props {
   models: ModelConfiguration[];
+  modelFetchError?: string | null;
 }
 
-const { models } = Astro.props;
+const { models, modelFetchError } = Astro.props;
 ---
 
 <div class="card bg-base-100/90 backdrop-blur-sm border border-base-300/50 shadow-lg rounded-xl">
@@ -133,11 +134,13 @@ const { models } = Astro.props;
             <div class="alert alert-warning">
               <Icon name="warning" size="lg" />
               <span>
-                No models configured.{' '}
+                {modelFetchError
+                  ? `Error loading models: ${modelFetchError}. Please `
+                  : 'No models configured. '}
                 <a href="/models" class="link">
-                  Add models
-                </a>{' '}
-                first.
+                  {modelFetchError ? 'check your model configurations' : 'Add models'}
+                </a>
+                {modelFetchError ? '.' : ' first.'}
               </span>
             </div>
           )
