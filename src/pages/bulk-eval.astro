@@ -571,7 +571,7 @@ try {
 
       // Clear existing results table
       const existingTable = stepResults.querySelector(
-        'div[class*="card"][id!="results-placeholder"]'
+        'div[class*="card"]:not([id="results-placeholder"])'
       );
       if (existingTable) {
         existingTable.remove();
