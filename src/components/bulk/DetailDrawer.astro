@@ -227,8 +227,8 @@ void rowData;
   }
 
   // Initialize once and re-initialize on Astro page transitions
-  initializeOnce('bulk-detail-drawer', initBulkDetailDrawer);
+  initializeOnce('bulkDetailDrawer', initBulkDetailDrawer);
   document.addEventListener('astro:page-load', () => {
-    initializeOnce('bulk-detail-drawer', initBulkDetailDrawer);
+    initializeOnce('bulkDetailDrawer', initBulkDetailDrawer);
   });
 </script>
