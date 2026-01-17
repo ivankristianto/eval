@@ -72,6 +72,20 @@ const totalPages = Math.max(1, Math.ceil(runs.length / pageSize));
         }
         <span class="text-sm text-base-content/60 font-medium">{runs.length} runs</span>
       </div>
+      {
+        selectable && (
+          <button
+            id="delete-selected-btn"
+            class="btn btn-error btn-sm gap-2"
+            disabled
+            aria-label="Delete selected runs"
+            aria-describedby="selected-count"
+          >
+            <Icon name="trash" size="sm" />
+            Delete Selected (<span id="selected-count">0</span>)
+          </button>
+        )
+      }
     </div>
 
     <!-- Empty State -->
@@ -316,11 +330,51 @@ const totalPages = Math.max(1, Math.ceil(runs.length / pageSize));
   </div>
 </div>
 
+<!-- Bulk Delete Confirmation Modal -->
+<dialog id="bulk-delete-modal" class="modal">
+  <div class="modal-box">
+    <h3 class="font-bold text-lg mb-4">Delete Selected Evaluation Runs?</h3>
+    <p class="text-base-content/70 mb-2">
+      This will permanently delete <span id="bulk-delete-count" class="font-bold">0</span> evaluation
+      run(s) and all their results.
+    </p>
+    <p class="text-error text-sm mb-6">This action cannot be undone.</p>
+    <div class="modal-action">
+      <button id="cancel-bulk-delete" class="btn btn-ghost">Cancel</button>
+      <button id="confirm-bulk-delete" class="btn btn-error">Delete</button>
+    </div>
+  </div>
+  <form method="dialog" class="modal-backdrop">
+    <button>close</button>
+  </form>
+</dialog>
+
 <script define:vars={{ pageSize, runs }} is:inline>
   // Pagination state
   let currentPage = 1;
   const totalRuns = runs.length;
   const totalPages = Math.max(1, Math.ceil(totalRuns / pageSize));
+
+  // Bulk delete state
+  const deleteSelectedBtn = document.getElementById('delete-selected-btn');
+  const selectedCountEl = document.getElementById('selected-count');
+  const bulkDeleteModal = document.getElementById('bulk-delete-modal');
+  const cancelBulkDeleteBtn = document.getElementById('cancel-bulk-delete');
+  const confirmBulkDeleteBtn = document.getElementById('confirm-bulk-delete');
+  const bulkDeleteCountEl = document.getElementById('bulk-delete-count');
+
+  let selectedRunIds = [];
+
+  // Update delete button state based on selection
+  function updateDeleteButtonState() {
+    const count = selectedRunIds.length;
+    if (selectedCountEl) {
+      selectedCountEl.textContent = count.toString();
+    }
+    if (deleteSelectedBtn) {
+      deleteSelectedBtn.disabled = count === 0;
+    }
+  }
 
   // Select all functionality
   const selectAllCheckbox = document.getElementById('select-all-runs');
@@ -338,19 +392,23 @@ const totalPages = Math.max(1, Math.ceil(runs.length / pageSize));
           checkbox.checked = isChecked;
         }
       });
+      selectedRunIds = getSelectedRunIds();
+      updateDeleteButtonState();
       // Dispatch event for parent to handle
       document.dispatchEvent(
         new CustomEvent('bulk-runs-selection-change', {
-          detail: { selectedIds: getSelectedRunIds() },
+          detail: { selectedIds: selectedRunIds },
         })
       );
     });
 
     runCheckboxes.forEach((checkbox) => {
       checkbox.addEventListener('change', () => {
+        selectedRunIds = getSelectedRunIds();
+        updateDeleteButtonState();
         document.dispatchEvent(
           new CustomEvent('bulk-runs-selection-change', {
-            detail: { selectedIds: getSelectedRunIds() },
+            detail: { selectedIds: selectedRunIds },
           })
         );
       });
@@ -513,6 +571,85 @@ const totalPages = Math.max(1, Math.ceil(runs.length / pageSize));
 
   // Initialize pagination on load
   updatePagination();
+
+  // Bulk delete modal handlers
+  function openBulkDeleteModal() {
+    const count = selectedRunIds.length;
+    if (bulkDeleteCountEl) {
+      bulkDeleteCountEl.textContent = count.toString();
+    }
+    bulkDeleteModal?.showModal();
+  }
+
+  function closeBulkDeleteModal() {
+    bulkDeleteModal?.close();
+  }
+
+  async function performBulkDelete() {
+    const idsToDelete = [...selectedRunIds];
+    let successCount = 0;
+    let errorCount = 0;
+    const errors = [];
+
+    // Delete each run individually
+    for (const runId of idsToDelete) {
+      try {
+        const response = await fetch(`/api/bulk/runs/${runId}`, {
+          method: 'DELETE',
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+          errors.push(`Run ${runId.slice(0, 8)}: ${errorData.error || 'Failed to delete'}`);
+          errorCount++;
+        } else {
+          successCount++;
+        }
+      } catch (error) {
+        errors.push(
+          `Run ${runId.slice(0, 8)}: ${error instanceof Error ? error.message : 'Network error'}`
+        );
+        errorCount++;
+      }
+    }
+
+    closeBulkDeleteModal();
+
+    // Dispatch event with results for parent to handle
+    const event = new CustomEvent('bulk-runs-delete-complete', {
+      bubbles: true,
+      detail: {
+        successCount,
+        errorCount,
+        errors,
+        totalIds: idsToDelete.length,
+      },
+    });
+    document.dispatchEvent(event);
+
+    // Clear selection after delete
+    selectedRunIds = [];
+    if (selectAllCheckbox) {
+      selectAllCheckbox.checked = false;
+    }
+    const runCheckboxes = document.querySelectorAll('.run-checkbox');
+    runCheckboxes.forEach((checkbox) => {
+      checkbox.checked = false;
+    });
+    updateDeleteButtonState();
+  }
+
+  // Setup bulk delete event listeners
+  deleteSelectedBtn?.addEventListener('click', openBulkDeleteModal);
+  cancelBulkDeleteBtn?.addEventListener('click', closeBulkDeleteModal);
+  confirmBulkDeleteBtn?.addEventListener('click', performBulkDelete);
+
+  // Close modal on backdrop click
+  bulkDeleteModal?.addEventListener('click', (e) => {
+    if (e.target === bulkDeleteModal) {
+      closeBulkDeleteModal();
+    }
+  });
 </script>
 
 <style>

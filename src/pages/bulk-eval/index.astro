@@ -189,4 +189,28 @@ const runs: BulkRun[] = allRuns.map((run) => {
     const customEvent = e as CustomEvent<{ runId: string }>;
     handleRerunRun(customEvent);
   });
+
+  // Handle bulk delete complete event from component
+  document.addEventListener('bulk-runs-delete-complete', (e: Event) => {
+    const customEvent = e as CustomEvent<{
+      successCount: number;
+      errorCount: number;
+      errors: string[];
+    }>;
+    const { successCount, errorCount, errors } = customEvent.detail;
+
+    if (successCount > 0) {
+      addToast(`Successfully deleted ${successCount} run(s)`, 'success');
+    }
+
+    if (errorCount > 0) {
+      addToast(
+        `Failed to delete ${errorCount} run(s): ${errors.slice(0, 3).join(', ')}${errors.length > 3 ? '...' : ''}`,
+        'error'
+      );
+    }
+
+    // Reload to show updated data
+    window.location.reload();
+  });
 </script>
