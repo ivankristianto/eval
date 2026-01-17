@@ -6,6 +6,48 @@
  * Features row selection, sticky columns with zebra striping, status badges, per-row actions,
  * bulk actions, and horizontal scroll for many columns.
  *
+ * ## Z-Index Layering Strategy
+ *
+ * Sticky columns require careful z-index management to ensure proper visual layering during
+ * horizontal and vertical scrolling. The layering strategy follows this hierarchy:
+ *
+ * | Layer | Z-Index | Element | Purpose |
+ * |-------|---------|---------|---------|
+ * | 1 | 5 | Body sticky columns | Base layer for sticky data columns in tbody |
+ * | 2 | 10 | Header sticky columns | Header cells for data columns (scrolls under row controls) |
+ * | 3 | 14 | Row number column | Row numbering needs to overlay data columns |
+ * | 4 | 15 | Checkbox column | Selection controls need highest priority in table body |
+ * | 5 | 20 | Table header (thead) | Sticky header overlays all scrolling content |
+ * | 6 | 30 | Header checkbox/row-number | Header cells for control columns overlay regular header |
+ * | 7 | 50 | Dropdown menus | Dropdowns must overlay all table elements |
+ *
+ * **Why this strategy matters:**
+ *
+ * 1. **Horizontal scrolling**: As users scroll right, sticky columns must overlay passing content
+ * 2. **Vertical scrolling**: The header must remain visible and overlay body rows
+ * 3. **Zebra striping**: Sticky columns need alternating backgrounds that match row striping
+ * 4. **Hover states**: Sticky column cells must highlight with their parent row
+ * 5. **Column stacking order**: When multiple sticky columns exist, leftmost columns overlay rightmost
+ *
+ * **Adding new sticky columns:**
+ *
+ * To add a new sticky column, determine its position in the visual hierarchy:
+ *
+ * - If it's a data column between existing sticky columns: Use `z-10` (thead) / `z-5` (tbody)
+ * - If it needs to overlay data columns (like row actions): Use `z-14` or higher
+ * - If it's a control column that must be most visible: Use `z-15`
+ * - Update the left offset calculation to account for the new column width
+ * - Add zebra striping rules for the new column (see `<style>` section)
+ *
+ * **CSS Implementation Notes:**
+ *
+ * - Z-index is applied via CSS classes in the `<style>` block, not inline
+ * - The `.sticky-col` class handles data column layering
+ * - `:nth-child()` selectors handle checkbox and row-number column layering
+ * - Background colors are applied separately to support zebra striping
+ *
+ * For full documentation, see: docs/components/tables.md
+ *
  * ## Custom Events
  *
  * The component dispatches custom events that parent components can listen to:

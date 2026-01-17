@@ -5,6 +5,50 @@
  * Unified table displaying all training pair data with inline actions.
  * Features: pagination, inline row editing, no alert() calls, proper zebra striping
  *
+ * ## Z-Index Layering Strategy
+ *
+ * Sticky columns require careful z-index management to ensure proper visual layering during
+ * horizontal and vertical scrolling. This table uses a simplified layering strategy:
+ *
+ * | Layer | Z-Index | Element | Purpose |
+ * |-------|---------|---------|---------|
+ * | 1 | 10 | Sticky columns (thead + tbody) | All sticky data columns use same layer |
+ * | 2 | 20 | Table header (thead) | Sticky header overlays scrolling content |
+ * | 3 | 50+ | Dropdown menus | Dropdowns overlay all table elements |
+ *
+ * **Differences from ResultsTable:**
+ *
+ * - This table has fewer sticky columns (Input, Expected Output, Generated Output)
+ * - No control columns (checkbox/row number) that need special layering
+ * - All sticky columns use `z-10` since they don't overlay each other in a hierarchy
+ *
+ * **Why this simplified strategy works:**
+ *
+ * 1. **Horizontal scrolling**: Sticky columns overlay passing content with `z-10`
+ * 2. **Vertical scrolling**: Header with `z-20` stays above body rows
+ * 3. **No column overlap**: The three sticky columns are at different left offsets,
+ *    so they don't visually overlap and don't need different z-indices
+ * 4. **Zebra striping**: Background colors are applied to support row striping
+ *
+ * **Adding new sticky columns:**
+ *
+ * To add a new sticky column to this table:
+ *
+ * - Use `z-10` for the sticky column (consistent with existing pattern)
+ * - Calculate the `left` offset based on column width (12rem per sticky column)
+ * - Add the `sticky-col` class for zebra striping support
+ * - Ensure proper background color for hover states
+ *
+ * **CSS Implementation Notes:**
+ *
+ * - Z-index is applied inline via `class="sticky left-0 z-10"` or in `<style>` block
+ * - The `.sticky-col` class enables zebra striping for sticky cells
+ * - Background colors are applied in `<style>` block for nth-child variants
+ * - Hover states change background for both regular and sticky cells
+ *
+ * For full documentation on z-index strategies across table components,
+ * see: docs/components/tables.md
+ *
  * @param pairs - Array of training pair objects with results
  * @param selectable - Whether to show checkboxes for selection (default: true)
  * @param showActions - Whether to show inline actions (default: true)
