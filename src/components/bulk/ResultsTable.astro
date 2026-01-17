@@ -397,28 +397,43 @@ const getActionsLeftOffset = (headerCount: number) => `calc(6rem + ${headerCount
                       data-row-index={rowIndex}
                     >
                       <div class="flex flex-col gap-2 group relative">
-                        {/* Status Badge and Regenerate Button */}
-                        <div class="flex items-center justify-between gap-1">
-                          <StatusBadge status={status} size="xs" />
-                          <button
-                            class="btn btn-ghost btn-xs btn-circle opacity-0 group-hover:opacity-100 transition-opacity"
-                            data-action="regenerate-cell"
-                            data-row-index={rowIndex}
-                            data-model-id={model.id}
-                            title={`Regenerate output for ${model.name}`}
-                            aria-label={`Regenerate row ${rowIndex + 1} with ${model.name}`}
-                          >
-                            <Icon name="refresh" size="sm" />
-                          </button>
-                        </div>
+                        {/* Status Badge and Regenerate Button - only show badge for non-completed */}
+                        {status !== 'completed' && (
+                          <div class="flex items-center justify-between gap-1">
+                            <StatusBadge status={status} size="xs" />
+                            <button
+                              class="btn btn-ghost btn-xs btn-circle opacity-0 group-hover:opacity-100 transition-opacity"
+                              data-action="regenerate-cell"
+                              data-row-index={rowIndex}
+                              data-model-id={model.id}
+                              title={`Regenerate output for ${model.name}`}
+                              aria-label={`Regenerate row ${rowIndex + 1} with ${model.name}`}
+                            >
+                              <Icon name="refresh" size="sm" />
+                            </button>
+                          </div>
+                        )}
 
                         {/* Output text or error message */}
                         {status === 'completed' && result?.output_text ? (
-                          <div
-                            class="text-sm whitespace-pre-wrap break-words max-h-16 overflow-y-auto text-base-content/80"
-                            title={result.output_text.trim()}
-                          >
-                            {result.output_text.trim()}
+                          <div class="relative group/output">
+                            <div
+                              class="text-sm whitespace-pre-wrap break-words max-h-16 overflow-y-auto text-base-content/80"
+                              title={result.output_text.trim()}
+                            >
+                              {result.output_text.trim()}
+                            </div>
+                            {/* Regenerate button shows on hover for completed results */}
+                            <button
+                              class="btn btn-ghost btn-xs btn-circle absolute top-0 right-0 opacity-0 group-hover/output:opacity-100 transition-opacity"
+                              data-action="regenerate-cell"
+                              data-row-index={rowIndex}
+                              data-model-id={model.id}
+                              title={`Regenerate output for ${model.name}`}
+                              aria-label={`Regenerate row ${rowIndex + 1} with ${model.name}`}
+                            >
+                              <Icon name="refresh" size="sm" />
+                            </button>
                           </div>
                         ) : status === 'failed' ? (
                           <div
