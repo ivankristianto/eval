@@ -17,7 +17,6 @@ import ConfigPanel from '@components/bulk/ConfigPanel.astro';
 import DetailDrawer from '@components/bulk/DetailDrawer.astro';
 import { getModels } from '@lib/db';
 import type { ModelConfiguration } from '@lib/utils/types';
-import type { RowResult } from '@lib/db';
 
 // Fetch available models for configuration panel
 let models: ModelConfiguration[] = [];
@@ -143,7 +142,7 @@ try {
   </div>
 
   <!-- Detail Drawer (hidden by default) -->
-  <DetailDrawer result={{} as RowResult} rowData={{} as Record<string, string>} />
+  <DetailDrawer allRowResults={[]} rowData={{} as Record<string, string>} rowIndex={0} />
 
   <!-- Drawer in overlays slot for proper z-index -->
   <div slot="overlays" id="drawer-overlays"></div>
@@ -173,7 +172,11 @@ try {
   // Declare the global function added by DetailDrawer
   declare global {
     interface Window {
-      showBulkRowDetails?: (result: RowResult, rowData: Record<string, string>) => void;
+      showBulkRowDetails?: (
+        allRowResults: RowResult[],
+        rowData: Record<string, string>,
+        rowIndex: number
+      ) => void;
     }
   }
 
@@ -736,7 +739,7 @@ try {
   };
 
   /**
-   * Handle row click to show details
+   * Handle row click to show details for all models
    */
   const handleRowClick = (event: Event) => {
     const target = event.target as HTMLElement;
@@ -746,44 +749,39 @@ try {
     const rowIndex = parseInt(row.getAttribute('data-row-index') || '-1');
     if (rowIndex < 0) return;
 
-    // Get the model_id from the clicked cell
-    const cell = target.closest('td[data-model-id]');
-    const modelId = cell?.getAttribute('data-model-id');
-
-    if (!modelId) {
-      addToast('Click on a model output cell to view details', 'info');
-      return;
-    }
-
-    // Find the result for this row and model
+    // Fetch all row data to get all model results
     fetch(`/api/bulk/results?run_id=${state.runId}`)
       .then((res) => res.json())
       .then((data) => {
-        // API returns { rows: [{ index, data, results }], run: {...}, ... }
+        // API returns { rows: [{ index, data, results }], run: {...}, selected_models: [...], ... }
         const row = data.rows?.[rowIndex];
         if (!row) return;
 
-        const result = row.results[modelId];
-        if (!result) return;
+        const selectedModels = data.selected_models || [];
+        const runId = data.run.id;
+        const systemPrompt = data.run.system_prompt || '';
+        const createdAt = data.run.created_at || '';
 
-        // Convert result to RowResult format expected by DetailDrawer
-        // Use run data for fields not included in the response
-        const rowResult: RowResult = {
-          id: `${data.run.id}-${rowIndex}-${modelId}`, // synthetic ID
-          run_id: data.run.id,
-          original_row_index: rowIndex,
-          model_id: modelId,
-          prompt_used: data.run.system_prompt || '',
-          output_text: result.output_text,
-          status: result.status,
-          error_message: result.error_message,
-          duration_ms: result.duration_ms,
-          created_at: data.run.created_at || '',
-        };
+        // Convert all model results to RowResult format
+        const allRowResults: RowResult[] = selectedModels.map((modelId: string) => {
+          const result = row.results[modelId];
+          return {
+            id: `${runId}-${rowIndex}-${modelId}`, // synthetic ID
+            run_id: runId,
+            original_row_index: rowIndex,
+            model_id: modelId,
+            prompt_used: systemPrompt,
+            output_text: result?.output_text,
+            status: result?.status || 'pending',
+            error_message: result?.error_message,
+            duration_ms: result?.duration_ms,
+            created_at: createdAt,
+          };
+        });
 
         // Call the global function exposed by DetailDrawer
         if (window.showBulkRowDetails) {
-          window.showBulkRowDetails(rowResult, row.data as Record<string, string>);
+          window.showBulkRowDetails(allRowResults, row.data as Record<string, string>, rowIndex);
         }
       })
       .catch(() => {
