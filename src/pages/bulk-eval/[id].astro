@@ -42,7 +42,7 @@ let initialData: {
     created_at: string;
   };
   headers: string[];
-  selected_models: string[];
+  selected_models: Array<{ id: string; name: string; provider: string }>;
   rows: Array<{
     index: number;
     data: Record<string, unknown>;
@@ -148,7 +148,7 @@ if (notFound || !initialData) {
           <div class="flex flex-wrap gap-1 mt-1">
             {
               initialData.selected_models.map((model) => (
-                <span class="badge badge-ghost badge-xs">{model}</span>
+                <span class="badge badge-ghost badge-xs">{model.name}</span>
               ))
             }
           </div>
@@ -458,7 +458,7 @@ if (notFound || !initialData) {
       row_count: number;
     };
     headers: string[];
-    selected_models: string[];
+    selected_models: Array<{ id: string; name: string; provider: string }>;
     rows: Array<{
       index: number;
       data: Record<string, unknown>;
@@ -597,11 +597,11 @@ if (notFound || !initialData) {
                     .join('')}
                   ${selectedModels
                     .map(
-                      (modelId: string) => `
+                      (model: { id: string; name: string; provider: string }) => `
                     <th class="min-w-[200px] max-w-[300px]">
                       <div class="flex items-center gap-2">
                         <span>Output</span>
-                        <span class="badge badge-sm badge-neutral">${modelId}</span>
+                        <span class="badge badge-sm badge-neutral">${model.name}</span>
                       </div>
                     </th>
                   `
@@ -630,8 +630,8 @@ if (notFound || !initialData) {
                       })
                       .join('')}
                     ${selectedModels
-                      .map((modelId: string) => {
-                        const result = row.results[modelId];
+                      .map((model: { id: string; name: string; provider: string }) => {
+                        const result = row.results[model.id];
                         let cellContent = '';
 
                         if (result?.status === 'completed') {
@@ -662,7 +662,7 @@ if (notFound || !initialData) {
                         }
 
                         return `
-                        <td class="min-w-[200px] max-w-[300px]" data-model-id="${modelId}">
+                        <td class="min-w-[200px] max-w-[300px]" data-model-id="${model.id}">
                           ${cellContent}
                         </td>
                       `;

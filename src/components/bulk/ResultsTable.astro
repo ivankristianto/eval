@@ -167,7 +167,11 @@ const csvData = JSON.parse(dataset.csv_data) as Record<string, unknown>[];
 const headers = csvData.length > 0 ? Object.keys(csvData[0]) : [];
 
 // Parse selected models from run
-const selectedModels = JSON.parse(run.selected_models) as string[];
+const selectedModels = JSON.parse(run.selected_models) as Array<{
+  id: string;
+  name: string;
+  provider: string;
+}>;
 
 // Group results by row index and model for easy lookup
 const resultsMap = new Map<string, RowResult>();
@@ -281,11 +285,11 @@ const getActionsLeftOffset = (headerCount: number) => `calc(6rem + ${headerCount
             </th>
             <!-- Model output columns -->
             {
-              selectedModels.map((modelId) => (
+              selectedModels.map((model) => (
                 <th class="min-w-[200px] max-w-[300px]" scope="col">
                   <div class="flex items-center gap-2">
                     <span>Output</span>
-                    <span class="badge badge-sm badge-neutral">{modelId}</span>
+                    <span class="badge badge-sm badge-neutral">{model.name}</span>
                   </div>
                 </th>
               ))
@@ -379,15 +383,15 @@ const getActionsLeftOffset = (headerCount: number) => `calc(6rem + ${headerCount
                     </ul>
                   </div>
                 </td>
-                {selectedModels.map((modelId) => {
-                  const resultKey = `${rowIndex}-${modelId}`;
+                {selectedModels.map((model) => {
+                  const resultKey = `${rowIndex}-${model.id}`;
                   const result = resultsMap.get(resultKey);
                   const status = result?.status || 'pending';
 
                   return (
                     <td
                       class="min-w-[200px] max-w-[300px]"
-                      data-model-id={modelId}
+                      data-model-id={model.id}
                       data-row-index={rowIndex}
                     >
                       <div class="flex flex-col gap-2 group relative">
@@ -398,9 +402,9 @@ const getActionsLeftOffset = (headerCount: number) => `calc(6rem + ${headerCount
                             class="btn btn-ghost btn-xs btn-circle opacity-0 group-hover:opacity-100 transition-opacity"
                             data-action="regenerate-cell"
                             data-row-index={rowIndex}
-                            data-model-id={modelId}
-                            title={`Regenerate output for ${modelId}`}
-                            aria-label={`Regenerate row ${rowIndex + 1} with ${modelId}`}
+                            data-model-id={model.id}
+                            title={`Regenerate output for ${model.name}`}
+                            aria-label={`Regenerate row ${rowIndex + 1} with ${model.name}`}
                           >
                             <Icon name="refresh" size="sm" />
                           </button>
