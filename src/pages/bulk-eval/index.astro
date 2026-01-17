@@ -10,6 +10,7 @@
  */
 
 import Layout from '@layouts/Layout.astro';
+import Icon from '@components/ui/Icon.astro';
 ---
 
 <Layout title="Bulk Evaluations - Eval AI">
@@ -25,16 +26,7 @@ import Layout from '@layouts/Layout.astro';
         <p class="text-base-content/60 text-lg">View and manage your bulk evaluation runs</p>
       </div>
       <a href="/bulk-eval/new" class="btn btn-luxe btn-luxe-primary gap-2">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          class="h-5 w-5"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"
-          ></path>
-        </svg>
+        <Icon name="plus" size="md" />
         New Evaluation
       </a>
     </div>
@@ -54,35 +46,13 @@ import Layout from '@layouts/Layout.astro';
       <div
         class="card bg-base-100/90 backdrop-blur-sm border border-base-300/50 shadow-lg rounded-xl p-12 text-center"
       >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          class="h-20 w-20 mx-auto text-base-content/20 mb-4"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="1.5"
-            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-          ></path>
-        </svg>
+        <Icon name="document" size="xl" class="mx-auto text-base-content/20 mb-4" />
         <h3 class="text-xl font-semibold mb-2">No Evaluation Runs</h3>
         <p class="text-base-content/60 mb-6">
           Create your first bulk evaluation to compare model outputs across multiple data rows
         </p>
         <a href="/bulk-eval/new" class="btn btn-luxe btn-luxe-primary gap-2">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-5 w-5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"
-            ></path>
-          </svg>
+          <Icon name="plus" size="md" />
           Create First Evaluation
         </a>
       </div>
@@ -174,6 +144,7 @@ import Layout from '@layouts/Layout.astro';
 
 <script>
   import { addToast } from '@lib/ui/toastStore';
+  import { createIconElement } from '@lib/ui/icons';
 
   interface BulkRun {
     id: string;
@@ -269,6 +240,14 @@ import Layout from '@layouts/Layout.astro';
    * Render a single row in the table
    */
   function renderRow(run: BulkRun): string {
+    // Create SVG icons and serialize to HTML string
+    const documentIcon = createIconElement('document', 'sm');
+    documentIcon.classList.add('text-base-content/40', 'flex-shrink-0');
+    const documentIconHtml = documentIcon.outerHTML;
+
+    const trashIcon = createIconElement('trash', 'sm');
+    const trashIconHtml = trashIcon.outerHTML;
+
     return `
       <tr class="run-row-clickable" data-run-id="${run.id}">
         <td>
@@ -278,19 +257,7 @@ import Layout from '@layouts/Layout.astro';
         </td>
         <td>
           <div class="flex items-center gap-2">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-4 w-4 text-base-content/40 flex-shrink-0"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-            </svg>
+            ${documentIconHtml}
             <span class="text-sm truncate" title="${run.dataset_filename}">${run.dataset_filename}</span>
           </div>
         </td>
@@ -312,19 +279,7 @@ import Layout from '@layouts/Layout.astro';
             data-run-id="${run.id}"
             title="Delete this run"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-4 w-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-            </svg>
+            ${trashIconHtml}
           </button>
         </td>
       </tr>
