@@ -100,6 +100,17 @@
  * }
  * ```
  *
+ * ### `bulk-cell-regenerate`
+ * Dispatched when user clicks "Regenerate" on a specific cell (row + model).
+ *
+ * **Event Detail:**
+ * ```typescript
+ * {
+ *   rowIndex: number;  // Zero-based row index
+ *   modelId: string;   // Model ID to regenerate
+ * }
+ * ```
+ *
  * ### `page-change`
  * Dispatched when user changes the current page.
  *
@@ -284,7 +295,7 @@ const getActionsLeftOffset = (headerCount: number) => `calc(6rem + ${headerCount
         <tbody id="results-body">
           {
             csvData.map((row, rowIndex) => (
-              <tr class="hover" data-row-index={rowIndex}>
+              <tr class="hover group" data-row-index={rowIndex}>
                 <td class="sticky left-0 z-10 bg-base-100">
                   <input
                     type="checkbox"
@@ -374,11 +385,25 @@ const getActionsLeftOffset = (headerCount: number) => `calc(6rem + ${headerCount
                   const status = result?.status || 'pending';
 
                   return (
-                    <td class="min-w-[200px] max-w-[300px]" data-model-id={modelId}>
-                      <div class="flex flex-col gap-2">
-                        {/* Status Badge */}
-                        <div class="flex items-center gap-1">
+                    <td
+                      class="min-w-[200px] max-w-[300px]"
+                      data-model-id={modelId}
+                      data-row-index={rowIndex}
+                    >
+                      <div class="flex flex-col gap-2 group relative">
+                        {/* Status Badge and Regenerate Button */}
+                        <div class="flex items-center justify-between gap-1">
                           <StatusBadge status={status} size="xs" />
+                          <button
+                            class="btn btn-ghost btn-xs btn-circle opacity-0 group-hover:opacity-100 transition-opacity"
+                            data-action="regenerate-cell"
+                            data-row-index={rowIndex}
+                            data-model-id={modelId}
+                            title={`Regenerate output for ${modelId}`}
+                            aria-label={`Regenerate row ${rowIndex + 1} with ${modelId}`}
+                          >
+                            <Icon name="refresh" size="sm" />
+                          </button>
                         </div>
 
                         {/* Output text or error message */}
@@ -733,6 +758,20 @@ const getActionsLeftOffset = (headerCount: number) => `calc(6rem + ${headerCount
             });
             element.dispatchEvent(event);
           }
+          break;
+        }
+        case 'regenerate-cell': {
+          const modelId = element.dataset.modelId;
+          if (!modelId) return;
+
+          const event = new CustomEvent('bulk-cell-regenerate', {
+            bubbles: true,
+            detail: {
+              rowIndex: parseInt(rowIndex || '0'),
+              modelId,
+            },
+          });
+          element.dispatchEvent(event);
           break;
         }
       }

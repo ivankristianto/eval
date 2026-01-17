@@ -326,6 +326,114 @@ if (notFound || !initialData) {
   });
 
   /**
+   * Handle bulk-cell-regenerate custom event
+   * Dispatched when user clicks regenerate on a specific cell
+   */
+  document.addEventListener('bulk-cell-regenerate', async (e: Event) => {
+    const customEvent = e as CustomEvent<{ rowIndex: number; modelId: string }>;
+    const { rowIndex, modelId } = customEvent.detail;
+
+    if (!runId) return;
+
+    // Show loading toast
+    addToast(`Regenerating evaluation for row ${rowIndex + 1}...`, 'info', 0);
+
+    // Find the cell to update its UI
+    const cell = document.querySelector(
+      `td[data-model-id="${modelId}"][data-row-index="${rowIndex}"]`
+    );
+    if (!cell) {
+      addToast('Cell not found', 'error');
+      return;
+    }
+
+    // Show loading state in cell
+    const originalContent = cell.innerHTML;
+    cell.innerHTML = `
+      <div class="flex items-center gap-2 text-warning">
+        <span class="loading loading-spinner loading-xs"></span>
+        <span class="text-xs">Regenerating...</span>
+      </div>
+    `;
+
+    try {
+      const response = await fetch('/api/bulk/rerun-result', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ run_id: runId, row_index: rowIndex, model_id: modelId }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to regenerate');
+      }
+
+      const data = await response.json();
+      const { result_id } = data;
+
+      // Poll for result completion
+      await pollForResult(result_id, rowIndex, modelId, cell);
+
+      // Show success toast
+      addToast(`Row ${rowIndex + 1} regenerated successfully`, 'success');
+
+      // Refresh the table data
+      await fetchData();
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      addToast(`Failed to regenerate row ${rowIndex + 1}: ${errorMessage}`, 'error');
+      // Restore original content on error
+      cell.innerHTML = originalContent;
+    }
+  });
+
+  /**
+   * Poll for a single result to complete
+   */
+  async function pollForResult(
+    resultId: string,
+    rowIndex: number,
+    modelId: string,
+    cell: Element
+  ): Promise<void> {
+    const maxAttempts = 60; // 2 minutes with 2-second intervals
+    let attempts = 0;
+
+    while (attempts < maxAttempts) {
+      try {
+        const response = await fetch(`/api/bulk/result?result_id=${resultId}`);
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch result status');
+        }
+
+        const data = await response.json();
+
+        if (data.status === 'completed' || data.status === 'failed') {
+          return; // Done, will refresh full table
+        }
+
+        // Update loading state
+        cell.innerHTML = `
+          <div class="flex items-center gap-2 text-warning">
+            <span class="loading loading-spinner loading-xs"></span>
+            <span class="text-xs">Regenerating...</span>
+          </div>
+        `;
+
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+        attempts++;
+      } catch (err) {
+        console.error('Error polling for result:', err);
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+        attempts++;
+      }
+    }
+
+    throw new Error('Timeout waiting for regeneration to complete');
+  }
+
+  /**
    * Polling configuration constants
    */
   const MAX_CONSECUTIVE_FAILURES = 10;
