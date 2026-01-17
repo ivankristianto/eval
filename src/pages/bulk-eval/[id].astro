@@ -20,9 +20,11 @@ import {
   getRunWithResults,
   getBulkDataset,
   type BulkDataset,
+  type EvaluationRun,
   type EvaluationRunWithResults,
   type RowResult,
 } from '@lib/db/bulk-db';
+import { getModelById } from '@lib/db/db';
 
 // Get run ID from URL params
 const { id } = Astro.params;
@@ -63,12 +65,21 @@ if (notFound || !run || !dataset) {
   return Astro.redirect('/404');
 }
 
-// Parse selected models for display
-const selectedModels = JSON.parse(run.selected_models) as Array<{
-  id: string;
-  name: string;
-  provider: string;
-}>;
+// Parse selected model IDs and fetch model names
+const selectedModelIds = JSON.parse(run.selected_models) as string[];
+const modelInfoArray: Array<{ id: string; name: string; provider: string } | null> =
+  selectedModelIds.map((modelId) => {
+    const model = getModelById(modelId);
+    if (!model) return null;
+    return {
+      id: model.id,
+      name: model.model_name,
+      provider: model.provider,
+    };
+  });
+const selectedModels = modelInfoArray.filter(
+  (m): m is { id: string; name: string; provider: string } => m !== null
+);
 
 // Calculate summary stats
 const completedCount = results.filter((r) => r.status === 'completed').length;
@@ -227,7 +238,7 @@ const progress = run.total_rows > 0 ? (run.processed_rows / run.total_rows) * 10
 
     <!-- Results Table (Server-Side Rendered) -->
     <div class="animate-reveal" id="results-table-wrapper">
-      <ResultsTable dataset={dataset} run={run} results={results} />
+      <ResultsTable dataset={dataset} run={run as EvaluationRun} results={results} />
     </div>
 
     <!-- Status Bar (shown during evaluation) -->
