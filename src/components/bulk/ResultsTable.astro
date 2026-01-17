@@ -6,6 +6,89 @@
  * Features row selection, sticky columns with zebra striping, status badges, per-row actions,
  * bulk actions, and horizontal scroll for many columns.
  *
+ * ## Custom Events
+ *
+ * The component dispatches custom events that parent components can listen to:
+ *
+ * ### `bulk-row-view-details`
+ * Dispatched when user clicks "View Details" in a row's action menu.
+ *
+ * **Event Detail:**
+ * ```typescript
+ * {
+ *   rowIndex: number;  // Zero-based index of the row in the CSV data
+ * }
+ * ```
+ *
+ * **Usage Example:**
+ * ```javascript
+ * document.addEventListener('bulk-row-view-details', (event) => {
+ *   const { rowIndex } = event.detail;
+ *   // Fetch row details and show drawer
+ * });
+ * ```
+ *
+ * ### `bulk-row-regenerate`
+ * Dispatched when user clicks "Regenerate All" for a specific row.
+ *
+ * **Event Detail:**
+ * ```typescript
+ * {
+ *   rowIndex: number;  // Zero-based index of the row to regenerate
+ * }
+ * ```
+ *
+ * ### `bulk-regenerate-selected`
+ * Dispatched when user clicks "Regenerate Selected" bulk action.
+ *
+ * **Event Detail:**
+ * ```typescript
+ * {
+ *   rowIndices: number[];  // Array of selected row indices
+ * }
+ * ```
+ *
+ * ### `bulk-delete-selected`
+ * Dispatched when user clicks "Delete Selected" bulk action.
+ *
+ * **Event Detail:**
+ * ```typescript
+ * {
+ *   rowIndices: number[];  // Array of selected row indices to delete
+ * }
+ * ```
+ *
+ * ### `page-change`
+ * Dispatched when user changes the current page.
+ *
+ * **Event Detail:**
+ * ```typescript
+ * {
+ *   page: number;  // The new page number (1-indexed)
+ * }
+ * ```
+ *
+ * ## Integration Pattern
+ *
+ * This component uses an event-based architecture for decoupling from parent components.
+ * Parent components should:
+ * 1. Render the ResultsTable component
+ * 2. Listen for custom events on `document`
+ * 3. Handle events by fetching data and updating UI (e.g., showing DetailDrawer)
+ *
+ * **Example Integration:**
+ * ```astro
+ * <ResultsTable dataset={dataset} run={run} results={results} />
+ *
+ * <script>
+ *   document.addEventListener('bulk-row-view-details', async (e) => {
+ *     const { rowIndex } = e.detail;
+ *     const result = await fetchRowResult(rowIndex);
+ *     window.showBulkRowDetails(result, rowData);
+ *   });
+ * </script>
+ * ```
+ *
  * @example
  * <ResultsTable dataset={dataset} run={run} results={results} />
  *
