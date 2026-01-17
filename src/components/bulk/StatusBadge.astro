@@ -16,9 +16,13 @@
 
 export interface Props {
   /**
-   * Evaluation status
+   * Evaluation status.
+   * - 'pending': Evaluation is queued or waiting to start
+   * - 'running': Evaluation is currently in progress (gradient emerald with pulse animation)
+   * - 'completed': Evaluation finished successfully
+   * - 'failed': Evaluation encountered an error
    */
-  status: 'pending' | 'completed' | 'failed';
+  status: 'pending' | 'running' | 'completed' | 'failed';
   /**
    * Badge size (default: 'md')
    */
@@ -38,6 +42,8 @@ const getStatusClass = () => {
   switch (status) {
     case 'pending':
       return 'status-pending';
+    case 'running':
+      return 'status-running';
     case 'completed':
       return 'status-completed';
     case 'failed':
@@ -64,6 +70,8 @@ const getIcon = () => {
   switch (status) {
     case 'pending':
       return '⋯';
+    case 'running':
+      return '◌';
     case 'completed':
       return '✓';
     case 'failed':
@@ -79,6 +87,7 @@ const getIcon = () => {
 const getLabelText = () => {
   const labels = {
     pending: 'Pending',
+    running: 'Running',
     completed: 'Completed',
     failed: 'Failed',
   };
