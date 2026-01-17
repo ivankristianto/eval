@@ -144,17 +144,28 @@ const getActionsLeftOffset = (headerCount: number) => `calc(6rem + ${headerCount
         <label
           class="flex items-center gap-2 cursor-pointer hover:bg-base-200/50 px-2 py-1 rounded-lg transition-colors"
         >
-          <input type="checkbox" class="checkbox checkbox-sm checkbox-luxe" id="select-all-rows" />
+          <input
+            type="checkbox"
+            class="checkbox checkbox-sm checkbox-luxe"
+            id="select-all-rows"
+            aria-label="Select all rows on current page"
+          />
           <span class="text-sm font-medium">Select All</span>
         </label>
         <span class="text-sm text-base-content/60 font-medium">{csvData.length} rows</span>
 
         <!-- Bulk Action Buttons -->
-        <div class="flex items-center gap-2 ml-2" id="bulk-actions">
+        <div
+          class="flex items-center gap-2 ml-2"
+          id="bulk-actions"
+          role="group"
+          aria-label="Bulk actions"
+        >
           <button
             class="btn btn-xs btn-ghost btn-luxe"
             data-action="regenerate-selected"
             title="Regenerate selected failed/pending evaluations"
+            aria-label="Regenerate selected rows"
             disabled
           >
             <Icon name="refresh" size="sm" />
@@ -164,6 +175,7 @@ const getActionsLeftOffset = (headerCount: number) => `calc(6rem + ${headerCount
             class="btn btn-xs btn-ghost text-error hover:bg-error/10"
             data-action="delete-selected"
             title="Delete selected results"
+            aria-label="Delete selected rows"
             disabled
           >
             <Icon name="trash" size="sm" />
@@ -186,11 +198,13 @@ const getActionsLeftOffset = (headerCount: number) => `calc(6rem + ${headerCount
         <thead class="bg-base-200/80 sticky top-0 z-20">
           <tr>
             <!-- Row checkbox column -->
-            <th class="w-12 sticky left-0 z-30 bg-base-200/90 hover:bg-base-300">
-              <span class="sr-only">Select</span>
+            <th class="w-12 sticky left-0 z-30 bg-base-200/90 hover:bg-base-300" scope="col">
+              <span class="sr-only">Select row</span>
             </th>
             <!-- Row number column -->
-            <th class="w-16 sticky left-[3rem] z-30 bg-base-200/90 hover:bg-base-300"> # </th>
+            <th class="w-16 sticky left-[3rem] z-30 bg-base-200/90 hover:bg-base-300" scope="col">
+              <span class="sr-only">Row number</span>
+            </th>
             <!-- CSV data columns -->
             {
               headers.map((header, index) => (
@@ -208,13 +222,14 @@ const getActionsLeftOffset = (headerCount: number) => `calc(6rem + ${headerCount
             <th
               class="w-20 sticky-col z-10 bg-base-200/90 hover:bg-base-300 text-center"
               style={`left: ${getActionsLeftOffset(headers.length)}`}
+              scope="col"
             >
-              Actions
+              <span class="sr-only">Row actions</span>
             </th>
             <!-- Model output columns -->
             {
               selectedModels.map((modelId) => (
-                <th class="min-w-[200px] max-w-[300px]">
+                <th class="min-w-[200px] max-w-[300px]" scope="col">
                   <div class="flex items-center gap-2">
                     <span>Output</span>
                     <span class="badge badge-sm badge-neutral">{modelId}</span>
@@ -233,6 +248,7 @@ const getActionsLeftOffset = (headerCount: number) => `calc(6rem + ${headerCount
                     type="checkbox"
                     class="checkbox checkbox-sm checkbox-luxe row-checkbox"
                     data-row-index={rowIndex}
+                    aria-label={`Select row ${rowIndex + 1}`}
                   />
                 </td>
                 <td class="sticky left-[3rem] z-10 bg-base-100 tabular-nums text-base-content/60">
@@ -260,38 +276,48 @@ const getActionsLeftOffset = (headerCount: number) => `calc(6rem + ${headerCount
                   style={`left: ${getActionsLeftOffset(headers.length)}`}
                 >
                   <div class="dropdown dropdown-end">
-                    <label tabindex="0" class="btn btn-ghost btn-xs btn-circle" title="Row actions">
+                    <label
+                      tabindex="0"
+                      class="btn btn-ghost btn-xs btn-circle"
+                      title="Row actions"
+                      aria-label={`Actions for row ${rowIndex + 1}`}
+                    >
                       <Icon name="more-vertical" size="sm" />
                     </label>
                     <ul
                       tabindex="0"
                       class="dropdown-content z-[50] menu p-2 shadow bg-base-200 rounded-box w-52 text-sm"
+                      role="menu"
+                      aria-label={`Row ${rowIndex + 1} actions`}
                     >
-                      <li>
+                      <li role="none">
                         <a
                           data-action="view-details"
                           data-row-index={rowIndex}
                           class="flex items-center gap-2"
+                          role="menuitem"
                         >
                           <Icon name="eye" size="sm" />
                           <span>View Details</span>
                         </a>
                       </li>
-                      <li>
+                      <li role="none">
                         <a
                           data-action="regenerate-row"
                           data-row-index={rowIndex}
                           class="flex items-center gap-2"
+                          role="menuitem"
                         >
                           <Icon name="refresh" size="sm" />
                           <span>Regenerate All</span>
                         </a>
                       </li>
-                      <li>
+                      <li role="none">
                         <a
                           data-action="copy-output"
                           data-row-index={rowIndex}
                           class="flex items-center gap-2"
+                          role="menuitem"
                         >
                           <Icon name="copy" size="sm" />
                           <span>Copy All Outputs</span>
@@ -351,12 +377,26 @@ const getActionsLeftOffset = (headerCount: number) => `calc(6rem + ${headerCount
           Showing 1-{Math.min(pageSize, csvData.length)} of {csvData.length} rows
         </span>
       </div>
-      <div class="join">
-        <button class="join-item btn btn-xs btn-ghost" data-action="prev-page" disabled> « </button>
-        <button class="join-item btn btn-xs btn-active" data-page="1">1</button>
+      <div class="join" role="navigation" aria-label="Table pagination">
+        <button
+          class="join-item btn btn-xs btn-ghost"
+          data-action="prev-page"
+          disabled
+          aria-label="Previous page"
+        >
+          «
+        </button>
+        <button
+          class="join-item btn btn-xs btn-active"
+          data-page="1"
+          aria-label="Page 1"
+          aria-current="page"
+        >
+          1
+        </button>
         {
           totalPages > 1 && (
-            <button class="join-item btn btn-xs btn-ghost" data-page="2">
+            <button class="join-item btn btn-xs btn-ghost" data-page="2" aria-label="Page 2">
               2
             </button>
           )
@@ -364,12 +404,23 @@ const getActionsLeftOffset = (headerCount: number) => `calc(6rem + ${headerCount
         {totalPages > 2 && <span class="join-item btn btn-xs btn-disabled btn-ghost">...</span>}
         {
           totalPages > 2 && (
-            <button class="join-item btn btn-xs btn-ghost" data-page={totalPages}>
+            <button
+              class="join-item btn btn-xs btn-ghost"
+              data-page={totalPages}
+              aria-label={`Page ${totalPages}`}
+            >
               {totalPages}
             </button>
           )
         }
-        <button class="join-item btn btn-xs btn-ghost" data-action="next-page" disabled> » </button>
+        <button
+          class="join-item btn btn-xs btn-ghost"
+          data-action="next-page"
+          disabled
+          aria-label="Next page"
+        >
+          »
+        </button>
       </div>
     </div>
 
@@ -486,8 +537,10 @@ const getActionsLeftOffset = (headerCount: number) => `calc(6rem + ${headerCount
       const pageNum = parseInt(btn.dataset.page || '0');
       if (pageNum === currentPage) {
         btn.classList.add('btn-active');
+        btn.setAttribute('aria-current', 'page');
       } else {
         btn.classList.remove('btn-active');
+        btn.removeAttribute('aria-current');
       }
     });
 
