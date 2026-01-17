@@ -134,10 +134,12 @@
  * <ResultsTable dataset={dataset} run={run} results={results} />
  *
  * <script>
- *   document.addEventListener('bulk-row-view-details', async (e) => {
+ *   document.addEventListener('bulk-row-view-details', (e) => {
  *     const { rowIndex } = e.detail;
- *     const result = await fetchRowResult(rowIndex);
- *     window.showBulkRowDetails(result, rowData);
+ *     // Fetch row details and show drawer
+ *     fetchRowResult(rowIndex).then(result => {
+ *       window.showBulkRowDetails(result, rowData);
+ *     });
  *   });
  * </script>
  * ```
