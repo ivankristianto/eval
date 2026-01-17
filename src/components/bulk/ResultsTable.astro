@@ -3,7 +3,8 @@
  * ResultsTable Component
  *
  * Paginated table displaying CSV data with evaluation results side-by-side for each model.
- * Features row selection, sticky columns, status indicators, and horizontal scroll for many columns.
+ * Features row selection, sticky columns with zebra striping, status badges, per-row actions,
+ * bulk actions, and horizontal scroll for many columns.
  *
  * @example
  * <ResultsTable dataset={dataset} run={run} results={results} />
@@ -15,6 +16,7 @@
 
 import type { BulkDataset, EvaluationRun, RowResult } from '@lib/db';
 import Icon from '@components/ui/Icon.astro';
+import StatusBadge from '@components/bulk/StatusBadge.astro';
 
 interface Props {
   dataset: BulkDataset;
@@ -41,13 +43,17 @@ for (const result of results) {
 // Default page size
 const pageSize = 20;
 const totalPages = Math.max(1, Math.ceil(csvData.length / pageSize));
+
+// Calculate sticky offset for Actions column
+// Base: checkbox (3rem) + row number (3rem) + headers (12rem each) + actions column (5rem)
+const getActionsLeftOffset = (headerCount: number) => `calc(6rem + ${headerCount * 12}rem + 5rem)`;
 ---
 
 <div
   class="card bg-base-100/90 backdrop-blur-sm border border-base-300/50 shadow-lg rounded-xl h-full flex flex-col overflow-hidden"
 >
   <div class="card-body p-3 flex flex-col min-h-0">
-    <!-- Table Header -->
+    <!-- Table Header with Bulk Actions -->
     <div
       class="flex items-center justify-between px-1 py-2 border-b border-base-300/80 flex-shrink-0"
     >
@@ -59,6 +65,28 @@ const totalPages = Math.max(1, Math.ceil(csvData.length / pageSize));
           <span class="text-sm font-medium">Select All</span>
         </label>
         <span class="text-sm text-base-content/60 font-medium">{csvData.length} rows</span>
+
+        <!-- Bulk Action Buttons -->
+        <div class="flex items-center gap-2 ml-2" id="bulk-actions">
+          <button
+            class="btn btn-xs btn-ghost btn-luxe"
+            data-action="regenerate-selected"
+            title="Regenerate selected failed/pending evaluations"
+            disabled
+          >
+            <Icon name="refresh" size="sm" />
+            Regenerate Selected
+          </button>
+          <button
+            class="btn btn-xs btn-ghost text-error hover:bg-error/10"
+            data-action="delete-selected"
+            title="Delete selected results"
+            disabled
+          >
+            <Icon name="trash" size="sm" />
+            Delete Selected
+          </button>
+        </div>
       </div>
       <div class="flex items-center gap-2">
         <span class="badge badge-ghost">
@@ -69,7 +97,7 @@ const totalPages = Math.max(1, Math.ceil(csvData.length / pageSize));
 
     <!-- Table with horizontal and vertical scroll -->
     <div
-      class="overflow-x-auto overflow-y-auto rounded-lg border border-base-300/50 flex-1 min-h-0"
+      class="overflow-x-auto overflow-y-auto rounded-lg border border-base-300/50 flex-1 min-h-0 relative"
     >
       <table class="table-luxe table-sm" id="results-table">
         <thead class="bg-base-200/80 sticky top-0 z-20">
@@ -84,7 +112,7 @@ const totalPages = Math.max(1, Math.ceil(csvData.length / pageSize));
             {
               headers.map((header, index) => (
                 <th
-                  class="sticky z-10 bg-base-200/90 hover:bg-base-300"
+                  class="sticky-col z-10 bg-base-200/90 hover:bg-base-300"
                   style={`left: calc(6rem + ${index * 12}rem)`}
                 >
                   <div class="flex items-center gap-2">
@@ -93,6 +121,13 @@ const totalPages = Math.max(1, Math.ceil(csvData.length / pageSize));
                 </th>
               ))
             }
+            <!-- Actions column -->
+            <th
+              class="w-20 sticky-col z-10 bg-base-200/90 hover:bg-base-300 text-center"
+              style={`left: ${getActionsLeftOffset(headers.length)}`}
+            >
+              Actions
+            </th>
             <!-- Model output columns -->
             {
               selectedModels.map((modelId) => (
@@ -124,7 +159,7 @@ const totalPages = Math.max(1, Math.ceil(csvData.length / pageSize));
                   const value = String(row[header] ?? '');
                   return (
                     <td
-                      class="sticky z-10 bg-base-100 max-w-[12rem]"
+                      class="sticky-col z-10 bg-base-100 max-w-[12rem]"
                       style={`left: calc(6rem + ${cellIndex * 12}rem)`}
                     >
                       <div
@@ -136,36 +171,84 @@ const totalPages = Math.max(1, Math.ceil(csvData.length / pageSize));
                     </td>
                   );
                 })}
+                {/* Actions column with dropdown menu */}
+                <td
+                  class="sticky-col z-10 bg-base-100 text-center"
+                  style={`left: ${getActionsLeftOffset(headers.length)}`}
+                >
+                  <div class="dropdown dropdown-end">
+                    <label tabindex="0" class="btn btn-ghost btn-xs btn-circle" title="Row actions">
+                      <Icon name="more-vertical" size="sm" />
+                    </label>
+                    <ul
+                      tabindex="0"
+                      class="dropdown-content z-[50] menu p-2 shadow bg-base-200 rounded-box w-52 text-sm"
+                    >
+                      <li>
+                        <a
+                          data-action="view-details"
+                          data-row-index={rowIndex}
+                          class="flex items-center gap-2"
+                        >
+                          <Icon name="eye" size="sm" />
+                          <span>View Details</span>
+                        </a>
+                      </li>
+                      <li>
+                        <a
+                          data-action="regenerate-row"
+                          data-row-index={rowIndex}
+                          class="flex items-center gap-2"
+                        >
+                          <Icon name="refresh" size="sm" />
+                          <span>Regenerate All</span>
+                        </a>
+                      </li>
+                      <li>
+                        <a
+                          data-action="copy-output"
+                          data-row-index={rowIndex}
+                          class="flex items-center gap-2"
+                        >
+                          <Icon name="copy" size="sm" />
+                          <span>Copy All Outputs</span>
+                        </a>
+                      </li>
+                    </ul>
+                  </div>
+                </td>
                 {selectedModels.map((modelId) => {
                   const resultKey = `${rowIndex}-${modelId}`;
                   const result = resultsMap.get(resultKey);
+                  const status = result?.status || 'pending';
 
                   return (
-                    <td class="min-w-[200px] max-w-[300px]">
-                      {result?.status === 'completed' ? (
-                        <div
-                          class="text-sm whitespace-pre-wrap break-words max-h-20 overflow-y-auto"
-                          title={result.output_text || ''}
-                        >
-                          {result.output_text || <span class="opacity-30 italic">No output</span>}
+                    <td class="min-w-[200px] max-w-[300px]" data-model-id={modelId}>
+                      <div class="flex flex-col gap-2">
+                        {/* Status Badge */}
+                        <div class="flex items-center gap-1">
+                          <StatusBadge status={status} size="xs" />
                         </div>
-                      ) : result?.status === 'failed' ? (
-                        <div class="flex items-center gap-2 text-error">
-                          <Icon name="error" size="sm" />
-                          <span class="text-xs" title={result.error_message}>
-                            Failed
-                          </span>
-                        </div>
-                      ) : result?.status === 'pending' ? (
-                        <div class="flex items-center gap-2 text-warning">
-                          <span class="loading loading-spinner loading-xs" />
-                          <span class="text-xs">Pending</span>
-                        </div>
-                      ) : (
-                        <div class="flex items-center gap-2 text-base-content/40">
-                          <span class="text-xs italic">Not started</span>
-                        </div>
-                      )}
+
+                        {/* Output text or error message */}
+                        {status === 'completed' && result?.output_text ? (
+                          <div
+                            class="text-sm whitespace-pre-wrap break-words max-h-16 overflow-y-auto text-base-content/80"
+                            title={result.output_text}
+                          >
+                            {result.output_text}
+                          </div>
+                        ) : status === 'failed' ? (
+                          <div
+                            class="text-xs text-error/80 italic truncate"
+                            title={result?.error_message || 'Unknown error'}
+                          >
+                            {result?.error_message || 'Failed'}
+                          </div>
+                        ) : (
+                          <div class="text-xs text-base-content/40 italic">Pending</div>
+                        )}
+                      </div>
                     </td>
                   );
                 })}
@@ -186,7 +269,7 @@ const totalPages = Math.max(1, Math.ceil(csvData.length / pageSize));
         </span>
       </div>
       <div class="join">
-        <button class="join-item btn btn-xs btn-ghost" data-action="prev-page" disabled>«</button>
+        <button class="join-item btn btn-xs btn-ghost" data-action="prev-page" disabled> « </button>
         <button class="join-item btn btn-xs btn-active" data-page="1">1</button>
         {
           totalPages > 1 && (
@@ -203,30 +286,36 @@ const totalPages = Math.max(1, Math.ceil(csvData.length / pageSize));
             </button>
           )
         }
-        <button class="join-item btn btn-xs btn-ghost" data-action="next-page" disabled>»</button>
+        <button class="join-item btn btn-xs btn-ghost" data-action="next-page" disabled> » </button>
       </div>
     </div>
 
-    <!-- Empty State -->
+    <!-- Enhanced Empty State -->
     {
       csvData.length === 0 && (
-        <div class="p-12 text-center">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke-width="1.5"
-            stroke="currentColor"
-            class="w-16 h-16 mx-auto opacity-30 mb-4"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"
-            />
-          </svg>
-          <h3 class="text-lg font-semibold mb-2">No Data Available</h3>
-          <p class="text-sm text-base-content/70">Upload a CSV file to get started</p>
+        <div class="flex-1 flex items-center justify-center p-12">
+          <div class="text-center max-w-md">
+            <div class="flex justify-center mb-4">
+              <div class="w-20 h-20 rounded-full bg-base-200 flex items-center justify-center">
+                <Icon name="table" size="lg" class="text-base-content/30" />
+              </div>
+            </div>
+            <h3 class="text-lg font-semibold mb-2">No Data Available</h3>
+            <p class="text-sm text-base-content/70 mb-6">
+              This evaluation run has no CSV data to display. Upload a CSV file to get started with
+              bulk evaluations.
+            </p>
+            <div class="flex justify-center gap-3">
+              <a href="/bulk" class="btn btn-primary btn-sm">
+                <Icon name="upload" size="sm" />
+                Upload CSV
+              </a>
+              <a href="/bulk" class="btn btn-ghost btn-sm">
+                <Icon name="arrow-left" size="sm" />
+                Back to Bulk Runs
+              </a>
+            </div>
+          </div>
         </div>
       )
     }
@@ -236,7 +325,7 @@ const totalPages = Math.max(1, Math.ceil(csvData.length / pageSize));
 <script is:inline define:vars={{ pageSize, csvData }}>
   /**
    * Client-side functionality for results table.
-   * Handles pagination, row selection, and status updates.
+   * Handles pagination, row selection, bulk actions, and per-row actions.
    */
 
   let currentPage = 1;
@@ -261,6 +350,7 @@ const totalPages = Math.max(1, Math.ceil(csvData.length / pageSize));
           checkbox.checked = isChecked;
         }
       });
+      updateBulkActionButtons();
     });
 
     rowCheckboxes.forEach((checkbox) => {
@@ -276,8 +366,25 @@ const totalPages = Math.max(1, Math.ceil(csvData.length / pageSize));
         if (selectAllCheckbox) {
           selectAllCheckbox.checked = allSelected && visibleCheckboxes.length > 0;
         }
+        updateBulkActionButtons();
       });
     });
+  }
+
+  /**
+   * Update bulk action button states based on selection
+   */
+  function updateBulkActionButtons() {
+    const selectedCount = getSelectedRows().length;
+    const regenerateBtn = document.querySelector('[data-action="regenerate-selected"]');
+    const deleteBtn = document.querySelector('[data-action="delete-selected"]');
+
+    if (regenerateBtn) {
+      regenerateBtn.disabled = selectedCount === 0;
+    }
+    if (deleteBtn) {
+      deleteBtn.disabled = selectedCount === 0;
+    }
   }
 
   /**
@@ -332,6 +439,7 @@ const totalPages = Math.max(1, Math.ceil(csvData.length / pageSize));
       if (selectAllCheckbox) {
         selectAllCheckbox.checked = false;
       }
+      updateBulkActionButtons();
 
       // Dispatch event for parent to handle
       const event = new CustomEvent('page-change', {
@@ -353,6 +461,7 @@ const totalPages = Math.max(1, Math.ceil(csvData.length / pageSize));
       if (selectAllCheckbox) {
         selectAllCheckbox.checked = false;
       }
+      updateBulkActionButtons();
 
       document.dispatchEvent(new CustomEvent('page-change', { detail: { page: currentPage } }));
     }
@@ -369,9 +478,87 @@ const totalPages = Math.max(1, Math.ceil(csvData.length / pageSize));
       if (selectAllCheckbox) {
         selectAllCheckbox.checked = false;
       }
+      updateBulkActionButtons();
 
       document.dispatchEvent(new CustomEvent('page-change', { detail: { page: currentPage } }));
     }
+  });
+
+  /**
+   * Handle per-row action clicks
+   */
+  document.querySelectorAll('[data-action]').forEach((element) => {
+    element.addEventListener('click', (e) => {
+      e.preventDefault();
+      const action = element.dataset.action;
+      const rowIndex = element.dataset.rowIndex;
+
+      if (!action) return;
+
+      switch (action) {
+        case 'view-details': {
+          // Dispatch custom event for parent to handle
+          const event = new CustomEvent('bulk-row-view-details', {
+            bubbles: true,
+            detail: { rowIndex: parseInt(rowIndex || '0') },
+          });
+          element.dispatchEvent(event);
+          break;
+        }
+        case 'regenerate-row': {
+          const event = new CustomEvent('bulk-row-regenerate', {
+            bubbles: true,
+            detail: { rowIndex: parseInt(rowIndex || '0') },
+          });
+          element.dispatchEvent(event);
+          break;
+        }
+        case 'copy-output': {
+          // Find all output cells for this row and copy them
+          const row = element.closest('tr');
+          if (row) {
+            const outputs = [];
+            row.querySelectorAll('[data-model-id]').forEach((cell) => {
+              const outputText = cell.textContent?.trim();
+              if (outputText && outputText !== 'Pending' && outputText !== 'Completed') {
+                outputs.push(outputText);
+              }
+            });
+            if (outputs.length > 0) {
+              navigator.clipboard.writeText(outputs.join('\n\n---\n\n')).then(() => {
+                // Show brief feedback
+                const originalText = element.textContent;
+                element.textContent = 'Copied!';
+                setTimeout(() => {
+                  element.textContent = originalText || '';
+                }, 1500);
+              });
+            }
+          }
+          break;
+        }
+        case 'regenerate-selected': {
+          const selectedRows = getSelectedRows();
+          const event = new CustomEvent('bulk-regenerate-selected', {
+            bubbles: true,
+            detail: { rowIndices: selectedRows },
+          });
+          element.dispatchEvent(event);
+          break;
+        }
+        case 'delete-selected': {
+          const selectedRows = getSelectedRows();
+          if (confirm(`Delete ${selectedRows.length} selected results?`)) {
+            const event = new CustomEvent('bulk-delete-selected', {
+              bubbles: true,
+              detail: { rowIndices: selectedRows },
+            });
+            element.dispatchEvent(event);
+          }
+          break;
+        }
+      }
+    });
   });
 
   /**
@@ -391,19 +578,38 @@ const totalPages = Math.max(1, Math.ceil(csvData.length / pageSize));
   // Initialize
   updateCheckboxes();
   updatePagination();
+  updateBulkActionButtons();
 </script>
 
 <style>
-  /* Fix zebra striping for sticky columns */
-  .table-luxe tbody tr:nth-child(even) .sticky {
+  /* Fix zebra striping for sticky columns using .sticky-col class */
+  .table-luxe tbody tr:nth-child(even) .sticky-col {
     background-color: hsl(var(--b2));
   }
 
-  .table-luxe tbody tr:nth-child(odd) .sticky {
+  .table-luxe tbody tr:nth-child(odd) .sticky-col {
     background-color: hsl(var(--b1));
   }
 
-  .table-luxe tbody tr:hover .sticky {
+  .table-luxe tbody tr:hover .sticky-col {
     background-color: hsl(var(--bc) / 0.1);
+  }
+
+  /* Ensure proper z-index layering for sticky columns */
+  .table-luxe thead th.sticky-col {
+    z-index: 10;
+  }
+
+  .table-luxe tbody td.sticky-col {
+    z-index: 5;
+  }
+
+  /* Checkbox column should have highest z-index */
+  .table-luxe tbody td.sticky:first-child {
+    z-index: 15;
+  }
+
+  .table-luxe tbody td.sticky:nth-child(2) {
+    z-index: 14;
   }
 </style>

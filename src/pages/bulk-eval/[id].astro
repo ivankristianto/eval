@@ -1,0 +1,770 @@
+---
+/**
+ * Bulk Evaluation Detail Page
+ *
+ * Displays detailed view of a single bulk evaluation run:
+ * - Run metadata (status, model count, progress)
+ * - Dataset preview
+ * - Results table with model outputs
+ * - Detail drawer for row results
+ * - Polls for status if run is in progress
+ * - Handles 404 if run not found
+ */
+
+import Layout from '@layouts/Layout.astro';
+import DetailDrawer from '@components/bulk/DetailDrawer.astro';
+import type { RowResult } from '@lib/db';
+
+// Get run ID from URL params
+const { id } = Astro.params;
+
+// Fetch run data server-side for initial render
+let initialData: {
+  run: {
+    id: string;
+    dataset_id: string;
+    status: string;
+    system_prompt: string;
+    temperature: number;
+    total_rows: number;
+    processed_rows: number;
+    created_at: string;
+    updated_at: string;
+    started_at: string | null;
+    completed_at: string | null;
+    error_message: string | null;
+  };
+  dataset: {
+    id: string;
+    filename: string;
+    row_count: number;
+    created_at: string;
+  };
+  headers: string[];
+  selected_models: string[];
+  rows: Array<{
+    index: number;
+    data: Record<string, unknown>;
+    results: Record<
+      string,
+      {
+        output_text?: string;
+        status: string;
+        error_message?: string;
+        duration_ms?: number;
+      }
+    >;
+  }>;
+  summary: {
+    total_rows: number;
+    processed_rows: number;
+    completed_count: number;
+    failed_count: number;
+    pending_count: number;
+    total_results: number;
+  };
+} | null = null;
+
+let notFound = false;
+
+// Fetch initial data from API
+try {
+  const response = await fetch(new URL(`/api/bulk/results?run_id=${id}`, Astro.url.origin));
+  if (response.ok) {
+    initialData = await response.json();
+  } else if (response.status === 404) {
+    notFound = true;
+  }
+} catch (e) {
+  console.error('Error fetching run data:', e);
+}
+
+// Handle 404
+if (notFound || !initialData) {
+  return Astro.redirect('/404');
+}
+---
+
+<Layout title={`Bulk Evaluation ${initialData.run.id.slice(0, 8)}... - Eval AI`}>
+  <!-- Pass run ID to client script -->
+  <span id="run-id" data-run-id={id} class="hidden"></span>
+
+  <div class="space-y-6">
+    <!-- Page Header with Back Button -->
+    <div class="flex items-center gap-4 animate-reveal">
+      <a href="/bulk-eval" class="btn btn-ghost btn-sm btn-circle">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-5 w-5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+        </svg>
+      </a>
+      <div class="flex-1">
+        <h1
+          class="text-2xl md:text-3xl font-display font-semibold tracking-tight text-gradient-gold"
+        >
+          Evaluation Run Details
+        </h1>
+        <p class="text-base-content/60 text-sm">
+          Run ID: <span class="font-mono">{initialData.run.id.slice(0, 8)}...</span>
+        </p>
+      </div>
+      <div id="run-status-badge" data-status={initialData.run.status}>
+        <!-- Populated by client script -->
+      </div>
+    </div>
+
+    <!-- Run Metadata Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 animate-reveal delay-100">
+      <!-- Dataset Info -->
+      <div
+        class="card bg-base-100/90 backdrop-blur-sm border border-base-300/50 shadow-lg rounded-xl"
+      >
+        <div class="card-body p-4">
+          <div class="text-xs text-base-content/50 font-medium uppercase tracking-wider mb-1">
+            Dataset
+          </div>
+          <div class="flex items-center gap-2">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-4 w-4 text-base-content/40"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              ></path>
+            </svg>
+            <div class="text-sm font-medium truncate" title={initialData.dataset.filename}>
+              {initialData.dataset.filename}
+            </div>
+          </div>
+          <div class="text-xs text-base-content/60 mt-1">{initialData.dataset.row_count} rows</div>
+        </div>
+      </div>
+
+      <!-- Models Count -->
+      <div
+        class="card bg-base-100/90 backdrop-blur-sm border border-base-300/50 shadow-lg rounded-xl"
+      >
+        <div class="card-body p-4">
+          <div class="text-xs text-base-content/50 font-medium uppercase tracking-wider mb-1">
+            Models
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="badge badge-neutral">{initialData.selected_models.length}</span>
+            <div class="text-sm text-base-content/70">
+              {initialData.selected_models.length === 1 ? 'model' : 'models'}
+            </div>
+          </div>
+          <div class="flex flex-wrap gap-1 mt-1">
+            {
+              initialData.selected_models.map((model) => (
+                <span class="badge badge-ghost badge-xs">{model}</span>
+              ))
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- Progress -->
+      <div
+        class="card bg-base-100/90 backdrop-blur-sm border border-base-300/50 shadow-lg rounded-xl"
+      >
+        <div class="card-body p-4">
+          <div class="text-xs text-base-content/50 font-medium uppercase tracking-wider mb-1">
+            Progress
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="flex-1 bg-base-300 rounded-full h-2">
+              <div
+                id="progress-bar"
+                class="h-2 rounded-full transition-all duration-300 bg-gradient-gold"
+                style={`width: ${(initialData.run.processed_rows / initialData.run.total_rows) * 100}%`}
+              >
+              </div>
+            </div>
+            <span id="progress-text" class="text-sm font-mono text-base-content/70">
+              {initialData.run.processed_rows}/{initialData.run.total_rows}
+            </span>
+          </div>
+          <div class="text-xs text-base-content/60 mt-1">
+            {Math.round((initialData.run.processed_rows / initialData.run.total_rows) * 100)}%
+            complete
+          </div>
+        </div>
+      </div>
+
+      <!-- Summary Stats -->
+      <div
+        class="card bg-base-100/90 backdrop-blur-sm border border-base-300/50 shadow-lg rounded-xl"
+      >
+        <div class="card-body p-4">
+          <div class="text-xs text-base-content/50 font-medium uppercase tracking-wider mb-1">
+            Results
+          </div>
+          <div class="grid grid-cols-3 gap-2">
+            <div class="text-center">
+              <div class="text-lg font-bold text-success" id="completed-count">
+                {initialData.summary.completed_count}
+              </div>
+              <div class="text-[10px] text-base-content/50 uppercase">Done</div>
+            </div>
+            <div class="text-center">
+              <div class="text-lg font-bold text-error" id="failed-count">
+                {initialData.summary.failed_count}
+              </div>
+              <div class="text-[10px] text-base-content/50 uppercase">Failed</div>
+            </div>
+            <div class="text-center">
+              <div class="text-lg font-bold text-warning" id="pending-count">
+                {initialData.summary.pending_count}
+              </div>
+              <div class="text-[10px] text-base-content/50 uppercase">Pending</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- System Prompt Preview -->
+    <div
+      class="card bg-base-100/90 backdrop-blur-sm border border-base-300/50 shadow-lg rounded-xl animate-reveal"
+    >
+      <div class="card-body p-4">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="text-sm font-semibold text-base-content/70">System Prompt</h3>
+          <div class="badge badge-ghost badge-sm">Temperature: {initialData.run.temperature}</div>
+        </div>
+        <div
+          class="bg-base-200 p-3 rounded-lg text-sm whitespace-pre-wrap max-h-24 overflow-y-auto"
+        >
+          {initialData.run.system_prompt}
+        </div>
+      </div>
+    </div>
+
+    <!-- Results Table -->
+    <div class="animate-reveal">
+      <div id="results-loading" class="hidden">
+        <div
+          class="card bg-base-100/90 backdrop-blur-sm border border-base-300/50 shadow-lg rounded-xl p-12 text-center"
+        >
+          <span class="loading loading-spinner loading-lg text-luxe-gold"></span>
+          <p class="text-base-content/60 mt-4">Loading results...</p>
+        </div>
+      </div>
+
+      <div id="results-table-container">
+        <!-- Results table will be rendered here by client script -->
+      </div>
+    </div>
+
+    <!-- Status Bar (shown during evaluation) -->
+    <div id="status-bar" class="hidden sticky bottom-4 z-40 animate-reveal">
+      <div
+        class="card bg-base-100/95 backdrop-blur-sm border border-luxe-gold/50 shadow-elevated rounded-xl"
+      >
+        <div class="card-body p-4 flex items-center gap-4">
+          <div class="flex items-center gap-3 flex-1">
+            <span class="loading loading-spinner loading-sm text-luxe-emerald"></span>
+            <div class="flex-1">
+              <p class="font-semibold text-sm">Evaluation in progress...</p>
+              <div class="w-full bg-base-300 rounded-full h-2 mt-1">
+                <div
+                  id="status-progress-bar"
+                  class="bg-gradient-emerald h-2 rounded-full transition-all duration-300"
+                  style="width: 0%"
+                >
+                </div>
+              </div>
+            </div>
+            <span id="status-progress-text" class="text-sm font-mono text-base-content/70"
+              >0 / 0</span
+            >
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Detail Drawer (hidden by default) -->
+  <DetailDrawer result={{} as RowResult} rowData={{} as Record<string, string>} />
+
+  <!-- Drawer in overlays slot for proper z-index -->
+  <div slot="overlays" id="drawer-overlays"></div>
+</Layout>
+
+<style>
+  .bg-gradient-emerald {
+    background: linear-gradient(135deg, #00ff87 0%, #00d9ff 100%);
+  }
+</style>
+
+<script>
+  import { addToast } from '@lib/ui/toastStore';
+  import type { RowResult } from '@lib/db';
+
+  // Declare the global function added by DetailDrawer
+  declare global {
+    interface Window {
+      showBulkRowDetails?: (result: RowResult, rowData: Record<string, string>) => void;
+    }
+  }
+
+  // Get run ID from data attribute
+  const runId = document.querySelector('[data-run-id]')?.getAttribute('data-run-id');
+  if (!runId) {
+    addToast('Run ID not found', 'error');
+    window.location.href = '/bulk-eval';
+  }
+
+  /**
+   * Polling configuration constants
+   */
+  const MAX_CONSECUTIVE_FAILURES = 10;
+  const INITIAL_BACKOFF_MS = 1500;
+  const MAX_BACKOFF_MS = 12000;
+  const BACKOFF_MULTIPLIER = 2;
+
+  interface BulkRunData {
+    run: {
+      id: string;
+      status: string;
+      total_rows: number;
+      processed_rows: number;
+      system_prompt: string;
+      created_at: string;
+      started_at: string | null;
+      completed_at: string | null;
+    };
+    dataset: {
+      id: string;
+      filename: string;
+      row_count: number;
+    };
+    headers: string[];
+    selected_models: string[];
+    rows: Array<{
+      index: number;
+      data: Record<string, unknown>;
+      results: Record<
+        string,
+        {
+          output_text?: string;
+          status: string;
+          error_message?: string;
+          duration_ms?: number;
+        }
+      >;
+    }>;
+    summary: {
+      total_rows: number;
+      processed_rows: number;
+      completed_count: number;
+      failed_count: number;
+      pending_count: number;
+    };
+  }
+
+  let isPolling = false;
+  let pollInterval: number | null = null;
+  let consecutiveFailures = 0;
+  let currentBackoffMs = INITIAL_BACKOFF_MS;
+  let currentData: BulkRunData | null = null;
+
+  // DOM elements
+  const resultsTableContainer = document.getElementById('results-table-container');
+  const statusBar = document.getElementById('status-bar');
+  const statusProgressBar = document.getElementById('status-progress-bar');
+  const statusProgressText = document.getElementById('status-progress-text');
+  const runStatusBadge = document.getElementById('run-status-badge');
+  const progressBar = document.getElementById('progress-bar');
+  const progressText = document.getElementById('progress-text');
+  const completedCount = document.getElementById('completed-count');
+  const failedCount = document.getElementById('failed-count');
+  const pendingCount = document.getElementById('pending-count');
+
+  /**
+   * Get status badge HTML
+   */
+  function getStatusBadge(status: string): string {
+    const statusConfig: Record<string, { class: string; label: string }> = {
+      pending: { class: 'status-pending', label: 'Pending' },
+      running: { class: 'status-running', label: 'Running' },
+      completed: { class: 'status-completed', label: 'Completed' },
+      failed: { class: 'status-failed', label: 'Failed' },
+    };
+    const config = statusConfig[status] || { class: 'status-pending', label: status };
+    return `<span class="${config.class}">${config.label}</span>`;
+  }
+
+  /**
+   * Update status badge
+   */
+  function updateStatusBadge(status: string): void {
+    if (runStatusBadge) {
+      runStatusBadge.innerHTML = getStatusBadge(status);
+      runStatusBadge.setAttribute('data-status', status);
+    }
+  }
+
+  /**
+   * Update progress bar
+   */
+  function updateProgress(processed: number, total: number): void {
+    const percentage = total > 0 ? (processed / total) * 100 : 0;
+    if (progressBar) {
+      progressBar.style.width = `${percentage}%`;
+      // Change color based on completion
+      if (percentage === 100) {
+        progressBar.classList.remove('bg-gradient-gold');
+        progressBar.classList.add('bg-gradient-emerald');
+      } else {
+        progressBar.classList.remove('bg-gradient-emerald');
+        progressBar.classList.add('bg-gradient-gold');
+      }
+    }
+    if (progressText) {
+      progressText.textContent = `${processed}/${total}`;
+    }
+  }
+
+  /**
+   * Update summary stats
+   */
+  function updateSummaryStats(summary: BulkRunData['summary']): void {
+    if (completedCount) completedCount.textContent = summary.completed_count.toString();
+    if (failedCount) failedCount.textContent = summary.failed_count.toString();
+    if (pendingCount) pendingCount.textContent = summary.pending_count.toString();
+  }
+
+  /**
+   * Render the results table
+   */
+  function renderResultsTable(data: BulkRunData): void {
+    if (!resultsTableContainer) return;
+
+    const headers = data.headers || [];
+    const selectedModels = data.selected_models || [];
+    const rows = data.rows || [];
+
+    const tableHTML = `
+      <div class="card bg-base-100/90 backdrop-blur-sm border border-base-300/50 shadow-lg rounded-xl h-full flex flex-col overflow-hidden">
+        <div class="card-body p-3 flex flex-col min-h-0">
+          <!-- Table Header -->
+          <div class="flex items-center justify-between px-1 py-2 border-b border-base-300/80 flex-shrink-0">
+            <div class="flex items-center gap-3">
+              <span class="text-sm text-base-content/60 font-medium">${rows.length} rows</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="badge badge-ghost">
+                ${selectedModels.length} model${selectedModels.length !== 1 ? 's' : ''}
+              </span>
+            </div>
+          </div>
+
+          <!-- Table with horizontal and vertical scroll -->
+          <div class="overflow-x-auto overflow-y-auto rounded-lg border border-base-300/50 flex-1 min-h-0">
+            <table class="table-luxe table-sm" id="results-table">
+              <thead class="bg-base-200/80 sticky top-0 z-20">
+                <tr>
+                  <th class="w-16 sticky left-0 z-30 bg-base-200/90 hover:bg-base-300">#</th>
+                  ${headers
+                    .map(
+                      (header: string, index: number) => `
+                    <th class="sticky z-10 bg-base-200/90 hover:bg-base-300" style="left: calc(4rem + ${index * 12}rem)">
+                      <div class="flex items-center gap-2">
+                        <span>${header}</span>
+                      </div>
+                    </th>
+                  `
+                    )
+                    .join('')}
+                  ${selectedModels
+                    .map(
+                      (modelId: string) => `
+                    <th class="min-w-[200px] max-w-[300px]">
+                      <div class="flex items-center gap-2">
+                        <span>Output</span>
+                        <span class="badge badge-sm badge-neutral">${modelId}</span>
+                      </div>
+                    </th>
+                  `
+                    )
+                    .join('')}
+                </tr>
+              </thead>
+              <tbody id="results-body">
+                ${rows
+                  .map(
+                    (row) => `
+                  <tr class="hover" data-row-index="${row.index}">
+                    <td class="sticky left-0 z-10 bg-base-100 tabular-nums text-base-content/60">
+                      ${row.index + 1}
+                    </td>
+                    ${headers
+                      .map((header: string, cellIndex: number) => {
+                        const value = String(row.data[header] ?? '');
+                        return `
+                        <td class="sticky z-10 bg-base-100 max-w-[12rem]" style="left: calc(4rem + ${cellIndex * 12}rem)">
+                          <div class="text-sm whitespace-pre-wrap break-words max-h-20 overflow-y-auto" title="${value}">
+                            ${value || '<span class="opacity-30">-</span>'}
+                          </div>
+                        </td>
+                      `;
+                      })
+                      .join('')}
+                    ${selectedModels
+                      .map((modelId: string) => {
+                        const result = row.results[modelId];
+                        let cellContent = '';
+
+                        if (result?.status === 'completed') {
+                          cellContent = `
+                          <div class="text-sm whitespace-pre-wrap break-words max-h-20 overflow-y-auto" title="${result.output_text || ''}">
+                            ${result.output_text || '<span class="opacity-30 italic">No output</span>'}
+                          </div>
+                        `;
+                        } else if (result?.status === 'failed') {
+                          cellContent = `
+                          <div class="flex items-center gap-2 text-error">
+                            <span class="text-xs" title="${result.error_message}">Failed</span>
+                          </div>
+                        `;
+                        } else if (result?.status === 'pending') {
+                          cellContent = `
+                          <div class="flex items-center gap-2 text-warning">
+                            <span class="loading loading-spinner loading-xs"></span>
+                            <span class="text-xs">Pending</span>
+                          </div>
+                        `;
+                        } else {
+                          cellContent = `
+                          <div class="flex items-center gap-2 text-base-content/40">
+                            <span class="text-xs italic">Not started</span>
+                          </div>
+                        `;
+                        }
+
+                        return `
+                        <td class="min-w-[200px] max-w-[300px]" data-model-id="${modelId}">
+                          ${cellContent}
+                        </td>
+                      `;
+                      })
+                      .join('')}
+                  </tr>
+                `
+                  )
+                  .join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    `;
+
+    resultsTableContainer.innerHTML = tableHTML;
+
+    // Add row click handlers
+    const resultsBody = document.getElementById('results-body');
+    resultsBody?.addEventListener('click', handleRowClick);
+  }
+
+  /**
+   * Handle row click to show details
+   */
+  async function handleRowClick(event: Event): Promise<void> {
+    const target = event.target as HTMLElement;
+    const row = target.closest('tr[data-row-index]');
+    if (!row || !currentData) return;
+
+    const rowIndex = parseInt(row.getAttribute('data-row-index') || '-1');
+    if (rowIndex < 0) return;
+
+    // Get the model_id from the clicked cell
+    const cell = target.closest('td[data-model-id]');
+    const modelId = cell?.getAttribute('data-model-id');
+
+    if (!modelId) {
+      addToast('Click on a model output cell to view details', 'info');
+      return;
+    }
+
+    // Find the result for this row and model
+    const rowData = currentData.rows[rowIndex];
+    if (!rowData) return;
+
+    const result = rowData.results[modelId];
+    if (!result) return;
+
+    // Convert result to RowResult format expected by DetailDrawer
+    const rowResult: RowResult = {
+      id: `${currentData.run.id}-${rowIndex}-${modelId}`, // synthetic ID
+      run_id: currentData.run.id,
+      original_row_index: rowIndex,
+      model_id: modelId,
+      prompt_used: currentData.run.system_prompt || '',
+      output_text: result.output_text,
+      status: result.status as 'pending' | 'completed' | 'failed',
+      error_message: result.error_message,
+      duration_ms: result.duration_ms,
+      created_at: currentData.run.created_at || '',
+    };
+
+    // Call the global function exposed by DetailDrawer
+    if (window.showBulkRowDetails) {
+      window.showBulkRowDetails(rowResult, rowData.data as Record<string, string>);
+    }
+  }
+
+  /**
+   * Fetch latest data from API
+   */
+  async function fetchData(): Promise<void> {
+    if (!runId) return;
+
+    try {
+      const response = await fetch(`/api/bulk/results?run_id=${runId}`);
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          addToast('Evaluation run not found', 'error');
+          window.location.href = '/bulk-eval';
+          return;
+        }
+        throw new Error('Failed to fetch run data');
+      }
+
+      const data: BulkRunData = await response.json();
+      currentData = data;
+
+      // Reset failure counter on successful request
+      consecutiveFailures = 0;
+      currentBackoffMs = INITIAL_BACKOFF_MS;
+
+      // Update UI
+      updateStatusBadge(data.run.status);
+      updateProgress(data.run.processed_rows, data.run.total_rows);
+      updateSummaryStats(data.summary);
+
+      // Update status bar if running
+      if (statusBar && statusProgressBar && statusProgressText) {
+        const isRunning = data.run.status === 'running' || data.run.status === 'pending';
+        statusBar.classList.toggle('hidden', !isRunning);
+        if (isRunning) {
+          const percentage = (data.run.processed_rows / data.run.total_rows) * 100;
+          statusProgressBar.style.width = `${percentage}%`;
+          statusProgressText.textContent = `${data.run.processed_rows} / ${data.run.total_rows}`;
+        }
+      }
+
+      // Render results table
+      renderResultsTable(data);
+
+      // Check if we should stop polling
+      if (data.run.status === 'completed' || data.run.status === 'failed') {
+        stopPolling();
+        if (statusBar) {
+          statusBar.classList.add('hidden');
+        }
+
+        if (data.run.status === 'completed') {
+          addToast('Evaluation completed successfully!', 'success');
+        } else if (data.run.status === 'failed') {
+          addToast(`Evaluation failed`, 'error');
+        }
+      }
+    } catch (error) {
+      consecutiveFailures++;
+
+      console.error(`[Polling error] Attempt ${consecutiveFailures}/${MAX_CONSECUTIVE_FAILURES}:`, {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        runId,
+        currentBackoff: currentBackoffMs,
+      });
+
+      // Check if we've exceeded max retries
+      if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
+        stopPolling();
+        if (statusBar) {
+          statusBar.classList.add('hidden');
+        }
+        addToast(
+          `Polling failed after ${MAX_CONSECUTIVE_FAILURES} attempts. Please refresh the page.`,
+          'error'
+        );
+        return;
+      }
+
+      // Increase backoff time exponentially
+      currentBackoffMs = Math.min(currentBackoffMs * BACKOFF_MULTIPLIER, MAX_BACKOFF_MS);
+    }
+  }
+
+  /**
+   * Start polling for status updates
+   */
+  function startPolling(): void {
+    if (isPolling || !runId) return;
+
+    isPolling = true;
+    consecutiveFailures = 0;
+    currentBackoffMs = INITIAL_BACKOFF_MS;
+
+    // Poll immediately
+    fetchData();
+
+    // Set up recursive polling with variable backoff
+    const scheduleNextPoll = () => {
+      if (!isPolling) return;
+
+      pollInterval = window.setTimeout(() => {
+        fetchData().finally(() => {
+          scheduleNextPoll();
+        });
+      }, currentBackoffMs);
+    };
+
+    scheduleNextPoll();
+  }
+
+  /**
+   * Stop polling for status updates
+   */
+  function stopPolling(): void {
+    if (pollInterval) {
+      clearTimeout(pollInterval);
+      pollInterval = null;
+    }
+    isPolling = false;
+  }
+
+  // Initialize
+  // Fetch data once on load
+  fetchData().then(() => {
+    // Start polling if run is still in progress
+    if (
+      currentData &&
+      (currentData.run.status === 'running' || currentData.run.status === 'pending')
+    ) {
+      startPolling();
+    }
+  });
+
+  // Cleanup on page unload
+  window.addEventListener('beforeunload', stopPolling);
+</script>

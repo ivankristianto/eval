@@ -1,0 +1,462 @@
+---
+/**
+ * Bulk Evaluation Runs List Page
+ *
+ * Displays a table of all bulk evaluation runs with:
+ * - Run ID, Dataset filename, Status, Model count, Created date
+ * - Clickable rows to navigate to detail page
+ * - Delete button per row
+ * - Empty state if no runs exist
+ */
+
+import Layout from '@layouts/Layout.astro';
+---
+
+<Layout title="Bulk Evaluations - Eval AI">
+  <div class="space-y-6">
+    <!-- Page Header -->
+    <div class="flex items-center justify-between animate-reveal">
+      <div class="accent-line">
+        <h1
+          class="text-4xl md:text-5xl font-display font-semibold tracking-tight mb-3 text-gradient-gold"
+        >
+          Bulk Evaluations
+        </h1>
+        <p class="text-base-content/60 text-lg">View and manage your bulk evaluation runs</p>
+      </div>
+      <a href="/bulk-eval/new" class="btn btn-luxe btn-luxe-primary gap-2">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-5 w-5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"
+          ></path>
+        </svg>
+        New Evaluation
+      </a>
+    </div>
+
+    <!-- Loading State -->
+    <div id="loading-state" class="animate-reveal delay-100">
+      <div
+        class="card bg-base-100/90 backdrop-blur-sm border border-base-300/50 shadow-lg rounded-xl p-12 text-center"
+      >
+        <span class="loading loading-spinner loading-lg text-luxe-gold"></span>
+        <p class="text-base-content/60 mt-4">Loading evaluation runs...</p>
+      </div>
+    </div>
+
+    <!-- Empty State (hidden by default) -->
+    <div id="empty-state" class="hidden animate-reveal delay-100">
+      <div
+        class="card bg-base-100/90 backdrop-blur-sm border border-base-300/50 shadow-lg rounded-xl p-12 text-center"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-20 w-20 mx-auto text-base-content/20 mb-4"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="1.5"
+            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+          ></path>
+        </svg>
+        <h3 class="text-xl font-semibold mb-2">No Evaluation Runs</h3>
+        <p class="text-base-content/60 mb-6">
+          Create your first bulk evaluation to compare model outputs across multiple data rows
+        </p>
+        <a href="/bulk-eval/new" class="btn btn-luxe btn-luxe-primary gap-2">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-5 w-5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"
+            ></path>
+          </svg>
+          Create First Evaluation
+        </a>
+      </div>
+    </div>
+
+    <!-- Runs Table (hidden by default) -->
+    <div id="runs-table-container" class="hidden animate-reveal delay-100">
+      <div
+        class="card bg-base-100/90 backdrop-blur-sm border border-base-300/50 shadow-lg rounded-xl"
+      >
+        <div class="overflow-x-auto">
+          <table class="table-luxe table-bulk-runs">
+            <thead>
+              <tr>
+                <th>Run ID</th>
+                <th>Dataset</th>
+                <th>Status</th>
+                <th>Models</th>
+                <th>Progress</th>
+                <th>Created</th>
+                <th class="text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="runs-table-body">
+              <!-- Populated by client script -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <dialog id="delete-modal" class="modal">
+      <div class="modal-box">
+        <h3 class="font-bold text-lg mb-4">Delete Evaluation Run?</h3>
+        <p class="text-base-content/70 mb-6">
+          This will permanently delete this evaluation run and all its results. This action cannot
+          be undone.
+        </p>
+        <div class="modal-action">
+          <button id="cancel-delete" class="btn btn-ghost">Cancel</button>
+          <button id="confirm-delete" class="btn btn-error">Delete</button>
+        </div>
+      </div>
+      <form method="dialog" class="modal-backdrop">
+        <button>close</button>
+      </form>
+    </dialog>
+  </div>
+</Layout>
+
+<style>
+  .table-bulk-runs thead th:first-child {
+    @apply min-w-[100px] w-[120px];
+  }
+
+  .table-bulk-runs thead th:nth-child(2) {
+    @apply min-w-[150px] w-[200px];
+  }
+
+  .table-bulk-runs thead th:nth-child(3) {
+    @apply min-w-[120px] w-[140px];
+  }
+
+  .table-bulk-runs thead th:nth-child(4) {
+    @apply min-w-[80px] w-[100px];
+  }
+
+  .table-bulk-runs thead th:nth-child(5) {
+    @apply min-w-[120px] w-[150px];
+  }
+
+  .table-bulk-runs thead th:nth-child(6) {
+    @apply min-w-[140px] w-[160px];
+  }
+
+  .table-bulk-runs thead th:last-child {
+    @apply min-w-[100px] w-[120px];
+  }
+
+  .run-row-clickable {
+    @apply cursor-pointer;
+  }
+
+  .run-row-clickable:hover td {
+    background-color: hsl(var(--b2) / 0.5);
+  }
+</style>
+
+<script>
+  import { addToast } from '@lib/ui/toastStore';
+
+  interface BulkRun {
+    id: string;
+    dataset_id: string;
+    dataset_filename: string;
+    status: 'pending' | 'running' | 'completed' | 'failed';
+    model_count: number;
+    total_rows: number;
+    processed_rows: number;
+    created_at: string;
+    started_at: string | null;
+    completed_at: string | null;
+    error_message: string | null;
+  }
+
+  const loadingState = document.getElementById('loading-state');
+  const emptyState = document.getElementById('empty-state');
+  const runsTableContainer = document.getElementById('runs-table-container');
+  const runsTableBody = document.getElementById('runs-table-body');
+  const deleteModal = document.getElementById('delete-modal') as HTMLDialogElement;
+  const cancelDeleteBtn = document.getElementById('cancel-delete');
+  const confirmDeleteBtn = document.getElementById('confirm-delete');
+
+  let runToDelete: string | null = null;
+
+  /**
+   * Format date for display
+   */
+  function formatDate(dateString: string): string {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  }
+
+  /**
+   * Format relative time for display
+   */
+  function formatRelativeTime(dateString: string): string {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return formatDate(dateString);
+  }
+
+  /**
+   * Get status badge HTML
+   */
+  function getStatusBadge(status: BulkRun['status']): string {
+    const statusConfig = {
+      pending: { class: 'status-pending', label: 'Pending' },
+      running: { class: 'status-running', label: 'Running' },
+      completed: { class: 'status-completed', label: 'Completed' },
+      failed: { class: 'status-failed', label: 'Failed' },
+    };
+    const config = statusConfig[status];
+    return `<span class="${config.class}">${config.label}</span>`;
+  }
+
+  /**
+   * Get progress bar HTML
+   */
+  function getProgressBar(processed: number, total: number): string {
+    const percentage = total > 0 ? (processed / total) * 100 : 0;
+    return `
+      <div class="flex items-center gap-2">
+        <div class="flex-1 bg-base-300 rounded-full h-2 max-w-[100px]">
+          <div
+            class="h-2 rounded-full transition-all duration-300 ${
+              percentage === 100 ? 'bg-gradient-emerald' : 'bg-gradient-gold'
+            }"
+            style="width: ${percentage}%"
+          ></div>
+        </div>
+        <span class="text-xs font-mono text-base-content/70">${processed}/${total}</span>
+      </div>
+    `;
+  }
+
+  /**
+   * Render a single row in the table
+   */
+  function renderRow(run: BulkRun): string {
+    return `
+      <tr class="run-row-clickable" data-run-id="${run.id}">
+        <td>
+          <div class="font-mono text-sm text-base-content/70 truncate" title="${run.id}">
+            ${run.id.slice(0, 8)}...
+          </div>
+        </td>
+        <td>
+          <div class="flex items-center gap-2">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-4 w-4 text-base-content/40 flex-shrink-0"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+            </svg>
+            <span class="text-sm truncate" title="${run.dataset_filename}">${run.dataset_filename}</span>
+          </div>
+        </td>
+        <td>${getStatusBadge(run.status)}</td>
+        <td>
+          <div class="flex items-center gap-1">
+            <span class="badge badge-neutral badge-sm">${run.model_count}</span>
+          </div>
+        </td>
+        <td>${getProgressBar(run.processed_rows, run.total_rows)}</td>
+        <td>
+          <div class="text-sm text-base-content/70" title="${formatDate(run.created_at)}">
+            ${formatRelativeTime(run.created_at)}
+          </div>
+        </td>
+        <td class="text-right">
+          <button
+            class="btn btn-ghost btn-xs btn-delete-run"
+            data-run-id="${run.id}"
+            title="Delete this run"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-4 w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+            </svg>
+          </button>
+        </td>
+      </tr>
+    `;
+  }
+
+  /**
+   * Load and render all evaluation runs
+   */
+  async function loadRuns(): Promise<void> {
+    try {
+      const response = await fetch('/api/bulk/runs');
+      if (!response.ok) {
+        throw new Error('Failed to load evaluation runs');
+      }
+
+      const data = await response.json();
+      const runs: BulkRun[] = data.runs || [];
+
+      // Hide loading state
+      if (loadingState) {
+        loadingState.classList.add('hidden');
+      }
+
+      // Show empty state or table
+      if (runs.length === 0) {
+        emptyState?.classList.remove('hidden');
+      } else {
+        runsTableContainer?.classList.remove('hidden');
+        if (runsTableBody) {
+          runsTableBody.innerHTML = runs.map(renderRow).join('');
+        }
+
+        // Add click handlers for row navigation
+        runsTableBody?.querySelectorAll('.run-row-clickable').forEach((row) => {
+          row.addEventListener('click', (e) => {
+            // Don't navigate if delete button was clicked
+            if ((e.target as HTMLElement).closest('.btn-delete-run')) {
+              return;
+            }
+            const runId = row.getAttribute('data-run-id');
+            if (runId) {
+              window.location.href = `/bulk-eval/${runId}`;
+            }
+          });
+        });
+
+        // Add click handlers for delete buttons
+        runsTableBody?.querySelectorAll('.btn-delete-run').forEach((btn) => {
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const runId = btn.getAttribute('data-run-id');
+            if (runId) {
+              openDeleteModal(runId);
+            }
+          });
+        });
+      }
+    } catch (error) {
+      if (loadingState) {
+        loadingState.classList.add('hidden');
+      }
+      addToast(
+        `Failed to load evaluation runs: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        'error'
+      );
+    }
+  }
+
+  /**
+   * Open delete confirmation modal
+   */
+  function openDeleteModal(runId: string): void {
+    runToDelete = runId;
+    deleteModal?.showModal();
+  }
+
+  /**
+   * Close delete modal
+   */
+  function closeDeleteModal(): void {
+    runToDelete = null;
+    deleteModal?.close();
+  }
+
+  /**
+   * Delete the run
+   */
+  async function deleteRun(): Promise<void> {
+    if (!runToDelete) return;
+
+    try {
+      const response = await fetch(`/api/bulk/runs/${runToDelete}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete evaluation run');
+      }
+
+      addToast('Evaluation run deleted successfully', 'success');
+      closeDeleteModal();
+
+      // Reload the table
+      if (runsTableBody) {
+        runsTableBody.innerHTML = '';
+      }
+      runsTableContainer?.classList.add('hidden');
+      emptyState?.classList.add('hidden');
+      if (loadingState) {
+        loadingState.classList.remove('hidden');
+      }
+      await loadRuns();
+    } catch (error) {
+      addToast(
+        `Failed to delete evaluation run: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        'error'
+      );
+    }
+  }
+
+  // Setup event listeners
+  cancelDeleteBtn?.addEventListener('click', closeDeleteModal);
+  confirmDeleteBtn?.addEventListener('click', deleteRun);
+
+  // Close modal on backdrop click
+  deleteModal?.addEventListener('click', (e) => {
+    if (e.target === deleteModal) {
+      closeDeleteModal();
+    }
+  });
+
+  // Load runs on page load
+  loadRuns();
+</script>
