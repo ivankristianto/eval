@@ -8,6 +8,7 @@
 
 import type { APIRoute } from 'astro';
 import { getRunWithResults, getRowResultsByIndex } from '@lib/db/bulk-db';
+import { getModelById } from '@lib/db';
 import { badRequest, notFound, createErrorResponse } from '@lib/api-error-handler';
 import { createLogger } from '@lib/logger';
 
@@ -67,11 +68,21 @@ export const GET: APIRoute = async ({ url }) => {
     // Get all results for this row
     const allRowResults = getRowResultsByIndex(runId, rowIndex);
 
+    // Enrich results with model information (name and provider)
+    const enrichedResults = allRowResults.map((result) => {
+      const model = getModelById(result.model_id);
+      return {
+        ...result,
+        model_name: model?.model_name || result.model_id,
+        model_provider: model?.provider || 'unknown',
+      };
+    });
+
     logger.logApiRequest('GET', '/api/bulk/row-details', 200, Date.now() - startTime);
 
     return new Response(
       JSON.stringify({
-        allRowResults,
+        allRowResults: enrichedResults,
         rowData,
       }),
       {
