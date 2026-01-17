@@ -64,6 +64,7 @@ const totalPages = Math.max(1, Math.ceil(runs.length / pageSize));
                 type="checkbox"
                 class="checkbox checkbox-sm checkbox-luxe"
                 id="select-all-runs"
+                aria-label="Select all runs on current page"
               />
               <span class="text-sm font-medium">Select All</span>
             </label>
@@ -99,18 +100,40 @@ const totalPages = Math.max(1, Math.ceil(runs.length / pageSize));
           <table class="table-luxe table-sm" id="bulk-runs-table">
             <thead class="bg-base-200/80 sticky top-0 z-20">
               <tr>
-                {selectable && <th class="w-12" />}
-                <th class="min-w-[120px] max-w-[150px] sticky left-0 z-10 bg-base-200/90 hover:bg-base-300">
+                {selectable && (
+                  <th class="w-12" scope="col">
+                    <span class="sr-only">Select run</span>
+                  </th>
+                )}
+                <th
+                  class="min-w-[120px] max-w-[150px] sticky left-0 z-10 bg-base-200/90 hover:bg-base-300"
+                  scope="col"
+                >
                   Run ID
                 </th>
-                <th class="min-w-[180px] max-w-[250px] sticky left-[12rem] z-10 bg-base-200/90 hover:bg-base-300">
+                <th
+                  class="min-w-[180px] max-w-[250px] sticky left-[12rem] z-10 bg-base-200/90 hover:bg-base-300"
+                  scope="col"
+                >
                   Dataset
                 </th>
-                <th class="min-w-[120px] w-[140px]">Status</th>
-                <th class="w-24 text-center">Models</th>
-                <th class="min-w-[120px] w-[150px]">Progress</th>
-                <th class="min-w-[140px] w-[160px]">Created</th>
-                {showActions && <th class="w-14" />}
+                <th class="min-w-[120px] w-[140px]" scope="col">
+                  Status
+                </th>
+                <th class="w-24 text-center" scope="col">
+                  Models
+                </th>
+                <th class="min-w-[120px] w-[150px]" scope="col">
+                  Progress
+                </th>
+                <th class="min-w-[140px] w-[160px]" scope="col">
+                  Created
+                </th>
+                {showActions && (
+                  <th class="w-14" scope="col">
+                    <span class="sr-only">Actions</span>
+                  </th>
+                )}
               </tr>
             </thead>
             <tbody id="bulk-runs-body">
@@ -122,6 +145,7 @@ const totalPages = Math.max(1, Math.ceil(runs.length / pageSize));
                         type="checkbox"
                         class="checkbox checkbox-sm checkbox-luxe run-checkbox"
                         data-run-id={run.id}
+                        aria-label={`Select run ${run.id.slice(0, 8)}`}
                       />
                     </td>
                   )}
@@ -185,33 +209,40 @@ const totalPages = Math.max(1, Math.ceil(runs.length / pageSize));
                           data-action="view-run"
                           data-run-id={run.id}
                           title="View details"
-                          aria-label={`View details for run ${run.id}`}
+                          aria-label={`View details for run ${run.id.slice(0, 8)}`}
                         >
                           <Icon name="eye" size="sm" />
                         </button>
                         <div class="dropdown dropdown-end">
-                          <label tabindex="0" class="btn btn-ghost btn-xs btn-circle">
+                          <label
+                            tabindex="0"
+                            class="btn btn-ghost btn-xs btn-circle"
+                            aria-label={`Actions for run ${run.id.slice(0, 8)}`}
+                          >
                             <Icon name="more-vertical" size="sm" />
                           </label>
                           <ul
                             tabindex="0"
                             class="dropdown-content z-[1] menu p-2 shadow bg-base-200 rounded-box w-52 text-sm"
+                            role="menu"
+                            aria-label={`Run ${run.id.slice(0, 8)} actions`}
                           >
-                            <li>
-                              <a data-action="view-run" data-run-id={run.id}>
+                            <li role="none">
+                              <a data-action="view-run" data-run-id={run.id} role="menuitem">
                                 View Details
                               </a>
                             </li>
-                            <li>
-                              <a data-action="rerun-run" data-run-id={run.id}>
+                            <li role="none">
+                              <a data-action="rerun-run" data-run-id={run.id} role="menuitem">
                                 Rerun Evaluation
                               </a>
                             </li>
-                            <li>
+                            <li role="none">
                               <a
                                 class="text-error hover:bg-error/20"
                                 data-action="delete-run"
                                 data-run-id={run.id}
+                                role="menuitem"
                               >
                                 Delete
                               </a>
@@ -238,25 +269,44 @@ const totalPages = Math.max(1, Math.ceil(runs.length / pageSize));
               Showing 1-{Math.min(pageSize, runs.length)} of {runs.length} runs
             </span>
           </div>
-          <div class="join">
-            <button class="join-item btn btn-xs btn-ghost" data-action="prev-page" disabled>
+          <div class="join" role="navigation" aria-label="Table pagination">
+            <button
+              class="join-item btn btn-xs btn-ghost"
+              data-action="prev-page"
+              disabled
+              aria-label="Previous page"
+            >
               &laquo;
             </button>
-            <button class="join-item btn btn-xs btn-active" data-page="1">
+            <button
+              class="join-item btn btn-xs btn-active"
+              data-page="1"
+              aria-label="Page 1"
+              aria-current="page"
+            >
               1
             </button>
             {totalPages > 1 && (
-              <button class="join-item btn btn-xs btn-ghost" data-page="2">
+              <button class="join-item btn btn-xs btn-ghost" data-page="2" aria-label="Page 2">
                 2
               </button>
             )}
             {totalPages > 2 && <span class="join-item btn btn-xs btn-disabled btn-ghost">...</span>}
             {totalPages > 2 && (
-              <button class="join-item btn btn-xs btn-ghost" data-page={totalPages}>
+              <button
+                class="join-item btn btn-xs btn-ghost"
+                data-page={totalPages}
+                aria-label={`Page ${totalPages}`}
+              >
                 {totalPages}
               </button>
             )}
-            <button class="join-item btn btn-xs btn-ghost" data-action="next-page" disabled>
+            <button
+              class="join-item btn btn-xs btn-ghost"
+              data-action="next-page"
+              disabled
+              aria-label="Next page"
+            >
               &raquo;
             </button>
           </div>
@@ -332,8 +382,10 @@ const totalPages = Math.max(1, Math.ceil(runs.length / pageSize));
       const pageNum = parseInt(btn.dataset.page || '0');
       if (pageNum === currentPage) {
         btn.classList.add('btn-active');
+        btn.setAttribute('aria-current', 'page');
       } else {
         btn.classList.remove('btn-active');
+        btn.removeAttribute('aria-current');
       }
     });
 
