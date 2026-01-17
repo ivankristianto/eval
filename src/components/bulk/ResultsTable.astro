@@ -530,10 +530,8 @@ const getActionsLeftOffset = (headerCount: number) => `calc(6rem + ${headerCount
 </div>
 
 <script is:inline define:vars={{ pageSize, csvData }}>
-  /**
-   * Client-side functionality for results table.
-   * Handles pagination, row selection, bulk actions, and per-row actions.
-   */
+  // Client-side functionality for results table.
+  // Handles pagination, row selection, bulk actions, and per-row actions.
 
   let currentPage = 1;
   const totalRows = csvData.length;
@@ -542,9 +540,7 @@ const getActionsLeftOffset = (headerCount: number) => `calc(6rem + ${headerCount
   const selectAllCheckbox = document.getElementById('select-all-rows');
   const paginationInfo = document.getElementById('pagination-info');
 
-  /**
-   * Update checkboxes based on visible rows
-   */
+  // Update checkboxes based on visible rows
   function updateCheckboxes() {
     const rowCheckboxes = document.querySelectorAll('.row-checkbox');
 
@@ -578,9 +574,7 @@ const getActionsLeftOffset = (headerCount: number) => `calc(6rem + ${headerCount
     });
   }
 
-  /**
-   * Update bulk action button states based on selection
-   */
+  // Update bulk action button states based on selection
   function updateBulkActionButtons() {
     const selectedCount = getSelectedRows().length;
     const regenerateBtn = document.querySelector('[data-action="regenerate-selected"]');
@@ -594,9 +588,7 @@ const getActionsLeftOffset = (headerCount: number) => `calc(6rem + ${headerCount
     }
   }
 
-  /**
-   * Update pagination display and visible rows
-   */
+  // Update pagination display and visible rows
   function updatePagination() {
     const start = (currentPage - 1) * pageSize + 1;
     const end = Math.min(currentPage * pageSize, totalRows);
@@ -635,9 +627,7 @@ const getActionsLeftOffset = (headerCount: number) => `calc(6rem + ${headerCount
     }
   }
 
-  /**
-   * Handle page button clicks
-   */
+  // Handle page button clicks
   document.querySelectorAll('[data-page]').forEach((btn) => {
     btn.addEventListener('click', () => {
       const page = parseInt(btn.dataset.page || '1');
@@ -659,9 +649,7 @@ const getActionsLeftOffset = (headerCount: number) => `calc(6rem + ${headerCount
     });
   });
 
-  /**
-   * Handle previous page button
-   */
+  // Handle previous page button
   document.querySelector('[data-action="prev-page"]')?.addEventListener('click', () => {
     if (currentPage > 1) {
       currentPage--;
@@ -676,9 +664,7 @@ const getActionsLeftOffset = (headerCount: number) => `calc(6rem + ${headerCount
     }
   });
 
-  /**
-   * Handle next page button
-   */
+  // Handle next page button
   document.querySelector('[data-action="next-page"]')?.addEventListener('click', () => {
     if (currentPage < totalPages) {
       currentPage++;
@@ -693,9 +679,7 @@ const getActionsLeftOffset = (headerCount: number) => `calc(6rem + ${headerCount
     }
   });
 
-  /**
-   * Handle per-row action clicks
-   */
+  // Handle per-row action clicks
   document.querySelectorAll('[data-action]').forEach((element) => {
     element.addEventListener('click', (e) => {
       e.preventDefault();
@@ -784,9 +768,7 @@ const getActionsLeftOffset = (headerCount: number) => `calc(6rem + ${headerCount
     });
   });
 
-  /**
-   * Get selected row indices
-   */
+  // Get selected row indices
   function getSelectedRows() {
     const rowCheckboxes = document.querySelectorAll('.row-checkbox');
     return Array.from(rowCheckboxes)

@@ -19,6 +19,7 @@ import {
   getBulkDataset,
   updateRunStatus,
   createRowResult,
+  updateRowResult,
   getModelById,
   decryptApiKey,
 } from '@lib/db';
@@ -203,9 +204,9 @@ export class BulkEvaluator {
     systemPrompt: string,
     temperature: number
   ): Promise<RowEvaluationResult> {
-    // Create initial pending row result
+    // Create initial pending row result and store its ID
     const prompt = interpolateTemplate(systemPrompt, row);
-    createRowResult({
+    const pendingResult = createRowResult({
       run_id: this.runId,
       original_row_index: rowIndex,
       model_id: modelId,
@@ -245,12 +246,8 @@ export class BulkEvaluator {
         };
       }
 
-      // Update row result with success
-      createRowResult({
-        run_id: this.runId,
-        original_row_index: rowIndex,
-        model_id: modelId,
-        prompt_used: prompt,
+      // Update row result with success (don't create a new one)
+      updateRowResult(pendingResult.id, {
         output_text: modelResponse.response,
         status: 'completed',
         duration_ms: modelResponse.executionTime,
@@ -270,13 +267,9 @@ export class BulkEvaluator {
         error instanceof Error ? error.message : error
       );
 
-      // Update row result with failure
+      // Update row result with failure (don't create a new one)
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      createRowResult({
-        run_id: this.runId,
-        original_row_index: rowIndex,
-        model_id: modelId,
-        prompt_used: prompt,
+      updateRowResult(pendingResult.id, {
         status: 'failed',
         error_message: errorMessage,
       });

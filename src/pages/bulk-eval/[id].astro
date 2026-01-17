@@ -329,7 +329,7 @@ const progress = run.total_rows > 0 ? (run.processed_rows / run.total_rows) * 10
     allRowResults: RowResult[];
     rowData: Record<string, string>;
   }> {
-    const response = await fetch(`/api/bulk/result?run_id=${runId}&row_index=${rowIndex}`);
+    const response = await fetch(`/api/bulk/row-details?run_id=${runId}&row_index=${rowIndex}`);
 
     if (!response.ok) {
       throw new Error('Failed to fetch row details');

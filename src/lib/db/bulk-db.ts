@@ -470,6 +470,25 @@ export function getRowResultForModel(
 }
 
 /**
+ * Get all results for a specific row index in a run.
+ * @param runId - Run ID
+ * @param rowIndex - Original row index
+ * @param db - Optional database instance
+ * @returns Array of row results for all models
+ */
+export function getRowResultsByIndex(
+  runId: string,
+  rowIndex: number,
+  db?: Database.Database
+): RowResult[] {
+  const database = db || getBulkDatabase();
+  const stmt = database.prepare(
+    'SELECT * FROM row_results WHERE run_id = ? AND original_row_index = ? ORDER BY model_id'
+  );
+  return stmt.all(runId, rowIndex) as RowResult[];
+}
+
+/**
  * Update a row result's status and output.
  * @param id - Result ID
  * @param updates - Fields to update
