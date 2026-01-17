@@ -14,7 +14,6 @@
 import Layout from '@layouts/Layout.astro';
 import DetailDrawer from '@components/bulk/DetailDrawer.astro';
 import Icon from '@components/ui/Icon.astro';
-import type { RowResult } from '@lib/db';
 
 // Get run ID from URL params
 const { id } = Astro.params;
@@ -277,7 +276,7 @@ if (notFound || !initialData) {
   </div>
 
   <!-- Detail Drawer (hidden by default) -->
-  <DetailDrawer result={{} as RowResult} rowData={{} as Record<string, string>} />
+  <DetailDrawer allRowResults={[]} rowData={{} as Record<string, string>} rowIndex={0} />
 
   <!-- Drawer in overlays slot for proper z-index -->
   <div slot="overlays" id="drawer-overlays"></div>
@@ -296,14 +295,19 @@ if (notFound || !initialData) {
   // Declare the global function added by DetailDrawer
   declare global {
     interface Window {
-      showBulkRowDetails?: (result: RowResult, rowData: Record<string, string>) => void;
+      showBulkRowDetails?: (
+        allRowResults: RowResult[],
+        rowData: Record<string, string>,
+        rowIndex: number
+      ) => void;
     }
   }
 
   // Define custom event detail type for bulk-row-view-details event
   interface BulkRowViewDetailsEventDetail {
-    rowResult: RowResult;
+    allRowResults: RowResult[];
     rowData: Record<string, string>;
+    rowIndex: number;
   }
 
   // Get run ID from data attribute
@@ -319,9 +323,9 @@ if (notFound || !initialData) {
    */
   document.addEventListener('bulk-row-view-details', (e: Event) => {
     const customEvent = e as CustomEvent<BulkRowViewDetailsEventDetail>;
-    const { rowResult, rowData } = customEvent.detail;
+    const { allRowResults, rowData, rowIndex } = customEvent.detail;
     if (window.showBulkRowDetails) {
-      window.showBulkRowDetails(rowResult, rowData);
+      window.showBulkRowDetails(allRowResults, rowData, rowIndex);
     }
   });
 
@@ -614,14 +618,14 @@ if (notFound || !initialData) {
                   .map(
                     (row) => `
                   <tr class="hover" data-row-index="${row.index}">
-                    <td class="sticky left-0 z-10 bg-base-100 tabular-nums text-base-content/60">
+                    <td class="sticky left-0 z-10 bg-base-100 tabular-nums text-base-content/60 px-2 py-1">
                       ${row.index + 1}
                     </td>
                     ${headers
                       .map((header: string, cellIndex: number) => {
                         const value = String(row.data[header] ?? '');
                         return `
-                        <td class="sticky z-10 bg-base-100 max-w-[12rem]" style="left: calc(4rem + ${cellIndex * 12}rem)">
+                        <td class="sticky z-10 bg-base-100 max-w-[12rem] px-2 py-1" style="left: calc(4rem + ${cellIndex * 12}rem)">
                           <div class="text-sm whitespace-pre-wrap break-words max-h-20 overflow-y-auto" title="${value}">
                             ${value || '<span class="opacity-30">-</span>'}
                           </div>
@@ -662,7 +666,7 @@ if (notFound || !initialData) {
                         }
 
                         return `
-                        <td class="min-w-[200px] max-w-[300px]" data-model-id="${model.id}">
+                        <td class="min-w-[200px] max-w-[300px] px-2 py-1" data-model-id="${model.id}">
                           ${cellContent}
                         </td>
                       `;
@@ -687,7 +691,7 @@ if (notFound || !initialData) {
   }
 
   /**
-   * Handle row click to show details
+   * Handle row click to show details for all models
    */
   async function handleRowClick(event: Event): Promise<void> {
     const target = event.target as HTMLElement;
@@ -697,40 +701,40 @@ if (notFound || !initialData) {
     const rowIndex = parseInt(row.getAttribute('data-row-index') || '-1');
     if (rowIndex < 0) return;
 
-    // Get the model_id from the clicked cell
-    const cell = target.closest('td[data-model-id]');
-    const modelId = cell?.getAttribute('data-model-id');
-
-    if (!modelId) {
-      addToast('Click on a model output cell to view details', 'info');
-      return;
-    }
-
-    // Find the result for this row and model
+    // Get the row data
     const rowData = currentData.rows[rowIndex];
     if (!rowData) return;
 
-    const result = rowData.results[modelId];
-    if (!result) return;
+    // Get run data with null check
+    const runId = currentData.run.id;
+    const systemPrompt = currentData.run.system_prompt || '';
+    const createdAt = currentData.run.created_at || '';
 
-    // Convert result to RowResult format expected by DetailDrawer
-    const rowResult: RowResult = {
-      id: `${currentData.run.id}-${rowIndex}-${modelId}`, // synthetic ID
-      run_id: currentData.run.id,
-      original_row_index: rowIndex,
-      model_id: modelId,
-      prompt_used: currentData.run.system_prompt || '',
-      output_text: result.output_text,
-      status: result.status as 'pending' | 'completed' | 'failed',
-      error_message: result.error_message,
-      duration_ms: result.duration_ms,
-      created_at: currentData.run.created_at || '',
-    };
+    // Convert all model results to RowResult format
+    const allRowResults: RowResult[] = currentData.selected_models.map((model) => {
+      const result = rowData.results[model.id];
+      return {
+        id: `${runId}-${rowIndex}-${model.id}`, // synthetic ID
+        run_id: runId,
+        original_row_index: rowIndex,
+        model_id: model.id,
+        prompt_used: systemPrompt,
+        output_text: result?.output_text,
+        status: (result?.status as 'pending' | 'completed' | 'failed') || 'pending',
+        error_message: result?.error_message,
+        duration_ms: result?.duration_ms,
+        created_at: createdAt,
+      };
+    });
 
     // Dispatch custom event for the detail drawer to handle
     const detailEvent = new CustomEvent<BulkRowViewDetailsEventDetail>('bulk-row-view-details', {
       bubbles: true,
-      detail: { rowResult, rowData: rowData.data as Record<string, string> },
+      detail: {
+        allRowResults,
+        rowData: rowData.data as Record<string, string>,
+        rowIndex,
+      },
     });
     document.dispatchEvent(detailEvent);
   }
