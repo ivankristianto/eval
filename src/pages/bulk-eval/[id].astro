@@ -13,6 +13,7 @@
 
 import Layout from '@layouts/Layout.astro';
 import DetailDrawer from '@components/bulk/DetailDrawer.astro';
+import Icon from '@components/ui/Icon.astro';
 import type { RowResult } from '@lib/db';
 
 // Get run ID from URL params
@@ -93,19 +94,7 @@ if (notFound || !initialData) {
     <!-- Page Header with Back Button -->
     <div class="flex items-center gap-4 animate-reveal">
       <a href="/bulk-eval" class="btn btn-ghost btn-sm btn-circle">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          class="h-5 w-5"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-        </svg>
+        <Icon name="arrow-left" size="md" />
       </a>
       <div class="flex-1">
         <h1
@@ -133,20 +122,7 @@ if (notFound || !initialData) {
             Dataset
           </div>
           <div class="flex items-center gap-2">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-4 w-4 text-base-content/40"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-              ></path>
-            </svg>
+            <Icon name="document" size="sm" class="text-base-content/40" />
             <div class="text-sm font-medium truncate" title={initialData.dataset.filename}>
               {initialData.dataset.filename}
             </div>
@@ -324,12 +300,30 @@ if (notFound || !initialData) {
     }
   }
 
+  // Define custom event detail type for bulk-row-view-details event
+  interface BulkRowViewDetailsEventDetail {
+    rowResult: RowResult;
+    rowData: Record<string, string>;
+  }
+
   // Get run ID from data attribute
   const runId = document.querySelector('[data-run-id]')?.getAttribute('data-run-id');
   if (!runId) {
     addToast('Run ID not found', 'error');
     window.location.href = '/bulk-eval';
   }
+
+  /**
+   * Handle bulk-row-view-details custom event
+   * Dispatched when a row is clicked to show details
+   */
+  document.addEventListener('bulk-row-view-details', (e: Event) => {
+    const customEvent = e as CustomEvent<BulkRowViewDetailsEventDetail>;
+    const { rowResult, rowData } = customEvent.detail;
+    if (window.showBulkRowDetails) {
+      window.showBulkRowDetails(rowResult, rowData);
+    }
+  });
 
   /**
    * Polling configuration constants
@@ -625,10 +619,12 @@ if (notFound || !initialData) {
       created_at: currentData.run.created_at || '',
     };
 
-    // Call the global function exposed by DetailDrawer
-    if (window.showBulkRowDetails) {
-      window.showBulkRowDetails(rowResult, rowData.data as Record<string, string>);
-    }
+    // Dispatch custom event for the detail drawer to handle
+    const detailEvent = new CustomEvent<BulkRowViewDetailsEventDetail>('bulk-row-view-details', {
+      bubbles: true,
+      detail: { rowResult, rowData: rowData.data as Record<string, string> },
+    });
+    document.dispatchEvent(detailEvent);
   }
 
   /**
