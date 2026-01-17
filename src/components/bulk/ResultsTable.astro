@@ -416,16 +416,16 @@ const getActionsLeftOffset = (headerCount: number) => `calc(6rem + ${headerCount
                         {status === 'completed' && result?.output_text ? (
                           <div
                             class="text-sm whitespace-pre-wrap break-words max-h-16 overflow-y-auto text-base-content/80"
-                            title={result.output_text}
+                            title={result.output_text.trim()}
                           >
-                            {result.output_text}
+                            {result.output_text.trim()}
                           </div>
                         ) : status === 'failed' ? (
                           <div
                             class="text-xs text-error/80 italic truncate"
-                            title={result?.error_message || 'Unknown error'}
+                            title={result?.error_message?.trim() || 'Unknown error'}
                           >
-                            {result?.error_message || 'Failed'}
+                            {result?.error_message?.trim() || 'Failed'}
                           </div>
                         ) : (
                           <div class="text-xs text-base-content/40 italic">Pending</div>
