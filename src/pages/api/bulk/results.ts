@@ -7,7 +7,7 @@
  */
 
 import type { APIRoute } from 'astro';
-import { getRunWithResults } from '@lib/db';
+import { getRunWithResults, getModelById } from '@lib/db';
 import { badRequest, notFound, createErrorResponse } from '@lib/api-error-handler';
 import { createLogger } from '@lib/logger';
 
@@ -18,7 +18,7 @@ const logger = createLogger('API:Bulk:Results');
  * Get complete results for a bulk evaluation run
  *
  * Query params: run_id (required)
- * Response: 200 with { run, dataset, headers, results_by_row, models }
+ * Response: 200 with { run, dataset, headers, selected_models (with id, name, provider), rows, summary }
  *          400 with { error: string }
  *          404 with { error: string }
  */
@@ -44,8 +44,20 @@ export const GET: APIRoute = async ({ url }) => {
     const csvRows = JSON.parse(data.dataset.csv_data) as Record<string, unknown>[];
     const headers = Object.keys(csvRows[0] || {});
 
-    // Parse selected models
+    // Parse selected models and fetch model names
     const selectedModels = JSON.parse(data.selected_models) as string[];
+    const modelInfoMap = new Map<string, { id: string; name: string; provider: string }>();
+
+    for (const modelId of selectedModels) {
+      const model = getModelById(modelId);
+      if (model) {
+        modelInfoMap.set(modelId, {
+          id: model.id,
+          name: model.model_name,
+          provider: model.provider,
+        });
+      }
+    }
 
     // Group results by row index and model for easy display
     const resultsByRow: Record<
@@ -83,6 +95,13 @@ export const GET: APIRoute = async ({ url }) => {
 
     logger.logApiRequest('GET', '/api/bulk/results', 200, Date.now() - startTime);
 
+    // Build selected_models array with model names
+    const modelsWithName = selectedModels
+      .map((modelId) => modelInfoMap.get(modelId))
+      .filter(
+        (model): model is { id: string; name: string; provider: string } => model !== undefined
+      );
+
     return new Response(
       JSON.stringify({
         run: {
@@ -106,7 +125,7 @@ export const GET: APIRoute = async ({ url }) => {
           created_at: data.dataset.created_at,
         },
         headers,
-        selected_models: selectedModels,
+        selected_models: modelsWithName,
         rows: rowsWithResults,
         // Summary statistics
         summary: {
