@@ -5,89 +5,84 @@
  * Displays detailed view of a single bulk evaluation run:
  * - Run metadata (status, model count, progress)
  * - Dataset preview
- * - Results table with model outputs
+ * - Results table with model outputs (server-side rendered)
  * - Detail drawer for row results
  * - Polls for status if run is in progress
  * - Handles 404 if run not found
  */
 
 import Layout from '@layouts/Layout.astro';
+import ResultsTable from '@components/bulk/ResultsTable.astro';
 import DetailDrawer from '@components/bulk/DetailDrawer.astro';
+import StatusBadge from '@components/bulk/StatusBadge.astro';
 import Icon from '@components/ui/Icon.astro';
+import {
+  getRunWithResults,
+  getBulkDataset,
+  type BulkDataset,
+  type EvaluationRunWithResults,
+  type RowResult,
+} from '@lib/db/bulk-db';
 
 // Get run ID from URL params
 const { id } = Astro.params;
 
-// Fetch run data server-side for initial render
-let initialData: {
-  run: {
-    id: string;
-    dataset_id: string;
-    status: string;
-    system_prompt: string;
-    temperature: number;
-    total_rows: number;
-    processed_rows: number;
-    created_at: string;
-    updated_at: string;
-    started_at: string | null;
-    completed_at: string | null;
-    error_message: string | null;
-  };
-  dataset: {
-    id: string;
-    filename: string;
-    row_count: number;
-    created_at: string;
-  };
-  headers: string[];
-  selected_models: Array<{ id: string; name: string; provider: string }>;
-  rows: Array<{
-    index: number;
-    data: Record<string, unknown>;
-    results: Record<
-      string,
-      {
-        output_text?: string;
-        status: string;
-        error_message?: string;
-        duration_ms?: number;
-      }
-    >;
-  }>;
-  summary: {
-    total_rows: number;
-    processed_rows: number;
-    completed_count: number;
-    failed_count: number;
-    pending_count: number;
-    total_results: number;
-  };
-} | null = null;
+// Handle missing ID
+if (!id) {
+  return Astro.redirect('/404');
+}
+
+// Fetch run and dataset data server-side
+let run: EvaluationRunWithResults | null = null;
+let dataset: BulkDataset | null = null;
+let results: RowResult[] = [];
 
 let notFound = false;
 
-// Fetch initial data from API
+// Fetch data from database
 try {
-  const response = await fetch(new URL(`/api/bulk/results?run_id=${id}`, Astro.url.origin));
-  if (response.ok) {
-    initialData = await response.json();
-  } else if (response.status === 404) {
+  run = getRunWithResults(id);
+  if (!run) {
     notFound = true;
+  } else {
+    dataset = getBulkDataset(run.dataset_id);
+    if (!dataset) {
+      notFound = true;
+    } else {
+      // Get results for this run
+      results = run.results || [];
+    }
   }
 } catch (e) {
   console.error('Error fetching run data:', e);
+  notFound = true;
 }
 
 // Handle 404
-if (notFound || !initialData) {
+if (notFound || !run || !dataset) {
   return Astro.redirect('/404');
 }
+
+// Parse selected models for display
+const selectedModels = JSON.parse(run.selected_models) as Array<{
+  id: string;
+  name: string;
+  provider: string;
+}>;
+
+// Calculate summary stats
+const completedCount = results.filter((r) => r.status === 'completed').length;
+const failedCount = results.filter((r) => r.status === 'failed').length;
+const pendingCount = results.filter((r) => r.status === 'pending').length;
+
+// Status for UI
+const isRunning = run.status === 'running' || run.status === 'pending';
+const progress = run.total_rows > 0 ? (run.processed_rows / run.total_rows) * 100 : 0;
 ---
 
-<Layout title={`Bulk Evaluation ${initialData.run.id.slice(0, 8)}... - Eval AI`}>
-  <!-- Pass run ID to client script -->
-  <span id="run-id" data-run-id={id} class="hidden"></span>
+<Layout title={`Bulk Evaluation ${run.id.slice(0, 8)}... - Eval AI`}>
+  <!-- Pass run ID and initial status to client script -->
+  <span id="run-id" data-run-id={id} data-is-running={isRunning} class="hidden"></span>
 
   <div class="space-y-6">
     <!-- Page Header with Back Button -->
@@ -102,11 +97,11 @@ if (notFound || !initialData) {
           Evaluation Run Details
         </h1>
         <p class="text-base-content/60 text-sm">
-          Run ID: <span class="font-mono">{initialData.run.id.slice(0, 8)}...</span>
+          Run ID: <span class="font-mono">{run.id.slice(0, 8)}...</span>
         </p>
       </div>
-      <div id="run-status-badge" data-status={initialData.run.status}>
-        <!-- Populated by client script -->
+      <div id="run-status-badge" data-status={run.status}>
+        <StatusBadge status={run.status as 'pending' | 'running' | 'completed' | 'failed'} />
       </div>
     </div>
 
@@ -122,11 +117,11 @@ if (notFound || !initialData) {
           </div>
           <div class="flex items-center gap-2">
             <Icon name="document" size="sm" class="text-base-content/40" />
-            <div class="text-sm font-medium truncate" title={initialData.dataset.filename}>
-              {initialData.dataset.filename}
+            <div class="text-sm font-medium truncate" title={dataset.filename}>
+              {dataset.filename}
             </div>
           </div>
-          <div class="text-xs text-base-content/60 mt-1">{initialData.dataset.row_count} rows</div>
+          <div class="text-xs text-base-content/60 mt-1">{dataset.row_count} rows</div>
         </div>
       </div>
 
@@ -139,14 +134,14 @@ if (notFound || !initialData) {
             Models
           </div>
           <div class="flex items-center gap-2">
-            <span class="badge badge-neutral">{initialData.selected_models.length}</span>
+            <span class="badge badge-neutral">{selectedModels.length}</span>
             <div class="text-sm text-base-content/70">
-              {initialData.selected_models.length === 1 ? 'model' : 'models'}
+              {selectedModels.length === 1 ? 'model' : 'models'}
             </div>
           </div>
           <div class="flex flex-wrap gap-1 mt-1">
             {
-              initialData.selected_models.map((model) => (
+              selectedModels.map((model) => (
                 <span class="badge badge-ghost badge-xs">{model.name}</span>
               ))
             }
@@ -166,18 +161,17 @@ if (notFound || !initialData) {
             <div class="flex-1 bg-base-300 rounded-full h-2">
               <div
                 id="progress-bar"
-                class="h-2 rounded-full transition-all duration-300 bg-gradient-gold"
-                style={`width: ${(initialData.run.processed_rows / initialData.run.total_rows) * 100}%`}
+                class={`h-2 rounded-full transition-all duration-300 ${progress === 100 ? 'bg-gradient-emerald' : 'bg-gradient-gold'}`}
+                style={`width: ${progress}%`}
               >
               </div>
             </div>
             <span id="progress-text" class="text-sm font-mono text-base-content/70">
-              {initialData.run.processed_rows}/{initialData.run.total_rows}
+              {run.processed_rows}/{run.total_rows}
             </span>
           </div>
           <div class="text-xs text-base-content/60 mt-1">
-            {Math.round((initialData.run.processed_rows / initialData.run.total_rows) * 100)}%
-            complete
+            {Math.round(progress)}% complete
           </div>
         </div>
       </div>
@@ -193,19 +187,19 @@ if (notFound || !initialData) {
           <div class="grid grid-cols-3 gap-2">
             <div class="text-center">
               <div class="text-lg font-bold text-success" id="completed-count">
-                {initialData.summary.completed_count}
+                {completedCount}
               </div>
               <div class="text-[10px] text-base-content/50 uppercase">Done</div>
             </div>
             <div class="text-center">
               <div class="text-lg font-bold text-error" id="failed-count">
-                {initialData.summary.failed_count}
+                {failedCount}
               </div>
               <div class="text-[10px] text-base-content/50 uppercase">Failed</div>
             </div>
             <div class="text-center">
               <div class="text-lg font-bold text-warning" id="pending-count">
-                {initialData.summary.pending_count}
+                {pendingCount}
               </div>
               <div class="text-[10px] text-base-content/50 uppercase">Pending</div>
             </div>
@@ -221,34 +215,23 @@ if (notFound || !initialData) {
       <div class="card-body p-4">
         <div class="flex items-center justify-between mb-2">
           <h3 class="text-sm font-semibold text-base-content/70">System Prompt</h3>
-          <div class="badge badge-ghost badge-sm">Temperature: {initialData.run.temperature}</div>
+          <div class="badge badge-ghost badge-sm">Temperature: {run.temperature}</div>
         </div>
         <div
           class="bg-base-200 p-3 rounded-lg text-sm whitespace-pre-wrap max-h-24 overflow-y-auto"
         >
-          {initialData.run.system_prompt}
+          {run.system_prompt}
         </div>
       </div>
     </div>
 
-    <!-- Results Table -->
-    <div class="animate-reveal">
-      <div id="results-loading" class="hidden">
-        <div
-          class="card bg-base-100/90 backdrop-blur-sm border border-base-300/50 shadow-lg rounded-xl p-12 text-center"
-        >
-          <span class="loading loading-spinner loading-lg text-luxe-gold"></span>
-          <p class="text-base-content/60 mt-4">Loading results...</p>
-        </div>
-      </div>
-
-      <div id="results-table-container">
-        <!-- Results table will be rendered here by client script -->
-      </div>
+    <!-- Results Table (Server-Side Rendered) -->
+    <div class="animate-reveal" id="results-table-wrapper">
+      <ResultsTable dataset={dataset} run={run} results={results} />
     </div>
 
     <!-- Status Bar (shown during evaluation) -->
-    <div id="status-bar" class="hidden sticky bottom-4 z-40 animate-reveal">
+    <div id="status-bar" class={`sticky bottom-4 z-40 animate-reveal ${isRunning ? '' : 'hidden'}`}>
       <div
         class="card bg-base-100/95 backdrop-blur-sm border border-luxe-gold/50 shadow-elevated rounded-xl"
       >
@@ -261,13 +244,13 @@ if (notFound || !initialData) {
                 <div
                   id="status-progress-bar"
                   class="bg-gradient-emerald h-2 rounded-full transition-all duration-300"
-                  style="width: 0%"
+                  style={`width: ${progress}%`}
                 >
                 </div>
               </div>
             </div>
             <span id="status-progress-text" class="text-sm font-mono text-base-content/70"
-              >0 / 0</span
+              >{run.processed_rows} / {run.total_rows}</span
             >
           </div>
         </div>
@@ -277,9 +260,6 @@ if (notFound || !initialData) {
 
   <!-- Detail Drawer (hidden by default) -->
   <DetailDrawer allRowResults={[]} rowData={{} as Record<string, string>} rowIndex={0} />
-
-  <!-- Drawer in overlays slot for proper z-index -->
-  <div slot="overlays" id="drawer-overlays"></div>
 </Layout>
 
 <style>
@@ -290,7 +270,7 @@ if (notFound || !initialData) {
 
 <script>
   import { addToast } from '@lib/ui/toastStore';
-  import type { RowResult } from '@lib/db';
+  import type { RowResult } from '@lib/db/bulk-db';
 
   // Declare the global function added by DetailDrawer
   declare global {
@@ -303,15 +283,11 @@ if (notFound || !initialData) {
     }
   }
 
-  // Define custom event detail type for bulk-row-view-details event
-  interface BulkRowViewDetailsEventDetail {
-    allRowResults: RowResult[];
-    rowData: Record<string, string>;
-    rowIndex: number;
-  }
+  // Get run ID and initial status from data attribute
+  const runIdEl = document.querySelector('[data-run-id]');
+  const runId = runIdEl?.getAttribute('data-run-id');
+  const initialIsRunning = runIdEl?.getAttribute('data-is-running') === 'true';
 
-  // Get run ID from data attribute
-  const runId = document.querySelector('[data-run-id]')?.getAttribute('data-run-id');
   if (!runId) {
     addToast('Run ID not found', 'error');
     window.location.href = '/bulk-eval';
@@ -319,15 +295,37 @@ if (notFound || !initialData) {
 
   /**
    * Handle bulk-row-view-details custom event
-   * Dispatched when a row is clicked to show details
+   * Dispatched when the View Details button is clicked
    */
   document.addEventListener('bulk-row-view-details', (e: Event) => {
-    const customEvent = e as CustomEvent<BulkRowViewDetailsEventDetail>;
-    const { allRowResults, rowData, rowIndex } = customEvent.detail;
-    if (window.showBulkRowDetails) {
-      window.showBulkRowDetails(allRowResults, rowData, rowIndex);
-    }
+    const customEvent = e as CustomEvent<{ rowIndex: number }>;
+    const { rowIndex } = customEvent.detail;
+
+    if (!runId) return;
+
+    // Fetch row details and show drawer
+    fetchRowDetails(rowIndex).then((data) => {
+      if (window.showBulkRowDetails) {
+        window.showBulkRowDetails(data.allRowResults, data.rowData, rowIndex);
+      }
+    });
   });
+
+  /**
+   * Fetch row details for the detail drawer
+   */
+  async function fetchRowDetails(rowIndex: number): Promise<{
+    allRowResults: RowResult[];
+    rowData: Record<string, string>;
+  }> {
+    const response = await fetch(`/api/bulk/result?run_id=${runId}&row_index=${rowIndex}`);
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch row details');
+    }
+
+    return await response.json();
+  }
 
   /**
    * Handle bulk-cell-regenerate custom event
@@ -381,8 +379,8 @@ if (notFound || !initialData) {
       // Show success toast
       addToast(`Row ${rowIndex + 1} regenerated successfully`, 'success');
 
-      // Refresh the table data
-      await fetchData();
+      // Refresh the page to show updated results
+      window.location.reload();
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
       addToast(`Failed to regenerate row ${rowIndex + 1}: ${errorMessage}`, 'error');
@@ -414,7 +412,7 @@ if (notFound || !initialData) {
         const data = await response.json();
 
         if (data.status === 'completed' || data.status === 'failed') {
-          return; // Done, will refresh full table
+          return; // Done, will refresh page
         }
 
         // Update loading state
@@ -445,54 +443,18 @@ if (notFound || !initialData) {
   const MAX_BACKOFF_MS = 12000;
   const BACKOFF_MULTIPLIER = 2;
 
-  interface BulkRunData {
-    run: {
-      id: string;
-      status: string;
-      total_rows: number;
-      processed_rows: number;
-      system_prompt: string;
-      created_at: string;
-      started_at: string | null;
-      completed_at: string | null;
-    };
-    dataset: {
-      id: string;
-      filename: string;
-      row_count: number;
-    };
-    headers: string[];
-    selected_models: Array<{ id: string; name: string; provider: string }>;
-    rows: Array<{
-      index: number;
-      data: Record<string, unknown>;
-      results: Record<
-        string,
-        {
-          output_text?: string;
-          status: string;
-          error_message?: string;
-          duration_ms?: number;
-        }
-      >;
-    }>;
-    summary: {
-      total_rows: number;
-      processed_rows: number;
-      completed_count: number;
-      failed_count: number;
-      pending_count: number;
-    };
+  interface BulkRunStatus {
+    status: string;
+    processed_rows: number;
+    total_rows: number;
   }
 
   let isPolling = false;
   let pollInterval: number | null = null;
   let consecutiveFailures = 0;
   let currentBackoffMs = INITIAL_BACKOFF_MS;
-  let currentData: BulkRunData | null = null;
 
   // DOM elements
-  const resultsTableContainer = document.getElementById('results-table-container');
   const statusBar = document.getElementById('status-bar');
   const statusProgressBar = document.getElementById('status-progress-bar');
   const statusProgressText = document.getElementById('status-progress-text');
@@ -551,234 +513,20 @@ if (notFound || !initialData) {
   /**
    * Update summary stats
    */
-  function updateSummaryStats(summary: BulkRunData['summary']): void {
+  function updateSummaryStats(summary: {
+    completed_count: number;
+    failed_count: number;
+    pending_count: number;
+  }): void {
     if (completedCount) completedCount.textContent = summary.completed_count.toString();
     if (failedCount) failedCount.textContent = summary.failed_count.toString();
     if (pendingCount) pendingCount.textContent = summary.pending_count.toString();
   }
 
   /**
-   * Render the results table
+   * Fetch latest status from API
    */
-  function renderResultsTable(data: BulkRunData): void {
-    if (!resultsTableContainer) return;
-
-    const headers = data.headers || [];
-    const selectedModels = data.selected_models || [];
-    const rows = data.rows || [];
-
-    const tableHTML = `
-      <div class="card bg-base-100/90 backdrop-blur-sm border border-base-300/50 shadow-lg rounded-xl h-full flex flex-col overflow-hidden">
-        <div class="card-body p-3 flex flex-col min-h-0">
-          <!-- Table Header -->
-          <div class="flex items-center justify-between px-1 py-2 border-b border-base-300/80 flex-shrink-0">
-            <div class="flex items-center gap-3">
-              <span class="text-sm text-base-content/60 font-medium">${rows.length} rows</span>
-            </div>
-            <div class="flex items-center gap-2">
-              <span class="badge badge-ghost">
-                ${selectedModels.length} model${selectedModels.length !== 1 ? 's' : ''}
-              </span>
-            </div>
-          </div>
-
-          <!-- Table with horizontal and vertical scroll -->
-          <div class="overflow-x-auto overflow-y-auto rounded-lg border border-base-300/50 flex-1 min-h-0">
-            <table class="table-luxe table-sm" id="results-table">
-              <thead class="bg-base-200/80 sticky top-0 z-20">
-                <tr>
-                  <th class="w-16 sticky left-0 z-30 bg-base-200/90 hover:bg-base-300">#</th>
-                  ${headers
-                    .map(
-                      (header: string, index: number) => `
-                    <th class="sticky z-10 bg-base-200/90 hover:bg-base-300" style="left: calc(4rem + ${index * 12}rem)">
-                      <div class="flex items-center gap-2">
-                        <span>${header}</span>
-                      </div>
-                    </th>
-                  `
-                    )
-                    .join('')}
-                  ${selectedModels
-                    .map(
-                      (model: { id: string; name: string; provider: string }) => `
-                    <th class="min-w-[200px] max-w-[300px]">
-                      <div class="flex items-center gap-2">
-                        <span>Output</span>
-                        <span class="badge badge-sm badge-neutral">${model.name}</span>
-                      </div>
-                    </th>
-                  `
-                    )
-                    .join('')}
-                  <th class="w-20 text-center">Actions</th>
-                </tr>
-              </thead>
-              <tbody id="results-body">
-                ${rows
-                  .map(
-                    (row) => `
-                  <tr class="hover" data-row-index="${row.index}">
-                    <td class="sticky left-0 z-10 bg-base-100 tabular-nums text-base-content/60 px-2 py-1">
-                      ${row.index + 1}
-                    </td>
-                    ${headers
-                      .map((header: string, cellIndex: number) => {
-                        const value = String(row.data[header] ?? '');
-                        return `
-                        <td class="sticky z-10 bg-base-100 max-w-[12rem] px-2 py-1" style="left: calc(4rem + ${cellIndex * 12}rem)">
-                          <div class="text-sm whitespace-pre-wrap break-words max-h-20 overflow-y-auto" title="${value}">
-                            ${value || '<span class="opacity-30">-</span>'}
-                          </div>
-                        </td>
-                      `;
-                      })
-                      .join('')}
-                    ${selectedModels
-                      .map((model: { id: string; name: string; provider: string }) => {
-                        const result = row.results[model.id];
-                        let cellContent = '';
-
-                        if (result?.status === 'completed') {
-                          cellContent = `
-                          <div class="text-sm whitespace-pre-wrap break-words max-h-20 overflow-y-auto" title="${result.output_text || ''}">
-                            ${result.output_text || '<span class="opacity-30 italic">No output</span>'}
-                          </div>
-                        `;
-                        } else if (result?.status === 'failed') {
-                          cellContent = `
-                          <div class="flex items-center gap-2 text-error">
-                            <span class="text-xs" title="${result.error_message}">Failed</span>
-                          </div>
-                        `;
-                        } else if (result?.status === 'pending') {
-                          cellContent = `
-                          <div class="flex items-center gap-2 text-warning">
-                            <span class="loading loading-spinner loading-xs"></span>
-                            <span class="text-xs">Pending</span>
-                          </div>
-                        `;
-                        } else {
-                          cellContent = `
-                          <div class="flex items-center gap-2 text-base-content/40">
-                            <span class="text-xs italic">Not started</span>
-                          </div>
-                        `;
-                        }
-
-                        return `
-                        <td class="min-w-[200px] max-w-[300px] px-2 py-1" data-model-id="${model.id}">
-                          ${cellContent}
-                        </td>
-                      `;
-                      })
-                      .join('')}
-                  <td class="px-2 py-1 text-center">
-                    <button
-                      class="btn btn-ghost btn-xs btn-circle view-details-btn"
-                      data-row-index="${row.index}"
-                      title="View all model outputs for this row"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                      </svg>
-                    </button>
-                  </td>
-                </tr>
-                `
-                  )
-                  .join('')}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    `;
-
-    resultsTableContainer.innerHTML = tableHTML;
-
-    // Add row click handlers
-    const resultsBody = document.getElementById('results-body');
-    resultsBody?.addEventListener('click', handleRowClick);
-
-    // Add click handlers to view details buttons
-    const viewDetailsBtns = document.querySelectorAll('.view-details-btn');
-    viewDetailsBtns.forEach((btn) => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const rowIndex = parseInt((btn as HTMLElement).getAttribute('data-row-index') || '-1');
-        if (rowIndex >= 0 && currentData) {
-          showRowDetails(rowIndex);
-        }
-      });
-    });
-  }
-
-  /**
-   * Handle row click to show details for all models
-   */
-  async function handleRowClick(event: Event): Promise<void> {
-    const target = event.target as HTMLElement;
-    const row = target.closest('tr[data-row-index]');
-    if (!row || !currentData) return;
-
-    const rowIndex = parseInt(row.getAttribute('data-row-index') || '-1');
-    if (rowIndex < 0) return;
-
-    // Don't trigger if clicking on the view details button
-    if (target.closest('.view-details-btn')) return;
-
-    showRowDetails(rowIndex);
-  }
-
-  /**
-   * Show row details for a given row index
-   */
-  function showRowDetails(rowIndex: number): void {
-    if (!currentData) return;
-
-    // Get the row data
-    const rowData = currentData.rows[rowIndex];
-    if (!rowData) return;
-
-    // Get run data with null check
-    const runId = currentData.run.id;
-    const systemPrompt = currentData.run.system_prompt || '';
-    const createdAt = currentData.run.created_at || '';
-
-    // Convert all model results to RowResult format
-    const allRowResults: RowResult[] = currentData.selected_models.map((model) => {
-      const result = rowData.results[model.id];
-      return {
-        id: `${runId}-${rowIndex}-${model.id}`, // synthetic ID
-        run_id: runId,
-        original_row_index: rowIndex,
-        model_id: model.id,
-        prompt_used: systemPrompt,
-        output_text: result?.output_text,
-        status: (result?.status as 'pending' | 'completed' | 'failed') || 'pending',
-        error_message: result?.error_message,
-        duration_ms: result?.duration_ms,
-        created_at: createdAt,
-      };
-    });
-
-    // Dispatch custom event for the detail drawer to handle
-    const detailEvent = new CustomEvent<BulkRowViewDetailsEventDetail>('bulk-row-view-details', {
-      bubbles: true,
-      detail: {
-        allRowResults,
-        rowData: rowData.data as Record<string, string>,
-        rowIndex,
-      },
-    });
-    document.dispatchEvent(detailEvent);
-  }
-
-  /**
-   * Fetch latest data from API
-   */
-  async function fetchData(): Promise<void> {
+  async function fetchStatus(): Promise<void> {
     if (!runId) return;
 
     try {
@@ -790,11 +538,13 @@ if (notFound || !initialData) {
           window.location.href = '/bulk-eval';
           return;
         }
-        throw new Error('Failed to fetch run data');
+        throw new Error('Failed to fetch run status');
       }
 
-      const data: BulkRunData = await response.json();
-      currentData = data;
+      const data: {
+        run: BulkRunStatus;
+        summary: { completed_count: number; failed_count: number; pending_count: number };
+      } = await response.json();
 
       // Reset failure counter on successful request
       consecutiveFailures = 0;
@@ -816,9 +566,6 @@ if (notFound || !initialData) {
         }
       }
 
-      // Render results table
-      renderResultsTable(data);
-
       // Check if we should stop polling
       if (data.run.status === 'completed' || data.run.status === 'failed') {
         stopPolling();
@@ -831,6 +578,9 @@ if (notFound || !initialData) {
         } else if (data.run.status === 'failed') {
           addToast(`Evaluation failed`, 'error');
         }
+
+        // Reload the page to show final results
+        setTimeout(() => window.location.reload(), 1000);
       }
     } catch (error) {
       consecutiveFailures++;
@@ -870,14 +620,14 @@ if (notFound || !initialData) {
     currentBackoffMs = INITIAL_BACKOFF_MS;
 
     // Poll immediately
-    fetchData();
+    fetchStatus();
 
     // Set up recursive polling with variable backoff
     const scheduleNextPoll = () => {
       if (!isPolling) return;
 
       pollInterval = window.setTimeout(() => {
-        fetchData().finally(() => {
+        fetchStatus().finally(() => {
           scheduleNextPoll();
         });
       }, currentBackoffMs);
@@ -897,17 +647,10 @@ if (notFound || !initialData) {
     isPolling = false;
   }
 
-  // Initialize
-  // Fetch data once on load
-  fetchData().then(() => {
-    // Start polling if run is still in progress
-    if (
-      currentData &&
-      (currentData.run.status === 'running' || currentData.run.status === 'pending')
-    ) {
-      startPolling();
-    }
-  });
+  // Initialize - Start polling if run is in progress
+  if (initialIsRunning) {
+    startPolling();
+  }
 
   // Cleanup on page unload
   window.addEventListener('beforeunload', stopPolling);
