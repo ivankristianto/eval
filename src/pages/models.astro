@@ -117,6 +117,9 @@ const modelIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text
             <option value="openai">OpenAI (GPT)</option>
             <option value="anthropic">Anthropic (Claude)</option>
             <option value="google">Google (Gemini)</option>
+            <option value="openrouter">Open Router</option>
+            <option value="lmstudio">LM Studio (Local)</option>
+            <option value="ollama">Ollama (Local)</option>
           </select>
         </div>
         <Input
@@ -131,10 +134,41 @@ const modelIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text
             target="_new">Models.dev</a
           > to find model ID.
         </p>
-        <Input label="API Key" name="api_key" type="password" placeholder="sk-..." required />
-        <p class="text-xs text-base-content/50 -mt-2">
-          Stored securely using AES-256-GCM encryption.
-        </p>
+
+        <!-- API Key Field (hidden for local providers) -->
+        <div id="api-key-container" class="form-control w-full">
+          <label class="label" for="api_key">
+            <span class="label-text font-medium">API Key</span>
+          </label>
+          <input
+            id="api_key"
+            name="api_key"
+            type="password"
+            class="input input-bordered w-full"
+            placeholder="sk-..."
+            required
+          />
+          <p class="text-xs text-base-content/50 mt-1">
+            Stored securely using AES-256-GCM encryption.
+          </p>
+        </div>
+
+        <!-- Base URL Field (shown for local providers only) -->
+        <div id="base-url-container" class="form-control w-full hidden">
+          <label class="label" for="base_url">
+            <span class="label-text font-medium">Base URL (Optional)</span>
+          </label>
+          <input
+            id="base_url"
+            name="base_url"
+            type="url"
+            class="input input-bordered w-full"
+            placeholder=""
+          />
+          <p class="text-xs text-base-content/50 mt-1" id="base-url-hint">
+            Leave blank to use default local endpoint.
+          </p>
+        </div>
         <div class="form-control w-full">
           <label class="label" for="notes">
             <span class="label-text font-medium">Notes (Optional)</span>
@@ -248,6 +282,49 @@ const modelIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text
   const importBtn = document.getElementById('import-btn') as HTMLButtonElement;
   const exportBtn = document.getElementById('export-btn') as HTMLButtonElement;
   const importFile = document.getElementById('import-file') as HTMLInputElement;
+  const providerSelect = document.getElementById('provider') as HTMLSelectElement;
+  const apiKeyContainer = document.getElementById('api-key-container') as HTMLDivElement;
+  const apiKeyInput = document.getElementById('api_key') as HTMLInputElement;
+  const baseUrlContainer = document.getElementById('base-url-container') as HTMLDivElement;
+  const baseUrlInput = document.getElementById('base_url') as HTMLInputElement;
+  const baseUrlHint = document.getElementById('base-url-hint') as HTMLParagraphElement;
+
+  // Local providers that don't require API keys
+  const LOCAL_PROVIDERS = ['lmstudio', 'ollama'];
+
+  // Default base URLs for local providers
+  const DEFAULT_BASE_URLS: Record<string, string> = {
+    lmstudio: 'http://localhost:1234/v1',
+    ollama: 'http://localhost:11434',
+  };
+
+  /**
+   * Updates form fields based on selected provider.
+   * - Hides API key field for local providers
+   * - Shows base URL field for local providers
+   */
+  function updateProviderFields() {
+    const selectedProvider = providerSelect.value;
+
+    if (LOCAL_PROVIDERS.includes(selectedProvider)) {
+      // Local provider: hide API key, show base URL
+      apiKeyContainer.classList.add('hidden');
+      apiKeyInput.required = false;
+      apiKeyInput.value = '';
+
+      baseUrlContainer.classList.remove('hidden');
+      baseUrlInput.placeholder = DEFAULT_BASE_URLS[selectedProvider] || '';
+      baseUrlHint.textContent = `Leave blank to use default (${DEFAULT_BASE_URLS[selectedProvider]}).`;
+    } else {
+      // Cloud provider: show API key, hide base URL
+      apiKeyContainer.classList.remove('hidden');
+      apiKeyInput.required = true;
+
+      baseUrlContainer.classList.add('hidden');
+      baseUrlInput.required = false;
+      baseUrlInput.value = '';
+    }
+  }
 
   /**
    * Sets up the event listener for showing the "Add Model" modal.
@@ -256,6 +333,13 @@ const modelIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text
     addModelBtn.addEventListener('click', () => {
       addModelModal.showModal();
     });
+  }
+
+  /**
+   * Sets up provider change listener to update form fields.
+   */
+  if (providerSelect) {
+    providerSelect.addEventListener('change', updateProviderFields);
   }
 
   /**
@@ -275,7 +359,11 @@ const modelIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text
       const data: Record<string, string> = {};
 
       formData.forEach((value, key) => {
-        data[key] = typeof value === 'string' ? value : value.name;
+        // Only include non-empty values (for optional fields like base_url)
+        const stringValue = typeof value === 'string' ? value : value.name;
+        if (stringValue) {
+          data[key] = stringValue;
+        }
       });
 
       try {
@@ -470,28 +558,43 @@ const modelIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text
           importBtn.disabled = true;
           importBtn.textContent = 'Importing...';
 
+          const LOCAL_PROVIDERS = ['lmstudio', 'ollama'];
+
           for (const model of models) {
             if (!model.provider || !model.model_name) {
               console.warn('Skipping invalid model entry', model);
               continue;
             }
 
-            if (!model.api_key) {
+            // Local providers don't require API keys
+            const isLocalProvider = LOCAL_PROVIDERS.includes(model.provider);
+            if (!isLocalProvider && !model.api_key) {
               console.warn(`Skipping ${model.model_name}: missing API key`);
               failCount++;
               continue;
             }
 
             try {
+              const requestBody: Record<string, string> = {
+                provider: model.provider,
+                model_name: model.model_name,
+                notes: model.notes || '',
+              };
+
+              // Only include api_key if present (cloud providers)
+              if (model.api_key) {
+                requestBody.api_key = model.api_key;
+              }
+
+              // Include base_url if present (local providers)
+              if (model.base_url) {
+                requestBody.base_url = model.base_url;
+              }
+
               const response = await fetch('/api/models', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  provider: model.provider,
-                  model_name: model.model_name,
-                  api_key: model.api_key,
-                  notes: model.notes,
-                }),
+                body: JSON.stringify(requestBody),
               });
 
               if (response.ok) successCount++;
