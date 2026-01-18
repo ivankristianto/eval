@@ -4,6 +4,7 @@ import Badge from '@components/ui/Badge.astro';
 import Button from '@components/ui/Button.astro';
 import Breadcrumbs from '@components/ui/Breadcrumbs.astro';
 import EvaluationDetailsDrawer from '@components/EvaluationDetailsDrawer.astro';
+import AllResultsModal from '@components/AllResultsModal.astro';
 import TemplateManager from '@components/TemplateManager.astro';
 import { getEvaluation, getResults } from '@lib/db';
 
@@ -119,6 +120,9 @@ function getStatusBadgeVariant(status: string) {
     </div>
 
     <div class={evaluationData.results.length > 0 ? '' : 'hidden'} id="actions-container">
+      <Button variant="ghost" size="md" id="view-all-results-btn" class="mr-2">
+        View All Results
+      </Button>
       <Button variant="ghost" size="md" id="save-template-btn"> Save as Template </Button>
     </div>
   </div>
@@ -270,6 +274,7 @@ function getStatusBadgeVariant(status: string) {
   <!-- Overlays at body level for proper z-index stacking -->
   <Fragment slot="overlays">
     <EvaluationDetailsDrawer />
+    <AllResultsModal />
   </Fragment>
 </Layout>
 
@@ -300,6 +305,12 @@ function getStatusBadgeVariant(status: string) {
         });
       }
     });
+  }
+
+  // View All Results
+  const viewAllResultsBtn = document.getElementById('view-all-results-btn');
+  if (viewAllResultsBtn) {
+    viewAllResultsBtn.addEventListener('click', () => window.showAllResults?.());
   }
 
   /**

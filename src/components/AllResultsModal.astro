@@ -1,0 +1,277 @@
+---
+/**
+ * All Results Modal component.
+ *
+ * Displays all model results from an evaluation in a single, scrollable view
+ * for easy comparison. Uses data from window.__EVALUATION_DATA__ global.
+ *
+ * @example
+ * // In evaluation details page
+ * <AllResultsModal />
+ */
+import Modal from './ui/Modal.astro';
+---
+
+<Modal id="all-results-modal" title="All Model Results" size="4xl">
+  <div slot="content" class="space-y-6">
+    <!-- Instruction -->
+    <div>
+      <h3 class="text-sm font-semibold text-base-content/70 mb-2">Instruction</h3>
+      <div
+        id="all-results-instruction"
+        class="bg-base-200 p-4 rounded-lg whitespace-pre-wrap text-sm"
+      >
+      </div>
+    </div>
+
+    <!-- Rubric (conditional) -->
+    <div id="all-results-rubric-container" class="hidden">
+      <h3 class="text-sm font-semibold text-base-content/70 mb-2">Accuracy Rubric</h3>
+      <div id="all-results-rubric" class="bg-base-200 p-4 rounded-lg font-mono text-sm"></div>
+    </div>
+
+    <!-- Expected Output (conditional) -->
+    <div id="all-results-expected-container" class="hidden">
+      <h3 class="text-sm font-semibold text-base-content/70 mb-2">Expected Output</h3>
+      <div
+        id="all-results-expected"
+        class="bg-base-200 p-4 rounded-lg font-mono text-sm whitespace-pre-wrap"
+      >
+      </div>
+    </div>
+
+    <!-- Model Results Grid -->
+    <div>
+      <h3 class="text-sm font-semibold text-base-content/70 mb-3">Model Responses</h3>
+      <div id="all-results-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Dynamically populated result cards -->
+      </div>
+    </div>
+  </div>
+
+  <div slot="footer">
+    <button class="btn btn-ghost" onclick="document.getElementById('all-results-modal').close()">
+      Close
+    </button>
+  </div>
+</Modal>
+
+<script>
+  import { initializeOnce } from '@lib/utils/client-utils';
+  import { ModalUtils } from '@lib/utils/client-utils';
+
+  /**
+   * Data structure for evaluation results from window.__EVALUATION_DATA__.
+   */
+  interface EvaluationResult {
+    model_id: string;
+    model_name: string;
+    provider: string;
+    response_text?: string;
+    execution_time_ms?: number;
+    input_tokens?: number;
+    output_tokens?: number;
+    total_tokens?: number;
+    accuracy_score?: number;
+    accuracy_reasoning?: string;
+    status: string;
+    temperature_used?: number;
+  }
+
+  interface EvaluationData {
+    instruction_text: string;
+    accuracy_rubric?: string;
+    expected_output?: string;
+    results: EvaluationResult[];
+  }
+
+  /**
+   * Get badge class for status.
+   */
+  function getStatusBadgeClass(status: string): string {
+    switch (status) {
+      case 'completed':
+        return 'badge-success';
+      case 'failed':
+        return 'badge-error';
+      case 'running':
+        return 'badge-info';
+      default:
+        return 'badge-warning';
+    }
+  }
+
+  /**
+   * Get status label with proper capitalization.
+   */
+  function getStatusLabel(status: string): string {
+    return status.charAt(0).toUpperCase() + status.slice(1);
+  }
+
+  /**
+   * Populate and show the all results modal.
+   */
+  function showAllResults(): void {
+    const evalData = window.__EVALUATION_DATA__ as EvaluationData | undefined;
+    if (!evalData) {
+      console.error('No evaluation data available');
+      return;
+    }
+
+    // Populate instruction
+    const instructionEl = document.getElementById('all-results-instruction');
+    if (instructionEl) {
+      instructionEl.textContent = evalData.instruction_text || '-';
+    }
+
+    // Populate rubric (conditional)
+    const rubricContainer = document.getElementById('all-results-rubric-container');
+    const rubricEl = document.getElementById('all-results-rubric');
+    if (evalData.accuracy_rubric && rubricEl) {
+      rubricContainer?.classList.remove('hidden');
+      rubricEl.textContent = evalData.accuracy_rubric;
+    } else {
+      rubricContainer?.classList.add('hidden');
+    }
+
+    // Populate expected output (conditional)
+    const expectedContainer = document.getElementById('all-results-expected-container');
+    const expectedEl = document.getElementById('all-results-expected');
+    if (evalData.expected_output && expectedEl) {
+      expectedContainer?.classList.remove('hidden');
+      expectedEl.textContent = evalData.expected_output;
+    } else {
+      expectedContainer?.classList.add('hidden');
+    }
+
+    // Populate results grid
+    const gridEl = document.getElementById('all-results-grid');
+    if (gridEl) {
+      gridEl.innerHTML = evalData.results
+        .map(
+          (result) => `
+        <div class="card-luxe p-4 space-y-3">
+          <!-- Model Header -->
+          <div class="flex items-center justify-between">
+            <div>
+              <h4 class="font-display font-semibold text-gradient-gold text-lg">
+                ${result.model_name}
+              </h4>
+              <div class="text-xs text-base-content/50 capitalize">${result.provider}</div>
+            </div>
+            <span class="badge ${getStatusBadgeClass(result.status)} badge-sm">
+              ${getStatusLabel(result.status)}
+            </span>
+          </div>
+
+          <!-- Metrics -->
+          <div class="grid grid-cols-3 gap-2 text-center">
+            <div class="bg-base-200 p-2 rounded-lg">
+              <div class="text-[10px] text-base-content/50 uppercase tracking-wider">Time</div>
+              <div class="font-mono text-sm font-semibold">
+                ${result.execution_time_ms ? `${result.execution_time_ms}ms` : '-'}
+              </div>
+            </div>
+            <div class="bg-base-200 p-2 rounded-lg">
+              <div class="text-[10px] text-base-content/50 uppercase tracking-wider">Tokens</div>
+              <div class="font-mono text-sm font-semibold">
+                ${result.total_tokens ?? '-'}
+              </div>
+            </div>
+            <div class="bg-base-200 p-2 rounded-lg">
+              <div class="text-[10px] text-base-content/50 uppercase tracking-wider">Accuracy</div>
+              <div class="font-mono text-sm font-semibold ${
+                result.accuracy_score !== undefined && result.accuracy_score >= 90
+                  ? 'metric-success'
+                  : result.accuracy_score !== undefined && result.accuracy_score >= 70
+                    ? 'text-warning'
+                    : result.accuracy_score !== undefined
+                      ? 'text-error'
+                      : ''
+              }">
+                ${result.accuracy_score !== undefined ? `${result.accuracy_score}%` : '-'}
+              </div>
+            </div>
+          </div>
+
+          <!-- Response -->
+          <div>
+            <h5 class="text-xs font-semibold text-base-content/70 mb-1">Response</h5>
+            <div class="bg-base-200 p-3 rounded-lg font-mono text-sm max-h-60 overflow-y-auto whitespace-pre-wrap custom-scrollbar">
+              ${result.response_text || '[No response]'}
+            </div>
+          </div>
+
+          <!-- Reasoning (if available) -->
+          ${
+            result.accuracy_reasoning
+              ? `
+          <div>
+            <h5 class="text-xs font-semibold text-base-content/70 mb-1">Reasoning</h5>
+            <div class="bg-base-200 p-3 rounded-lg text-sm max-h-40 overflow-y-auto custom-scrollbar">
+              ${result.accuracy_reasoning}
+            </div>
+          </div>
+          `
+              : ''
+          }
+
+          <!-- Temperature (if not default) -->
+          ${
+            result.temperature_used !== undefined && result.temperature_used !== 0.3
+              ? `
+          <div class="text-xs text-base-content/50">
+            Temperature: ${result.temperature_used.toFixed(1)}
+          </div>
+          `
+              : ''
+          }
+        </div>
+      `
+        )
+        .join('');
+    }
+
+    // Open modal
+    ModalUtils.open('all-results-modal');
+  }
+
+  // Initialize once to prevent duplicate listeners on Astro page transitions
+  initializeOnce('allResultsModal', () => {
+    // Expose to window for button click handler
+    window.showAllResults = showAllResults;
+  });
+
+  // Re-initialize on Astro page transitions
+  document.addEventListener('astro:page-load', () => {
+    initializeOnce('allResultsModal', () => {
+      window.showAllResults = showAllResults;
+    });
+  });
+</script>
+
+<style>
+  /* Custom gold-themed scrollbar for response areas */
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-luxe-gold) var(--color-gold-bg-subtle);
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: var(--color-gold-bg-subtle);
+    border-radius: 4px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: var(--color-luxe-gold);
+    border-radius: 4px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: var(--color-luxe-gold-light);
+  }
+</style>

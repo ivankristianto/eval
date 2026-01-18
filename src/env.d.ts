@@ -52,6 +52,8 @@ declare global {
       totalTokens?: number;
       temperature?: number;
     }) => void;
+    /** Show all results modal for evaluation comparison */
+    showAllResults?: () => void;
     openDrawer?: (id: string) => void;
     closeDrawer?: (id: string) => void;
     /** Toast notification system */
