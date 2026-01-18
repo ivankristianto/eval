@@ -67,8 +67,15 @@ describe('validateUpdateModel', () => {
     expect(result.error?.error).toBe('INVALID_INPUT');
   });
 
-  it('rejects empty api_key updates', () => {
-    const result = validateUpdateModel({ api_key: '  ' });
+  it('accepts empty string api_key updates (for local providers)', () => {
+    // Empty string is allowed for local providers to clear/remove an API key
+    const result = validateUpdateModel({ api_key: '' });
+
+    expect(result.valid).toBe(true);
+  });
+
+  it('rejects non-string api_key updates', () => {
+    const result = validateUpdateModel({ api_key: 123 as unknown });
 
     expect(result.valid).toBe(false);
     expect(result.error?.error).toBe('INVALID_API_KEY');

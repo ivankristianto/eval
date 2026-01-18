@@ -35,7 +35,8 @@ export function createMockDb() {
   const insertModel = (
     provider: Provider,
     modelName: string,
-    apiKey: string,
+    apiKey?: string,
+    baseUrl?: string,
     notes?: string
   ): ModelConfiguration => {
     const id = randomUUID();
@@ -44,7 +45,8 @@ export function createMockDb() {
       id,
       provider,
       model_name: modelName,
-      api_key_encrypted: `enc:${apiKey}`,
+      api_key_encrypted: apiKey ? `enc:${apiKey}` : undefined,
+      base_url: baseUrl,
       created_at: createdAt,
       updated_at: createdAt,
       is_active: true,
@@ -66,14 +68,16 @@ export function createMockDb() {
 
   const updateModel = (
     id: string,
-    updates: Partial<{ is_active: boolean; notes: string; api_key: string }>
+    updates: Partial<{ is_active: boolean; notes: string; api_key: string; base_url: string }>
   ): ModelConfiguration | null => {
     const model = store.models.get(id);
     if (!model) return null;
 
     if (updates.is_active !== undefined) model.is_active = updates.is_active;
     if (updates.notes !== undefined) model.notes = updates.notes;
-    if (updates.api_key !== undefined) model.api_key_encrypted = `enc:${updates.api_key}`;
+    if (updates.api_key !== undefined)
+      model.api_key_encrypted = updates.api_key ? `enc:${updates.api_key}` : undefined;
+    if (updates.base_url !== undefined) model.base_url = updates.base_url;
     model.updated_at = now();
     store.models.set(id, model);
     return model;

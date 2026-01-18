@@ -11,6 +11,12 @@ import { createLogger } from '@lib/logger';
 
 const logger = createLogger('API:Models');
 
+// Default base URLs for local providers
+const DEFAULT_BASE_URLS: Record<string, string> = {
+  lmstudio: 'http://localhost:1234/v1',
+  ollama: 'http://localhost:11434',
+};
+
 /**
  * POST /api/models
  * Creates a new model configuration.
@@ -35,24 +41,31 @@ export const POST: APIRoute = async ({ request }) => {
       });
     }
 
-    const { provider, model_name, api_key, notes } = body;
+    const { provider, model_name, api_key, base_url, notes } = body;
 
     logger.info('Creating new model configuration', { provider, model_name });
 
-    // Test API key with provider
-    const isValid = await ClientFactory.testConnection(provider, api_key, model_name);
+    // Set default base URL for local providers if not provided
+    let finalBaseUrl = base_url;
+    if (!finalBaseUrl && provider in DEFAULT_BASE_URLS) {
+      finalBaseUrl = DEFAULT_BASE_URLS[provider];
+    }
+
+    // Test API connection with provider
+    const isValid = await ClientFactory.testConnection(provider, api_key, model_name, finalBaseUrl);
 
     if (!isValid) {
       logger.logApiRequest('POST', '/api/models', 401, Date.now() - startTime);
-      return internalError('API key rejected by provider', {
-        code: 'API_KEY_AUTHENTICATION_FAILED',
+      return internalError('Connection test failed for provider', {
+        code: 'CONNECTION_FAILED',
         provider,
-        provider_message: 'Invalid authentication credentials',
+        provider_message:
+          'Could not connect to the provider API. Please check your credentials and base URL.',
       });
     }
 
     // Create model
-    const model = insertModel(provider, model_name, api_key, notes);
+    const model = insertModel(provider, model_name, api_key, finalBaseUrl, notes);
 
     logger.info('Model configuration created', {
       modelId: model.id,
@@ -66,6 +79,7 @@ export const POST: APIRoute = async ({ request }) => {
         id: model.id,
         provider: model.provider,
         model_name: model.model_name,
+        base_url: model.base_url,
         is_active: model.is_active,
         created_at: model.created_at,
         validation_status: 'valid',
@@ -115,6 +129,7 @@ export const GET: APIRoute = async ({ url }) => {
       id: model.id,
       provider: model.provider,
       model_name: model.model_name,
+      base_url: model.base_url,
       is_active: model.is_active,
       created_at: model.created_at,
       notes: model.notes,

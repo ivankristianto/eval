@@ -7,9 +7,10 @@ PRAGMA journal_mode = WAL;
 -- ModelConfiguration table
 CREATE TABLE IF NOT EXISTS ModelConfiguration (
   id TEXT PRIMARY KEY,
-  provider TEXT NOT NULL CHECK (provider IN ('openai', 'anthropic', 'google')),
+  provider TEXT NOT NULL CHECK (provider IN ('openai', 'anthropic', 'google', 'openrouter', 'lmstudio', 'ollama')),
   model_name TEXT NOT NULL,
-  api_key_encrypted TEXT NOT NULL,
+  api_key_encrypted TEXT,
+  base_url TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now')),
   is_active INTEGER NOT NULL DEFAULT 1,
@@ -18,6 +19,7 @@ CREATE TABLE IF NOT EXISTS ModelConfiguration (
 
 CREATE INDEX IF NOT EXISTS idx_model_provider_active ON ModelConfiguration(provider, is_active);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_model_provider_name ON ModelConfiguration(provider, model_name);
+CREATE INDEX IF NOT EXISTS idx_model_base_url ON ModelConfiguration(base_url);
 
 -- EvaluationTemplate table (must come before Evaluation due to foreign key)
 CREATE TABLE IF NOT EXISTS EvaluationTemplate (

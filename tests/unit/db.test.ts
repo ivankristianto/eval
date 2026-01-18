@@ -48,24 +48,24 @@ describe('ModelConfiguration CRUD', () => {
   });
 
   it('encrypts API keys on insert', () => {
-    const model = dbModule.insertModel('openai', 'gpt-4', 'sk-secret');
+    const model = dbModule.insertModel('openai', 'gpt-4', 'sk-secret', undefined);
 
     expect(model.api_key_encrypted).not.toBe('sk-secret');
-    expect(dbModule.decryptApiKey(model.api_key_encrypted)).toBe('sk-secret');
+    expect(dbModule.decryptApiKey(model.api_key_encrypted!)).toBe('sk-secret');
   });
 
   it('rejects duplicate provider/model combinations', () => {
-    dbModule.insertModel('openai', 'gpt-4', 'sk-1');
+    dbModule.insertModel('openai', 'gpt-4', 'sk-1', undefined);
 
-    expect(() => dbModule.insertModel('openai', 'gpt-4', 'sk-2')).toThrow();
+    expect(() => dbModule.insertModel('openai', 'gpt-4', 'sk-2', undefined)).toThrow();
   });
 
   it('returns a model and supports decrypting the key', () => {
-    const model = dbModule.insertModel('openai', 'gpt-4', 'sk-secret');
+    const model = dbModule.insertModel('openai', 'gpt-4', 'sk-secret', undefined);
     const fetched = dbModule.getModelById(model.id);
 
     expect(fetched).not.toBeNull();
-    expect(dbModule.decryptApiKey(fetched!.api_key_encrypted)).toBe('sk-secret');
+    expect(dbModule.decryptApiKey(fetched!.api_key_encrypted!)).toBe('sk-secret');
   });
 
   it('returns null when model is missing', () => {
@@ -73,7 +73,7 @@ describe('ModelConfiguration CRUD', () => {
   });
 
   it('updates a model', () => {
-    const model = dbModule.insertModel('openai', 'gpt-4', 'sk-secret');
+    const model = dbModule.insertModel('openai', 'gpt-4', 'sk-secret', undefined);
     const updated = dbModule.updateModel(model.id, {
       is_active: false,
       notes: 'updated',
@@ -82,11 +82,11 @@ describe('ModelConfiguration CRUD', () => {
 
     expect(updated?.is_active).toBe(false);
     expect(updated?.notes).toBe('updated');
-    expect(dbModule.decryptApiKey(updated!.api_key_encrypted)).toBe('sk-new');
+    expect(dbModule.decryptApiKey(updated!.api_key_encrypted!)).toBe('sk-new');
   });
 
   it('deletes a model', () => {
-    const model = dbModule.insertModel('openai', 'gpt-4', 'sk-secret');
+    const model = dbModule.insertModel('openai', 'gpt-4', 'sk-secret', undefined);
 
     expect(dbModule.deleteModel(model.id)).toBe(true);
     expect(dbModule.getModelById(model.id)).toBeNull();

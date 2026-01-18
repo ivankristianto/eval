@@ -179,11 +179,16 @@ export class EvaluationExecutor {
         throw new Error('Model is inactive');
       }
 
-      // Decrypt API key
-      const apiKey = decryptApiKey(model.api_key_encrypted);
+      // Decrypt API key (optional for local providers)
+      const apiKey = model.api_key_encrypted ? decryptApiKey(model.api_key_encrypted) : undefined;
 
       // Create client and execute with timeout
-      const client = ClientFactory.createClient(model.provider, apiKey, model.model_name);
+      const client = ClientFactory.createClient(
+        model.provider,
+        apiKey,
+        model.model_name,
+        model.base_url
+      );
 
       const modelResponse = await Promise.race([
         client.evaluate(instruction, { systemPrompt, temperature }),

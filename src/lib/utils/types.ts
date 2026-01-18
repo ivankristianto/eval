@@ -1,7 +1,7 @@
 // src/lib/types.ts
 // TypeScript interfaces for AI Model Evaluation Framework
 
-export type Provider = 'openai' | 'anthropic' | 'google';
+export type Provider = 'openai' | 'anthropic' | 'google' | 'openrouter' | 'lmstudio' | 'ollama';
 export type RubricType = 'exact_match' | 'partial_credit' | 'semantic_similarity';
 export type EvaluationStatus = 'pending' | 'running' | 'completed' | 'failed';
 export type ResultStatus = 'pending' | 'completed' | 'failed';
@@ -10,7 +10,8 @@ export interface ModelConfiguration {
   id: string;
   provider: Provider;
   model_name: string;
-  api_key_encrypted: string;
+  api_key_encrypted?: string;
+  base_url?: string;
   created_at: string;
   updated_at: string;
   is_active: boolean;
@@ -149,7 +150,8 @@ export interface ResultsResponse {
 export interface CreateModelRequest {
   provider: Provider;
   model_name: string;
-  api_key: string;
+  api_key?: string;
+  base_url?: string;
   notes?: string;
 }
 

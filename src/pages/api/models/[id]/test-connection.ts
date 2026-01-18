@@ -42,9 +42,11 @@ export const POST: APIRoute = async ({ params, request }) => {
 
     logger.info('Testing model API connection', { modelId: id, provider: model.provider });
 
-    // Check if a new API key was provided in the request body
-    let apiKey: string;
+    // Check if a new API key or base URL was provided in the request body
+    let apiKey: string | undefined;
+    let baseUrl = model.base_url;
     let usingProvidedKey = false;
+    let usingProvidedBaseUrl = false;
 
     try {
       const body = await request.json();
@@ -66,23 +68,38 @@ export const POST: APIRoute = async ({ params, request }) => {
         }
         apiKey = body.api_key;
         usingProvidedKey = true;
-      } else {
+      } else if (model.api_key_encrypted) {
         // Use stored API key
         apiKey = decryptApiKey(model.api_key_encrypted);
       }
+      // For local providers (lmstudio, ollama), apiKey may remain undefined
+
+      if (body.base_url) {
+        baseUrl = body.base_url;
+        usingProvidedBaseUrl = true;
+      }
     } catch {
-      // No body or invalid JSON, use stored API key
-      apiKey = decryptApiKey(model.api_key_encrypted);
+      // No body or invalid JSON, use stored API key and base URL
+      if (model.api_key_encrypted) {
+        apiKey = decryptApiKey(model.api_key_encrypted);
+      }
+      baseUrl = model.base_url;
     }
 
     // Test connection
-    const isValid = await ClientFactory.testConnection(model.provider, apiKey, model.model_name);
+    const isValid = await ClientFactory.testConnection(
+      model.provider,
+      apiKey,
+      model.model_name,
+      baseUrl
+    );
 
     if (isValid) {
       logger.info('API connection test successful', {
         modelId: id,
         provider: model.provider,
         usingProvidedKey,
+        usingProvidedBaseUrl,
       });
       logger.logApiRequest(
         'POST',
@@ -96,8 +113,9 @@ export const POST: APIRoute = async ({ params, request }) => {
           model_id: model.id,
           provider: model.provider,
           model_name: model.model_name,
+          base_url: baseUrl,
           status: 'valid',
-          message: 'API key is valid',
+          message: 'Connection test successful',
         }),
         {
           status: 200,
@@ -109,6 +127,7 @@ export const POST: APIRoute = async ({ params, request }) => {
         modelId: id,
         provider: model.provider,
         usingProvidedKey,
+        usingProvidedBaseUrl,
       });
       logger.logApiRequest(
         'POST',
@@ -117,10 +136,10 @@ export const POST: APIRoute = async ({ params, request }) => {
         Date.now() - startTime
       );
 
-      return internalError('API key is invalid or expired', {
-        code: 'API_KEY_INVALID',
+      return internalError('Connection test failed. Please check your credentials and base URL.', {
+        code: 'CONNECTION_FAILED',
         provider: model.provider,
-        provider_message: 'Invalid authentication credentials',
+        provider_message: 'Could not connect to the provider API',
       });
     }
   } catch (error) {

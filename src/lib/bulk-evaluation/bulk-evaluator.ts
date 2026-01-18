@@ -225,9 +225,14 @@ export class BulkEvaluator {
         throw new Error(`Model is inactive: ${modelId}`);
       }
 
-      // Decrypt API key and create client
-      const apiKey = decryptApiKey(model.api_key_encrypted);
-      const client = ClientFactory.createClient(model.provider, apiKey, model.model_name);
+      // Decrypt API key (optional for local providers) and create client
+      const apiKey = model.api_key_encrypted ? decryptApiKey(model.api_key_encrypted) : undefined;
+      const client = ClientFactory.createClient(
+        model.provider,
+        apiKey,
+        model.model_name,
+        model.base_url
+      );
 
       // Execute model with timeout
       const modelResponse = await Promise.race([

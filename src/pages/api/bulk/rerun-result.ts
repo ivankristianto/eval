@@ -194,9 +194,14 @@ async function executeRerun(
       throw new Error(`Model not found: ${modelId}`);
     }
 
-    // Decrypt API key and create client
-    const apiKey = decryptApiKey(model.api_key_encrypted);
-    const client = ClientFactory.createClient(model.provider, apiKey, model.model_name);
+    // Decrypt API key (optional for local providers) and create client
+    const apiKey = model.api_key_encrypted ? decryptApiKey(model.api_key_encrypted) : undefined;
+    const client = ClientFactory.createClient(
+      model.provider,
+      apiKey,
+      model.model_name,
+      model.base_url
+    );
 
     // Interpolate prompt with row data
     const prompt = interpolateTemplate(systemPrompt, rowData);

@@ -171,33 +171,36 @@ export function decryptApiKey(encryptedData: string): string {
  * Inserts a new model configuration into the database.
  * @param provider - AI provider name
  * @param modelName - Model identifier
- * @param apiKey - Plaintext API key (will be encrypted)
+ * @param apiKey - Optional plaintext API key (will be encrypted)
+ * @param baseUrl - Optional base URL for local providers
  * @param notes - Optional notes
  * @returns Created model configuration
  */
 export function insertModel(
   provider: Provider,
   modelName: string,
-  apiKey: string,
+  apiKey?: string,
+  baseUrl?: string,
   notes?: string
 ): ModelConfiguration {
   const database = getDatabase();
   const id = uuidv4();
   const now = new Date().toISOString();
-  const apiKeyEncrypted = encryptApiKey(apiKey);
+  const apiKeyEncrypted = apiKey ? encryptApiKey(apiKey) : undefined;
 
   const stmt = database.prepare(`
-    INSERT INTO ModelConfiguration (id, provider, model_name, api_key_encrypted, created_at, updated_at, is_active, notes)
-    VALUES (?, ?, ?, ?, ?, ?, 1, ?)
+    INSERT INTO ModelConfiguration (id, provider, model_name, api_key_encrypted, base_url, created_at, updated_at, is_active, notes)
+    VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?)
   `);
 
-  stmt.run(id, provider, modelName, apiKeyEncrypted, now, now, notes || null);
+  stmt.run(id, provider, modelName, apiKeyEncrypted || null, baseUrl || null, now, now, notes || null);
 
   return {
     id,
     provider,
     model_name: modelName,
     api_key_encrypted: apiKeyEncrypted,
+    base_url: baseUrl,
     created_at: now,
     updated_at: now,
     is_active: true,
@@ -237,7 +240,8 @@ export function getModels(activeOnly = false, provider?: Provider): ModelConfigu
     id: row.id as string,
     provider: row.provider as Provider,
     model_name: row.model_name as string,
-    api_key_encrypted: row.api_key_encrypted as string,
+    api_key_encrypted: row.api_key_encrypted as string | undefined,
+    base_url: row.base_url as string | undefined,
     created_at: row.created_at as string,
     updated_at: row.updated_at as string,
     is_active: Boolean(row.is_active),
@@ -262,7 +266,8 @@ export function getModelById(id: string): ModelConfiguration | null {
     id: row.id as string,
     provider: row.provider as Provider,
     model_name: row.model_name as string,
-    api_key_encrypted: row.api_key_encrypted as string,
+    api_key_encrypted: row.api_key_encrypted as string | undefined,
+    base_url: row.base_url as string | undefined,
     created_at: row.created_at as string,
     updated_at: row.updated_at as string,
     is_active: Boolean(row.is_active),
@@ -278,7 +283,7 @@ export function getModelById(id: string): ModelConfiguration | null {
  */
 export function updateModel(
   id: string,
-  updates: Partial<{ is_active: boolean; notes: string; api_key: string }>
+  updates: Partial<{ is_active: boolean; notes: string; api_key: string; base_url: string }>
 ): ModelConfiguration | null {
   const database = getDatabase();
   const existing = getModelById(id);
@@ -298,7 +303,11 @@ export function updateModel(
   }
   if (updates.api_key !== undefined) {
     setClauses.push('api_key_encrypted = ?');
-    params.push(encryptApiKey(updates.api_key));
+    params.push(updates.api_key ? encryptApiKey(updates.api_key) : null);
+  }
+  if (updates.base_url !== undefined) {
+    setClauses.push('base_url = ?');
+    params.push(updates.base_url);
   }
 
   params.push(id);

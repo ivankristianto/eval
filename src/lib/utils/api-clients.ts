@@ -340,6 +340,335 @@ export class GoogleClient implements ModelClient {
   }
 }
 
+// ===== Open Router Client =====
+
+/**
+ * Client for Open Router API (OpenAI-compatible API for multiple providers).
+ * Uses OpenAI SDK with custom base URL and Open Router-specific headers.
+ */
+export class OpenRouterClient implements ModelClient {
+  private client: OpenAI;
+  private modelName: string;
+  private logger = createLogger('OpenRouter:ModelClient');
+
+  /**
+   * Initializes a new Open Router client.
+   * @param apiKey - Open Router API key
+   * @param modelName - Model identifier (e.g., 'anthropic/claude-3-opus')
+   */
+  constructor(apiKey: string, modelName: string) {
+    this.client = new OpenAI({
+      baseURL: 'https://openrouter.ai/api/v1',
+      apiKey,
+      defaultHeaders: {
+        'HTTP-Referer': 'https://eval-ai-models.com',
+        'X-Title': 'Eval AI Models',
+      },
+    });
+    this.modelName = modelName;
+  }
+
+  /**
+   * Evaluates an instruction using the Open Router API.
+   * @param instruction - The user instruction/prompt to evaluate
+   * @param options - Optional configuration
+   * @param options.systemPrompt - Custom system prompt to shape model behavior (max 4000 chars)
+   * @param options.temperature - Sampling temperature 0.0-2.0 (default: 0.3 if not specified)
+   * @returns Model response with text, token counts, and execution time
+   */
+  async evaluate(
+    instruction: string,
+    options?: { systemPrompt?: string; temperature?: number }
+  ): Promise<ModelResponse> {
+    const startTime = performance.now();
+
+    // Build messages array with system prompt if provided
+    const messages: Array<{ role: 'system' | 'user'; content: string }> = [];
+    if (options?.systemPrompt) {
+      messages.push({ role: 'system', content: options.systemPrompt });
+    }
+    messages.push({ role: 'user', content: instruction });
+
+    const response = await this.client.chat.completions.create({
+      model: this.modelName,
+      messages,
+      ...(options?.temperature !== undefined && { temperature: options.temperature }),
+      max_tokens: 4096,
+    });
+
+    const executionTime = Math.round(performance.now() - startTime);
+
+    const choice = response.choices[0];
+    const usage = response.usage;
+
+    const result = {
+      response: choice?.message?.content || '',
+      inputTokens: usage?.prompt_tokens || 0,
+      outputTokens: usage?.completion_tokens || 0,
+      totalTokens: usage?.total_tokens || 0,
+      executionTime,
+    };
+
+    // Debug logging
+    this.logger.debug('OpenRouter API response', {
+      model: this.modelName,
+      systemPrompt: options?.systemPrompt
+        ? `"${options.systemPrompt.substring(0, 50)}..."`
+        : 'none',
+      temperature: options?.temperature ?? 'default',
+      response: result.response.substring(0, 200) + (result.response.length > 200 ? '...' : ''),
+      tokens: {
+        input: result.inputTokens,
+        output: result.outputTokens,
+        total: result.totalTokens,
+      },
+      executionTime: `${result.executionTime}ms`,
+    });
+
+    return result;
+  }
+
+  /**
+   * Tests connection by making a minimal API request.
+   * @returns True if API is accessible
+   */
+  async testConnection(): Promise<boolean> {
+    try {
+      await this.client.chat.completions.create({
+        model: this.modelName,
+        messages: [{ role: 'user', content: 'Hi' }],
+        max_tokens: 10,
+      });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+}
+
+// ===== LM Studio Client =====
+
+/**
+ * Client for LM Studio local LLM deployments.
+ * Uses OpenAI SDK with configurable local base URL.
+ */
+export class LMStudioClient implements ModelClient {
+  private client: OpenAI;
+  private modelName: string;
+  private logger = createLogger('LMStudio:ModelClient');
+
+  /**
+   * Initializes a new LM Studio client.
+   * @param apiKey - Not used for local, but SDK requires it (pass empty string or dummy)
+   * @param modelName - Model identifier (e.g., 'llama-3-8b')
+   * @param baseUrl - Custom base URL (default: 'http://localhost:1234/v1')
+   */
+  constructor(apiKey: string, modelName: string, baseUrl = 'http://localhost:1234/v1') {
+    this.client = new OpenAI({
+      baseURL: baseUrl,
+      apiKey: apiKey || 'dummy-key', // SDK requires apiKey, but LM Studio doesn't use it
+    });
+    this.modelName = modelName;
+  }
+
+  /**
+   * Evaluates an instruction using the LM Studio local API.
+   * @param instruction - The user instruction/prompt to evaluate
+   * @param options - Optional configuration
+   * @param options.systemPrompt - Custom system prompt to shape model behavior (max 4000 chars)
+   * @param options.temperature - Sampling temperature 0.0-2.0 (default: 0.3 if not specified)
+   * @returns Model response with text, token counts, and execution time
+   */
+  async evaluate(
+    instruction: string,
+    options?: { systemPrompt?: string; temperature?: number }
+  ): Promise<ModelResponse> {
+    const startTime = performance.now();
+
+    // Build messages array with system prompt if provided
+    const messages: Array<{ role: 'system' | 'user'; content: string }> = [];
+    if (options?.systemPrompt) {
+      messages.push({ role: 'system', content: options.systemPrompt });
+    }
+    messages.push({ role: 'user', content: instruction });
+
+    const response = await this.client.chat.completions.create({
+      model: this.modelName,
+      messages,
+      ...(options?.temperature !== undefined && { temperature: options.temperature }),
+      max_tokens: 4096,
+    });
+
+    const executionTime = Math.round(performance.now() - startTime);
+
+    const choice = response.choices[0];
+    const usage = response.usage;
+
+    const result = {
+      response: choice?.message?.content || '',
+      inputTokens: usage?.prompt_tokens || 0,
+      outputTokens: usage?.completion_tokens || 0,
+      totalTokens: usage?.total_tokens || 0,
+      executionTime,
+    };
+
+    // Debug logging
+    this.logger.debug('LM Studio API response', {
+      model: this.modelName,
+      systemPrompt: options?.systemPrompt
+        ? `"${options.systemPrompt.substring(0, 50)}..."`
+        : 'none',
+      temperature: options?.temperature ?? 'default',
+      response: result.response.substring(0, 200) + (result.response.length > 200 ? '...' : ''),
+      tokens: {
+        input: result.inputTokens,
+        output: result.outputTokens,
+        total: result.totalTokens,
+      },
+      executionTime: `${result.executionTime}ms`,
+    });
+
+    return result;
+  }
+
+  /**
+   * Tests connection by making a minimal API request.
+   * @returns True if local API is accessible
+   */
+  async testConnection(): Promise<boolean> {
+    try {
+      await this.client.chat.completions.create({
+        model: this.modelName,
+        messages: [{ role: 'user', content: 'Hi' }],
+        max_tokens: 10,
+      });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+}
+
+// ===== Ollama Client =====
+
+/**
+ * Client for Ollama local LLM deployments.
+ * Uses Ollama's REST API directly with fetch.
+ */
+export class OllamaClient implements ModelClient {
+  private baseUrl: string;
+  private modelName: string;
+  private logger = createLogger('Ollama:ModelClient');
+
+  /**
+   * Initializes a new Ollama client.
+   * @param _apiKey - Not used for Ollama (no authentication)
+   * @param modelName - Model identifier (e.g., 'llama3', 'mistral')
+   * @param baseUrl - Custom base URL (default: 'http://localhost:11434')
+   */
+  constructor(_apiKey: string, modelName: string, baseUrl = 'http://localhost:11434') {
+    this.baseUrl = baseUrl;
+    this.modelName = modelName;
+  }
+
+  /**
+   * Evaluates an instruction using the Ollama API.
+   * @param instruction - The user instruction/prompt to evaluate
+   * @param options - Optional configuration
+   * @param options.systemPrompt - Custom system prompt to shape model behavior (max 4000 chars)
+   * @param options.temperature - Sampling temperature 0.0-2.0 (default: 0.3 if not specified)
+   * @returns Model response with text, token counts, and execution time
+   */
+  async evaluate(
+    instruction: string,
+    options?: { systemPrompt?: string; temperature?: number }
+  ): Promise<ModelResponse> {
+    const startTime = performance.now();
+
+    const requestBody: {
+      model: string;
+      messages: Array<{ role: string; content: string }>;
+      stream: boolean;
+      options?: { temperature: number };
+    } = {
+      model: this.modelName,
+      messages: [],
+      stream: false,
+    };
+
+    // Add system prompt if provided
+    if (options?.systemPrompt) {
+      requestBody.messages.push({ role: 'system', content: options.systemPrompt });
+    }
+    requestBody.messages.push({ role: 'user', content: instruction });
+
+    // Add temperature if provided
+    if (options?.temperature !== undefined) {
+      requestBody.options = { temperature: options.temperature };
+    }
+
+    const response = await fetch(`${this.baseUrl}/api/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(requestBody),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Ollama API error: ${response.status} ${response.statusText}`);
+    }
+
+    const data = (await response.json()) as {
+      message?: { content: string };
+      prompt_eval_count?: number;
+      eval_count?: number;
+    };
+
+    const executionTime = Math.round(performance.now() - startTime);
+
+    const result = {
+      response: data.message?.content || '',
+      inputTokens: data.prompt_eval_count || 0,
+      outputTokens: data.eval_count || 0,
+      totalTokens: (data.prompt_eval_count || 0) + (data.eval_count || 0),
+      executionTime,
+    };
+
+    // Debug logging
+    this.logger.debug('Ollama API response', {
+      model: this.modelName,
+      systemPrompt: options?.systemPrompt
+        ? `"${options.systemPrompt.substring(0, 50)}..."`
+        : 'none',
+      temperature: options?.temperature ?? 'default',
+      response: result.response.substring(0, 200) + (result.response.length > 200 ? '...' : ''),
+      tokens: {
+        input: result.inputTokens,
+        output: result.outputTokens,
+        total: result.totalTokens,
+      },
+      executionTime: `${result.executionTime}ms`,
+    });
+
+    return result;
+  }
+
+  /**
+   * Tests connection by listing available models via Ollama API.
+   * @returns True if local API is accessible
+   */
+  async testConnection(): Promise<boolean> {
+    try {
+      const response = await fetch(`${this.baseUrl}/api/tags`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      return response.ok;
+    } catch {
+      return false;
+    }
+  }
+}
+
 // ===== Client Factory =====
 
 /**
@@ -349,18 +678,34 @@ export class ClientFactory {
   /**
    * Creates a model client for the specified provider.
    * @param provider - AI provider name
-   * @param apiKey - Provider API key
+   * @param apiKey - Optional provider API key (required for cloud providers, optional for local)
    * @param modelName - Model identifier
+   * @param baseUrl - Optional base URL for local providers (LM Studio, Ollama)
    * @returns Initialized model client
    */
-  static createClient(provider: Provider, apiKey: string, modelName: string): ModelClient {
+  static createClient(
+    provider: Provider,
+    apiKey: string | undefined,
+    modelName: string,
+    baseUrl?: string
+  ): ModelClient {
     switch (provider) {
       case 'openai':
+        if (!apiKey) throw new Error('API key is required for OpenAI');
         return new OpenAIClient(apiKey, modelName);
       case 'anthropic':
+        if (!apiKey) throw new Error('API key is required for Anthropic');
         return new AnthropicClient(apiKey, modelName);
       case 'google':
+        if (!apiKey) throw new Error('API key is required for Google');
         return new GoogleClient(apiKey, modelName);
+      case 'openrouter':
+        if (!apiKey) throw new Error('API key is required for Open Router');
+        return new OpenRouterClient(apiKey, modelName);
+      case 'lmstudio':
+        return new LMStudioClient(apiKey || '', modelName, baseUrl);
+      case 'ollama':
+        return new OllamaClient(apiKey || '', modelName, baseUrl);
       default:
         throw new Error(`Unknown provider: ${provider}`);
     }
@@ -369,16 +714,18 @@ export class ClientFactory {
   /**
    * Tests connection for a specific model configuration.
    * @param provider - AI provider name
-   * @param apiKey - Provider API key
+   * @param apiKey - Optional provider API key
    * @param modelName - Model identifier
+   * @param baseUrl - Optional base URL for local providers
    * @returns True if connection is successful
    */
   static async testConnection(
     provider: Provider,
-    apiKey: string,
-    modelName: string
+    apiKey: string | undefined,
+    modelName: string,
+    baseUrl?: string
   ): Promise<boolean> {
-    const client = this.createClient(provider, apiKey, modelName);
+    const client = this.createClient(provider, apiKey, modelName, baseUrl);
     return client.testConnection();
   }
 }
@@ -434,8 +781,15 @@ export async function callModel(
     throw new Error(`Model configuration not found: ${modelId}`);
   }
 
-  const apiKey = decryptApiKey(modelConfig.api_key_encrypted);
-  const client = ClientFactory.createClient(modelConfig.provider, apiKey, modelConfig.model_name);
+  const apiKey = modelConfig.api_key_encrypted
+    ? decryptApiKey(modelConfig.api_key_encrypted)
+    : undefined;
+  const client = ClientFactory.createClient(
+    modelConfig.provider,
+    apiKey,
+    modelConfig.model_name,
+    modelConfig.base_url
+  );
 
   callModelLogger.debug('Model client created', {
     provider: modelConfig.provider,

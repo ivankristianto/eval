@@ -46,6 +46,7 @@ export const GET: APIRoute = async ({ params }) => {
         id: model.id,
         provider: model.provider,
         model_name: model.model_name,
+        base_url: model.base_url,
         is_active: model.is_active,
         created_at: model.created_at,
         updated_at: model.updated_at,
@@ -89,7 +90,7 @@ export const PATCH: APIRoute = async ({ params, request }) => {
     }
 
     const body = await request.json();
-    const { is_active, notes, api_key } = body;
+    const { is_active, notes, api_key, base_url } = body;
 
     // Check if trying to disable model with active evaluations
     if (is_active === false && hasActiveEvaluations(id)) {
@@ -118,7 +119,13 @@ export const PATCH: APIRoute = async ({ params, request }) => {
         );
       }
 
-      const isValid = await ClientFactory.testConnection(model.provider, api_key, model.model_name);
+      const testBaseUrl = base_url || model.base_url;
+      const isValid = await ClientFactory.testConnection(
+        model.provider,
+        api_key,
+        model.model_name,
+        testBaseUrl
+      );
       if (!isValid) {
         validationStatus = 'invalid';
         errorMessage = 'API key validation failed';
@@ -127,10 +134,16 @@ export const PATCH: APIRoute = async ({ params, request }) => {
     }
 
     // Build updates object
-    const updates: Partial<{ is_active: boolean; notes: string; api_key: string }> = {};
+    const updates: Partial<{
+      is_active: boolean;
+      notes: string;
+      api_key: string;
+      base_url: string;
+    }> = {};
     if (is_active !== undefined) updates.is_active = is_active;
     if (notes !== undefined) updates.notes = notes;
     if (api_key && validationStatus === 'valid') updates.api_key = api_key;
+    if (base_url !== undefined) updates.base_url = base_url;
 
     const updated = updateModel(id, updates);
 
@@ -151,6 +164,7 @@ export const PATCH: APIRoute = async ({ params, request }) => {
         id: updated.id,
         provider: updated.provider,
         model_name: updated.model_name,
+        base_url: updated.base_url,
         is_active: updated.is_active,
         updated_at: updated.updated_at,
         validation_status: validationStatus,

@@ -3,7 +3,14 @@
 
 import type { Provider, RubricType, ApiError } from '@lib/utils/types';
 
-const VALID_PROVIDERS: Provider[] = ['openai', 'anthropic', 'google'];
+const VALID_PROVIDERS: Provider[] = [
+  'openai',
+  'anthropic',
+  'google',
+  'openrouter',
+  'lmstudio',
+  'ollama',
+];
 const VALID_RUBRIC_TYPES: RubricType[] = ['exact_match', 'partial_credit', 'semantic_similarity'];
 const MAX_INSTRUCTION_LENGTH = 10000;
 const MAX_NAME_LENGTH = 100;
@@ -120,11 +127,32 @@ export function validateProvider(provider: unknown): ValidationResult {
 
 /**
  * Validates the format of an API key based on its provider.
- * @param apiKey - The API key to validate
+ * @param apiKey - The API key to validate (can be empty for local providers)
  * @param provider - The provider the key belongs to
  * @returns Validation result
  */
 export function validateApiKeyFormat(apiKey: unknown, provider: Provider): ValidationResult {
+  // Local providers don't require API keys
+  if (provider === 'lmstudio' || provider === 'ollama') {
+    // API key is optional for local providers
+    if (apiKey === undefined || apiKey === null || apiKey === '') {
+      return { valid: true };
+    }
+    // If provided, it should be a string (for future compatibility)
+    if (typeof apiKey !== 'string') {
+      return {
+        valid: false,
+        error: {
+          error: 'INVALID_API_KEY',
+          message: 'API key must be a string if provided',
+          field: 'api_key',
+        },
+      };
+    }
+    return { valid: true };
+  }
+
+  // Cloud providers require API keys
   if (typeof apiKey !== 'string' || apiKey.trim().length === 0) {
     return {
       valid: false,
@@ -174,6 +202,20 @@ export function validateApiKeyFormat(apiKey: unknown, provider: Provider): Valid
             message: 'Google API key appears too short',
             field: 'api_key',
             details: { provider: 'google', reason: 'key does not match expected format' },
+          },
+        };
+      }
+      break;
+    case 'openrouter':
+      // Open Router API keys start with 'sk-or-'
+      if (!apiKey.startsWith('sk-or-')) {
+        return {
+          valid: false,
+          error: {
+            error: 'INVALID_API_KEY',
+            message: 'Open Router API key must start with "sk-or-"',
+            field: 'api_key',
+            details: { provider: 'openrouter', reason: 'key does not match expected format' },
           },
         };
       }
@@ -443,8 +485,37 @@ export function validateCreateModel(data: unknown): ValidationResult {
   const modelNameResult = validateModelName(body.model_name);
   if (!modelNameResult.valid) return modelNameResult;
 
+  // API key validation (optional for local providers)
   const apiKeyResult = validateApiKeyFormat(body.api_key, body.provider as Provider);
   if (!apiKeyResult.valid) return apiKeyResult;
+
+  // Base URL validation (optional, for local providers)
+  if (body.base_url !== undefined && body.base_url !== null) {
+    if (typeof body.base_url !== 'string') {
+      return {
+        valid: false,
+        error: {
+          error: 'INVALID_INPUT',
+          message: 'base_url must be a string if provided',
+          field: 'base_url',
+        },
+      };
+    }
+
+    // Validate URL format
+    try {
+      new URL(body.base_url as string);
+    } catch {
+      return {
+        valid: false,
+        error: {
+          error: 'INVALID_INPUT',
+          message: 'base_url must be a valid URL',
+          field: 'base_url',
+        },
+      };
+    }
+  }
 
   return { valid: true };
 }
@@ -489,16 +560,48 @@ export function validateUpdateModel(data: unknown): ValidationResult {
     };
   }
 
+  // API key is optional for local providers, but if provided must be a string
   if (body.api_key !== undefined) {
-    if (typeof body.api_key !== 'string' || body.api_key.trim().length === 0) {
+    if (typeof body.api_key !== 'string') {
       return {
         valid: false,
         error: {
           error: 'INVALID_API_KEY',
-          message: 'API key must be a non-empty string',
+          message: 'API key must be a string if provided',
           field: 'api_key',
         },
       };
+    }
+    // Empty string is allowed for local providers (to remove/clear the key)
+  }
+
+  // Base URL validation (optional)
+  if (body.base_url !== undefined && body.base_url !== null) {
+    if (typeof body.base_url !== 'string') {
+      return {
+        valid: false,
+        error: {
+          error: 'INVALID_INPUT',
+          message: 'base_url must be a string if provided',
+          field: 'base_url',
+        },
+      };
+    }
+
+    if (body.base_url !== '') {
+      // Validate URL format if not empty string
+      try {
+        new URL(body.base_url as string);
+      } catch {
+        return {
+          valid: false,
+          error: {
+            error: 'INVALID_INPUT',
+            message: 'base_url must be a valid URL',
+            field: 'base_url',
+          },
+        };
+      }
     }
   }
 
