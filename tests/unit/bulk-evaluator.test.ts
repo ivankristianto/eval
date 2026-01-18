@@ -21,6 +21,7 @@ vi.mock('@lib/db', () => ({
   getBulkDataset: vi.fn(),
   updateRunStatus: vi.fn(),
   createRowResult: vi.fn(),
+  updateRowResult: vi.fn(),
   getModelById: vi.fn(),
   decryptApiKey: vi.fn(() => 'mock-api-key'),
 }));

@@ -33,6 +33,7 @@ function createTestEvaluationRun(
     run_type?: 'task_generate' | 'judge_evaluate' | 'full_evaluation';
     status?: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
     iteration_number?: number;
+    created_at?: string;
   }
 ): { runId: string; modelId: string; promptVersionId: string } {
   const modelId = createTestModelConfig(db, 'openai');
@@ -46,7 +47,7 @@ function createTestEvaluationRun(
   const nextVersion = versionResult.max_version + 1;
 
   const promptVersionId = uuidv4();
-  const now = new Date().toISOString();
+  const now = overrides?.created_at ?? new Date().toISOString();
 
   db.prepare(
     `INSERT INTO judge_prompt_versions (id, persona_id, version_number, prompt_text, created_by, created_at)
@@ -493,17 +494,14 @@ describe('Version Comparison Service', () => {
     });
 
     it('should order runs by created_at DESC', () => {
-      const run1 = createTestEvaluationRun(db, personaId);
-      // Small delay to ensure different timestamps
-      const start = Date.now();
-      while (Date.now() - start < 2) {
-        // busy wait for 2ms
-      }
-      const run2 = createTestEvaluationRun(db, personaId);
-      while (Date.now() - start < 4) {
-        // busy wait for 4ms total
-      }
-      const run3 = createTestEvaluationRun(db, personaId);
+      // Use explicit timestamps to ensure deterministic ordering
+      const timestamp1 = '2024-01-01T00:00:00.000Z';
+      const timestamp2 = '2024-01-01T00:00:01.000Z';
+      const timestamp3 = '2024-01-01T00:00:02.000Z';
+
+      const run1 = createTestEvaluationRun(db, personaId, { created_at: timestamp1 });
+      const run2 = createTestEvaluationRun(db, personaId, { created_at: timestamp2 });
+      const run3 = createTestEvaluationRun(db, personaId, { created_at: timestamp3 });
 
       const versions = getAvailableVersions(personaId, trainingPairIds[0], db);
 

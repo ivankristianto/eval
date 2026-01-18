@@ -262,17 +262,29 @@ of text."
       const data2 = [{ q: '2', a: 'a2' }];
       const data3 = [{ q: '3', a: 'a3' }];
 
-      createBulkDataset('first.csv', data1, db);
-      // Small delay to ensure different timestamps
-      const start = Date.now();
-      while (Date.now() - start < 2) {
-        // busy wait for 2ms
-      }
-      createBulkDataset('second.csv', data2, db);
-      while (Date.now() - start < 4) {
-        // busy wait for 4ms total
-      }
-      createBulkDataset('third.csv', data3, db);
+      // Use explicit timestamps to ensure deterministic ordering
+      const timestamp1 = '2024-01-01T00:00:00.000Z';
+      const timestamp2 = '2024-01-01T00:00:01.000Z';
+      const timestamp3 = '2024-01-01T00:00:02.000Z';
+
+      const id1 = crypto.randomUUID();
+      const id2 = crypto.randomUUID();
+      const id3 = crypto.randomUUID();
+
+      db.prepare(
+        `INSERT INTO bulk_datasets (id, filename, row_count, csv_data, created_at)
+         VALUES (?, ?, ?, ?, ?)`
+      ).run(id1, 'first.csv', 1, JSON.stringify(data1), timestamp1);
+
+      db.prepare(
+        `INSERT INTO bulk_datasets (id, filename, row_count, csv_data, created_at)
+         VALUES (?, ?, ?, ?, ?)`
+      ).run(id2, 'second.csv', 1, JSON.stringify(data2), timestamp2);
+
+      db.prepare(
+        `INSERT INTO bulk_datasets (id, filename, row_count, csv_data, created_at)
+         VALUES (?, ?, ?, ?, ?)`
+      ).run(id3, 'third.csv', 1, JSON.stringify(data3), timestamp3);
 
       const datasets = db.prepare('SELECT * FROM bulk_datasets ORDER BY created_at DESC').all();
 
