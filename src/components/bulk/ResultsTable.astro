@@ -175,6 +175,18 @@ const selectedModels = JSON.parse(run.selected_models) as Array<{
   provider: string;
 }>;
 
+/**
+ * Model output information for display in the Generated Output column.
+ */
+interface ModelOutputInfo {
+  id: string;
+  name: string;
+  provider: string;
+  status: 'pending' | 'completed' | 'failed';
+  output_text?: string;
+  error_message?: string;
+}
+
 // Group results by row index and model for easy lookup
 const resultsMap = new Map<string, RowResult>();
 for (const result of results) {
@@ -182,13 +194,45 @@ for (const result of results) {
   resultsMap.set(key, result);
 }
 
+/**
+ * Get model outputs for a specific row.
+ * Returns an array of ModelOutputInfo with status and output data.
+ *
+ * @param rowIndex - Zero-based row index
+ * @param selectedModels - Array of selected models
+ * @param resultsMap - Map of result keys to RowResult
+ * @returns Array of ModelOutputInfo for each model
+ */
+function getModelOutputsForRow(
+  rowIndex: number,
+  selectedModels: Array<{ id: string; name: string; provider: string }>,
+  resultsMap: Map<string, RowResult>
+): ModelOutputInfo[] {
+  return selectedModels.map((model) => {
+    const key = `${rowIndex}-${model.id}`;
+    const result = resultsMap.get(key);
+
+    return {
+      id: model.id,
+      name: model.name,
+      provider: model.provider,
+      status: result?.status || 'pending',
+      output_text: result?.output_text,
+      error_message: result?.error_message,
+    };
+  });
+}
+
 // Default page size
 const pageSize = 20;
 const totalPages = Math.max(1, Math.ceil(csvData.length / pageSize));
 
-// Calculate sticky offset for Actions column
-// Base: checkbox (3rem) + row number (3rem) + headers (12rem each) + actions column (5rem)
-const getActionsLeftOffset = (headerCount: number) => `calc(6rem + ${headerCount * 12}rem + 5rem)`;
+// Calculate sticky offset for Generated Output column
+// Base: checkbox (3rem) + row number (3rem) + headers (12rem each)
+const getGeneratedOutputLeftOffset = (headerCount: number) => `calc(6rem + ${headerCount * 12}rem)`;
+
+// Calculate sticky offset for Row Actions column (after Generated Output)
+const getActionsLeftOffset = (headerCount: number) => `calc(6rem + ${headerCount * 12}rem + 16rem)`;
 ---
 
 <div
@@ -256,15 +300,15 @@ const getActionsLeftOffset = (headerCount: number) => `calc(6rem + ${headerCount
       <table class="table-luxe table-sm" id="results-table">
         <thead class="bg-base-200/80 sticky top-0 z-20">
           <tr>
-            <!-- Row checkbox column -->
+            {/* Row checkbox column */}
             <th class="w-12 sticky left-0 z-30 bg-base-200/90 hover:bg-base-300" scope="col">
               <span class="sr-only">Select row</span>
             </th>
-            <!-- Row number column -->
+            {/* Row number column */}
             <th class="w-16 sticky left-[3rem] z-30 bg-base-200/90 hover:bg-base-300" scope="col">
               <span class="sr-only">Row number</span>
             </th>
-            <!-- CSV data columns -->
+            {/* CSV data columns */}
             {
               headers.map((header, index) => (
                 <th
@@ -277,180 +321,170 @@ const getActionsLeftOffset = (headerCount: number) => `calc(6rem + ${headerCount
                 </th>
               ))
             }
-            <!-- Actions column -->
+            {/* Generated Output column - replaces per-model columns */}
             <th
-              class="w-20 sticky-col z-10 bg-base-200/90 hover:bg-base-300 text-center"
+              class="w-64 sticky-col z-10 bg-base-200/90 hover:bg-base-300"
+              style={`left: ${getGeneratedOutputLeftOffset(headers.length)}`}
+              scope="col"
+            >
+              <div class="flex items-center gap-2">
+                <span>Generated Output</span>
+                <span class="badge badge-sm badge-neutral">
+                  {selectedModels.length} model{selectedModels.length !== 1 ? 's' : ''}
+                </span>
+              </div>
+            </th>
+            {/* Row Actions column */}
+            <th
+              class="w-24 sticky-col z-14 bg-base-200/90 hover:bg-base-300 text-center"
               style={`left: ${getActionsLeftOffset(headers.length)}`}
               scope="col"
             >
               <span class="sr-only">Row actions</span>
             </th>
-            <!-- Model output columns -->
-            {
-              selectedModels.map((model) => (
-                <th class="min-w-[200px] max-w-[300px]" scope="col">
-                  <div class="flex items-center gap-2">
-                    <span>Output</span>
-                    <span class="badge badge-sm badge-neutral">{model.name}</span>
-                  </div>
-                </th>
-              ))
-            }
           </tr>
         </thead>
         <tbody id="results-body">
           {
-            csvData.map((row, rowIndex) => (
-              <tr class="hover group" data-row-index={rowIndex}>
-                <td class="sticky left-0 z-10 bg-base-100">
-                  <input
-                    type="checkbox"
-                    class="checkbox checkbox-sm checkbox-luxe row-checkbox"
-                    data-row-index={rowIndex}
-                    aria-label={`Select row ${rowIndex + 1}`}
-                  />
-                </td>
-                <td class="sticky left-[3rem] z-10 bg-base-100 tabular-nums text-base-content/60">
-                  {rowIndex + 1}
-                </td>
-                {headers.map((header, cellIndex) => {
-                  const value = String(row[header] ?? '');
-                  return (
-                    <td
-                      class="sticky-col z-10 bg-base-100 max-w-[12rem]"
-                      style={`left: calc(6rem + ${cellIndex * 12}rem)`}
-                    >
-                      <div
-                        class="text-sm whitespace-pre-wrap break-words max-h-20 overflow-y-auto"
-                        title={value}
-                      >
-                        {value || <span class="opacity-30">-</span>}
-                      </div>
-                    </td>
-                  );
-                })}
-                {/* Actions column with dropdown menu */}
-                <td
-                  class="sticky-col z-10 bg-base-100 text-center"
-                  style={`left: ${getActionsLeftOffset(headers.length)}`}
-                >
-                  <div class="dropdown dropdown-end">
-                    <label
-                      tabindex="0"
-                      class="btn btn-ghost btn-xs btn-circle"
-                      title="Row actions"
-                      aria-label={`Actions for row ${rowIndex + 1}`}
-                    >
-                      <Icon name="more-vertical" size="sm" />
-                    </label>
-                    <ul
-                      tabindex="0"
-                      class="dropdown-content z-[50] menu p-2 shadow bg-base-200 rounded-box w-52 text-sm"
-                      role="menu"
-                      aria-label={`Row ${rowIndex + 1} actions`}
-                    >
-                      <li role="none">
-                        <a
-                          data-action="view-details"
-                          data-row-index={rowIndex}
-                          class="flex items-center gap-2"
-                          role="menuitem"
-                        >
-                          <Icon name="eye" size="sm" />
-                          <span>View Details</span>
-                        </a>
-                      </li>
-                      <li role="none">
-                        <a
-                          data-action="regenerate-row"
-                          data-row-index={rowIndex}
-                          class="flex items-center gap-2"
-                          role="menuitem"
-                        >
-                          <Icon name="refresh" size="sm" />
-                          <span>Regenerate All</span>
-                        </a>
-                      </li>
-                      <li role="none">
-                        <a
-                          data-action="copy-output"
-                          data-row-index={rowIndex}
-                          class="flex items-center gap-2"
-                          role="menuitem"
-                        >
-                          <Icon name="copy" size="sm" />
-                          <span>Copy All Outputs</span>
-                        </a>
-                      </li>
-                    </ul>
-                  </div>
-                </td>
-                {selectedModels.map((model) => {
-                  const resultKey = `${rowIndex}-${model.id}`;
-                  const result = resultsMap.get(resultKey);
-                  const status = result?.status || 'pending';
+            csvData.map((row, rowIndex) => {
+              const modelOutputs = getModelOutputsForRow(rowIndex, selectedModels, resultsMap);
 
-                  return (
-                    <td
-                      class="min-w-[200px] max-w-[300px]"
-                      data-model-id={model.id}
+              return (
+                <tr class="hover group" data-row-index={rowIndex}>
+                  <td class="sticky left-0 z-15 bg-base-100">
+                    <input
+                      type="checkbox"
+                      class="checkbox checkbox-sm checkbox-luxe row-checkbox"
                       data-row-index={rowIndex}
-                    >
-                      <div class="flex flex-col gap-2 group relative">
-                        {/* Status Badge and Regenerate Button - only show badge for non-completed */}
-                        {status !== 'completed' && (
-                          <div class="flex items-center justify-between gap-1">
-                            <StatusBadge status={status} size="xs" />
-                            <button
-                              class="btn btn-ghost btn-xs btn-circle opacity-0 group-hover:opacity-100 transition-opacity"
-                              data-action="regenerate-cell"
-                              data-row-index={rowIndex}
-                              data-model-id={model.id}
-                              title={`Regenerate output for ${model.name}`}
-                              aria-label={`Regenerate row ${rowIndex + 1} with ${model.name}`}
-                            >
-                              <Icon name="refresh" size="sm" />
-                            </button>
-                          </div>
-                        )}
-
-                        {/* Output text or error message */}
-                        {status === 'completed' && result?.output_text ? (
-                          <div class="relative group/output">
-                            <div
-                              class="text-sm whitespace-pre-wrap break-words max-h-16 overflow-y-auto text-base-content/80"
-                              title={result.output_text.trim()}
-                            >
-                              {result.output_text.trim()}
+                      aria-label={`Select row ${rowIndex + 1}`}
+                    />
+                  </td>
+                  <td class="sticky left-[3rem] z-14 bg-base-100 tabular-nums text-base-content/60">
+                    {rowIndex + 1}
+                  </td>
+                  {headers.map((header, cellIndex) => {
+                    const value = String(row[header] ?? '');
+                    return (
+                      <td
+                        class="sticky-col z-10 bg-base-100 max-w-[12rem]"
+                        style={`left: calc(6rem + ${cellIndex * 12}rem)`}
+                      >
+                        <div
+                          class="text-sm whitespace-pre-wrap break-words max-h-20 overflow-y-auto"
+                          title={value}
+                        >
+                          {value || <span class="opacity-30">-</span>}
+                        </div>
+                      </td>
+                    );
+                  })}
+                  {/* Generated Output column with model list and popovers */}
+                  <td
+                    class="sticky-col z-10 bg-base-100"
+                    style={`left: ${getGeneratedOutputLeftOffset(headers.length)}`}
+                  >
+                    <div class="flex flex-col gap-2 py-1">
+                      {modelOutputs.map((model) => (
+                        <div class="flex items-center gap-2 group/model">
+                          {/* Status icon */}
+                          <span class="shrink-0" title={model.status}>
+                            {model.status === 'completed' ? (
+                              <Icon name="check-circle" size="xs" class="text-success" />
+                            ) : model.status === 'failed' ? (
+                              <Icon name="error" size="xs" class="text-error" />
+                            ) : (
+                              <Icon name="clock" size="xs" class="text-warning" />
+                            )}
+                          </span>
+                          {/* Model name */}
+                          <span class="text-sm font-medium truncate flex-1">{model.name}</span>
+                          {/* Info icon with popover/dropdown */}
+                          {(model.status === 'completed' || model.status === 'failed') && (
+                            <div class="dropdown dropdown-end dropdown-hover">
+                              <label
+                                tabindex="0"
+                                class="btn btn-ghost btn-xs btn-circle opacity-0 group-hover/model:opacity-100 transition-opacity"
+                                title={`View output for ${model.name}`}
+                                aria-label={`View output for ${model.name}`}
+                              >
+                                <Icon name="info" size="sm" />
+                              </label>
+                              <div
+                                tabindex="0"
+                                class="dropdown-content z-[50] card card-compact w-96 p-2 shadow bg-base-100 border border-base-300"
+                              >
+                                <div class="card-body">
+                                  <div class="flex items-center justify-between gap-2 mb-2">
+                                    <span class="font-semibold">{model.name}</span>
+                                    <span class="badge badge-sm badge-neutral">
+                                      {model.provider}
+                                    </span>
+                                  </div>
+                                  <StatusBadge status={model.status} size="xs" />
+                                  <div class="mt-2">
+                                    {model.status === 'completed' && model.output_text ? (
+                                      <div class="text-sm whitespace-pre-wrap break-words max-h-48 overflow-y-auto bg-base-200 p-2 rounded">
+                                        {model.output_text.trim()}
+                                      </div>
+                                    ) : model.status === 'failed' ? (
+                                      <div class="text-sm text-error whitespace-pre-wrap break-words bg-error/10 p-2 rounded">
+                                        {model.error_message?.trim() || 'Unknown error'}
+                                      </div>
+                                    ) : (
+                                      <div class="text-sm text-base-content/50 italic">
+                                        Pending generation...
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
                             </div>
-                            {/* Regenerate button shows on hover for completed results */}
-                            <button
-                              class="btn btn-ghost btn-xs btn-circle absolute top-0 right-0 opacity-0 group-hover/output:opacity-100 transition-opacity"
-                              data-action="regenerate-cell"
-                              data-row-index={rowIndex}
-                              data-model-id={model.id}
-                              title={`Regenerate output for ${model.name}`}
-                              aria-label={`Regenerate row ${rowIndex + 1} with ${model.name}`}
-                            >
-                              <Icon name="refresh" size="sm" />
-                            </button>
-                          </div>
-                        ) : status === 'failed' ? (
-                          <div
-                            class="text-xs text-error/80 italic truncate"
-                            title={result?.error_message?.trim() || 'Unknown error'}
-                          >
-                            {result?.error_message?.trim() || 'Failed'}
-                          </div>
-                        ) : (
-                          <div class="text-xs text-base-content/40 italic">Pending</div>
-                        )}
-                      </div>
-                    </td>
-                  );
-                })}
-              </tr>
-            ))
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </td>
+                  {/* Row Actions column with direct action buttons */}
+                  <td
+                    class="sticky-col z-14 bg-base-100 text-center"
+                    style={`left: ${getActionsLeftOffset(headers.length)}`}
+                  >
+                    <div class="flex items-center justify-center gap-1">
+                      {/* View button */}
+                      <button
+                        class="btn btn-ghost btn-xs btn-circle"
+                        data-action="view-details"
+                        data-row-index={rowIndex}
+                        title="View details"
+                        aria-label={`View details for row ${rowIndex + 1}`}
+                      >
+                        <Icon name="eye" size="sm" />
+                      </button>
+                      {/* Rerun button */}
+                      <button
+                        class="btn btn-ghost btn-xs btn-circle"
+                        data-action="regenerate-row"
+                        data-row-index={rowIndex}
+                        title="Regenerate all models for this row"
+                        aria-label={`Regenerate row ${rowIndex + 1}`}
+                      >
+                        <Icon name="refresh" size="sm" />
+                      </button>
+                      {/* Delete button */}
+                      <button
+                        class="btn btn-ghost btn-xs btn-circle text-error hover:bg-error/10"
+                        data-action="delete-row"
+                        data-row-index={rowIndex}
+                        title="Delete results for this row"
+                        aria-label={`Delete row ${rowIndex + 1}`}
+                      >
+                        <Icon name="trash" size="sm" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })
           }
         </tbody>
       </table>
@@ -721,27 +755,13 @@ const getActionsLeftOffset = (headerCount: number) => `calc(6rem + ${headerCount
           element.dispatchEvent(event);
           break;
         }
-        case 'copy-output': {
-          // Find all output cells for this row and copy them
-          const row = element.closest('tr');
-          if (row) {
-            const outputs = [];
-            row.querySelectorAll('[data-model-id]').forEach((cell) => {
-              const outputText = cell.textContent?.trim();
-              if (outputText && outputText !== 'Pending' && outputText !== 'Completed') {
-                outputs.push(outputText);
-              }
+        case 'delete-row': {
+          if (confirm(`Delete results for row ${parseInt(rowIndex || '0') + 1}?`)) {
+            const event = new CustomEvent('bulk-delete-selected', {
+              bubbles: true,
+              detail: { rowIndices: [parseInt(rowIndex || '0')] },
             });
-            if (outputs.length > 0) {
-              navigator.clipboard.writeText(outputs.join('\n\n---\n\n')).then(() => {
-                // Show brief feedback
-                const originalText = element.textContent;
-                element.textContent = 'Copied!';
-                setTimeout(() => {
-                  element.textContent = originalText || '';
-                }, 1500);
-              });
-            }
+            element.dispatchEvent(event);
           }
           break;
         }
@@ -763,20 +783,6 @@ const getActionsLeftOffset = (headerCount: number) => `calc(6rem + ${headerCount
             });
             element.dispatchEvent(event);
           }
-          break;
-        }
-        case 'regenerate-cell': {
-          const modelId = element.dataset.modelId;
-          if (!modelId) return;
-
-          const event = new CustomEvent('bulk-cell-regenerate', {
-            bubbles: true,
-            detail: {
-              rowIndex: parseInt(rowIndex || '0'),
-              modelId,
-            },
-          });
-          element.dispatchEvent(event);
           break;
         }
       }
