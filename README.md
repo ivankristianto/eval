@@ -1,10 +1,10 @@
 # AI Model Evaluation Framework
 
-A powerful, local-first framework designed to compare, evaluate, and train AI models (OpenAI, Anthropic, Google). Measure accuracy, latency, and token usage while refining model behavior through advanced judge personas and iterative training loops.
+A powerful, local-first framework designed to compare, evaluate, and train AI models (OpenAI, Anthropic, Google, Open Router, LM Studio, Ollama). Measure accuracy, latency, and token usage while refining model behavior through advanced judge personas and iterative training loops.
 
 ## 🚀 Features
 
-- **Multi-Model Evaluation**: Run instructions against GPT-4, Claude 3, and Gemini 2.0 simultaneously.
+- **Multi-Model Evaluation**: Run instructions against GPT-4, Claude 3, Gemini 2.0, Open Router, LM Studio, and Ollama simultaneously.
 - **LLM-as-a-Judge**: Specialized iterative training system for judge personas.
   - **Iterative Training**: Refine judge prompts based on human feedback until convergence (F1 ≥ 0.80).
   - **Metrics**: Automated calculation of F1 Score, Precision, Recall, and Cohen's Kappa.
@@ -63,7 +63,8 @@ A powerful, local-first framework designed to compare, evaluate, and train AI mo
 
 - **Node.js**: v22.0.0 or higher
 - **npm**: v10.0.0 or higher
-- **API Keys**: OpenAI, Anthropic, or Google Gemini
+- **API Keys**: OpenAI, Anthropic, Google Gemini, or Open Router (for cloud providers)
+- **Local LLM**: LM Studio or Ollama (for local evaluation, optional)
 
 ### Installation
 
@@ -95,6 +96,45 @@ A powerful, local-first framework designed to compare, evaluate, and train AI mo
    ```
    The application will be available at [http://localhost:3000](http://localhost:3000).
 
+## 🤖 Supported AI Providers
+
+The framework supports multiple AI providers through a unified evaluation interface:
+
+### Cloud Providers
+
+| Provider        | Models                     | API Key Format | Notes                        |
+| --------------- | -------------------------- | -------------- | ---------------------------- |
+| **OpenAI**      | GPT-4, GPT-4o, o1, o3      | `sk-...`       | Requires API key             |
+| **Anthropic**   | Claude 3 Opus/Sonnet/Haiku | `sk-ant-...`   | Requires API key             |
+| **Google**      | Gemini 1.5/2.0 Pro         | `AIza...`      | Requires API key (39+ chars) |
+| **Open Router** | Multi-provider access      | `sk-or-...`    | Requires API key             |
+
+### Local Providers
+
+| Provider      | Models                            | Auth | Default Endpoint           | Notes               |
+| ------------- | --------------------------------- | ---- | -------------------------- | ------------------- |
+| **LM Studio** | Local LLMs (Llama, Mistral, etc.) | None | `http://localhost:1234/v1` | No API key required |
+| **Ollama**    | Local LLMs (Llama, Mistral, etc.) | None | `http://localhost:11434`   | No API key required |
+
+### Adding a Model
+
+1. Navigate to **Models** page
+2. Click **Add Model**
+3. Select **Provider** from dropdown
+4. Enter **Model Name** (must match provider's model identifier)
+5. For cloud providers: Enter **API Key**
+6. For local providers: Optionally configure **Base URL** (uses default if omitted)
+7. Click **Test** to verify connection
+8. Click **Add Model** to save
+
+### Provider-Specific Notes
+
+**Open Router**: Access multiple AI models through a single API. Visit [openrouter.ai](https://openrouter.ai) to get your API key and browse available models.
+
+**LM Studio**: Download from [lmstudio.ai](https://lmstudio.ai), start the server, and load your preferred model.
+
+**Ollama**: Install from [ollama.com](https://ollama.com), start the server with `ollama serve`, and pull models with `ollama pull <model-name>`.
+
 ## 📖 API Documentation
 
 The project uses a contract-first approach. The complete REST API documentation is maintained in:
@@ -124,7 +164,7 @@ This project uses automated quality enforcement to maintain code standards:
 
 **Local Development** (Pre-commit Hooks):
 
-- **Pre-commit**: Runs ESLint and Prettier on staged files (*.ts, *.tsx, *.astro, *.js, *.jsx)
+- **Pre-commit**: Runs ESLint and Prettier on staged files (_.ts, _.tsx, _.astro, _.js, \*.jsx)
   - Typecheck is intentionally excluded from pre-commit for faster incremental development
   - Run typecheck manually before creating PRs
 - **Pre-push**: Runs full test suite (optional, can be skipped with `--no-verify`)

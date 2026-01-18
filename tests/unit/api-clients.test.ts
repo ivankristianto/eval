@@ -1,11 +1,20 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { AnthropicClient, ClientFactory, GoogleClient, OpenAIClient } from '@lib/utils/api-clients';
+import {
+  AnthropicClient,
+  ClientFactory,
+  GoogleClient,
+  LMStudioClient,
+  OllamaClient,
+  OpenAIClient,
+  OpenRouterClient,
+} from '@lib/utils/api-clients';
 
 const sdkMocks = vi.hoisted(() => ({
   openaiCreate: vi.fn(),
   openaiList: vi.fn(),
   anthropicCreate: vi.fn(),
   googleGenerateContent: vi.fn(),
+  ollamaFetch: vi.fn(),
 }));
 
 vi.mock('openai', () => {
@@ -45,11 +54,15 @@ vi.mock('@google/generative-ai', () => {
   return { GoogleGenerativeAI: MockGoogleGenerativeAI };
 });
 
+// Mock fetch for Ollama
+global.fetch = sdkMocks.ollamaFetch as unknown as typeof fetch;
+
 beforeEach(() => {
   sdkMocks.openaiCreate.mockReset();
   sdkMocks.openaiList.mockReset();
   sdkMocks.anthropicCreate.mockReset();
   sdkMocks.googleGenerateContent.mockReset();
+  sdkMocks.ollamaFetch.mockReset();
 });
 
 describe('OpenAIClient', () => {
@@ -484,6 +497,431 @@ describe('GoogleClient', () => {
   });
 });
 
+describe('OpenRouterClient', () => {
+  it('returns evaluation results and token counts', async () => {
+    sdkMocks.openaiCreate.mockResolvedValue({
+      choices: [{ message: { content: 'OpenRouter response' } }],
+      usage: { prompt_tokens: 5, completion_tokens: 8, total_tokens: 13 },
+    });
+
+    const timerSpy = vi
+      .spyOn(performance, 'now')
+      .mockImplementationOnce(() => 50)
+      .mockImplementationOnce(() => 120);
+
+    const client = new OpenRouterClient('sk-or-key', 'anthropic/claude-3-opus');
+    const result = await client.evaluate('Hello OpenRouter');
+
+    expect(result).toEqual({
+      response: 'OpenRouter response',
+      inputTokens: 5,
+      outputTokens: 8,
+      totalTokens: 13,
+      executionTime: 70,
+    });
+    expect(sdkMocks.openaiCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        model: 'anthropic/claude-3-opus',
+        max_tokens: 4096,
+      })
+    );
+
+    timerSpy.mockRestore();
+  });
+
+  it('propagates API errors', async () => {
+    sdkMocks.openaiCreate.mockRejectedValue(new Error('OpenRouter API error'));
+
+    const client = new OpenRouterClient('sk-or-key', 'meta-llama/llama-3-70b');
+
+    await expect(client.evaluate('Hi')).rejects.toThrow('OpenRouter API error');
+  });
+
+  it('returns connection status', async () => {
+    sdkMocks.openaiCreate.mockResolvedValue({
+      choices: [{ message: { content: 'Ok' } }],
+      usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
+    });
+
+    const client = new OpenRouterClient('sk-or-key', 'meta-llama/llama-3-70b');
+    const ok = await client.testConnection();
+
+    expect(ok).toBe(true);
+
+    sdkMocks.openaiCreate.mockRejectedValue(new Error('No auth'));
+    const failed = await client.testConnection();
+
+    expect(failed).toBe(false);
+  });
+
+  it('adds system prompt to messages array when provided', async () => {
+    sdkMocks.openaiCreate.mockResolvedValue({
+      choices: [{ message: { content: 'Response' } }],
+      usage: { prompt_tokens: 10, completion_tokens: 5, total_tokens: 15 },
+    });
+
+    const client = new OpenRouterClient('sk-or-key', 'meta-llama/llama-3-70b');
+    await client.evaluate('User instruction', {
+      systemPrompt: 'You are a helpful assistant',
+    });
+
+    expect(sdkMocks.openaiCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        messages: expect.arrayContaining([
+          { role: 'system', content: 'You are a helpful assistant' },
+          { role: 'user', content: 'User instruction' },
+        ]),
+      })
+    );
+  });
+
+  it('adds temperature parameter when provided', async () => {
+    sdkMocks.openaiCreate.mockResolvedValue({
+      choices: [{ message: { content: 'Response' } }],
+      usage: { prompt_tokens: 5, completion_tokens: 3, total_tokens: 8 },
+    });
+
+    const client = new OpenRouterClient('sk-or-key', 'meta-llama/llama-3-70b');
+    await client.evaluate('User instruction', { temperature: 0.5 });
+
+    expect(sdkMocks.openaiCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        temperature: 0.5,
+      })
+    );
+  });
+
+  it('supports both systemPrompt and temperature together', async () => {
+    sdkMocks.openaiCreate.mockResolvedValue({
+      choices: [{ message: { content: 'Response' } }],
+      usage: { prompt_tokens: 10, completion_tokens: 5, total_tokens: 15 },
+    });
+
+    const client = new OpenRouterClient('sk-or-key', 'meta-llama/llama-3-70b');
+    await client.evaluate('User instruction', {
+      systemPrompt: 'You are a helpful assistant',
+      temperature: 0.7,
+    });
+
+    expect(sdkMocks.openaiCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        messages: expect.arrayContaining([
+          { role: 'system', content: 'You are a helpful assistant' },
+          { role: 'user', content: 'User instruction' },
+        ]),
+        temperature: 0.7,
+      })
+    );
+  });
+});
+
+describe('LMStudioClient', () => {
+  it('returns evaluation results and token counts', async () => {
+    sdkMocks.openaiCreate.mockResolvedValue({
+      choices: [{ message: { content: 'LM Studio response' } }],
+      usage: { prompt_tokens: 6, completion_tokens: 10, total_tokens: 16 },
+    });
+
+    const timerSpy = vi
+      .spyOn(performance, 'now')
+      .mockImplementationOnce(() => 100)
+      .mockImplementationOnce(() => 180);
+
+    const client = new LMStudioClient('', 'llama-3-8b');
+    const result = await client.evaluate('Hello LM Studio');
+
+    expect(result).toEqual({
+      response: 'LM Studio response',
+      inputTokens: 6,
+      outputTokens: 10,
+      totalTokens: 16,
+      executionTime: 80,
+    });
+
+    timerSpy.mockRestore();
+  });
+
+  it('propagates API errors', async () => {
+    sdkMocks.openaiCreate.mockRejectedValue(new Error('LM Studio connection failed'));
+
+    const client = new LMStudioClient('', 'llama-3-8b');
+
+    await expect(client.evaluate('Hi')).rejects.toThrow('LM Studio connection failed');
+  });
+
+  it('returns connection status', async () => {
+    sdkMocks.openaiCreate.mockResolvedValue({
+      choices: [{ message: { content: 'Ok' } }],
+      usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
+    });
+
+    const client = new LMStudioClient('', 'llama-3-8b');
+    const ok = await client.testConnection();
+
+    expect(ok).toBe(true);
+
+    sdkMocks.openaiCreate.mockRejectedValue(new Error('Connection failed'));
+    const failed = await client.testConnection();
+
+    expect(failed).toBe(false);
+  });
+
+  it('supports custom base URL', async () => {
+    sdkMocks.openaiCreate.mockResolvedValue({
+      choices: [{ message: { content: 'Response' } }],
+      usage: { prompt_tokens: 5, completion_tokens: 3, total_tokens: 8 },
+    });
+
+    const client = new LMStudioClient('', 'llama-3-8b', 'http://localhost:9999/v1');
+    await client.evaluate('Test');
+
+    expect(sdkMocks.openaiCreate).toHaveBeenCalled();
+  });
+
+  it('handles empty API key (local provider)', async () => {
+    sdkMocks.openaiCreate.mockResolvedValue({
+      choices: [{ message: { content: 'Response' } }],
+      usage: { prompt_tokens: 5, completion_tokens: 3, total_tokens: 8 },
+    });
+
+    const client = new LMStudioClient('', 'llama-3-8b');
+    await client.evaluate('Test');
+
+    expect(sdkMocks.openaiCreate).toHaveBeenCalled();
+  });
+
+  it('adds system prompt to messages array when provided', async () => {
+    sdkMocks.openaiCreate.mockResolvedValue({
+      choices: [{ message: { content: 'Response' } }],
+      usage: { prompt_tokens: 10, completion_tokens: 5, total_tokens: 15 },
+    });
+
+    const client = new LMStudioClient('', 'llama-3-8b');
+    await client.evaluate('User instruction', {
+      systemPrompt: 'You are a helpful assistant',
+    });
+
+    expect(sdkMocks.openaiCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        messages: expect.arrayContaining([
+          { role: 'system', content: 'You are a helpful assistant' },
+          { role: 'user', content: 'User instruction' },
+        ]),
+      })
+    );
+  });
+
+  it('adds temperature parameter when provided', async () => {
+    sdkMocks.openaiCreate.mockResolvedValue({
+      choices: [{ message: { content: 'Response' } }],
+      usage: { prompt_tokens: 5, completion_tokens: 3, total_tokens: 8 },
+    });
+
+    const client = new LMStudioClient('', 'llama-3-8b');
+    await client.evaluate('User instruction', { temperature: 0.8 });
+
+    expect(sdkMocks.openaiCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        temperature: 0.8,
+      })
+    );
+  });
+});
+
+describe('OllamaClient', () => {
+  it('returns evaluation results and token counts', async () => {
+    sdkMocks.ollamaFetch.mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        message: { content: 'Ollama response' },
+        prompt_eval_count: 7,
+        eval_count: 12,
+      }),
+    } as Response);
+
+    const timerSpy = vi
+      .spyOn(performance, 'now')
+      .mockImplementationOnce(() => 75)
+      .mockImplementationOnce(() => 155);
+
+    const client = new OllamaClient('', 'llama3');
+    const result = await client.evaluate('Hello Ollama');
+
+    expect(result).toEqual({
+      response: 'Ollama response',
+      inputTokens: 7,
+      outputTokens: 12,
+      totalTokens: 19,
+      executionTime: 80,
+    });
+    expect(sdkMocks.ollamaFetch).toHaveBeenCalledWith(
+      'http://localhost:11434/api/chat',
+      expect.objectContaining({
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      })
+    );
+
+    timerSpy.mockRestore();
+  });
+
+  it('propagates API errors', async () => {
+    sdkMocks.ollamaFetch.mockResolvedValue({
+      ok: false,
+      status: 500,
+      statusText: 'Internal Server Error',
+    } as Response);
+
+    const client = new OllamaClient('', 'llama3');
+
+    await expect(client.evaluate('Hi')).rejects.toThrow('Ollama API error: 500');
+  });
+
+  it('returns connection status via /api/tags', async () => {
+    sdkMocks.ollamaFetch.mockResolvedValue({
+      ok: true,
+    } as Response);
+
+    const client = new OllamaClient('', 'llama3');
+    const ok = await client.testConnection();
+
+    expect(ok).toBe(true);
+    expect(sdkMocks.ollamaFetch).toHaveBeenCalledWith('http://localhost:11434/api/tags', {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    sdkMocks.ollamaFetch.mockResolvedValue({
+      ok: false,
+    } as Response);
+    const failed = await client.testConnection();
+
+    expect(failed).toBe(false);
+  });
+
+  it('supports custom base URL', async () => {
+    sdkMocks.ollamaFetch.mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        message: { content: 'Response' },
+        prompt_eval_count: 5,
+        eval_count: 8,
+      }),
+    } as Response);
+
+    const client = new OllamaClient('', 'llama3', 'http://localhost:9999');
+    await client.evaluate('Test');
+
+    expect(sdkMocks.ollamaFetch).toHaveBeenCalledWith(
+      'http://localhost:9999/api/chat',
+      expect.objectContaining({
+        method: 'POST',
+      })
+    );
+  });
+
+  it('handles empty API key (no authentication)', async () => {
+    sdkMocks.ollamaFetch.mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        message: { content: 'Response' },
+        prompt_eval_count: 5,
+        eval_count: 8,
+      }),
+    } as Response);
+
+    const client = new OllamaClient('', 'llama3');
+    await client.evaluate('Test');
+
+    expect(sdkMocks.ollamaFetch).toHaveBeenCalled();
+  });
+
+  it('adds system prompt to messages when provided', async () => {
+    sdkMocks.ollamaFetch.mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        message: { content: 'Response' },
+        prompt_eval_count: 10,
+        eval_count: 5,
+      }),
+    } as Response);
+
+    const client = new OllamaClient('', 'llama3');
+    await client.evaluate('User instruction', {
+      systemPrompt: 'You are a helpful assistant',
+    });
+
+    const callArgs = JSON.parse(
+      (sdkMocks.ollamaFetch.mock.calls[0][1] as Record<string, unknown>).body as string
+    );
+    expect(callArgs.messages).toEqual([
+      { role: 'system', content: 'You are a helpful assistant' },
+      { role: 'user', content: 'User instruction' },
+    ]);
+  });
+
+  it('adds temperature to options when provided', async () => {
+    sdkMocks.ollamaFetch.mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        message: { content: 'Response' },
+        prompt_eval_count: 5,
+        eval_count: 8,
+      }),
+    } as Response);
+
+    const client = new OllamaClient('', 'llama3');
+    await client.evaluate('User instruction', { temperature: 0.6 });
+
+    const callArgs = JSON.parse(
+      (sdkMocks.ollamaFetch.mock.calls[0][1] as Record<string, unknown>).body as string
+    );
+    expect(callArgs.options).toEqual({ temperature: 0.6 });
+  });
+
+  it('supports both systemPrompt and temperature together', async () => {
+    sdkMocks.ollamaFetch.mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        message: { content: 'Response' },
+        prompt_eval_count: 10,
+        eval_count: 5,
+      }),
+    } as Response);
+
+    const client = new OllamaClient('', 'llama3');
+    await client.evaluate('User instruction', {
+      systemPrompt: 'You are a helpful assistant',
+      temperature: 0.9,
+    });
+
+    const callArgs = JSON.parse(
+      (sdkMocks.ollamaFetch.mock.calls[0][1] as Record<string, unknown>).body as string
+    );
+    expect(callArgs.messages).toEqual([
+      { role: 'system', content: 'You are a helpful assistant' },
+      { role: 'user', content: 'User instruction' },
+    ]);
+    expect(callArgs.options).toEqual({ temperature: 0.9 });
+  });
+
+  it('handles missing token counts gracefully', async () => {
+    sdkMocks.ollamaFetch.mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        message: { content: 'Response' },
+      }),
+    } as Response);
+
+    const client = new OllamaClient('', 'llama3');
+    const result = await client.evaluate('Test');
+
+    expect(result.inputTokens).toBe(0);
+    expect(result.outputTokens).toBe(0);
+    expect(result.totalTokens).toBe(0);
+  });
+});
+
 describe('ClientFactory', () => {
   it('creates provider clients', () => {
     expect(ClientFactory.createClient('openai', 'key', 'gpt-4')).toBeInstanceOf(OpenAIClient);
@@ -491,11 +929,54 @@ describe('ClientFactory', () => {
       AnthropicClient
     );
     expect(ClientFactory.createClient('google', 'key', 'gemini')).toBeInstanceOf(GoogleClient);
+    expect(
+      ClientFactory.createClient('openrouter', 'key', 'meta-llama/llama-3-70b')
+    ).toBeInstanceOf(OpenRouterClient);
+    expect(ClientFactory.createClient('lmstudio', '', 'llama-3-8b')).toBeInstanceOf(LMStudioClient);
+    expect(ClientFactory.createClient('ollama', '', 'llama3')).toBeInstanceOf(OllamaClient);
   });
 
   it('throws for unknown providers', () => {
     expect(() => ClientFactory.createClient('invalid' as never, 'key', 'model')).toThrow(
       'Unknown provider'
     );
+  });
+
+  it('throws for cloud providers without API key', () => {
+    expect(() => ClientFactory.createClient('openai', undefined, 'gpt-4')).toThrow(
+      'API key is required for OpenAI'
+    );
+    expect(() => ClientFactory.createClient('anthropic', undefined, 'claude-3')).toThrow(
+      'API key is required for Anthropic'
+    );
+    expect(() => ClientFactory.createClient('google', undefined, 'gemini')).toThrow(
+      'API key is required for Google'
+    );
+    expect(() => ClientFactory.createClient('openrouter', undefined, 'llama-3')).toThrow(
+      'API key is required for Open Router'
+    );
+  });
+
+  it('allows empty API key for local providers', () => {
+    expect(() => ClientFactory.createClient('lmstudio', undefined, 'llama-3-8b')).not.toThrow();
+    expect(() => ClientFactory.createClient('ollama', undefined, 'llama3')).not.toThrow();
+  });
+
+  it('passes base URL to local providers', () => {
+    const lmStudioClient = ClientFactory.createClient(
+      'lmstudio',
+      '',
+      'llama-3-8b',
+      'http://localhost:9999/v1'
+    );
+    expect(lmStudioClient).toBeInstanceOf(LMStudioClient);
+
+    const ollamaClient = ClientFactory.createClient(
+      'ollama',
+      '',
+      'llama3',
+      'http://localhost:9999'
+    );
+    expect(ollamaClient).toBeInstanceOf(OllamaClient);
   });
 });

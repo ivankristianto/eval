@@ -260,6 +260,120 @@ describe('validateCreateModel api key formats', () => {
     expect(result.valid).toBe(false);
     expect(result.error?.error).toBe('INVALID_API_KEY');
   });
+
+  it('rejects invalid openrouter api key format (not starting with sk-or-)', () => {
+    const result = validateCreateModel({
+      provider: 'openrouter',
+      model_name: 'meta-llama/llama-3-70b',
+      api_key: 'sk-123',
+    });
+
+    expect(result.valid).toBe(false);
+    expect(result.error?.error).toBe('INVALID_API_KEY');
+  });
+
+  it('accepts valid openrouter api key format (starting with sk-or-)', () => {
+    const result = validateCreateModel({
+      provider: 'openrouter',
+      model_name: 'meta-llama/llama-3-70b',
+      api_key: 'sk-or-test-key-123',
+    });
+
+    expect(result.valid).toBe(true);
+  });
+
+  it('accepts empty api key for lmstudio (local provider)', () => {
+    const result = validateCreateModel({
+      provider: 'lmstudio',
+      model_name: 'llama-3-8b',
+      api_key: '',
+    });
+
+    expect(result.valid).toBe(true);
+  });
+
+  it('accepts empty api key for ollama (local provider)', () => {
+    const result = validateCreateModel({
+      provider: 'ollama',
+      model_name: 'llama3',
+      api_key: '',
+    });
+
+    expect(result.valid).toBe(true);
+  });
+
+  it('accepts omitting api_key for lmstudio (local provider)', () => {
+    const result = validateCreateModel({
+      provider: 'lmstudio',
+      model_name: 'llama-3-8b',
+    });
+
+    expect(result.valid).toBe(true);
+  });
+
+  it('accepts omitting api_key for ollama (local provider)', () => {
+    const result = validateCreateModel({
+      provider: 'ollama',
+      model_name: 'llama3',
+    });
+
+    expect(result.valid).toBe(true);
+  });
+});
+
+describe('validateCreateModel new providers', () => {
+  it('accepts openrouter provider', () => {
+    const result = validateCreateModel({
+      provider: 'openrouter',
+      model_name: 'anthropic/claude-3-opus',
+      api_key: 'sk-or-test-key-123',
+    });
+
+    expect(result.valid).toBe(true);
+  });
+
+  it('accepts lmstudio provider', () => {
+    const result = validateCreateModel({
+      provider: 'lmstudio',
+      model_name: 'llama-3-8b',
+      api_key: '',
+    });
+
+    expect(result.valid).toBe(true);
+  });
+
+  it('accepts ollama provider', () => {
+    const result = validateCreateModel({
+      provider: 'ollama',
+      model_name: 'llama3',
+      api_key: '',
+    });
+
+    expect(result.valid).toBe(true);
+  });
+
+  it('validates base_url format for local providers', () => {
+    const result = validateCreateModel({
+      provider: 'lmstudio',
+      model_name: 'llama-3-8b',
+      api_key: '',
+      base_url: 'not-a-url',
+    });
+
+    expect(result.valid).toBe(false);
+    expect(result.error?.field).toBe('base_url');
+  });
+
+  it('accepts valid base_url for local providers', () => {
+    const result = validateCreateModel({
+      provider: 'lmstudio',
+      model_name: 'llama-3-8b',
+      api_key: '',
+      base_url: 'http://localhost:9999/v1',
+    });
+
+    expect(result.valid).toBe(true);
+  });
 });
 
 describe('validateSystemPrompt', () => {
