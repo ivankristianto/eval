@@ -139,80 +139,89 @@ tests/unit/providers/
 
 ### Phase 1: Database & Types
 
-- [ ] **DB-001**: Update `db/schema.sql`
-  - [ ] Add `base_url TEXT` column to ModelConfiguration table
-  - [ ] Update provider CHECK constraint to include 'openrouter', 'lmstudio', 'ollama'
-  - [ ] Add index on base_url for local providers
+- [x] **DB-001**: Update `db/schema.sql`
+  - [x] Add `base_url TEXT` column to ModelConfiguration table
+  - [x] Update provider CHECK constraint to include 'openrouter', 'lmstudio', 'ollama'
+  - [x] Add index on base_url for local providers
 
-- [ ] **TYPES-001**: Update `src/lib/utils/types.ts`
-  - [ ] Extend Provider type: `'openai' | 'anthropic' | 'google' | 'openrouter' | 'lmstudio' | 'ollama'`
-  - [ ] Add `base_url?: string` to ModelConfiguration interface
-  - [ ] Update CreateModelRequest to include optional base_url
+- [x] **TYPES-001**: Update `src/lib/utils/types.ts`
+  - [x] Extend Provider type: `'openai' | 'anthropic' | 'google' | 'openrouter' | 'lmstudio' | 'ollama'`
+  - [x] Add `base_url?: string` to ModelConfiguration interface
+  - [x] Update CreateModelRequest to include optional base_url
 
-- [ ] **DB-001**: Update `src/lib/db/model-db.ts`
-  - [ ] Update insertModel() to accept base_url
-  - [ ] Update updateModel() to handle base_url
-  - [ ] Update getModelById() to return base_url
-  - [ ] Update getModels() to return base_url
+- [x] **DB-002**: Update `src/lib/db/db.ts`
+  - [x] Update insertModel() to accept base_url
+  - [x] Update updateModel() to handle base_url
+  - [x] Update getModelById() to return base_url
+  - [x] Update getModels() to return base_url
 
 ### Phase 2: Provider Implementations
 
-- [ ] **PROVIDER-001**: Create `src/lib/providers/base.ts`
-  - [ ] Define ProviderConfig interface
-  - [ ] Create base ProviderClient class with common utilities
-  - [ ] Export type definitions
+- [x] **PROVIDER-001**: Create OpenRouterClient in `src/lib/utils/api-clients.ts`
+  - [x] Implement OpenRouterClient class (uses OpenAI SDK)
+  - [x] Configure base URL: `https://openrouter.ai/api/v1`
+  - [x] Handle OpenRouter-specific headers (HTTP-Referer, X-Title)
+  - [x] Implement evaluate() method
+  - [x] Implement testConnection() method
 
-- [ ] **PROVIDER-002**: Create `src/lib/providers/openrouter-provider.ts`
-  - [ ] Implement OpenRouterClient class (extends base or uses OpenAI SDK)
-  - [ ] Configure base URL: `https://openrouter.ai/api/v1`
-  - [ ] Handle OpenRouter-specific headers (HTTP-Referer, X-Title)
-  - [ ] Implement evaluate() method
-  - [ ] Implement testConnection() method
+- [x] **PROVIDER-002**: Create LMStudioClient in `src/lib/utils/api-clients.ts`
+  - [x] Implement LMStudioClient class (uses OpenAI SDK with custom base URL)
+  - [x] Default base URL: `http://localhost:1234/v1`
+  - [x] Handle empty API key (no authentication)
+  - [x] Implement evaluate() method
+  - [x] Implement testConnection() method
 
-- [ ] **PROVIDER-003**: Create `src/lib/providers/lmstudio-provider.ts`
-  - [ ] Implement LMStudioClient class (uses OpenAI SDK with custom base URL)
-  - [ ] Default base URL: `http://localhost:1234/v1`
-  - [ ] Handle empty API key (no authentication)
-  - [ ] Implement evaluate() method
-  - [ ] Implement testConnection() method
+- [x] **PROVIDER-003**: Create OllamaClient in `src/lib/utils/api-clients.ts`
+  - [x] Implement OllamaClient class (custom REST API client)
+  - [x] Default base URL: `http://localhost:11434`
+  - [x] Handle Ollama API format: `/api/chat`
+  - [x] Implement evaluate() method
+  - [x] Implement testConnection() method (use `/api/tags` endpoint)
 
-- [ ] **PROVIDER-004**: Create `src/lib/providers/ollama-provider.ts`
-  - [ ] Implement OllamaClient class (custom REST API client)
-  - [ ] Default base URL: `http://localhost:11434`
-  - [ ] Handle Ollama API format: `/api/generate` and `/api/chat`
-  - [ ] Implement evaluate() method
-  - [ ] Implement testConnection() method (use `/api/tags` endpoint)
-
-- [ ] **CLIENT-001**: Update `src/lib/utils/api-clients.ts`
-  - [ ] Import new provider clients
-  - [ ] Update ClientFactory.createClient() switch statement
-  - [ ] Update ClientFactory.testConnection() switch statement
-  - [ ] Handle optional API key for local providers
-  - [ ] Pass base_url to provider clients
+- [x] **CLIENT-001**: Update `src/lib/utils/api-clients.ts`
+  - [x] Import new provider clients
+  - [x] Update ClientFactory.createClient() switch statement
+  - [x] Update ClientFactory.testConnection() switch statement
+  - [x] Handle optional API key for local providers
+  - [x] Pass base_url to provider clients
 
 ### Phase 3: Validation & API
 
-- [ ] **VALIDATION-001**: Update `src/lib/validation/validators.ts`
-  - [ ] Add 'openrouter', 'lmstudio', 'ollama' to VALID_PROVIDERS array
-  - [ ] Add validateApiKeyFormat() cases:
-    - [ ] Open Router: starts with `sk-or-`
-    - [ ] LM Studio: allow empty string (no auth)
-    - [ ] Ollama: allow empty string (no auth)
-  - [ ] Add base_url validation (valid URL format)
-  - [ ] Update validateCreateModel() to handle optional api_key
+- [x] **VALIDATION-001**: Update `src/lib/validation/validators.ts`
+  - [x] Add 'openrouter', 'lmstudio', 'ollama' to VALID_PROVIDERS array
+  - [x] Add validateApiKeyFormat() cases:
+    - [x] Open Router: starts with `sk-or-`
+    - [x] LM Studio: allow empty string (no auth)
+    - [x] Ollama: allow empty string (no auth)
+  - [x] Add base_url validation (valid URL format)
+  - [x] Update validateCreateModel() to handle optional api_key
 
-- [ ] **API-001**: Update `src/pages/api/models.ts`
-  - [ ] Handle base_url in POST /api/models
-  - [ ] Set default base URLs for local providers
-  - [ ] Validate base_url format
+- [x] **API-001**: Update `src/pages/api/models.ts`
+  - [x] Handle base_url in POST /api/models
+  - [x] Set default base URLs for local providers
+  - [x] Validate base_url format
 
-- [ ] **API-002**: Update `src/pages/api/models/[id].ts`
-  - [ ] Return base_url in GET response
-  - [ ] Handle base_url in PATCH updates
+- [x] **API-002**: Update `src/pages/api/models/[id].ts`
+  - [x] Return base_url in GET response
+  - [x] Handle base_url in PATCH updates
 
-- [ ] **API-003**: Update `src/pages/api/models/[id]/test-connection.ts`
-  - [ ] Handle empty API key for local providers
-  - [ ] Pass base_url to ClientFactory
+- [x] **API-003**: Update `src/pages/api/models/[id]/test-connection.ts`
+  - [x] Handle empty API key for local providers
+  - [x] Pass base_url to ClientFactory
+
+### Phase 4: Evaluator Updates
+
+- [x] **EVALUATOR-001**: Update `src/lib/evaluation/evaluator.ts`
+  - [x] Handle optional api_key_encrypted
+  - [x] Pass base_url to ClientFactory
+
+- [x] **BULK-EVALUATOR-001**: Update `src/lib/bulk-evaluation/bulk-evaluator.ts`
+  - [x] Handle optional api_key_encrypted
+  - [x] Pass base_url to ClientFactory
+
+- [x] **RERUN-RESULT-001**: Update `src/pages/api/bulk/rerun-result.ts`
+  - [x] Handle optional api_key_encrypted
+  - [x] Pass base_url to ClientFactory
 
 ### Phase 4: UI Updates
 
