@@ -265,9 +265,10 @@ const modelIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text
                     <div>
                       <div class="flex items-center gap-2 mb-1">
                         <div class="font-medium">{model.model_name}</div>
-                        <div class={`provider-badge provider-badge-${model.provider}`}>
-                          {getProviderBadge(model.provider)}
-                        </div>
+                        <div
+                          class={`provider-badge provider-badge-${model.provider}`}
+                          set:html={getProviderBadge(model.provider)}
+                        />
                       </div>
                       {model.notes && (
                         <div class="text-xs text-base-content/40 mt-0.5">{model.notes}</div>
