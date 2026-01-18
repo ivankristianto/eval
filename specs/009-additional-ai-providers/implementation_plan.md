@@ -225,16 +225,16 @@ tests/unit/providers/
 
 ### Phase 4: UI Updates
 
-- [ ] **UI-001**: Update `src/pages/models.astro`
-  - [ ] Add Open Router, LM Studio, Ollama to provider dropdown
-  - [ ] Add conditional logic: show/hide API key field based on provider
-  - [ ] Add optional "Base URL" input field (shown for local providers)
+- [x] **UI-001**: Update `src/pages/models.astro`
+  - [x] Add Open Router, LM Studio, Ollama to provider dropdown
+  - [x] Add conditional logic: show/hide API key field based on provider
+  - [x] Add optional "Base URL" input field (shown for local providers)
   - [ ] Display provider icons/badges in model list
-  - [ ] Show default base URL hint for local providers
+  - [x] Show default base URL hint for local providers
 
-- [ ] **UI-002**: Update `src/components/NewEvaluationModal.astro`
-  - [ ] No changes needed (dynamically loads via getModels())
-  - [ ] Verify: model cards show provider correctly
+- [x] **UI-002**: Update `src/components/NewEvaluationModal.astro`
+  - [x] No changes needed (dynamically loads via getModels())
+  - [x] Verify: model cards show provider correctly
 
 ### Phase 5: Testing
 
